@@ -17,7 +17,7 @@ return [
     'help'  => 'Who we are: story, figures, founder quote, vision and mission, core values, governance (board shown from Admin > Team) and location.',
     'nav'   => ['label' => 'About', 'order' => 20, 'header' => true, 'footer' => true],
     'seo'   => [
-        'title'       => 'Empowering Youth in Northern Uganda',
+        'title'       => 'Preparing Communities for Change',
         'description' => 'Lumina Africa Foundation is a registered community-based non-profit in Gulu City, Northern Uganda. Learn about our story, vision, mission, core values and governance.',
         'og_image'    => 'assets/img/site/photo-05.jpg',
     ],
@@ -60,7 +60,7 @@ return [
             'key' => 'quote', 'label' => 'Founder quote', 'toggle' => true,
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the quote (optional)', 'type' => 'text', 'default' => ''],
-                ['key' => 'text', 'label' => 'Quote', 'type' => 'textarea', 'rows' => 5, 'default' => 'Northern Uganda lost years to conflict, but we will not lose our future to digital exclusion. Every young person, regardless of certificates or background, deserves the skills to participate in today’s economy. When we equip youth with practical digital tools, we restore dignity, rebuild confidence, and unlock opportunity.'],
+                ['key' => 'text', 'label' => 'Quote', 'type' => 'textarea', 'rows' => 5, 'default' => 'Northern Uganda lost years to conflict, but we will not lose our future to digital exclusion. Every young person, regardless of certificates or background, deserves the skills to participate in today’s economy.'],
                 ['key' => 'author', 'label' => 'Who said it', 'type' => 'text', 'default' => 'Moses Komakech, Founder'],
                 ['key' => 'image', 'label' => 'Portrait (optional)', 'type' => 'image', 'default' => 'assets/img/site/about/founder-portrait.jpg',
                     'alt' => 'Portrait of Moses Komakech, founder of Lumina Africa Foundation, in a blue suit'],
@@ -78,7 +78,7 @@ return [
                 ['key' => 'vision_text', 'label' => 'Vision: text', 'type' => 'textarea', 'rows' => 4, 'default' => 'An inclusive digital future for Northern Uganda where all young people and women are equipped, connected, and empowered to thrive in the global digital economy.'],
                 ['key' => 'mission_icon', 'label' => 'Mission: icon', 'type' => 'select', 'options' => icon_options(), 'default' => 'target'],
                 ['key' => 'mission_title', 'label' => 'Mission: heading', 'type' => 'text', 'default' => 'Mission'],
-                ['key' => 'mission_text', 'label' => 'Mission: text', 'type' => 'textarea', 'rows' => 4, 'default' => 'To reduce youth unemployment in Northern Uganda by equipping vulnerable young people with market-relevant digital and employable skills, providing psychosocial support, and creating pathways to decent work and sustainable livelihoods.'],
+                ['key' => 'mission_text', 'label' => 'Mission: text', 'type' => 'textarea', 'rows' => 4, 'default' => 'We aim to strengthen access to learning, improve practical competencies, build confidence and help young people prepare for further education, employment, entrepreneurship and leadership.'],
             ],
         ],
         [
@@ -89,7 +89,7 @@ return [
                 ['key' => 'vision_title', 'label' => 'Vision: heading', 'type' => 'text', 'default' => 'Our Vision'],
                 ['key' => 'vision_text', 'label' => 'Vision: text', 'type' => 'textarea', 'rows' => 3, 'default' => 'A Northern Uganda where vulnerable youth thrive through digital skills, decent work, and equal opportunity.'],
                 ['key' => 'mission_title', 'label' => 'Mission: heading', 'type' => 'text', 'default' => 'Our Mission'],
-                ['key' => 'mission_text', 'label' => 'Mission: text', 'type' => 'textarea', 'rows' => 4, 'default' => 'To reduce youth unemployment by equipping vulnerable youth with market-relevant digital and employable skills, providing psychosocial support, and creating clear pathways to decent work and sustainable livelihoods.'],
+                ['key' => 'mission_text', 'label' => 'Mission: text', 'type' => 'textarea', 'rows' => 4, 'default' => 'We aim to strengthen access to learning, improve practical competencies, build confidence and help young people prepare for further education, employment, entrepreneurship and leadership.'],
             ],
         ],
         [
@@ -132,7 +132,7 @@ return [
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Location', 'help' => $hlHelp],
-                ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Located in Pece-Laroo Division in Gulu City Council, Lumina Africa Foundation serves as a hub for youth empowerment and community development.'],
+                ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Located in Pece-Laroo Division in Gulu City Council, Lumina Africa Foundation is a growing community-based organisation. Our primary geographic focus is Northern Uganda.'],
                 ['key' => 'address_label', 'label' => 'Label before the address', 'type' => 'text', 'default' => 'Address'],
                 ['key' => 'map_title', 'label' => 'Map: description for screen readers', 'type' => 'text', 'default' => 'Map showing the location of Lumina Africa Foundation'],
             ],

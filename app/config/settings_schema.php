@@ -71,7 +71,7 @@ return [
                 'logo_path'        => ['label' => 'Logo', 'type' => 'image', 'default' => 'assets/img/brand/logo-512.png', 'rules' => 'nullable|max:255'],
                 'favicon_path'     => ['label' => 'Favicon', 'type' => 'image', 'default' => 'assets/img/brand/favicon-32.png', 'rules' => 'nullable|max:255'],
                 'og_image'         => ['label' => 'Default social sharing image', 'type' => 'image', 'default' => 'assets/img/site/photo-hero-portrait.jpg', 'rules' => 'nullable|max:255', 'help' => 'Shown when a page is shared on social media (1200x630 works best).'],
-                'meta_description' => ['label' => 'Default meta description', 'type' => 'textarea', 'default' => 'Lumina Africa Foundation is a registered community-based non-profit in Gulu City, Northern Uganda, bridging the digital divide for vulnerable youth through digital skills, employability, internships and entrepreneurship.', 'rules' => 'nullable|max:300'],
+                'meta_description' => ['label' => 'Default meta description', 'type' => 'textarea', 'default' => 'Lumina Africa Foundation is a community-based non-profit in Gulu City, Northern Uganda, developing community-centred programs for underserved communities.', 'rules' => 'nullable|max:300'],
                 'analytics_id'     => ['label' => 'Google Analytics measurement ID', 'type' => 'text', 'default' => '', 'rules' => 'nullable|regex:/^G-[A-Z0-9]{4,20}$/', 'placeholder' => 'G-XXXXXXXXXX', 'help' => 'Optional. Leave empty for no tracking.'],
             ],
         ],

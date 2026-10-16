@@ -1,9 +1,9 @@
 <?php
 /**
  * Registry entry: DONATE PAGE  (OWNER: B1 "web-core"; redesigned by B-INNER-A).
- * Default wording = the live Donate page (docs/live-snapshot/donate.txt). NOTE FOR THE OWNER: parts of the live wording (school supplies,
- * community health outreach, children and families) describe a wider scope than the digital-skills mission described elsewhere on the
- * site. They are kept as the faithful default; review them in Admin > Pages > Donate.
+ * Default wording = the owner's planned-programs copy (docs/content-source/planned-programs.md). The earlier live-site wording (school
+ * supplies, food and clothing for children, "life-changing programs") was replaced because it contradicted the planned-programs
+ * wording; the support cards now name the partnership routes of that copy. Review them in Admin > Pages > Donate.
  * Account details (bank, mobile money, PayPal) and the online link are NOT copy: they come from Settings > Donations and are simply
  * hidden while empty. Pledges are stored in Admin > Donations with status "pledged" (a record of intent, never a payment).
  * The quick-amount buttons of the pledge form are the ones of the donation panel (Site-wide content > Donation panel): suggestions only.
@@ -17,8 +17,8 @@ return [
     'help'  => 'Ways to give (details from Settings > Donations), what donations support, the pledge form and the FAQ. The pledge form can be pre-filled with ?amount=50&currency=USD.',
     'nav'   => ['label' => 'Donate', 'order' => 95, 'header' => true, 'footer' => true, 'button' => true],
     'seo'   => [
-        'title'       => 'Support Our Life-Changing Programs',
-        'description' => 'Support Lumina Africa Foundation: your donation helps vulnerable youth and families in Northern Uganda gain digital skills and opportunity. Every contribution counts.',
+        'title'       => 'Support Our Planned Programs',
+        'description' => 'Support Lumina Africa Foundation. Together, we can help turn these plans into practical opportunities for the communities we serve.',
         'og_image'    => 'assets/img/site/photo-03.jpg',
     ],
     'sections' => [
@@ -27,7 +27,7 @@ return [
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
                 ['key' => 'title', 'label' => 'Main heading', 'type' => 'text', 'default' => 'Support [[Us]]', 'maxlength' => 140, 'help' => $hlHelp],
-                ['key' => 'lead', 'label' => 'Intro paragraph', 'type' => 'textarea', 'rows' => 3, 'default' => 'Your donations empower children and families through life-changing programs. Every contribution counts!'],
+                ['key' => 'lead', 'label' => 'Intro paragraph', 'type' => 'textarea', 'rows' => 3, 'default' => 'Lumina Africa Foundation welcomes conversations with organisations and individuals interested in helping develop our proposed interventions.'],
                 ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Donate to Support Lumina Africa Foundation'],
                 ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '', 'help' => 'Leave empty to use the online donation link from Settings > Donations (currently the GoFundMe campaign).'],
                 ['key' => 'cta2_label', 'label' => 'Second button: text (optional)', 'type' => 'text', 'default' => 'Make a pledge', 'help' => 'Hidden while the pledge form section is switched off.'],
@@ -59,7 +59,7 @@ return [
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Support [[Us]]', 'help' => $hlHelp],
-                ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 6, 'default' => 'Join us in making a significant difference for families in our community and beyond. Together, we can build a supportive environment that encourages growth, resilience, and hope for every family. Your involvement is essential in helping us achieve our goals and create lasting change. Let\'s work hand in hand to transform the lives of those who need it most.'],
+                ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 6, 'default' => 'We recognise that translating planned programs into meaningful outcomes requires collaboration, resources and shared commitment. Together, we can help turn these plans into practical opportunities for the communities we serve. The initiatives described on this site represent our planned program areas and proposed interventions, and they should not be interpreted as confirmation that every activity is currently funded, operational or already delivering results.'],
                 ['key' => 'items', 'label' => 'Cards', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a card', 'max_rows' => 8,
                     'fields' => [
                         ['key' => 'icon', 'label' => 'Icon (used when the card has no photo)', 'type' => 'select', 'options' => icon_options(), 'default' => 'heart'],
@@ -68,8 +68,8 @@ return [
                         ['key' => 'image', 'label' => 'Photo (optional)', 'type' => 'image'],
                     ],
                     'default' => [
-                        ['icon' => 'book-open', 'title' => 'School Supplies', 'text' => 'Provide essential supplies for children in need, including food, clothing, educational materials, and hygiene products, to ensure they have a better chance at growing up healthy and successful in their lives.', 'image' => '', 'image_alt' => ''],
-                        ['icon' => 'laptop', 'title' => 'Digital Literacy', 'text' => 'Empower youth through essential training programs.', 'image' => '', 'image_alt' => ''],
+                        ['icon' => 'handshake', 'title' => 'Program Funding & Grants', 'text' => 'Lumina Africa Foundation welcomes conversations with organisations and individuals interested in helping develop our proposed interventions through program funding and grants.', 'image' => '', 'image_alt' => ''],
+                        ['icon' => 'laptop', 'title' => 'Computers & Digital Equipment', 'text' => 'Lumina Africa Foundation welcomes conversations with organisations and individuals interested in helping develop our proposed interventions through computers, digital equipment and learning resources.', 'image' => '', 'image_alt' => ''],
                     ],
                 ],
                 ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Donate to Support Lumina Africa Foundation'],
@@ -127,7 +127,7 @@ return [
                     'default' => [
                         ['question' => 'Is my donation tax-deductible?', 'answer' => 'Please check with your local tax authority regarding the deductibility of donations made to our organization.'],
                         ['question' => 'Who can I contact?', 'answer' => 'You can contact us through our website for any inquiries or assistance regarding donations.'],
-                        ['question' => 'What is the impact of my donation?', 'answer' => 'Every contribution directly helps us provide essential resources and programs to children, youth, and families in need.'],
+                        ['question' => 'What is the impact of my donation?', 'answer' => 'Together, we can help turn these plans into practical opportunities for the communities we serve. The initiatives described on this site represent our planned program areas and proposed interventions, and they should not be interpreted as confirmation that every activity is currently funded, operational or already delivering results.'],
                     ],
                 ],
             ],

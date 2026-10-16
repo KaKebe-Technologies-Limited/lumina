@@ -54,7 +54,7 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('logo_path', 'assets/img/brand/logo-512.png'),
   ('favicon_path', 'assets/img/brand/favicon-32.png'),
   ('og_image', 'assets/img/brand/logo-512.png'),
-  ('meta_description', 'Lumina Africa Foundation is a registered community-based non-profit in Gulu City, Northern Uganda, bridging the digital divide for vulnerable youth through digital skills, employability, internships and entrepreneurship.'),
+  ('meta_description', 'Lumina Africa Foundation is a community-based non-profit in Gulu City, Northern Uganda, developing community-centred programs for underserved communities.'),
   ('analytics_id', '')
 ON DUPLICATE KEY UPDATE
   setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
@@ -222,10 +222,10 @@ INSERT INTO faqs (group_key, question, answer, sort_order, is_active)
 SELECT seed.group_key, seed.question, seed.answer, seed.sort_order, seed.is_active FROM (
   SELECT 'donate' AS group_key, 'How can I donate?' AS question, 'You can donate via mobile money, bank transfer, or international donations through PayPal/Stripe.' AS answer, 10 AS sort_order, 0 AS is_active
   UNION ALL SELECT 'donate', 'Is my donation tax-deductible?', 'Please check with your local tax authority regarding the deductibility of donations made to our organization.', 20, 1
-  UNION ALL SELECT 'donate', 'What programs do donations support?', 'Donations support school supplies, digital literacy training, and community health outreach programs for children and families.', 30, 0
-  UNION ALL SELECT 'donate', 'Can I donate monthly?', 'Yes, you can set up a recurring donation to support our ongoing programs.', 40, 0
+  UNION ALL SELECT 'donate', 'What programs do donations support?', 'Our planned interventions focus on three interconnected pillars: Health, Education, and Technology & Innovation. Lumina Africa Foundation welcomes conversations with organisations and individuals interested in helping develop our proposed interventions through program funding and grants, and computers, digital equipment and learning resources.', 30, 0
+  UNION ALL SELECT 'donate', 'Can I donate monthly?', 'Yes, you can set up a recurring donation to support our planned programs.', 40, 0
   UNION ALL SELECT 'donate', 'Who can I contact?', 'You can contact us through our website for any inquiries or assistance regarding donations.', 50, 1
-  UNION ALL SELECT 'donate', 'What is the impact of my donation?', 'Every contribution directly helps us provide essential resources and programs to children, youth, and families in need.', 60, 1
+  UNION ALL SELECT 'donate', 'What is the impact of my donation?', 'Together, we can help turn these plans into practical opportunities for the communities we serve. The initiatives described on this site represent our planned program areas and proposed interventions, and they should not be interpreted as confirmation that every activity is currently funded, operational or already delivering results.', 60, 1
 ) AS seed
 WHERE NOT EXISTS (SELECT 1 FROM faqs WHERE group_key = 'donate');
 
@@ -233,13 +233,13 @@ UPDATE faqs SET answer = 'You can donate via mobile money, bank transfer, or int
   WHERE group_key = 'donate' AND question = 'How can I donate?' AND (@reseed = 1 OR updated_at = created_at);
 UPDATE faqs SET answer = 'Please check with your local tax authority regarding the deductibility of donations made to our organization.', sort_order = 20, is_active = 1, updated_at = created_at
   WHERE group_key = 'donate' AND question = 'Is my donation tax-deductible?' AND (@reseed = 1 OR updated_at = created_at);
-UPDATE faqs SET answer = 'Donations support school supplies, digital literacy training, and community health outreach programs for children and families.', sort_order = 30, is_active = 0, updated_at = created_at
+UPDATE faqs SET answer = 'Our planned interventions focus on three interconnected pillars: Health, Education, and Technology & Innovation. Lumina Africa Foundation welcomes conversations with organisations and individuals interested in helping develop our proposed interventions through program funding and grants, and computers, digital equipment and learning resources.', sort_order = 30, is_active = 0, updated_at = created_at
   WHERE group_key = 'donate' AND question = 'What programs do donations support?' AND (@reseed = 1 OR updated_at = created_at);
-UPDATE faqs SET answer = 'Yes, you can set up a recurring donation to support our ongoing programs.', sort_order = 40, is_active = 0, updated_at = created_at
+UPDATE faqs SET answer = 'Yes, you can set up a recurring donation to support our planned programs.', sort_order = 40, is_active = 0, updated_at = created_at
   WHERE group_key = 'donate' AND question = 'Can I donate monthly?' AND (@reseed = 1 OR updated_at = created_at);
 UPDATE faqs SET answer = 'You can contact us through our website for any inquiries or assistance regarding donations.', sort_order = 50, is_active = 1, updated_at = created_at
   WHERE group_key = 'donate' AND question = 'Who can I contact?' AND (@reseed = 1 OR updated_at = created_at);
-UPDATE faqs SET answer = 'Every contribution directly helps us provide essential resources and programs to children, youth, and families in need.', sort_order = 60, is_active = 1, updated_at = created_at
+UPDATE faqs SET answer = 'Together, we can help turn these plans into practical opportunities for the communities we serve. The initiatives described on this site represent our planned program areas and proposed interventions, and they should not be interpreted as confirmation that every activity is currently funded, operational or already delivering results.', sort_order = 60, is_active = 1, updated_at = created_at
   WHERE group_key = 'donate' AND question = 'What is the impact of my donation?' AND (@reseed = 1 OR updated_at = created_at);
 
 -- ------------------------------------------------------------------ gallery_images (photos bundled under assets/img/site; the two photos of children are inactive until consent is confirmed)
