@@ -9,7 +9,7 @@
   --tint-cool: #EEF1F6;
   --white: #FFFFFF;
   --line: #E4E1DA;
-  --font-display: Fraunces, Iowan Old Style, Palatino Linotype, Palatino, Georgia, serif;
+  --font-display: Fraunces, Fraunces Fallback, Iowan Old Style, Palatino Linotype, Palatino, Georgia, serif;
   --radius-card: 24px;
   --radius-photo: 28px;
   --radius-panel: 40px;
@@ -28,8 +28,8 @@
   --ink-soft: #5A6470;
   --surface: #F7F3EC;
   --border: #E3DDD2;
-  --font-heading: Poppins, Segoe UI, system-ui, -apple-system, sans-serif;
-  --font-body: DM Sans, Segoe UI, system-ui, -apple-system, sans-serif;
+  --font-heading: Poppins, Poppins Fallback, Segoe UI, system-ui, -apple-system, sans-serif;
+  --font-body: DM Sans, DM Sans Fallback, Segoe UI, system-ui, -apple-system, sans-serif;
   --radius: 12px;
   --header-h: 72px;
   --radius-sheet: 32px;
@@ -39,6 +39,149 @@
   :root {
     --radius-sheet: 56px;
   }
+}
+
+@font-face {
+  font-family: "DM Sans Fallback";
+  font-style: normal;
+  font-weight: 400;
+  src: local("Arial"), local("ArialMT"), local("Arimo"), local("Liberation Sans");
+  size-adjust: 103.9%;
+  ascent-override: 95.3%;
+  descent-override: 29.8%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "DM Sans Fallback";
+  font-style: normal;
+  font-weight: 500;
+  src: local("Arial"), local("ArialMT"), local("Arimo"), local("Liberation Sans");
+  size-adjust: 105.7%;
+  ascent-override: 93.7%;
+  descent-override: 29.3%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "DM Sans Fallback";
+  font-style: normal;
+  font-weight: 600;
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Arimo Bold"), local("Liberation Sans Bold");
+  size-adjust: 100.2%;
+  ascent-override: 98.8%;
+  descent-override: 30.9%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "DM Sans Fallback";
+  font-style: normal;
+  font-weight: 700;
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Arimo Bold"), local("Liberation Sans Bold");
+  size-adjust: 101.9%;
+  ascent-override: 97.2%;
+  descent-override: 30.4%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Poppins Fallback";
+  font-style: normal;
+  font-weight: 500;
+  src: local("Arial"), local("ArialMT"), local("Arimo"), local("Liberation Sans");
+  size-adjust: 113.7%;
+  ascent-override: 92.4%;
+  descent-override: 30.8%;
+  line-gap-override: 8.8%;
+}
+
+@font-face {
+  font-family: "Poppins Fallback";
+  font-style: normal;
+  font-weight: 600;
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Arimo Bold"), local("Liberation Sans Bold");
+  size-adjust: 106.3%;
+  ascent-override: 98.8%;
+  descent-override: 32.9%;
+  line-gap-override: 9.4%;
+}
+
+@font-face {
+  font-family: "Poppins Fallback";
+  font-style: normal;
+  font-weight: 700;
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Arimo Bold"), local("Liberation Sans Bold");
+  size-adjust: 107.4%;
+  ascent-override: 97.8%;
+  descent-override: 32.6%;
+  line-gap-override: 9.3%;
+}
+
+@font-face {
+  font-family: "Fraunces Fallback";
+  font-style: normal;
+  font-weight: 500;
+  src: local("Georgia"), local("Gelasio");
+  size-adjust: 107.1%;
+  ascent-override: 91.5%;
+  descent-override: 24.3%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Fraunces Fallback";
+  font-style: normal;
+  font-weight: 600;
+  src: local("Georgia Bold"), local("Georgia-Bold"), local("Gelasio Bold");
+  size-adjust: 93.6%;
+  ascent-override: 104.7%;
+  descent-override: 27.8%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Fraunces Fallback";
+  font-style: normal;
+  font-weight: 700;
+  src: local("Georgia Bold"), local("Georgia-Bold"), local("Gelasio Bold");
+  size-adjust: 96.6%;
+  ascent-override: 101.4%;
+  descent-override: 26.9%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Poppins Caps Fallback";
+  font-style: normal;
+  font-weight: 500;
+  src: local("Arial"), local("ArialMT"), local("Arimo"), local("Liberation Sans");
+  size-adjust: 95.8%;
+  ascent-override: 109.6%;
+  descent-override: 36.5%;
+  line-gap-override: 10.4%;
+}
+
+@font-face {
+  font-family: "Poppins Caps Fallback";
+  font-style: normal;
+  font-weight: 600;
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Arimo Bold"), local("Liberation Sans Bold");
+  size-adjust: 95.6%;
+  ascent-override: 109.8%;
+  descent-override: 36.6%;
+  line-gap-override: 10.5%;
+}
+
+@font-face {
+  font-family: "Poppins Caps Fallback";
+  font-style: normal;
+  font-weight: 700;
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Arimo Bold"), local("Liberation Sans Bold");
+  size-adjust: 96.6%;
+  ascent-override: 108.7%;
+  descent-override: 36.2%;
+  line-gap-override: 10.4%;
 }
 
 *,
@@ -62,7 +205,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 1.0625rem;
   line-height: 1.65;
   color: #1D1E20;
@@ -136,7 +279,7 @@ hr {
 
 h1, h2, h3, h4, h5, h6,
 .h1, .h2, .h3, .h4 {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   line-height: 1.15;
   color: #2C2F31;
@@ -146,7 +289,7 @@ h1, h2, h3, h4, h5, h6,
 
 h1, h2, h3,
 .h1, .h2, .h3 {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-weight: 600;
   letter-spacing: -0.012em;
   line-height: 1.14;
@@ -207,7 +350,7 @@ small, .small {
   display: inline-block;
   margin-bottom: 1rem;
   padding-bottom: 0.55rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Caps Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.3;
@@ -298,7 +441,7 @@ small, .small {
   border-left: 4px solid #D6A151;
   background: #F7F3EC;
   border-radius: 0 12px 12px 0;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.1875rem;
   font-style: italic;
   color: #2C3950;
@@ -548,6 +691,16 @@ small, .small {
 :focus-visible {
   outline: 3px solid #B4540F;
   outline-offset: 3px;
+}
+
+html {
+  scroll-padding-top: calc(64px + 1rem);
+  scroll-padding-bottom: 4.5rem;
+}
+
+.section--navy :focus-visible, .section--dark :focus-visible, .sheet--navy :focus-visible, .hero-photo :focus-visible, .page-hero :focus-visible, .band :focus-visible, .stat-band__card :focus-visible, .donate-panel :focus-visible, .cta :focus-visible,
+.quote-card--dark :focus-visible, .event-facts :focus-visible, .subscribe-box :focus-visible, .site-footer :focus-visible {
+  outline-color: #D6A151;
 }
 
 .skip-link {
@@ -1058,7 +1211,7 @@ body.has-sticky-header .site-main {
 }
 
 .brand__name {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 700;
   font-size: 0.98rem;
   letter-spacing: -0.01em;
@@ -1212,7 +1365,7 @@ body.has-sticky-header .site-main {
 }
 
 .site-nav__title {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -1268,7 +1421,7 @@ body.has-sticky-header .site-main {
   display: block;
   padding: 0.75rem 1rem;
   border-radius: 12px;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 1rem;
   font-weight: 500;
   color: #2C3950;
@@ -1532,7 +1685,7 @@ body.nav-open {
 }
 
 .newsletter-row__title {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.35rem, 1.1rem + 0.9vw, 1.9rem);
   font-weight: 600;
   line-height: 1.2;
@@ -1627,9 +1780,9 @@ body.nav-open {
   }
 }
 
-@media (min-width: 992px) {
+@media (min-width: 1200px) {
   .site-footer__grid {
-    grid-template-columns: 1.3fr 1.25fr 1fr 1.4fr;
+    grid-template-columns: 0.9fr 1.5fr 0.95fr 1.4fr;
     gap: 2rem;
   }
 }
@@ -1648,7 +1801,7 @@ body.nav-open {
 }
 
 .site-footer__name {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.4rem;
   font-weight: 600;
   line-height: 1.2;
@@ -1672,7 +1825,7 @@ body.nav-open {
 
 .site-footer__title {
   margin-bottom: 1rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -1701,10 +1854,15 @@ body.nav-open {
   padding-block: 2px;
 }
 
-@media (min-width: 576px) {
+@media (min-width: 22.5rem) {
   .site-footer__links--cols {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 1.5rem;
+    display: block;
+    column-count: 2;
+    column-gap: 1rem;
+  }
+  .site-footer__links--cols li {
+    break-inside: avoid;
+    margin-bottom: 0.5rem;
   }
 }
 
@@ -1747,6 +1905,12 @@ body.nav-open {
   }
 }
 
+@media (max-width: 1199.98px) {
+  .site-footer__bottom > div {
+    padding-bottom: 4.5rem;
+  }
+}
+
 @media (min-width: 768px) {
   .site-footer__bottom > div {
     flex-direction: row;
@@ -1781,39 +1945,6 @@ body.nav-open {
   text-decoration: none;
 }
 
-.newsletter__form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
-.newsletter__form .input {
-  flex: 1;
-  min-width: 0;
-}
-
-.newsletter__note {
-  margin-top: 0.5rem;
-  font-size: 0.8125rem;
-  opacity: 0.75;
-}
-
-.site-footer .input {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #FFFFFF;
-}
-
-.site-footer .input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.site-footer .input:focus {
-  border-color: #D6A151;
-  background: rgba(255, 255, 255, 0.12);
-}
-
 .back-to-top {
   position: fixed;
   right: 1rem;
@@ -1830,15 +1961,18 @@ body.nav-open {
   color: #FFFFFF;
   box-shadow: 0 6px 18px rgba(23, 32, 54, 0.1), 0 2px 6px rgba(23, 32, 54, 0.06);
   opacity: 0;
+  visibility: hidden;
   transform: translateY(12px);
   pointer-events: none;
-  transition: opacity 250ms ease, transform 250ms ease, background-color 150ms ease;
+  transition: opacity 250ms ease, transform 250ms ease, background-color 150ms ease, visibility 0s linear 250ms;
 }
 
 .back-to-top.is-visible {
   opacity: 1;
+  visibility: visible;
   transform: none;
   pointer-events: auto;
+  transition-delay: 0s;
 }
 
 .back-to-top:hover {
@@ -1853,7 +1987,7 @@ body.nav-open {
   padding: 0.8rem 1.65rem;
   border: 2px solid transparent;
   border-radius: 999px;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.2;
@@ -2044,6 +2178,7 @@ body.nav-open {
 }
 
 .btn--caps {
+  font-family: "Poppins", "Poppins Caps Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   padding: 0.85rem 1.7rem;
   font-size: 0.8125rem;
   letter-spacing: 0.08em;
@@ -2452,7 +2587,7 @@ body.nav-open {
 }
 
 .card__title {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.3rem;
   line-height: 1.25;
   color: #2C3950;
@@ -2520,7 +2655,7 @@ body.nav-open {
   background: #EEF1F6;
   font-size: clamp(1.15rem, 1rem + 0.6vw, 1.5rem);
   line-height: 1.5;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-weight: 500;
   color: #2C3950;
 }
@@ -2544,7 +2679,7 @@ body.nav-open {
 .quote__cite {
   display: block;
   margin-top: 1rem;
-  font-family: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
   color: #5A6470;
@@ -2686,93 +2821,6 @@ body.nav-open {
   }
 }
 
-.hero {
-  position: relative;
-  overflow: hidden;
-  background: radial-gradient(60rem 30rem at 85% -10%, rgba(224, 115, 65, 0.28), transparent 60%), radial-gradient(40rem 26rem at -5% 110%, rgba(214, 161, 81, 0.2), transparent 60%), #172036;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.hero__inner {
-  width: 100%;
-  max-width: 1180px;
-  margin-inline: auto;
-  padding-inline: 1.25rem;
-  display: grid;
-  gap: 3rem;
-  align-items: center;
-  padding-block: 4rem;
-}
-
-@media (min-width: 768px) {
-  .hero__inner {
-    padding-inline: 2rem;
-  }
-}
-
-@media (min-width: 992px) {
-  .hero__inner {
-    grid-template-columns: 1.15fr 0.85fr;
-    padding-block: 6rem;
-    gap: 4rem;
-  }
-}
-
-.hero__eyebrow {
-  color: #D6A151;
-}
-
-.hero__title {
-  color: #FFFFFF;
-  font-size: clamp(2.2rem, 1.4rem + 2.8vw, 3.6rem);
-  line-height: 1.08;
-}
-
-.hero__title em {
-  font-style: normal;
-  color: #D6A151;
-}
-
-.hero__lead {
-  margin-top: 1rem;
-  max-width: 38rem;
-  font-size: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
-  color: rgba(255, 255, 255, 0.84);
-}
-
-.hero__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 2rem;
-}
-
-.hero__media {
-  position: relative;
-  max-width: 26rem;
-  margin-inline: auto;
-  width: 100%;
-}
-
-.hero__media img {
-  width: 100%;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-  border-radius: 999px 999px 32px 32px;
-  box-shadow: 0 18px 44px rgba(23, 32, 54, 0.16), 0 6px 14px rgba(23, 32, 54, 0.08);
-  border: 6px solid rgba(214, 161, 81, 0.55);
-}
-
-.hero__media::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: 14% -8% -6% 18%;
-  border-radius: 999px 999px 32px 32px;
-  background: rgba(224, 115, 65, 0.35);
-  filter: blur(40px);
-}
-
 .page-hero {
   position: relative;
   isolation: isolate;
@@ -2802,7 +2850,13 @@ body.nav-open {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(90deg, rgba(23, 32, 54, 0.92) 0%, rgba(23, 32, 54, 0.7) 55%, rgba(23, 32, 54, 0.45) 100%);
+  background: linear-gradient(180deg, rgba(23, 32, 54, 0.82), rgba(23, 32, 54, 0.76));
+}
+
+@media (min-width: 992px) {
+  .page-hero--image::before {
+    background: linear-gradient(90deg, rgba(23, 32, 54, 0.92) 0%, rgba(23, 32, 54, 0.7) 55%, rgba(23, 32, 54, 0.45) 100%);
+  }
 }
 
 .page-hero::after {
@@ -2869,88 +2923,13 @@ body.nav-open {
   margin-bottom: 1.5rem;
 }
 
-.stats {
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-@media (min-width: 992px) {
-  .stats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 992px) {
-  .stats--3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.stats--2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-@media (min-width: 992px) {
-  .stats--2 {
-    grid-template-columns: repeat(2, minmax(0, 18rem));
-  }
-}
-
-.stat {
-  padding: 1.5rem;
-  text-align: center;
-  border-radius: 24px;
-  background: #FFFFFF;
-  border: 1px solid #E4E1DA;
-  box-shadow: 0 1px 2px rgba(23, 32, 54, 0.08), 0 1px 3px rgba(23, 32, 54, 0.06);
-}
-
-.stat__value {
-  display: block;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  font-size: clamp(2.25rem, 1.6rem + 2.4vw, 3.5rem);
-  font-weight: 700;
-  line-height: 1;
-  color: #2C3950;
-  font-variant-numeric: tabular-nums;
-}
-
-.stat__label {
-  display: block;
-  margin-top: 0.5rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: #5A6470;
-}
-
-.stat__icon {
-  display: inline-flex;
-  margin-bottom: 0.75rem;
-  color: #B4540F;
-}
-
-.section--navy .stat, .section--dark .stat, .stat--on-dark {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: none;
-}
-
-.section--navy .stat__value, .section--dark .stat__value, .stat--on-dark .stat__value {
-  color: #D6A151;
-}
-
-.section--navy .stat__label, .section--dark .stat__label, .stat--on-dark .stat__label {
-  color: rgba(255, 255, 255, 0.85);
-}
-
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   padding: 0.2rem 0.7rem;
   border-radius: 999px;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.5;
@@ -3278,7 +3257,7 @@ body.nav-open {
   border: 0;
   background: transparent;
   text-align: left;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 1.05rem;
   font-weight: 600;
   color: #2C3950;
@@ -3302,6 +3281,11 @@ body.nav-open {
 
 .accordion__trigger:hover {
   background: #F7F3EC;
+}
+
+.accordion__trigger:focus-visible {
+  outline-offset: -4px;
+  border-radius: 20px;
 }
 
 .accordion__panel {
@@ -3364,7 +3348,7 @@ body.nav-open {
   height: 100%;
   background: linear-gradient(135deg, #2C3950, #3C4E6E);
   color: #D6A151;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 3rem;
   font-weight: 700;
 }
@@ -3378,7 +3362,7 @@ body.nav-open {
 }
 
 .team-card__name {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.25rem;
 }
 
@@ -3468,7 +3452,7 @@ body.nav-open {
 }
 
 .partner-logo__name {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   font-size: 0.9375rem;
 }
@@ -3521,7 +3505,7 @@ body.nav-open {
 
 .document-row__title {
   font-size: 1.05rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   color: #2C2F31;
 }
@@ -3600,7 +3584,7 @@ body.nav-open {
 }
 
 .event-card__day {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.75rem;
   font-weight: 700;
   color: #D6A151;
@@ -3615,7 +3599,7 @@ body.nav-open {
 }
 
 .event-card__title {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.25rem;
 }
 
@@ -3715,7 +3699,7 @@ body.nav-open {
 }
 
 .story-card__quote {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-weight: 500;
   font-size: 1.1rem;
   line-height: 1.45;
@@ -3727,7 +3711,7 @@ body.nav-open {
 }
 
 .story-card__title {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.25rem;
 }
 
@@ -3766,67 +3750,6 @@ body.nav-open {
 .story-card__person small {
   display: block;
   font-weight: 400;
-  color: #5A6470;
-}
-
-.timeline {
-  position: relative;
-  display: grid;
-  gap: 2rem;
-  padding-left: 0;
-}
-
-.timeline::before {
-  content: '';
-  position: absolute;
-  top: 1rem;
-  bottom: 1rem;
-  left: 1.35rem;
-  width: 2px;
-  background: linear-gradient(to bottom, #D6A151, rgba(214, 161, 81, 0.1));
-}
-
-.timeline__item {
-  position: relative;
-  display: grid;
-  grid-template-columns: 2.75rem 1fr;
-  gap: 1rem;
-  align-items: start;
-}
-
-.timeline__marker {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 50%;
-  background: #2C3950;
-  color: #D6A151;
-  border: 3px solid #FFFFFF;
-  box-shadow: 0 0 0 2px #D6A151;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
-  font-weight: 700;
-}
-
-.timeline__title {
-  font-size: 1.15rem;
-}
-
-.timeline__date {
-  display: block;
-  margin-bottom: 2px;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #B4540F;
-}
-
-.timeline__text {
-  margin-top: 0.5rem;
   color: #5A6470;
 }
 
@@ -4086,7 +4009,7 @@ body.nav-open {
 
 .feature-card__title,
 .feature__title {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.25rem;
   font-weight: 600;
   line-height: 1.25;
@@ -4396,7 +4319,7 @@ body.nav-open {
 
 .stat-band__value {
   display: block;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(2.4rem, 1.6rem + 2.8vw, 4.25rem);
   font-weight: 600;
   line-height: 1;
@@ -4663,7 +4586,7 @@ body.nav-open {
   border-radius: 50%;
   background: #2C3950;
   color: #D6A151;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-weight: 600;
 }
 
@@ -4676,7 +4599,7 @@ body.nav-open {
 
 .quote-card__name {
   display: block;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
   color: #2C3950;
@@ -4735,7 +4658,7 @@ body.nav-open {
 }
 
 .quote-card--large .quote-card__text {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.1875rem;
   line-height: 1.55;
   -webkit-line-clamp: unset;
@@ -4816,7 +4739,7 @@ body.nav-open {
   display: grid;
   place-items: center;
   padding: 0 1rem 0 1.5rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   color: #2C3950;
   background: #EEF1F6;
@@ -4830,7 +4753,7 @@ body.nav-open {
   border: 0;
   border-radius: 0;
   background: transparent;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.35rem;
   font-weight: 600;
   color: #172036;
@@ -4857,7 +4780,7 @@ body.nav-open {
   border: 1.5px solid rgba(255, 255, 255, 0.5);
   border-radius: 999px;
   background: transparent;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
   color: #FFFFFF;
@@ -5017,7 +4940,7 @@ body.nav-open {
 
 .partner-strip__title {
   max-width: 18ch;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.35rem, 1.1rem + 0.9vw, 1.9rem);
   font-weight: 600;
   line-height: 1.2;
@@ -5036,7 +4959,7 @@ body.nav-open {
   align-items: center;
   min-height: 2.75rem;
   color: #2C3950;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
   text-decoration: none;
@@ -5099,7 +5022,7 @@ body.nav-open {
   margin-bottom: 0.75rem;
   padding-right: 3.5rem;
   color: #FFFFFF;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
 }
@@ -5141,7 +5064,7 @@ body.nav-open {
   border-radius: 0 20px 20px 0;
   background: #F7F3EC;
   color: #2C3950;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: clamp(1.05rem, 0.95rem + 0.5vw, 1.3rem);
   font-weight: 500;
   line-height: 1.5;
@@ -5188,85 +5111,6 @@ body.nav-open {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23172036' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
 }
 
-.page-home .home-photo, .page-home .framed, .page-about .home-photo, .page-about .framed, .page-programs .home-photo, .page-programs .framed, .page-projects .home-photo, .page-projects .framed, .page-involvement .home-photo, .page-involvement .framed, .page-donate .home-photo, .page-donate .framed {
-  position: relative;
-  isolation: isolate;
-}
-
-.page-home .home-photo img, .page-home .framed img, .page-about .home-photo img, .page-about .framed img, .page-programs .home-photo img, .page-programs .framed img, .page-projects .home-photo img, .page-projects .framed img, .page-involvement .home-photo img, .page-involvement .framed img, .page-donate .home-photo img, .page-donate .framed img {
-  width: 100%;
-  aspect-ratio: 5 / 4;
-  object-fit: cover;
-}
-
-.page-home .home-photo::after, .page-home .framed::after, .page-about .home-photo::after, .page-about .framed::after, .page-programs .home-photo::after, .page-programs .framed::after, .page-projects .home-photo::after, .page-projects .framed::after, .page-involvement .home-photo::after, .page-involvement .framed::after, .page-donate .home-photo::after, .page-donate .framed::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: 0.9rem -0.7rem -0.9rem 0.9rem;
-  border-radius: 20px;
-  background: rgba(214, 161, 81, 0.32);
-}
-
-.page-home .icon-tile, .page-about .icon-tile, .page-programs .icon-tile, .page-projects .icon-tile, .page-involvement .icon-tile, .page-donate .icon-tile {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 14px;
-  background: rgba(214, 161, 81, 0.28);
-  color: #2C3950;
-  flex: none;
-}
-
-.page-home .principle-grid, .page-about .principle-grid, .page-programs .principle-grid, .page-projects .principle-grid, .page-involvement .principle-grid, .page-donate .principle-grid {
-  display: grid;
-  gap: 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .page-home .principle-grid, .page-about .principle-grid, .page-programs .principle-grid, .page-projects .principle-grid, .page-involvement .principle-grid, .page-donate .principle-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.page-home .principle, .page-about .principle, .page-programs .principle, .page-projects .principle, .page-involvement .principle, .page-donate .principle {
-  padding: 1.5rem;
-  background: #FFFFFF;
-  border: 1px solid #E3DDD2;
-  border-radius: 20px;
-  box-shadow: 0 1px 2px rgba(23, 32, 54, 0.08), 0 1px 3px rgba(23, 32, 54, 0.06);
-}
-
-.page-home .principle h3, .page-about .principle h3, .page-programs .principle h3, .page-projects .principle h3, .page-involvement .principle h3, .page-donate .principle h3 {
-  font-size: 1.15rem;
-  margin-top: 0.75rem;
-}
-
-.page-home .principle p, .page-about .principle p, .page-programs .principle p, .page-projects .principle p, .page-involvement .principle p, .page-donate .principle p {
-  margin-top: 0.5rem;
-  color: #5A6470;
-  font-size: 0.9375rem;
-}
-
-.page-home .form-split, .page-about .form-split, .page-programs .form-split, .page-projects .form-split, .page-involvement .form-split, .page-donate .form-split {
-  display: grid;
-  gap: 2rem;
-  align-items: start;
-}
-
-@media (min-width: 992px) {
-  .page-home .form-split, .page-about .form-split, .page-programs .form-split, .page-projects .form-split, .page-involvement .form-split, .page-donate .form-split {
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-    gap: 4rem;
-  }
-}
-
-.page-home .form-requirements, .page-about .form-requirements, .page-programs .form-requirements, .page-projects .form-requirements, .page-involvement .form-requirements, .page-donate .form-requirements {
-  margin-top: 1rem;
-}
-
 .page-home .cards-center, .page-about .cards-center, .page-programs .cards-center, .page-projects .cards-center, .page-involvement .cards-center, .page-donate .cards-center {
   display: flex;
   flex-wrap: wrap;
@@ -5306,6 +5150,18 @@ body.nav-open {
   }
 }
 
+@media (min-width: 768px) {
+  .page-home .home-help__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 992px) {
+  .page-home .home-help__grid {
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+}
+
 .page-home .home-help__cards {
   display: grid;
   gap: 1rem;
@@ -5318,31 +5174,7 @@ body.nav-open {
   }
 }
 
-@media (min-width: 768px) {
-  .page-home .home-help__cards {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (min-width: 992px) {
-  .page-home .home-help__cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (min-width: 576px) {
-  .page-home .home-help__cards > :last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (min-width: 768px) {
-  .page-home .home-help__cards > :last-child:nth-child(odd) {
-    grid-column: auto;
-  }
-}
-
-@media (min-width: 992px) {
   .page-home .home-help__cards > :last-child:nth-child(odd) {
     grid-column: 1 / -1;
   }
@@ -5356,7 +5188,7 @@ body.nav-open {
   margin: 0;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 992px) {
   .page-home .home-help__media {
     align-self: stretch;
   }
@@ -5369,8 +5201,16 @@ body.nav-open {
 
 @media (min-width: 768px) {
   .page-home .home-help__media img {
+    aspect-ratio: 4 / 3;
+    max-height: 34rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .page-home .home-help__media img {
     height: 100%;
     min-height: 26rem;
+    max-height: none;
     aspect-ratio: auto;
   }
 }
@@ -5593,7 +5433,7 @@ body.nav-open {
   border-left: 5px solid #D6A151;
   border-radius: 0 24px 24px 0;
   background: #F7F3EC;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.25rem, 1.05rem + 1vw, 1.75rem);
   line-height: 1.4;
   color: #2C3950;
@@ -5621,7 +5461,7 @@ body.nav-open {
 .page-home .home-founder__photo figcaption {
   margin-top: 1rem;
   text-align: center;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   color: #2C3950;
 }
@@ -5762,7 +5602,7 @@ body.nav-open {
 .page-about .ia-statement, .page-programs .ia-statement, .page-projects .ia-statement, .page-involvement .ia-statement, .page-donate .ia-statement, .page-careers .ia-statement, .page-contact .ia-statement {
   padding-left: 1.5rem;
   border-left: 4px solid #D6A151;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.3rem, 1.05rem + 1vw, 1.85rem);
   font-weight: 500;
   line-height: 1.28;
@@ -5774,7 +5614,7 @@ body.nav-open {
   padding: 1.5rem;
   border-radius: 24px;
   background: #EEF1F6;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.1rem, 1rem + 0.5vw, 1.4rem);
   font-weight: 500;
   line-height: 1.45;
@@ -5999,7 +5839,7 @@ body.nav-open {
 }
 
 .page-about .ia-facts dt, .page-programs .ia-facts dt, .page-projects .ia-facts dt, .page-involvement .ia-facts dt, .page-donate .ia-facts dt, .page-careers .ia-facts dt, .page-contact .ia-facts dt {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -6047,7 +5887,7 @@ body.nav-open {
 }
 
 .page-about .ia-form .field__label, .page-programs .ia-form .field__label, .page-projects .ia-form .field__label, .page-involvement .ia-form .field__label, .page-donate .ia-form .field__label, .page-careers .ia-form .field__label, .page-contact .ia-form .field__label {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -6161,7 +6001,7 @@ body.nav-open {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.3;
@@ -6271,7 +6111,7 @@ body.nav-open {
 }
 
 .page-about .ia-quote__text {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.2rem, 1rem + 1.1vw, 1.85rem);
   font-weight: 500;
   line-height: 1.42;
@@ -6284,7 +6124,7 @@ body.nav-open {
 
 .page-about .ia-quote__cite {
   margin-top: 1.5rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -6411,7 +6251,7 @@ body.nav-open {
 
 .page-programs .programs-accountability__intro {
   margin-bottom: 1rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   color: #2C3950;
 }
@@ -6499,18 +6339,18 @@ body.nav-open {
   transition: transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-.page-projects .project-row:hover .page-projects .project-row__frame img {
+.page-projects .project-row:hover .project-row__frame img {
   transform: scale(1.03);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-projects .project-row:hover .page-projects .project-row__frame img {
+  .page-projects .project-row:hover .project-row__frame img {
     transform: none;
   }
 }
 
 .page-projects .project-row__bignum {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 5rem;
   font-weight: 600;
   line-height: 1;
@@ -6529,7 +6369,7 @@ body.nav-open {
   border: 4px solid #FFFFFF;
   border-radius: 50%;
   background: #2C3950;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.25rem;
   font-weight: 600;
   color: #D6A151;
@@ -6537,7 +6377,7 @@ body.nav-open {
 }
 
 @media (min-width: 768px) {
-  .page-projects .project-row--reverse .page-projects .project-row__num {
+  .page-projects .project-row--reverse .project-row__num {
     right: auto;
     left: 1.5rem;
   }
@@ -6631,7 +6471,7 @@ body.nav-open {
 }
 
 .page-involvement .ia-way__tagline {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
   line-height: 1.45;
@@ -6644,7 +6484,7 @@ body.nav-open {
 }
 
 .page-involvement .involvement-join__sub {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   color: #D6A151;
 }
@@ -6712,7 +6552,7 @@ body.nav-open {
   border: 1px solid #8791A0;
   border-radius: 999px;
   background: #FFFFFF;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
   color: #2C3950;
@@ -6991,7 +6831,7 @@ body.nav-open {
   border-color: #E4E1DA;
   background: #FFFFFF;
   box-shadow: 0 1px 2px rgba(23, 32, 54, 0.08), 0 1px 3px rgba(23, 32, 54, 0.06);
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -7128,7 +6968,7 @@ body.nav-open {
 }
 
 .page-blog .empty-state__title, .page-news .empty-state__title, .page-activities .empty-state__title, .page-gallery .empty-state__title, .page-team .empty-state__title, .page-partners .empty-state__title, .page-reports .empty-state__title, .page-events .empty-state__title, .page-stories .empty-state__title, .page-privacy .empty-state__title, .is-custom .empty-state__title, .is-error .empty-state__title, .is-unsubscribe .empty-state__title {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.6rem, 1.3rem + 1.2vw, 2.2rem);
   color: #2C3950;
 }
@@ -7171,7 +7011,7 @@ body.nav-open {
   border-radius: 999px;
   background: #FFFFFF;
   box-shadow: 0 1px 2px rgba(23, 32, 54, 0.08), 0 1px 3px rgba(23, 32, 54, 0.06);
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.6875rem;
   font-weight: 600;
   line-height: 1.5;
@@ -7194,14 +7034,14 @@ body.nav-open {
 }
 
 .card__chip-day {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.35rem;
   font-weight: 700;
   color: #D6A151;
 }
 
 .card__chip-month {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -7367,12 +7207,18 @@ body.nav-open {
 }
 
 .subscribe-box__form .input {
-  flex: 1 1 14rem;
+  flex: none;
   min-width: 0;
   min-height: 3.4rem;
   padding-inline: 1.5rem;
   border-color: transparent;
   border-radius: 999px;
+}
+
+@media (min-width: 576px) {
+  .subscribe-box__form .input {
+    flex: 1 1 14rem;
+  }
 }
 
 .subscribe-box__form .btn {
@@ -7390,7 +7236,7 @@ body.nav-open {
 }
 
 .share__title {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -7464,7 +7310,7 @@ body.nav-open {
   margin: 0 0 2rem;
   padding-bottom: 2rem;
   border-bottom: 1px solid #E4E1DA;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.65rem);
   font-weight: 500;
   line-height: 1.45;
@@ -7491,7 +7337,7 @@ body.nav-open {
   padding: 0.4rem 1rem;
   border-radius: 999px;
   background: #EEF1F6;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   color: #2C3950;
@@ -7553,7 +7399,7 @@ body.nav-open {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -7562,7 +7408,7 @@ body.nav-open {
 }
 
 .post-nav__title {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.3;
@@ -7663,7 +7509,7 @@ body.nav-open {
   position: absolute;
   inset: auto 0 0 0;
   padding: 2.75rem 1rem 0.75rem;
-  background: linear-gradient(transparent, rgba(23, 32, 54, 0.9));
+  background: linear-gradient(rgba(23, 32, 54, 0) 0, rgba(23, 32, 54, 0.82) 38%, rgba(23, 32, 54, 0.92) 100%);
   color: #FFFFFF;
   font-size: 0.8125rem;
   line-height: 1.4;
@@ -7877,7 +7723,7 @@ body.nav-open {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -7887,7 +7733,7 @@ body.nav-open {
 
 .page-activities .activity__fact dd {
   margin: 0.25rem 0 0;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.2rem;
   font-weight: 600;
   color: #2C3950;
@@ -7904,7 +7750,7 @@ body.nav-open {
 .page-careers .job-list__title {
   max-width: 62rem;
   margin: 0 auto 1rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -8025,7 +7871,7 @@ body.nav-open {
 }
 
 .page-careers .no-openings__title {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.35rem, 1.15rem + 0.8vw, 1.8rem);
   font-weight: 600;
   color: #2C3950;
@@ -8077,7 +7923,7 @@ body.nav-open {
   margin-bottom: 1rem;
   border-radius: 50%;
   background: #2C3950;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.4rem;
   font-weight: 600;
   color: #D6A151;
@@ -8108,7 +7954,7 @@ body.nav-open {
 
 .page-careers .role-card__title {
   margin-bottom: 1rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -8149,7 +7995,7 @@ body.nav-open {
 .page-careers .careers-cta__quote {
   max-width: 38rem;
   margin: 1.5rem auto 0;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.15rem, 1rem + 0.5vw, 1.5rem);
   font-weight: 500;
   line-height: 1.4;
@@ -8170,7 +8016,7 @@ body.nav-open {
   border-radius: 999px;
   background: #2C3950;
   color: #FFFFFF;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -8259,7 +8105,7 @@ body.nav-open {
 }
 
 .page-contact .contact-social__title {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -8363,7 +8209,7 @@ body.nav-open {
 
 .page-contact .map-fallback__address {
   margin-top: 0.5rem;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-weight: 600;
   font-size: 1.1875rem;
   color: #2C3950;
@@ -8387,7 +8233,7 @@ body.nav-open {
 .page-contact .closing-line {
   max-width: 36rem;
   margin-inline: auto;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.3rem, 1.05rem + 1vw, 2rem);
   font-weight: 500;
   line-height: 1.4;
@@ -8464,7 +8310,7 @@ body.nav-open {
 
 .page-privacy .legal__toc-title {
   margin-bottom: 0.75rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -8480,7 +8326,7 @@ body.nav-open {
   padding: 0.4rem 1rem;
   border-radius: 999px;
   background: #EEF1F6;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   color: #2C3950;
@@ -8518,7 +8364,7 @@ body.nav-open {
   border-radius: 50%;
   background: #2C3950;
   color: #D6A151;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.9375rem;
   font-weight: 700;
 }
@@ -8594,7 +8440,7 @@ body.nav-open {
 
 .is-error .error-page__code {
   margin: 0;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(6rem, 3rem + 13vw, 11.5rem);
   font-weight: 700;
   line-height: 0.95;
@@ -8613,7 +8459,7 @@ body.nav-open {
 .is-error .error-page__links h2 {
   margin-bottom: 1rem;
   color: #2C3950;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -8767,7 +8613,7 @@ body.nav-open {
 }
 
 .page-team .team-card__role {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -8950,7 +8796,7 @@ body.nav-open {
 
 .page-team .bio-dialog__role {
   margin-top: 0.25rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -9075,7 +8921,7 @@ body.page-team.is-dialog-open {
   border-radius: 50%;
   background: #2C3950;
   color: #D6A151;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 2rem;
   font-weight: 700;
   box-shadow: 0 0 0 6px rgba(214, 161, 81, 0.22);
@@ -9133,7 +8979,7 @@ body.page-team.is-dialog-open {
   padding: 0.4rem 1.1rem;
   border-radius: 999px;
   background: #EEF1F6;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   color: #2C3950;
@@ -9156,7 +9002,7 @@ body.page-team.is-dialog-open {
 }
 
 .page-reports .filter-bar .field__label {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -9199,7 +9045,7 @@ body.page-team.is-dialog-open {
 }
 
 .page-reports .document-row__ext {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -9208,7 +9054,7 @@ body.page-team.is-dialog-open {
 }
 
 .page-reports .document-row__title {
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.2rem;
   color: #2C3950;
 }
@@ -9260,13 +9106,17 @@ body.page-team.is-dialog-open {
   }
 }
 
-.page-events .event-detail__aside {
-  order: -1;
+@media (min-width: 992px) {
+  .page-events .event-detail__main {
+    grid-column: 1;
+    grid-row: 1;
+  }
 }
 
 @media (min-width: 992px) {
   .page-events .event-detail__aside {
-    order: 0;
+    grid-column: 2;
+    grid-row: 1;
     position: sticky;
     top: calc(72px + 1.5rem);
   }
@@ -9325,7 +9175,7 @@ body.page-team.is-dialog-open {
 }
 
 .page-events .event-facts__item dt {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -9335,7 +9185,7 @@ body.page-team.is-dialog-open {
 
 .page-events .event-facts__item dd {
   margin: 0.25rem 0 0;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.15rem;
   font-weight: 600;
   line-height: 1.35;
@@ -9345,7 +9195,7 @@ body.page-team.is-dialog-open {
 .page-events .event-facts__time {
   display: block;
   margin-top: 2px;
-  font-family: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.9375rem;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.86);
@@ -9471,13 +9321,13 @@ body.page-team.is-dialog-open {
   border-radius: 50%;
   background: #2C3950;
   color: #D6A151;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-weight: 600;
 }
 
 .story-tile__name {
   display: block;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
   color: #2C3950;
@@ -9581,14 +9431,14 @@ body.page-team.is-dialog-open {
   border-radius: 50%;
   background: #2C3950;
   color: #D6A151;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.35rem;
   font-weight: 600;
 }
 
 .page-stories .story-person__name {
   display: block;
-  font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.25rem;
   font-weight: 600;
   color: #2C3950;

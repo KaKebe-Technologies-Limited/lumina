@@ -4,7 +4,7 @@
     // THE orange call to action (white text)
     &--cta { background: $cta; color: $white; box-shadow: 0 6px 16px rgba($cta, 0.28); &:hover { background: $cta-hover; color: $white; } }
     // small-caps label style used by header / hero / panel buttons
-    &--caps { padding: 0.85rem 1.7rem; font-size: $fs-xs; letter-spacing: 0.08em; text-transform: uppercase; &.btn--sm { padding: 0.6rem 1.2rem; } &.btn--lg { padding: 1.05rem 2.1rem; } }
+    &--caps { font-family: $font-heading-caps; padding: 0.85rem 1.7rem; font-size: $fs-xs; letter-spacing: 0.08em; text-transform: uppercase; &.btn--sm { padding: 0.6rem 1.2rem; } &.btn--lg { padding: 1.05rem 2.1rem; } }
     // translucent outline pill for use ON PHOTOS (hero video button)
     &--photo { background: rgba($white, 0.12); border-color: rgba($white, 0.6); color: $white; backdrop-filter: blur(6px); &:hover { background: $white; border-color: $white; color: $navy-dark; } }
     // solid white pill (volunteer band, on dark photos)

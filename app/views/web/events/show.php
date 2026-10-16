@@ -60,6 +60,42 @@ $ld = array_filter([
         <p class="event-back"><a class="btn btn--outline btn--caps btn--sm" href="<?= e(url('events')) ?>"><?= icon('arrow-left', 'icon--sm') ?> <?= e(content('events', 'detail.back')) ?></a></p>
 
         <div class="event-detail">
+            <aside class="event-detail__aside">
+                <div class="event-facts">
+                    <?php if ($over): ?><p class="badge badge--neutral"><?= e(content('events', 'detail.ended')) ?></p><?php endif; ?>
+                    <dl class="event-facts__list">
+                        <?php if ($start): ?>
+                            <div class="event-facts__item">
+                                <span class="event-facts__icon"><?= icon('calendar') ?></span>
+                                <div>
+                                    <dt><?= e(content('events', 'detail.when')) ?></dt>
+                                    <dd>
+                                        <time datetime="<?= e($start->format('c')) ?>"><?= e($dateText) ?></time>
+                                        <span class="event-facts__time"><?= e($timeText) ?></span>
+                                    </dd>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        <?php if ($location !== ''): ?>
+                            <div class="event-facts__item">
+                                <span class="event-facts__icon"><?= icon('map-pin') ?></span>
+                                <div>
+                                    <dt><?= e(content('events', 'detail.where')) ?></dt>
+                                    <dd><?= e($location) ?></dd>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </dl>
+                    <?php if ($placesLeft !== ''): ?><p class="event-facts__places"><?= icon('users', 'icon--sm') ?> <?= e($placesLeft) ?></p><?php endif; ?>
+                    <?php if ($showRegister && !$over && !$registered && !($enabled && $full)): ?>
+                        <a class="btn btn--cta btn--caps btn--block" href="#register"><?= e(content('events', 'register.submit')) ?></a>
+                    <?php endif; ?>
+                    <?php if ($start && trim((string) content('events', 'detail.calendar')) !== ''): ?>
+                        <a class="btn btn--outline-light btn--caps btn--block" href="<?= e($calendarUrl) ?>" download><?= icon('calendar', 'icon--sm') ?> <?= e(content('events', 'detail.calendar')) ?></a>
+                    <?php endif; ?>
+                </div>
+            </aside>
+
             <div class="event-detail__main">
                 <?php if ($img !== ''): ?>
                     <figure class="event-detail__media"><img src="<?= e($img) ?>" alt="<?= e($event['image_alt'] ?? '') ?>" fetchpriority="high" decoding="async"></figure>
@@ -126,42 +162,6 @@ $ld = array_filter([
                     </section>
                 <?php endif; ?>
             </div>
-
-            <aside class="event-detail__aside">
-                <div class="event-facts">
-                    <?php if ($over): ?><p class="badge badge--neutral"><?= e(content('events', 'detail.ended')) ?></p><?php endif; ?>
-                    <dl class="event-facts__list">
-                        <?php if ($start): ?>
-                            <div class="event-facts__item">
-                                <span class="event-facts__icon"><?= icon('calendar') ?></span>
-                                <div>
-                                    <dt><?= e(content('events', 'detail.when')) ?></dt>
-                                    <dd>
-                                        <time datetime="<?= e($start->format('c')) ?>"><?= e($dateText) ?></time>
-                                        <span class="event-facts__time"><?= e($timeText) ?></span>
-                                    </dd>
-                                </div>
-                            </div>
-                        <?php endif; ?>
-                        <?php if ($location !== ''): ?>
-                            <div class="event-facts__item">
-                                <span class="event-facts__icon"><?= icon('map-pin') ?></span>
-                                <div>
-                                    <dt><?= e(content('events', 'detail.where')) ?></dt>
-                                    <dd><?= e($location) ?></dd>
-                                </div>
-                            </div>
-                        <?php endif; ?>
-                    </dl>
-                    <?php if ($placesLeft !== ''): ?><p class="event-facts__places"><?= icon('users', 'icon--sm') ?> <?= e($placesLeft) ?></p><?php endif; ?>
-                    <?php if ($showRegister && !$over && !$registered && !($enabled && $full)): ?>
-                        <a class="btn btn--cta btn--caps btn--block" href="#register"><?= e(content('events', 'register.submit')) ?></a>
-                    <?php endif; ?>
-                    <?php if ($start && trim((string) content('events', 'detail.calendar')) !== ''): ?>
-                        <a class="btn btn--outline-light btn--caps btn--block" href="<?= e($calendarUrl) ?>" download><?= icon('calendar', 'icon--sm') ?> <?= e(content('events', 'detail.calendar')) ?></a>
-                    <?php endif; ?>
-                </div>
-            </aside>
         </div>
     </div>
 </section>

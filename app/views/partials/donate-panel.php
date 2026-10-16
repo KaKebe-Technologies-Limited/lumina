@@ -4,7 +4,8 @@
  * IT IS NOT A PAYMENT FORM. "Pledge" is a GET to /donate with ?amount=&currency= (the Donate page prefills its pledge form from them via
  * donate_prefill()); "Donate online" goes to the donation link in Settings (GoFundMe). Hidden entirely when the registry switch
  * "Donation panel" (Site-wide content) is off. All copy comes from the registry page "global" > donate_panel; every var below is an
- * optional override: $eyebrow, $title, $text, $class.
+ * optional override: $eyebrow, $title, $text, $class, and $images (list of content_img() results that replace the site-wide collage
+ * photos on one page; when none of them has a photo the site-wide ones are used).
  *   <section class="section" id="donate-panel"><div class="container"><?= partial('partials/donate-panel') ?></div></section>
  */
 if (!section_on('global', 'donate_panel')) {
@@ -22,6 +23,12 @@ foreach (content_list('global', 'donate_panel.amounts') as $row) {
     }
 }
 $dpImages = array_values(array_filter([content_img('global', 'donate_panel.image1'), content_img('global', 'donate_panel.image2'), content_img('global', 'donate_panel.image3')], static fn(array $i): bool => $i['has']));
+if (!empty($images) && is_array($images)) {
+    $dpOwn = array_values(array_filter($images, static fn($i): bool => is_array($i) && !empty($i['has']) && !empty($i['src'])));
+    if ($dpOwn) {
+        $dpImages = $dpOwn;
+    }
+}
 $dpOnline = trim((string) setting('donate_url', ''));
 $dpOnlineLabel = trim((string) content('global', 'donate_panel.online_label'));
 $dpNote = trim((string) content('global', 'donate_panel.note'));

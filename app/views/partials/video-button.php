@@ -17,4 +17,4 @@ $vbClass = trim((string) ($class ?? '')) !== '' ? (string) $class : 'btn btn--ph
 ?>
 <a class="<?= e($vbClass) ?>" href="https://www.youtube.com/watch?v=<?= e($vbId) ?>" target="_blank" rel="noopener noreferrer" aria-haspopup="dialog"
    data-video-lightbox data-video-id="<?= e($vbId) ?>" data-video-title="<?= e($vbTitle) ?>"
-   data-close-label="<?= e((string) content('global', 'labels.close')) ?>" data-fallback-label="<?= e((string) content('global', 'labels.watch_on_youtube')) ?>"><span class="btn__play"><?= icon('play') ?></span><span><?= e($vbLabel) ?></span></a>
+   data-close-label="<?= e((string) content('global', 'labels.close')) ?>" data-default-title="<?= e((string) content('global', 'labels.video_fallback_title')) ?>" data-fallback-label="<?= e((string) content('global', 'labels.watch_on_youtube')) ?>"><span class="btn__play"><?= icon('play') ?></span><span><?= e($vbLabel) ?></span></a>

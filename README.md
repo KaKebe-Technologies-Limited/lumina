@@ -97,11 +97,12 @@ index.php   front controller          app/        code (core, controllers, model
 assets/     css js img (static)       uploads/    user-uploaded images
 storage/    private runtime data      database/   schema.sql, seed.sql
 scss/       styles (compiled to assets/css)       bin/  setup, create-admin, build-scss, selftest
-docs/       ARCHITECTURE.md, CONTENT_NOTES.md, live-snapshot/
+docs/       ARCHITECTURE.md, DESIGN.md, CONTENT_NOTES.md, live-snapshot/
 ```
 
 ## Documentation
 
+* `docs/DESIGN.md` - the public design system: tokens, contrast table, component markup, JS hooks, per-section recipes. Read it before touching `scss/` or the public views.
 * `docs/ARCHITECTURE.md` - developer contract: structure, APIs, CMS page registry, URL map, security rules.
 * `docs/CONTENT_NOTES.md` - where the starter wording comes from and what the owner still has to confirm or supply.
 * `docs/live-snapshot/` - text of the live site pages used as the content source.

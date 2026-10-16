@@ -20,7 +20,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 1.0625rem;
   line-height: 1.65;
   color: #1D1E20;
@@ -275,6 +275,16 @@ hr {
   outline-offset: 3px;
 }
 
+html {
+  scroll-padding-top: calc(64px + 1rem);
+  scroll-padding-bottom: 4.5rem;
+}
+
+.section--navy :focus-visible, .section--dark :focus-visible, .sheet--navy :focus-visible, .hero-photo :focus-visible, .page-hero :focus-visible, .band :focus-visible, .stat-band__card :focus-visible, .donate-panel :focus-visible, .cta :focus-visible,
+.quote-card--dark :focus-visible, .event-facts :focus-visible, .subscribe-box :focus-visible, .site-footer :focus-visible {
+  outline-color: #D6A151;
+}
+
 .skip-link {
   position: absolute;
   top: 0;
@@ -328,7 +338,7 @@ hr {
   padding: 0.8rem 1.65rem;
   border: 2px solid transparent;
   border-radius: 999px;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.2;
@@ -648,7 +658,7 @@ hr {
   gap: 0.35rem;
   padding: 0.2rem 0.7rem;
   border-radius: 999px;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.5;
@@ -981,7 +991,7 @@ body.admin {
 
 .admin h1, .admin h2, .admin h3, .admin h4, .admin h5 {
   margin: 0;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   line-height: 1.25;
   color: #2C3950;
@@ -1081,7 +1091,7 @@ body.admin-nav-open .admin-sidebar {
 
 .admin-sidebar__brand strong {
   display: block;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.98rem;
   line-height: 1.1;
 }
@@ -1264,7 +1274,7 @@ body.admin-nav-open .admin-backdrop {
 }
 
 .admin-topbar__title {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   font-size: 1.05rem;
   color: #2C3950;
@@ -1480,7 +1490,7 @@ body.admin-nav-open .admin-backdrop {
 
 .admin .stat-tile__value {
   display: block;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 1.6rem;
   font-weight: 700;
   line-height: 1;
@@ -1707,7 +1717,7 @@ body.admin-nav-open .admin-backdrop {
   position: sticky;
   top: 0;
   background: #F7F3EC;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2307,7 +2317,7 @@ body.admin-nav-open .admin-backdrop {
 }
 
 .admin .repeater__row-title {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   font-size: 0.9rem;
   color: #2C3950;
@@ -2473,7 +2483,7 @@ body.admin-nav-open .admin-backdrop {
 }
 
 .auth__brand strong {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 1.2rem;
   color: #2C3950;
 }
@@ -3222,7 +3232,7 @@ body.admin-nav-open .admin-backdrop {
 .admin .pe-stat-value {
   flex: none;
   min-width: 5.5rem;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 700;
   font-size: 1.25rem;
   color: #2C3950;
@@ -3241,7 +3251,7 @@ body.admin-nav-open .admin-backdrop {
 }
 
 .admin .pe-stat-preview__value {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 2rem;
   font-weight: 700;
   color: #D6A151;
@@ -3282,7 +3292,7 @@ body.admin-nav-open .admin-backdrop {
   border-radius: 999px;
   background: #F1F1F1;
   color: #5A6470;
-  font-family: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.8125rem;
   font-weight: 700;
   line-height: 1.5rem;
@@ -3411,7 +3421,7 @@ body.admin-nav-open .admin-backdrop {
 }
 
 .admin-pages-editor .pe-section__label {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
 }
 
@@ -4370,16 +4380,16 @@ body.admin-nav-open .admin-backdrop {
 
 .admin .editor__btn--italic {
   font-style: italic;
-  font-family: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
 .admin .editor__btn--underline {
   text-decoration: underline;
-  font-family: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
 .admin .editor__btn--bold {
-  font-family: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
 .admin .editor__btn--wide {
@@ -4521,7 +4531,7 @@ body.admin-nav-open .admin-backdrop {
 
 .admin .editor__panel__title {
   grid-column: 1 / -1;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   font-size: 0.88rem;
   color: #2C3950;
@@ -5457,7 +5467,7 @@ body.admin-receipt .receipt__amount {
 }
 
 body.admin-receipt .receipt__amount strong {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 1.8rem;
   line-height: 1.2;
   color: #2C3950;
@@ -5675,7 +5685,7 @@ body.admin-receipt .receipt__sign-label {
   justify-content: center;
   background: #2C3950;
   color: #D6A151;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   font-size: 0.9rem;
   letter-spacing: 0.02em;
@@ -5727,7 +5737,7 @@ body.admin-receipt .receipt__sign-label {
 
 .admin-org .org-fileicon b {
   margin-top: 3px;
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 0.6rem;
   letter-spacing: 0.04em;
   color: #B4540F;
@@ -5854,7 +5864,7 @@ body.admin-receipt .receipt__sign-label {
 }
 
 .admin-org .org-figure__value {
-  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 1.9rem;
   font-weight: 700;
   line-height: 1;

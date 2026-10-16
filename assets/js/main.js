@@ -178,7 +178,8 @@
                 if (entry.target.hasAttribute('data-count-to')) runCounter(entry.target);
                 io.unobserve(entry.target);
             });
-        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        // threshold 0 (not a ratio): a ratio is unreachable for blocks taller than the viewport, which would leave long CMS text invisible
+        }, { threshold: 0, rootMargin: '0px 0px -40px 0px' });
         reveals.forEach((el, i) => { el.style.transitionDelay = `${Math.min(i % 4, 3) * 70}ms`; io.observe(el); });
         counters.forEach((el) => io.observe(el));
     } else {
@@ -260,11 +261,16 @@
             overlay.className = 'lightbox';
             overlay.setAttribute('role', 'dialog');
             overlay.setAttribute('aria-modal', 'true');
-            overlay.setAttribute('aria-label', 'Image viewer');
+            overlay.setAttribute('aria-label', a.dataset.viewerLabel || 'Image viewer');
             overlay.innerHTML = '<figure class="lightbox__figure"><img class="lightbox__img" alt=""><figcaption class="lightbox__caption"></figcaption></figure>'
                 + `<button type="button" class="lightbox__btn lightbox__btn--close" aria-label="Close">${icon('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>')}</button>`
                 + `<button type="button" class="lightbox__btn lightbox__btn--prev" aria-label="Previous image">${icon('<polyline points="15 18 9 12 15 6"/>')}</button>`
                 + `<button type="button" class="lightbox__btn lightbox__btn--next" aria-label="Next image">${icon('<polyline points="9 18 15 12 9 6"/>')}</button>`;
+            // labels come from the registry (Pages > Site-wide > labels) through data attributes of the clicked link; the English text is only a fallback
+            [['close', 'closeLabel'], ['prev', 'prevLabel'], ['next', 'nextLabel']].forEach(([k, d]) => {
+                const b = $('.lightbox__btn--' + k, overlay);
+                if (b && a.dataset[d]) b.setAttribute('aria-label', a.dataset[d]);
+            });
             document.body.appendChild(overlay);
             document.body.style.overflow = 'hidden';
             setBackgroundInert(true);
@@ -381,9 +387,8 @@
             frameWrap.className = 'video-modal__frame';
             const frame = document.createElement('iframe');
             frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
-            frame.title = title || 'Video';
+            frame.title = title || a.dataset.defaultTitle || 'Video';
             frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
-            frame.allowFullscreen = true;
             frame.referrerPolicy = 'strict-origin-when-cross-origin';
             frameWrap.appendChild(frame);
             box.append(close, frameWrap);

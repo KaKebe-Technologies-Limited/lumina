@@ -17,7 +17,7 @@ $active = (string) old('is_active', (int) ($row['is_active'] ?? 1) === 1 ? '1' :
                 <label class="field__label" for="f-group_key">Group</label>
                 <input class="input" type="text" id="f-group_key" name="group_key" list="faq-groups" maxlength="50" required value="<?= e($v('group_key', 'donate')) ?>" aria-describedby="f-group-help"<?= has_error('group_key') ? ' aria-invalid="true"' : '' ?>>
                 <datalist id="faq-groups"><?php foreach ($groups as $g): ?><option value="<?= e($g) ?>"><?php endforeach; ?></datalist>
-                <div class="field__help" id="f-group-help">Where the question appears: only the "donate" group is shown on the website (on the Donate page).</div>
+                <div class="field__help" id="f-group-help">Where the question appears: "home" = home page FAQ; "donate" = Donate page (and the home page when "home" and "general" are empty); "general" = home page FAQ when "home" is empty.</div>
                 <?php if (has_error('group_key')): ?><div class="field__error" role="alert"><?= e(error('group_key')) ?></div><?php endif; ?>
             </div>
             <?= partial('partials/form-field', ['name' => 'sort_order', 'label' => 'Position', 'type' => 'number', 'value' => $v('sort_order', '0'), 'min' => 0, 'step' => 1, 'help' => 'Lower numbers come first. You can also drag questions into order on the list.']) ?>

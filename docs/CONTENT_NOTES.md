@@ -185,7 +185,10 @@ labelled with a photographer or licence. Alt text describes only what is visible
 | `photo-02.jpg` | gallery, **inactive** | black-and-white photograph of a crowd of children. Needs proof of consent and rights |
 | `photo-08.jpg` | gallery, **inactive** | black-and-white portrait of a child holding a sign that reads HOPE. Needs proof of consent and rights |
 | `photo-hero-portrait.jpg` | not seeded | children at laptops in blue uniforms; carries a **third-party watermark strip** (global-impact-innovators.com). Replace it in Admin > Pages > Home before launch. Because of the watermark the seeded default social-sharing image (`og_image`) is the logo instead of this photo |
+| `photo-hero-wide.jpg` | Home hero (seeded) | a plain composition crop of the portrait photo taken above the third-party strip, 1600 px wide, no retouching. The source is portrait, so on very wide screens it is soft: replace it with a landscape photograph the foundation owns (Admin > Pages > Home > Hero) |
 | `photo-founder-tall.jpg` | not seeded as a team photo | portrait described on the live site as the founder; the brief asks for no photo claim, so Moses Komakech's profile has no photo yet |
+
+**More photographs needed.** Only four photographs are cleared for use (`photo-03` to `photo-06`) and they are also the four program photos, so on Home the same pictures reappear in the stacks and the carousel. The gallery mosaic hides itself for that reason (it only shows gallery photos the carousel does not). Owner: please supply additional photographs (with consent and rights) and add them in Admin > Gallery and Admin > Pages > Home.
 
 Images that exist on the live site but are **not bundled** (not downloaded): the Wii Got Quarry photos for the activity and the blog
 post, the board portraits, program card photos, gallery photos and Unsplash/Pexels stock images. The seeded activity and posts

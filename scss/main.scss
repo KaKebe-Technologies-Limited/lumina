@@ -47,6 +47,7 @@
     @include respond(md) { --radius-sheet: #{$radius-sheet}; }
 }
 
+@import 'base/fonts';
 @import 'base/reset';
 @import 'base/typography';
 @import 'base/utilities';
@@ -67,7 +68,6 @@
 @import 'components/cards';
 @import 'components/forms';
 @import 'components/hero';
-@import 'components/stats';
 @import 'components/badge';
 @import 'components/alerts';
 @import 'components/pagination';
@@ -79,7 +79,6 @@
 @import 'components/document-row';
 @import 'components/event-card';
 @import 'components/story-card';
-@import 'components/timeline';
 @import 'components/lightbox';
 @import 'components/filter-bar';
 @import 'components/feature-card';

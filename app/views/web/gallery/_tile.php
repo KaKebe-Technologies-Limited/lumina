@@ -27,7 +27,7 @@ if (!preg_match('~^https?://~i', $stored) && !str_contains($stored, '..')) {
 }
 ?>
 <li class="gallery-tile gallery-tile--<?= e($variant) ?>" data-reveal>
-    <a class="gallery-tile__link" href="<?= e($src) ?>" data-lightbox="<?= e($group ?? 'gallery') ?>" data-caption="<?= e($caption) ?>"<?= trim($alt) === '' ? ' aria-label="' . e(content('gallery', 'grid.open_label')) . '"' : '' ?>>
+    <a class="gallery-tile__link" href="<?= e($src) ?>" data-lightbox="<?= e($group ?? 'gallery') ?>" data-caption="<?= e($caption) ?>" data-viewer-label="<?= e((string) content('global', 'labels.image_viewer')) ?>" data-close-label="<?= e((string) content('global', 'labels.close')) ?>" data-prev-label="<?= e((string) content('global', 'labels.prev_image')) ?>" data-next-label="<?= e((string) content('global', 'labels.next_image')) ?>"<?= trim($alt) === '' ? ' aria-label="' . e(content('gallery', 'grid.open_label')) . '"' : '' ?>>
         <img src="<?= e($src) ?>" alt="<?= e($alt) ?>" loading="lazy" decoding="async"<?= $w > 0 ? ' width="' . $w . '" height="' . $h . '"' : '' ?>>
         <?php if ($caption !== ''): ?><span class="gallery-tile__caption"><?= e($caption) ?></span><?php endif; ?>
     </a>

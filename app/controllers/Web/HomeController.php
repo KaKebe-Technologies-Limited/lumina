@@ -101,11 +101,11 @@ final class HomeController extends Controller
         return array_slice($cards, 0, $limit);
     }
 
-    /** Up to five active gallery photos as ['src','alt','has'] (the shape of content_img()). @return list<array{src:string,alt:string,has:bool}> */
+    /** Active gallery photos (first 40; the view drops the ones the carousel shows and keeps five) as ['src','alt','has'] (the shape of content_img()). @return list<array{src:string,alt:string,has:bool}> */
     private function gallery(): array
     {
         $out = [];
-        foreach (array_slice($this->safe(static fn(): array => GalleryImage::active()), 0, 5) as $g) {
+        foreach (array_slice($this->safe(static fn(): array => GalleryImage::active()), 0, 40) as $g) {
             $src = img_url((string) ($g['image'] ?? ''));
             if ($src !== '') {
                 $out[] = ['src' => $src, 'alt' => (string) ($g['alt_text'] ?? ''), 'has' => true];

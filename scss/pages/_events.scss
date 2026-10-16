@@ -19,8 +19,10 @@
         grid-template-columns: minmax(0, 1fr);
         @include respond(lg) { grid-template-columns: minmax(0, 1fr) 22rem; gap: $space-8; align-items: start; }
 
-        // facts first on phones, in the sidebar on desktop
-        &__aside { order: -1; @include respond(lg) { order: 0; position: sticky; top: calc(#{$header-h} + 1.5rem); } }
+        // facts first on phones, in the sidebar on desktop. The aside is first in the DOM (focus order = visual order on phones);
+        // from lg the grid places it in the right-hand column without any `order`.
+        &__main { @include respond(lg) { grid-column: 1; grid-row: 1; } }
+        &__aside { @include respond(lg) { grid-column: 2; grid-row: 1; position: sticky; top: calc(#{$header-h} + 1.5rem); } }
         &__media {
             margin: 0 0 $space-6;
             img { display: block; width: 100%; max-height: 32rem; object-fit: cover; object-position: 50% 30%; border-radius: $radius-photo; box-shadow: $shadow-card; }

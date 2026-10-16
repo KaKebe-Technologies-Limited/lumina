@@ -14,7 +14,7 @@ $emptyBtn = content_btn('programs', 'overview.empty_cta');
     'eyebrow' => (string) content('programs', 'hero.eyebrow'),
     'title'   => (string) content('programs', 'hero.title'),
     'lead'    => (string) content('programs', 'hero.lead'),
-    'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt'], 'focus' => '50% 28%'] : null,
+    'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt'], 'focus' => '50% 12%'] : null,
 ]) ?>
 
 <?php /* ------------------------------------------------------------------ PROGRAMS GRID (always on) */ ?>

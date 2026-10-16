@@ -29,6 +29,8 @@
         .icon { flex: none; width: 2rem; height: 2rem; padding: 0.4rem; border-radius: 50%; background: $tint-cool; transition: transform $t-base ease, background-color $t-fast ease; color: $navy; }
         &[aria-expanded='true'] .icon { transform: rotate(180deg); background: $gold; }
         &:hover { background: $surface; }
+        // the item clips overflow, so the keyboard ring is drawn INSIDE the trigger (a positive offset would be cut off)
+        &:focus-visible { outline-offset: -4px; border-radius: $radius-lg; }
     }
     &__panel { padding: 0 $space-5 $space-5; color: $ink-soft; > * + * { margin-top: $space-3; } }
     &__panel[hidden] { display: none; }

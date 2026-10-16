@@ -19,8 +19,9 @@ final class FaqsController extends AdminController
 {
     /** group => where it appears (help text). */
     private const GROUP_HINTS = [
-        'donate'  => 'These questions appear on the Donate page.',
-        'general' => 'Not shown anywhere on the website: only the "donate" group has a place on a page. (Programs, Involvement and Careers keep their questions in Pages.)',
+        'home'    => 'These questions appear in the FAQ on the home page. While this group has no active question, the home page uses the "general" group, and then the "donate" group.',
+        'donate'  => 'These questions appear on the Donate page. They also appear on the home page while the "home" and "general" groups have no active question.',
+        'general' => 'These questions appear in the FAQ on the home page while the "home" group has no active question (a single active question here replaces the donate questions on the home page). (Programs, Involvement and Careers keep their questions in Pages.)',
     ];
 
     public function index(Request $request): Response
@@ -132,10 +133,13 @@ final class FaqsController extends AdminController
     private function groups(): array
     {
         $groups = array_keys($this->counts());
-        if (!in_array('donate', $groups, true)) {
-            $groups[] = 'donate';
+        foreach (['donate', 'home'] as $always) {
+            if (!in_array($always, $groups, true)) {
+                $groups[] = $always;
+            }
         }
-        usort($groups, static fn(string $a, string $b): int => [$a === 'donate' ? 0 : 9, $a] <=> [$b === 'donate' ? 0 : 9, $b]);
+        $rank = static fn(string $g): int => ['donate' => 0, 'home' => 1][$g] ?? 9;
+        usort($groups, static fn(string $a, string $b): int => [$rank($a), $a] <=> [$rank($b), $b]);
         return $groups;
     }
 

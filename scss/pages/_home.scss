@@ -47,55 +47,6 @@ $b1-pages: '.page-home, .page-about, .page-programs, .page-projects, .page-invol
     }
     .section--navy .checklist li::before, .section--dark .checklist li::before { background-color: $gold; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23172036' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); }
 
-    // photo with an offset gold block behind it
-    .home-photo, .framed {
-        position: relative;
-        isolation: isolate;
-        img { width: 100%; aspect-ratio: 5 / 4; object-fit: cover; }
-        &::after {
-            content: '';
-            position: absolute;
-            z-index: -1;
-            inset: 0.9rem -0.7rem -0.9rem 0.9rem;
-            border-radius: $radius-lg;
-            background: rgba($gold, 0.32);
-        }
-    }
-
-    // icon in a soft gold square (cards)
-    .icon-tile {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 3.25rem;
-        height: 3.25rem;
-        border-radius: 14px;
-        background: rgba($gold, 0.28);
-        color: $navy;
-        flex: none;
-    }
-
-    // numbered / titled principle cards
-    .principle-grid { display: grid; gap: $space-5; @include respond(md) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    .principle {
-        padding: $space-5;
-        background: $white;
-        border: 1px solid $border;
-        border-radius: $radius-lg;
-        box-shadow: $shadow-sm;
-        h3 { font-size: 1.15rem; margin-top: $space-3; }
-        p { margin-top: $space-2; color: $ink-soft; font-size: $fs-sm; }
-    }
-
-    // two-column text / form layouts
-    .form-split {
-        display: grid;
-        gap: $space-6;
-        align-items: start;
-        @include respond(lg) { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: $space-8; }
-    }
-    .form-requirements { margin-top: $space-4; }
-
     // a few cards, centred (a 3-column grid would leave empty cells on the right)
     .cards-center {
         display: flex;
@@ -122,23 +73,32 @@ $b1-pages: '.page-home, .page-about, .page-programs, .page-projects, .page-invol
     .hero-photo::before { @include respond(lg) { background: linear-gradient(90deg, rgba($navy-dark, 0.92) 0%, rgba($navy-dark, 0.8) 46%, rgba($navy-dark, 0.62) 66%, rgba($navy-dark, 0.08) 100%); } }
 
     // ---- 2. HOW WE HELP: outlined cards (2 x 2) + tall rounded photo --------------------------------------------------
+    // text + cards first, photo underneath until lg (a tablet text column is too narrow for a tall side photo: the photo
+    // used to be stretched to the height of the stacked cards and became a blurry sliver that cut the faces)
+    .home-help__grid {
+        @include respond(md) { grid-template-columns: minmax(0, 1fr); }
+        @include respond(lg) { grid-template-columns: 1.15fr 0.85fr; }
+    }
     .home-help__cards {
         display: grid;
         gap: $space-4;
         grid-template-columns: minmax(0, 1fr);
-        // 2 columns while the block is stacked (sm), 1 column in the narrow text column beside the photo (md), 2 again from lg
+        // 2 columns from sm (full width while stacked, and in the text column beside the photo from lg)
         @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        @include respond(md) { grid-template-columns: minmax(0, 1fr); }
-        @include respond(lg) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         // an odd last card (3 or 1 cards) spans the row instead of leaving a hole
-        > :last-child:nth-child(odd) { @include respond(sm) { grid-column: 1 / -1; } @include respond(md) { grid-column: auto; } @include respond(lg) { grid-column: 1 / -1; } }
+        > :last-child:nth-child(odd) { @include respond(sm) { grid-column: 1 / -1; } }
         .feature-card { height: 100%; }
     }
-    // the photo grows to the height of the cards beside it (4:5 when stacked on a phone)
+    // 4:5 portrait on a phone, a 4:3 crop on a tablet, and from lg a tall photo that grows to the height of the cards beside it
     .home-help__media {
         margin: 0;
-        @include respond(md) { align-self: stretch; }
-        img { box-shadow: $shadow-lg; object-position: 62% 40%; @include respond(md) { height: 100%; min-height: 26rem; aspect-ratio: auto; } }
+        @include respond(lg) { align-self: stretch; }
+        img {
+            box-shadow: $shadow-lg;
+            object-position: 62% 40%;
+            @include respond(md) { aspect-ratio: 4 / 3; max-height: 34rem; }
+            @include respond(lg) { height: 100%; min-height: 26rem; max-height: none; aspect-ratio: auto; }
+        }
     }
     .home-help__grid--solo {
         .home-help__cards { @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); > :last-child:nth-child(odd) { grid-column: auto; } } }

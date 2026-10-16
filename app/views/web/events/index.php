@@ -20,7 +20,7 @@ $pastBadge = (string) content('events', 'labels.past_badge');
     'eyebrow' => content('events', 'hero.eyebrow'),
     'title'   => content('events', 'hero.title'),
     'lead'    => content('events', 'hero.lead'),
-    'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt'], 'focus' => '50% 40%'] : null,
+    'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt'], 'focus' => '50% 45%'] : null,
     'sheet'   => $any ? 'white' : 'tint',
 ]) ?>
 

@@ -47,7 +47,7 @@ $chipsLabel = trim((string) content('donate', 'pledge.chips_label'));
     'eyebrow' => (string) content('donate', 'hero.eyebrow'),
     'title'   => (string) content('donate', 'hero.title'),
     'lead'    => (string) content('donate', 'hero.lead'),
-    'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt'], 'focus' => '50% 30%'] : null,
+    'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt'], 'focus' => '50% 12%'] : null,
     'actions' => $actions,
 ]) ?>
 <?php $this->start('scripts'); ?><script src="<?= e(asset('js/pages/donate.js')) ?>" defer></script><?php $this->end(); ?>

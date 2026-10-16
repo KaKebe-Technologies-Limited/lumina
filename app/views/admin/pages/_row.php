@@ -30,7 +30,9 @@ $isTemplate = $index === '__INDEX__';
     <div class="repeater__fields">
         <?php foreach ($subs as $sk => $sf):
             $sname = $name . '[' . $index . '][' . $sk . ']';
-            $sval = $row[$sk] ?? ($isTemplate || $row === [] ? ($sf['default'] ?? '') : '');
+            // a key missing from an older saved row falls back to the registry default (like Content::list() does on the public page),
+            // otherwise a <select> would submit its first option on an unchanged save
+            $sval = $row[$sk] ?? ($sf['default'] ?? '');
             if ($sf['type'] === 'boolean') {
                 $sval = in_array($sval, [true, 1, '1'], true);
             }

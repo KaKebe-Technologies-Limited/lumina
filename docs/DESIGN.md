@@ -63,7 +63,8 @@ Sass variables live in `scss/abstracts/_tokens.scss` (also available to every pa
 |---|---|
 | `$font-display` / `--font-display` | `'Fraunces', 'Iowan Old Style', Palatino, Georgia, serif` (h1-h3, `.stat-band__value`, card titles, quotes) |
 | `$font-heading` / `--font-heading` | Poppins (buttons, labels, nav, h4-h6) |
-| `$font-body` | DM Sans |
+| `$font-body` | DM Sans (requested as `ital,wght@0,400;0,500;0,600;0,700;1,400`: no `opsz` axis, about 40 KB lighter) |
+| Fallback faces | `scss/base/_fonts.scss` defines metric-matched `DM Sans Fallback`, `Poppins Fallback`, `Poppins Caps Fallback` (local Arial) and `Fraunces Fallback` (local Georgia) with `size-adjust` / `ascent-override` / `descent-override`. They sit second in `$font-body`, `$font-heading`, `$font-display`; `$font-heading-caps` (eyebrows, `.btn--caps`) uses the capitals variant. The web-font swap no longer shifts the layout (measured: above-the-fold boxes identical with and without the web fonts). If you change a Google Fonts weight/axis, re-measure and update the numbers in that file. |
 | h1 | `clamp(2.4rem, 1.5rem + 3.2vw, 4rem)`; hero-photo title up to 4.5 rem; h2 `1.9 -> 3 rem`; h3 `1.3 -> 1.7 rem` |
 | `$fs-xs .. $fs-4xl` | 0.8125, 0.9375, 1.0625 (body), 1.1875, 1.375, 1.75, 2.25, 3, 3.75 rem |
 
@@ -125,6 +126,10 @@ Computed from the actual hex values (`overlay` rows = worst case: the photo behi
 
 Rules: never put `$gold` text on white; never use `$orange` / `$gold-deep` for small text on white (use `$orange-text` / `$gold-text`); white text on a photo needs the veil
 (hero-photo, band and page-hero add it); link colour is `$orange-text` everywhere.
+
+**Keyboard focus ring (WCAG 1.4.11 / 2.4.7 / 2.4.11):** the global ring is `$orange-dark` (4.5-5.0:1 on white and cream). On navy surfaces it is only 1.8-2.4:1, so `scss/base/_a11y.scss` switches it to gold (`$gold` 5.0:1 on navy, 7.0:1 on navy-dark) inside `.section--navy/--dark`, `.sheet--navy`, `.hero-photo`, `.page-hero`, `.band`, `.stat-band__card`, `.donate-panel`, `.cta`, `.quote-card--dark`, `.event-facts`, `.subscribe-box` and `.site-footer`. A NEW navy component must be added to that list. Components that clip overflow (the accordion item) draw the ring inside (`outline-offset: -4px`). `html` has `scroll-padding-top` (header + 1 rem) so the sticky header never covers a focused element.
+
+**White text on photos:** below `lg` every `.page-hero--image` uses an even navy-dark veil (.82 -> .76) because the copy spans the full width; the left-to-right fade starts at `lg`. Gallery captions fade to a .82 veil by 38 % of their height (white 13 px text >= 4.5:1 over bright patches).
 
 ---------------------------------------------------------------------------------------------------------------------
 
@@ -334,7 +339,7 @@ Params `partners` (rows of `partners`), `title`. Renders nothing when empty. Gre
 Optional `title`, `text`, `placeholder`, `button`, `source` (stored on the subscriber), `idp` (id prefix, required if used twice). The footer already contains one.
 
 ### 7.22 Reveal-on-scroll
-`data-reveal` on any block (partials already add it). Fades/slides in once; no-JS and `prefers-reduced-motion` show everything immediately.
+`data-reveal` on any block (partials already add it), including tall CMS text: the observer uses `threshold: 0`, so a block taller than the viewport still reveals as soon as it enters (a ratio threshold is unreachable for tall blocks and left long text invisible). Fades/slides in once; no-JS and `prefers-reduced-motion` show everything immediately.
 
 ### 7.23 Misc
 `.section--tint | --cool | --navy | --dark | --spacious | --sm`, `.grid grid--2|3|4`, `.stack`, `.cluster`, `.prose`, `.figure-round`, `.badge`, `.tag`, `.empty-state` (via `partials/empty-state`), `.pagination`. Spacing helpers `.mt-3..7`, `.mb-0..6`.
@@ -514,9 +519,34 @@ Partners strip (hidden when no partners) -> newsletter row -> deep navy footer (
 Created: `app/helpers_design.php`; partials `topbar site-header site-footer newsletter-row partner-strip section-head feature-card photo-stack stat-band band hero-photo video-button carousel quote-card donate-panel faq-split media-mosaic`;
 `scss/layout/_topbar.scss`; `scss/components/_buttons-pill _section-head _sheet _hero-photo _feature-card _media _stat-band _band _carousel _quote-card _donate-panel _faq-split _partner-strip _video-modal.scss`; this file.
 Rewritten: `scss/layout/_header.scss`, `scss/layout/_footer.scss`, `scss/components/_hero.scss` (page-hero; legacy `.hero` kept), `scss/base/_typography.scss` (serif headings, new eyebrow, `.hl`).
-Edited (additive): `scss/abstracts/_tokens.scss`, `scss/main.scss`, `scss/components/{_cards,_cta,_accordion,_stats,_event-card,_story-card,_team-card,_document-row,_partner-grid}.scss`, `scss/layout/{_grid,_container,_section}.scss`,
+Edited (additive): `scss/abstracts/_tokens.scss`, `scss/main.scss`, `scss/components/{_cards,_cta,_accordion,_event-card,_story-card,_team-card,_document-row,_partner-grid}.scss`, `scss/layout/{_grid,_container,_section}.scss`,
 `app/views/layouts/main.php` (partials + Fraunces link), `app/views/partials/{page-hero,cta-donate,program-card,project-card}.php`, `app/core/Icons.php` (+23 icons), `app/helpers.php` (one `require_once` at the end), `app/config/pages/global.php` (new sections/fields, all existing keys unchanged), `assets/js/main.js`.
 Unchanged: admin SCSS and PHP, every `.htaccess`, CSP headers (`frame-src` already allows `youtube-nocookie.com`; Fraunces comes from the already-allowed Google Fonts hosts).
-Legacy kept until the page agents finish (delete afterwards to slim `main.css`): `.hero` / `.hero__*` (old home hero), `.stats` / `.stat` (old counters), `.newsletter` / `.site-footer .input` (old footer form), `.feature` alias.
+Legacy removed by the integration pass: the old `.hero` home hero, `.stats` / `.stat` counters, `.newsletter` footer form, the `timeline` component and a few dead home blocks (`.home-photo`, `.icon-tile`, `.principle-grid`, `.form-split`). `.feature` is still an alias of `.feature-card`.
 
 Build note: `bin/build-scss.py` now strips the UTF-8 BOM that libsass prepends to compressed output whenever the CSS contains a non-ASCII character (for example `content: '...'`). After the banner comment that BOM became part of the first selector and silently dropped the `:root` rule (all `--custom-properties`, including `--radius-sheet`). Write CSS escapes as `\201C`, never as literal non-ASCII characters.
+
+
+## 15. Integration pass (what changed after the page agents finished)
+
+* **Stat card source of truth:** the navy stat card on Home shows the rows of **Admin > Stats** (group `home`, first four). The repeater in Admin > Pages > Home > "4b. Statistics card" is only a fallback while that table is empty, so editing it has no visible effect once stats exist. This is deliberate (one place for real figures).
+* **Donate hand-off:** the home donation panel is a GET form to `/donate?amount=&currency=#pledge`; the Donate page reads it through `donate_prefill()` (digits only, 1 to 999,999,999.99; anything else is ignored) and fills its pledge form. The pledge chips need JS and are hidden without it.
+* **Heading order:** `partials/empty-state` now prints an `h2` by default (optional `tag` = `h2|h3|h4`), and the Contact info cards are `h2`, so no public page jumps from `h1` to `h3`.
+* **Events:** the facts card shows `HH:MM - HH:MM` only when the end time is later than the start.
+* **Checking a mobile layout:** headless Edge cannot go below a 500 px window, so use the built-in browser (emulated 375 x 812) for phone checks. Scroll-reveal (`[data-reveal]`) elements are faded until they enter the viewport, so full-page headless screenshots show them half transparent: that is expected.
+* **CSS size:** `assets/css/main.min.css` is about 169 KB (about 199 KB unminified); the pages load only the minified file.
+* **Tablet "How we help":** the text + cards block stacks (cards 2-up, then the photo as a 4:3 crop, max 34 rem tall) until `lg`; only from `lg` does the photo sit beside the cards and stretch to their height. (At `md` the narrow text column used to force a 270 px wide, 1180 px tall sliver.)
+* **No repeated photos on Home:** the gallery mosaic leaves out every photo the carousel cards already show and disappears when fewer than three remain (today all four cleared photos are program photos, so it is hidden until more gallery photos are added). The Home donation panel has its own collage fields (Admin > Pages > Home > "7. Donation panel": default the hero photo; clear them to fall back to the site-wide collage); `partials/donate-panel` accepts an optional `images` override for this.
+* **Footer quick links:** a list of more than 7 links flows into two CSS columns from 360 px (a wrapped label no longer stretches a grid row); the quick-links track is wider (`1.15fr 1.85fr 1fr 1.35fr` from `lg`).
+
+## 16. Fixer pass (visual redesign review)
+
+* **Hero crops:** Programs, Donate and Team (photo-03) use `focus` `50% 12%` / `50% 12%` / `40% 12%` so the trainer's head is inside the 1440 px strip; Events (photo-04) `50% 45%`. Only four photographs are cleared (CONTENT_NOTES), so three pages still share photo-03 by default; editors can swap the hero image in Admin > Pages.
+* **Events detail:** the facts `<aside>` is now FIRST in the DOM (tab order = visual order on phones); from `lg` the grid places `__main` in column 1 and `__aside` in column 2 without `order`.
+* **Back to top:** `visibility: hidden` until shown (not a tab stop while invisible); the footer bottom bar has extra bottom padding below `xl` so the button never covers the credit line.
+* **Projects list:** hover zoom and the reverse-row number chip were dead selectors (`&:hover &__frame` inside a nested block repeats the parent chain). Inside nested page blocks write the block name out in full.
+* **Home mosaic:** the controller passes up to 40 active gallery photos; the view removes the ones the carousel shows and THEN keeps five, so photos added in Admin > Gallery (which are appended at the end) switch the mosaic on.
+* **Admin > FAQs:** hints describe the real Home fallback (home, then general, then donate); a `home` tab is always listed.
+* **Admin > Pages repeaters:** a sub-field missing from a row saved before it existed shows the registry default in the editor (an unchanged Save no longer rewrites the icon).
+* **Lightbox / video labels:** `global > labels` has `image_viewer`, `prev_image`, `next_image`, `video_fallback_title` (and `close`); `_tile.php` and `video-button.php` pass them as data attributes; the redundant `allowFullscreen` line is gone.
+* **Image weight:** `photo-founder-tall.jpg` is now 832 x 1248 (100 KB); the 1440 x 2160 master is `docs/brand/photo-founder-tall-master.jpg` (not web served).

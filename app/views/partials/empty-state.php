@@ -6,7 +6,7 @@
 ?>
 <div class="empty-state">
     <span class="empty-state__icon"><?= icon($icon ?? 'inbox', 'icon--xl') ?></span>
-    <h3 class="empty-state__title"><?= e($title) ?></h3>
+    <?php $esTag = in_array($tag ?? "h2", ["h2", "h3", "h4"], true) ? ($tag ?? "h2") : "h2"; ?><<?= $esTag ?> class="empty-state__title"><?= e($title) ?></<?= $esTag ?>>
     <?php if (!empty($text)): ?><p class="empty-state__text"><?= e($text) ?></p><?php endif; ?>
     <?php if (!empty($actions)): ?>
         <div class="empty-state__actions">

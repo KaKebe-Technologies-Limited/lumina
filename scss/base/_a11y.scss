@@ -7,6 +7,19 @@
     @include focus-ring;
 }
 
+// The sticky header must never cover the element that receives keyboard focus (WCAG 2.2 SC 2.4.11), and the back-to-top
+// button keeps clear of the last focused line.
+html {
+    scroll-padding-top: calc(#{$header-h-shrunk} + 1rem);
+    scroll-padding-bottom: 4.5rem;
+}
+
+// Navy surfaces: the orange ring is only 1.8-2.4:1 there, so draw a gold one (5.0:1 on navy, 7.0:1 on navy-dark).
+.section--navy, .section--dark, .sheet--navy, .hero-photo, .page-hero, .band, .stat-band__card, .donate-panel, .cta,
+.quote-card--dark, .event-facts, .subscribe-box, .site-footer {
+    :focus-visible { outline-color: $gold; }
+}
+
 .skip-link {
     position: absolute;
     top: 0;

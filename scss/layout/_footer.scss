@@ -41,7 +41,8 @@
         gap: $space-7;
         padding-block: $space-8 $space-7;
         @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        @include respond(lg) { grid-template-columns: 1.3fr 1.25fr 1fr 1.4fr; gap: $space-6; }
+        // four columns only where the e-mail addresses and the two-column link list fit without breaking a word (xl and up)
+        @include respond(xl) { grid-template-columns: 0.9fr 1.5fr 0.95fr 1.4fr; gap: $space-6; }
     }
 
     &__brand { display: flex; flex-direction: column; align-items: flex-start; gap: $space-3; }
@@ -63,7 +64,15 @@
     }
 
     &__links { display: grid; align-items: start; gap: $space-2; li a { display: inline-block; padding-block: 2px; } }
-    &__links--cols { @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: $space-5; } }
+    // a long list flows into two CSS columns (from 360 px): a link that wraps to two lines no longer stretches a whole grid row
+    &__links--cols {
+        @media (min-width: 22.5rem) {
+            display: block;
+            column-count: 2;
+            column-gap: $space-4;
+            li { break-inside: avoid; margin-bottom: $space-2; }
+        }
+    }
 
     &__contact { display: grid; gap: $space-3; li { display: flex; gap: $space-3; align-items: flex-start; overflow-wrap: anywhere; } .icon { margin-top: 3px; color: $gold; } }
 
@@ -75,6 +84,8 @@
             flex-direction: column;
             gap: $space-2 $space-5;
             padding-block: $space-5;
+            // keep the fixed back-to-top button off the credit line when the page is scrolled to the very end
+            @include respond-down(xl) { padding-bottom: 4.5rem; }
             font-size: $fs-xs;
             @include respond(md) { flex-direction: row; justify-content: space-between; align-items: center; }
         }
@@ -100,20 +111,6 @@
     }
 }
 
-// Newsletter signup (legacy markup used inside the navy footer; kept for views that embed .newsletter)
-.newsletter {
-    &__form { display: flex; flex-direction: column; gap: $space-2; margin-top: $space-3; }
-    &__form .input { flex: 1; min-width: 0; }
-    &__note { margin-top: $space-2; font-size: $fs-xs; opacity: 0.75; }
-}
-.site-footer .input {
-    background: rgba($white, 0.08);
-    border-color: rgba($white, 0.25);
-    color: $white;
-    &::placeholder { color: rgba($white, 0.6); }
-    &:focus { border-color: $gold; background: rgba($white, 0.12); }
-}
-
 // Back to top
 .back-to-top {
     position: fixed;
@@ -131,9 +128,10 @@
     color: $white;
     box-shadow: $shadow;
     opacity: 0;
+    visibility: hidden;                  // not focusable / not announced while it is invisible; hidden only after the fade-out
     transform: translateY(12px);
     pointer-events: none;
-    transition: opacity $t-base ease, transform $t-base ease, background-color $t-fast ease;
-    &.is-visible { opacity: 1; transform: none; pointer-events: auto; }
+    transition: opacity $t-base ease, transform $t-base ease, background-color $t-fast ease, visibility 0s linear $t-base;
+    &.is-visible { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition-delay: 0s; }
     &:hover { background: $cta; }
 }

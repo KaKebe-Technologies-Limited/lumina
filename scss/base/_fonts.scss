@@ -1,0 +1,44 @@
+// Metric-matched fallback faces. Until the Google web fonts arrive the browser draws local Arial / Georgia, rescaled with
+// size-adjust + ascent/descent overrides to the real font's width and vertical metrics, so the swap does not re-wrap
+// headings, hero leads or buttons (layout shift). Values were measured in the browser against the real faces
+// (canvas measureText on a pangram-style sample at the web fonts as requested in layouts/main.php - DM Sans WITHOUT the opsz axis; override = real metric / size-adjust). The families sit second in the font stacks
+// ($font-body, $font-heading, $font-display); where the local font does not exist the face is ignored and the next stack entry applies.
+@mixin font-fallback($family, $weight, $sources, $size, $ascent, $descent, $gap: 0%) {
+    @font-face {
+        font-family: $family;
+        font-style: normal;
+        font-weight: $weight;
+        src: $sources;
+        size-adjust: $size;
+        ascent-override: $ascent;
+        descent-override: $descent;
+        line-gap-override: $gap;
+    }
+}
+
+$_arial:      local('Arial'), local('ArialMT'), local('Arimo'), local('Liberation Sans');
+$_arial-bold: local('Arial Bold'), local('Arial-BoldMT'), local('Arimo Bold'), local('Liberation Sans Bold');
+$_georgia:      local('Georgia'), local('Gelasio');
+$_georgia-bold: local('Georgia Bold'), local('Georgia-Bold'), local('Gelasio Bold');
+
+// DM Sans (body) -> Arial
+@include font-fallback('DM Sans Fallback', 400, $_arial,      103.9%, 95.3%, 29.8%);
+@include font-fallback('DM Sans Fallback', 500, $_arial,      105.7%, 93.7%, 29.3%);
+@include font-fallback('DM Sans Fallback', 600, $_arial-bold, 100.2%, 98.8%, 30.9%);
+@include font-fallback('DM Sans Fallback', 700, $_arial-bold, 101.9%, 97.2%, 30.4%);
+
+// Poppins (UI labels, buttons, h4-h6) -> Arial
+@include font-fallback('Poppins Fallback', 500, $_arial,      113.7%, 92.4%, 30.8%, 8.8%);
+@include font-fallback('Poppins Fallback', 600, $_arial-bold, 106.3%, 98.8%, 32.9%, 9.4%);
+@include font-fallback('Poppins Fallback', 700, $_arial-bold, 107.4%, 97.8%, 32.6%, 9.3%);
+
+// Fraunces (display serif) -> Georgia
+@include font-fallback('Fraunces Fallback', 500, $_georgia,      107.1%, 91.5%,  24.3%);
+@include font-fallback('Fraunces Fallback', 600, $_georgia-bold, 93.6%,  104.7%, 27.8%);
+@include font-fallback('Fraunces Fallback', 700, $_georgia-bold, 96.6%,  101.4%, 26.9%);
+
+// Poppins set in CAPITALS (eyebrows, .btn--caps): capitals are ~4% NARROWER than Arial's, lower-case ~7-14% wider, so the
+// upper-case labels get their own fallback measured on a capitals sample.
+@include font-fallback('Poppins Caps Fallback', 500, $_arial,      95.8%, 109.6%, 36.5%, 10.4%);
+@include font-fallback('Poppins Caps Fallback', 600, $_arial-bold, 95.6%, 109.8%, 36.6%, 10.5%);
+@include font-fallback('Poppins Caps Fallback', 700, $_arial-bold, 96.6%, 108.7%, 36.2%, 10.4%);

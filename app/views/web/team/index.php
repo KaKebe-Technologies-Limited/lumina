@@ -23,7 +23,7 @@ if ($empty2['has']) {
     'eyebrow' => content('team', 'hero.eyebrow'),
     'title'   => content('team', 'hero.title'),
     'lead'    => content('team', 'hero.lead'),
-    'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt'], 'focus' => '40% 30%'] : null,
+    'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt'], 'focus' => '40% 12%'] : null,
     'sheet'   => $total === 0 ? 'tint' : 'white',
 ]) ?>
 

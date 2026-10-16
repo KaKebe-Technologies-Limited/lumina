@@ -76,7 +76,7 @@ $fieldMeta = [
                     <article class="feature-card contact-card" data-reveal>
                         <span class="feature-card__icon"><?= icon($c['icon']) ?></span>
                         <div class="feature-card__body">
-                            <h3 class="feature-card__title"><?= e($c['title']) ?></h3>
+                            <h2 class="feature-card__title"><?= e($c['title']) ?></h2>
                             <?= $c['html'] ?>
                         </div>
                     </article>

@@ -171,7 +171,7 @@ return [
                     ]],
                 ['key' => 'image1', 'label' => 'Collage: front photo', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
                 ['key' => 'image2', 'label' => 'Collage: photo behind (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-05.jpg', 'alt' => 'Young people seated in a training room, one of them typing on a laptop'],
-                ['key' => 'show_mosaic', 'label' => 'Show the row of gallery photos underneath', 'type' => 'boolean', 'default' => true, 'help' => 'Uses the active photos of Admin > Gallery. It is hidden automatically while the gallery has fewer than three photos.'],
+                ['key' => 'show_mosaic', 'label' => 'Show the row of gallery photos underneath', 'type' => 'boolean', 'default' => true, 'help' => 'Uses the active photos of Admin > Gallery. It is hidden automatically while fewer than three photos remain that the projects carousel does not already show.'],
             ],
         ],
         // ------------------------------------------------------------------ 6. featured programs & projects
@@ -211,6 +211,10 @@ return [
                 ['key' => 'eyebrow', 'label' => 'Small heading (leave empty to use the site-wide wording)', 'type' => 'text', 'default' => ''],
                 ['key' => 'title', 'label' => 'Heading (leave empty to use the site-wide wording)', 'type' => 'text', 'default' => '', 'help' => $hl],
                 ['key' => 'text', 'label' => 'Text (leave empty to use the site-wide wording)', 'type' => 'textarea', 'rows' => 3, 'default' => ''],
+                ['key' => 'image1', 'label' => 'Collage photo (front)', 'type' => 'image', 'default' => 'assets/img/site/photo-hero-wide.jpg',
+                    'alt' => 'Pupils in blue school uniforms seated along rows of desks with laptops in a classroom',
+                    'help' => 'The home page shows its own photo here so the projects carousel just above does not repeat the same pictures. Remove it (and the next one) to use the site-wide collage photos instead.'],
+                ['key' => 'image2', 'label' => 'Collage photo (behind, optional)', 'type' => 'image', 'default' => '', 'alt' => ''],
             ],
         ],
         // ------------------------------------------------------------------ 8. impact stories

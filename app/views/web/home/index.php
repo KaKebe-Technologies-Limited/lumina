@@ -139,7 +139,12 @@ $vmRows = $titled(content_list('home', 'vision_mission.rows'));
 $vmStack = partial('partials/photo-stack', ['images' => [content_img('home', 'vision_mission.image1'), content_img('home', 'vision_mission.image2')]]);
 $quote = trim((string) content('home', 'founder.quote'));
 $founderImg = content_img('home', 'founder.image');
-$mosaic = (bool) content('home', 'vision_mission.show_mosaic') && count($gallery) >= 3 ? partial('partials/media-mosaic', ['images' => $gallery]) : '';
+// gallery photos the carousel cards below already show are left out of the mosaic; fewer than three left = no mosaic (no repeats)
+$srcKey = static fn(string $src): string => (string) strtok($src, '?');
+$cardPhotos = array_map(static fn(array $f): string => $srcKey(img_url((string) ($f['row']['image'] ?? ''))), $featured);
+// (filter first, THEN keep five: photos added later in Admin > Gallery sit at the end of the list and must still reach the mosaic)
+$mosaicImages = array_slice(array_values(array_filter($gallery, static fn(array $g): bool => !in_array($srcKey($g['src']), $cardPhotos, true))), 0, 5);
+$mosaic = (bool) content('home', 'vision_mission.show_mosaic') && count($mosaicImages) >= 3 ? partial('partials/media-mosaic', ['images' => $mosaicImages]) : '';
 section_begin('home', 'vision_mission', ['class' => 'home-mission', 'labelledby' => 'mission-title']);
 ?>
     <div class="split split--start home-mission__grid<?= $vmStack === '' ? ' home-mission__grid--solo' : '' ?>">
@@ -217,7 +222,7 @@ endif;
 
 <?php /* ------------------------------------------------------------------ 7. DONATION PANEL (pledge / redirect, never a payment form; wording lives in Site-wide content) */ ?>
 <?php
-$dpOverrides = [];
+$dpOverrides = ['images' => [content_img('home', 'donate_panel.image1'), content_img('home', 'donate_panel.image2')]];
 foreach (['eyebrow', 'title', 'text'] as $k) {
     $v = trim((string) content('home', 'donate_panel.' . $k));
     if ($v !== '') {
