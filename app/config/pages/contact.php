@@ -1,10 +1,11 @@
 <?php
 /**
- * Registry entry: CONTACT. OWNER: B2 "web-content".
+ * Registry entry: CONTACT. OWNER: B2 "web-content"; redesigned by B-INNER-A.
  * Wording: https://www.luminaafricafoundation.com/contact (see docs/live-snapshot/contact.txt).
  * Postal address, emails, main phone numbers, WhatsApp and social links come from Settings (Organisation-wide details);
  * only the surrounding copy, opening hours and the extra phone number shown on the live page live here.
  */
+$hlHelp = 'Put [[double brackets]] around the words that get the hand-drawn underline.';
 return [
     'slug'  => 'contact',
     'title' => 'Contact',
@@ -21,14 +22,18 @@ return [
             'key' => 'hero', 'label' => 'Page banner',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Contact Us', 'maxlength' => 140],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Contact [[Us]]', 'maxlength' => 140, 'help' => $hlHelp],
                 ['key' => 'lead', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 4, 'default' => 'We would love to hear from you! Whether you want to partner with us, volunteer, or learn more about our programs, our team is ready to connect with you.'],
+                ['key' => 'image', 'label' => 'Background photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-04.jpg',
+                    'alt' => 'Young people seated in the audience of an event',
+                    'help' => 'A wide photo darkened behind the heading. Remove it for the plain navy banner.'],
             ],
         ],
         [
             'key' => 'form', 'label' => 'Contact form', 'help' => 'Headings, field labels, button and messages of the contact form. Messages are saved in Inbox > Messages and emailed to the notification address in Settings.',
             'fields' => [
-                ['key' => 'title', 'label' => 'Form heading', 'type' => 'text', 'default' => 'Send us a message'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the form heading (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Form heading', 'type' => 'text', 'default' => 'Send us a [[message]]', 'help' => $hlHelp],
                 ['key' => 'intro', 'label' => 'Form intro', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
                 ['key' => 'name_label', 'label' => 'Name: label', 'type' => 'text', 'default' => 'Your Name'],
                 ['key' => 'email_label', 'label' => 'Email: label', 'type' => 'text', 'default' => 'Your Email Address'],
@@ -40,6 +45,7 @@ return [
                 ['key' => 'privacy_note', 'label' => 'Privacy note under the button', 'type' => 'text', 'default' => 'We use your details only to reply to your message.'],
                 ['key' => 'privacy_link_label', 'label' => 'Privacy note: link text', 'type' => 'text', 'default' => 'Read our Privacy Policy'],
                 ['key' => 'success', 'label' => 'Success message', 'type' => 'textarea', 'rows' => 2, 'default' => 'Thank you for contacting us. Your message has been received and our team will get back to you soon.'],
+                ['key' => 'error_title', 'label' => 'Error summary: heading (shown above the form when something needs fixing)', 'type' => 'text', 'default' => 'Please check the following before sending'],
                 ['key' => 'err_required', 'label' => 'Error: required field', 'type' => 'text', 'default' => 'Please fill in this field.'],
                 ['key' => 'err_email', 'label' => 'Error: invalid email', 'type' => 'text', 'default' => 'Please enter a valid email address.'],
                 ['key' => 'err_phone', 'label' => 'Error: invalid phone', 'type' => 'text', 'default' => 'Please enter a valid phone number.'],
@@ -51,7 +57,8 @@ return [
             'key' => 'details', 'label' => 'Office and contact details', 'toggle' => true,
             'help' => 'The address, emails, phone numbers, WhatsApp and social links are shown automatically from Settings.',
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Contact Us'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Contact [[Us]]', 'help' => $hlHelp],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 2, 'default' => 'Visit us at Lumina Africa Foundation in Gulu City, Uganda, for inquiries.'],
                 ['key' => 'office_title', 'label' => 'Office heading', 'type' => 'text', 'default' => 'Our Office'],
                 ['key' => 'email_title', 'label' => 'Email heading', 'type' => 'text', 'default' => 'Email'],
@@ -67,7 +74,8 @@ return [
             'key' => 'map', 'label' => 'Map', 'toggle' => true,
             'help' => 'The map appears when a Google Maps embed link is set in Settings. Without it, a link to the address on Google Maps is shown instead.',
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Find us'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading above the map', 'type' => 'text', 'default' => 'Find [[us]]', 'help' => $hlHelp],
                 ['key' => 'iframe_title', 'label' => 'Map: accessible title', 'type' => 'text', 'default' => 'Map showing the location of our office'],
                 ['key' => 'fallback_text', 'label' => 'Text when there is no embedded map', 'type' => 'textarea', 'rows' => 2, 'default' => 'Find our office on the map.'],
                 ['key' => 'link_label', 'label' => 'Google Maps link', 'type' => 'text', 'default' => 'Open in Google Maps'],

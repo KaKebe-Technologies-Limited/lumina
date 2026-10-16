@@ -1,0 +1,35 @@
+// Public-only button variants (the admin bundle does not import this file). Pill shapes, uppercase option, play-icon button.
+// Contrast: white on $cta 4.66:1 - white on $cta-hover 6.4:1 - $navy-dark on $white 16:1 - $navy-dark on $gold 7:1.
+.btn {
+    // THE orange call to action (white text)
+    &--cta { background: $cta; color: $white; box-shadow: 0 6px 16px rgba($cta, 0.28); &:hover { background: $cta-hover; color: $white; } }
+    // small-caps label style used by header / hero / panel buttons
+    &--caps { padding: 0.85rem 1.7rem; font-size: $fs-xs; letter-spacing: 0.08em; text-transform: uppercase; &.btn--sm { padding: 0.6rem 1.2rem; } &.btn--lg { padding: 1.05rem 2.1rem; } }
+    // translucent outline pill for use ON PHOTOS (hero video button)
+    &--photo { background: rgba($white, 0.12); border-color: rgba($white, 0.6); color: $white; backdrop-filter: blur(6px); &:hover { background: $white; border-color: $white; color: $navy-dark; } }
+    // solid white pill (volunteer band, on dark photos)
+    &--white { background: $white; color: $navy-dark; &:hover { background: $gold; color: $navy-dark; } }
+    // outline in the CTA orange for light backgrounds
+    &--outline-cta { background: transparent; border-color: $cta; color: $orange-text; &:hover { background: $cta; color: $white; } }
+    // round play badge used inside .btn--play / video buttons
+    &__play {
+        display: inline-grid;
+        place-items: center;
+        flex: none;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 50%;
+        background: $white;
+        color: $navy-dark;
+        .icon { width: 0.8rem; height: 0.8rem; margin-left: 2px; vertical-align: 0; }
+    }
+    &--photo:hover &__play { background: $navy-dark; color: $white; }
+    &--white &__play { background: $cta; color: $white; }
+    &--white:hover &__play { background: $navy-dark; }
+}
+
+.link-arrow { color: $orange-text; }
+.btn--link { color: $orange-text; }
+
+// The older orange variants adopt the new CTA look so un-migrated pages match the redesigned ones
+.btn--accent, .btn--orange { background: $cta; color: $white; box-shadow: 0 6px 16px rgba($cta, 0.24); &:hover { background: $cta-hover; color: $white; } }

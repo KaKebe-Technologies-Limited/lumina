@@ -1,10 +1,11 @@
 <?php
 /**
- * EVENT DETAIL (/events/{slug}) - OWNED BY B7 "org-public".
+ * EVENT DETAIL (/events/{slug}) - B-INNER-B restyle of the B7 view.
  * Vars: $event (events row), $start / $end (DateTimeImmutable|null), $over (bool: the event has ended), $capacity (0 = unlimited),
  * $taken, $left (int|null free places), $full, $canRegister, $externalUrl (validated http(s) registration link or ''),
  * $registered (array|null: this visitor just registered - name/email/mailed), $others (other upcoming events).
  * Every label and message comes from content('events', ...) (admin: Pages > Events); the event data itself comes from the Events admin.
+ * Registration form: CSRF + honeypot + validation are unchanged (handled by EventsController).
  */
 $img = img_url($event['image'] ?? '');
 $summary = trim((string) ($event['summary'] ?? ''));
@@ -16,7 +17,7 @@ $dateText = $start ? $start->format('l, j F Y') : '';
 $timeText = '';
 if ($start) {
     $timeText = $start->format('H:i');
-    if ($end) {
+    if ($end && $end > $start) {
         $timeText .= $end->format('Y-m-d') === $start->format('Y-m-d')
             ? ' - ' . $end->format('H:i')
             : ' - ' . $end->format('l, j F Y, H:i');
@@ -54,19 +55,19 @@ $ld = array_filter([
     'lead'    => $summary,
 ]) ?>
 
-<section class="section" id="event">
+<section class="section event-page" id="event">
     <div class="container">
-        <p class="event-back"><a class="link-arrow" href="<?= e(url('events')) ?>"><?= icon('arrow-left', 'icon--arrow') ?> <?= e(content('events', 'detail.back')) ?></a></p>
+        <p class="event-back"><a class="btn btn--outline btn--caps btn--sm" href="<?= e(url('events')) ?>"><?= icon('arrow-left', 'icon--sm') ?> <?= e(content('events', 'detail.back')) ?></a></p>
 
         <div class="event-detail">
             <div class="event-detail__main">
                 <?php if ($img !== ''): ?>
-                    <figure class="event-detail__media"><img src="<?= e($img) ?>" alt="<?= e($event['image_alt'] ?? '') ?>" fetchpriority="high"></figure>
+                    <figure class="event-detail__media"><img src="<?= e($img) ?>" alt="<?= e($event['image_alt'] ?? '') ?>" fetchpriority="high" decoding="async"></figure>
                 <?php endif; ?>
 
                 <?php if ($body !== ''): ?>
                     <h2 class="event-detail__heading"><?= e(content('events', 'detail.about')) ?></h2>
-                    <div class="prose"><?= rich($body) ?></div>
+                    <div class="prose event-detail__body"><?= rich($body) ?></div>
                 <?php endif; ?>
 
                 <?php if ($showRegister): ?>
@@ -113,14 +114,14 @@ $ld = array_filter([
                                     <?= partial('partials/form-field', ['name' => 'notes', 'label' => content('events', 'register.notes_label'), 'type' => 'textarea', 'rows' => 4, 'maxlength' => 1000, 'class' => 'field--full']) ?>
                                 </div>
                                 <div class="form-actions">
-                                    <button class="btn btn--primary btn--lg" type="submit" data-loading-text="<?= e(content('events', 'register.sending')) ?>"><?= e(content('events', 'register.submit')) ?></button>
+                                    <button class="btn btn--cta btn--caps btn--lg" type="submit" data-loading-text="<?= e(content('events', 'register.sending')) ?>"><?= e(content('events', 'register.submit')) ?></button>
                                     <?php if ($placesLeft !== ''): ?><span class="form-note"><?= e($placesLeft) ?></span><?php endif; ?>
                                 </div>
                             </form>
                         <?php endif; ?>
 
                         <?php if ($externalUrl !== '' && !$over): ?>
-                            <p class="event-register__external"><a class="btn btn--accent" href="<?= e($externalUrl) ?>" target="_blank" rel="noopener noreferrer"><?= e(content('events', 'register.external_label')) ?> <?= icon('external-link', 'icon--sm') ?></a></p>
+                            <p class="event-register__external"><a class="btn btn--outline btn--caps" href="<?= e($externalUrl) ?>" target="_blank" rel="noopener noreferrer"><?= e(content('events', 'register.external_label')) ?> <?= icon('external-link', 'icon--sm') ?></a></p>
                         <?php endif; ?>
                     </section>
                 <?php endif; ?>
@@ -132,23 +133,32 @@ $ld = array_filter([
                     <dl class="event-facts__list">
                         <?php if ($start): ?>
                             <div class="event-facts__item">
-                                <dt><?= icon('calendar', 'icon--sm') ?> <?= e(content('events', 'detail.when')) ?></dt>
-                                <dd>
-                                    <time datetime="<?= e($start->format('c')) ?>"><?= e($dateText) ?></time>
-                                    <span class="event-facts__time"><?= e($timeText) ?></span>
-                                </dd>
+                                <span class="event-facts__icon"><?= icon('calendar') ?></span>
+                                <div>
+                                    <dt><?= e(content('events', 'detail.when')) ?></dt>
+                                    <dd>
+                                        <time datetime="<?= e($start->format('c')) ?>"><?= e($dateText) ?></time>
+                                        <span class="event-facts__time"><?= e($timeText) ?></span>
+                                    </dd>
+                                </div>
                             </div>
                         <?php endif; ?>
                         <?php if ($location !== ''): ?>
                             <div class="event-facts__item">
-                                <dt><?= icon('map-pin', 'icon--sm') ?> <?= e(content('events', 'detail.where')) ?></dt>
-                                <dd><?= e($location) ?></dd>
+                                <span class="event-facts__icon"><?= icon('map-pin') ?></span>
+                                <div>
+                                    <dt><?= e(content('events', 'detail.where')) ?></dt>
+                                    <dd><?= e($location) ?></dd>
+                                </div>
                             </div>
                         <?php endif; ?>
                     </dl>
                     <?php if ($placesLeft !== ''): ?><p class="event-facts__places"><?= icon('users', 'icon--sm') ?> <?= e($placesLeft) ?></p><?php endif; ?>
+                    <?php if ($showRegister && !$over && !$registered && !($enabled && $full)): ?>
+                        <a class="btn btn--cta btn--caps btn--block" href="#register"><?= e(content('events', 'register.submit')) ?></a>
+                    <?php endif; ?>
                     <?php if ($start && trim((string) content('events', 'detail.calendar')) !== ''): ?>
-                        <a class="btn btn--outline btn--block" href="<?= e($calendarUrl) ?>" download><?= icon('calendar', 'icon--sm') ?> <?= e(content('events', 'detail.calendar')) ?></a>
+                        <a class="btn btn--outline-light btn--caps btn--block" href="<?= e($calendarUrl) ?>" download><?= icon('calendar', 'icon--sm') ?> <?= e(content('events', 'detail.calendar')) ?></a>
                     <?php endif; ?>
                 </div>
             </aside>
@@ -159,10 +169,10 @@ $ld = array_filter([
 <?php if ($others): ?>
     <section class="section section--tint" id="more-events" aria-labelledby="more-events-title">
         <div class="container">
-            <div class="section__header"><h2 id="more-events-title"><?= e(content('events', 'detail.more_title')) ?></h2></div>
-            <div class="event-list">
+            <?= partial('partials/section-head', ['title' => content('events', 'detail.more_title'), 'id' => 'more-events-title', 'align' => 'center']) ?>
+            <div class="grid grid--3 grid--gap-lg event-list post-grid post-grid--n<?= min(count($others), 3) ?>">
                 <?php foreach ($others as $other): ?>
-                    <?= partial('partials/event-card', ['event' => $other, 'past' => false, 'cta' => content('events', 'labels.card_cta')]) ?>
+                    <?= partial('web/events/_card', ['event' => $other, 'past' => false, 'cta' => content('events', 'labels.card_cta')]) ?>
                 <?php endforeach; ?>
             </div>
         </div>

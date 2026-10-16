@@ -40,6 +40,10 @@ def build_one(src_name: str, base: str) -> bool:
     except sass.CompileError as exc:
         sys.stderr.write('SCSS ERROR in %s:\n%s\n' % (src_name, exc))
         return False
+    # libsass prepends a UTF-8 BOM to compressed output when the CSS contains non-ASCII characters; after the banner comment the BOM
+    # would become part of the first selector and silently drop the first rule (:root with the custom properties). Remove it.
+    expanded = expanded.lstrip('\ufeff')
+    compressed = compressed.lstrip('\ufeff')
     OUT.mkdir(parents=True, exist_ok=True)
     banner = BANNER.format(src=src_name)
     (OUT / (base + '.css')).write_text(banner + expanded, encoding='utf-8', newline='\n')

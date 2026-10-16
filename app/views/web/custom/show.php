@@ -3,6 +3,7 @@
  * Owner-created page. Vars: $row (pages row), $template ('default' | 'wide' | 'landing'), $children (published sub-pages).
  * Title, subtitle, hero photo (+ alt) and body are edited in the admin (Pages). Body is sanitised rich text.
  *   default  narrow reading column     wide  full-width reading area     landing  photo banner, wide body and the donate band
+ * B-INNER-B restyle: photo page-hero (landing), rounded figure, readable prose, sub-pages as feature cards.
  */
 $hero = img_url($row['hero_image'] ?? '');
 $heroAlt = (string) ($row['hero_image_alt'] ?? '');
@@ -13,14 +14,14 @@ $showUpdated = (bool) content('site_custom', 'labels.show_updated');
 <?= partial('partials/page-hero', [
     'title' => $row['title'],
     'lead'  => (string) ($row['subtitle'] ?? ''),
-    'image' => $landing && $hero !== '' ? ['src' => $hero, 'alt' => $heroAlt] : null,
+    'image' => $landing && $hero !== '' ? ['src' => $hero, 'alt' => $heroAlt, 'focus' => '50% 35%'] : null,
 ]) ?>
 
 <article class="section custom-page custom-page--<?= e($template) ?>">
     <div class="<?= e($container) ?>">
         <?php if (!$landing && $hero !== ''): ?>
             <figure class="custom-page__figure">
-                <img src="<?= e($hero) ?>" alt="<?= e($heroAlt) ?>" fetchpriority="high">
+                <img src="<?= e($hero) ?>" alt="<?= e($heroAlt) ?>" fetchpriority="high" decoding="async">
             </figure>
         <?php endif; ?>
 
@@ -29,13 +30,15 @@ $showUpdated = (bool) content('site_custom', 'labels.show_updated');
         <?php if ($children): ?>
             <nav class="custom-page__children" aria-labelledby="children-title">
                 <h2 id="children-title" class="h3"><?= e(content('site_custom', 'labels.children_title')) ?></h2>
-                <ul class="grid grid--auto">
+                <ul class="custom-page__list">
                     <?php foreach ($children as $c): ?>
-                        <li class="card card--flat card--tint custom-page__child">
-                            <div class="card__body">
-                                <h3 class="card__title"><a class="card__stretch" href="<?= e(url($c['slug'])) ?>"><?= e($c['nav_label'] !== null && $c['nav_label'] !== '' ? $c['nav_label'] : $c['title']) ?></a></h3>
-                                <?php if (trim((string) ($c['subtitle'] ?? '')) !== ''): ?><p class="card__text"><?= e($c['subtitle']) ?></p><?php endif; ?>
-                            </div>
+                        <li>
+                            <?= partial('partials/feature-card', [
+                                'title' => $c['nav_label'] !== null && $c['nav_label'] !== '' ? $c['nav_label'] : $c['title'],
+                                'text'  => trim((string) ($c['subtitle'] ?? '')),
+                                'icon'  => 'arrow-up-right',
+                                'href'  => url($c['slug']),
+                            ]) ?>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -43,7 +46,7 @@ $showUpdated = (bool) content('site_custom', 'labels.show_updated');
         <?php endif; ?>
 
         <?php if ($showUpdated && format_date($row['updated_at'] ?? null) !== ''): ?>
-            <p class="custom-page__updated"><?= e(content('site_custom', 'labels.updated_label')) ?>: <time datetime="<?= e(format_date($row['updated_at'], 'Y-m-d')) ?>"><?= e(format_date($row['updated_at'])) ?></time></p>
+            <p class="custom-page__updated"><?= icon('clock', 'icon--sm') ?> <?= e(content('site_custom', 'labels.updated_label')) ?>: <time datetime="<?= e(format_date($row['updated_at'], 'Y-m-d')) ?>"><?= e(format_date($row['updated_at'])) ?></time></p>
         <?php endif; ?>
     </div>
 </article>

@@ -26,14 +26,15 @@ return [
                 ['key' => 'title', 'label' => 'Page heading', 'type' => 'text', 'default' => 'Our Partners', 'maxlength' => 120],
                 ['key' => 'lead', 'label' => 'Intro paragraph', 'type' => 'textarea', 'rows' => 3, 'maxlength' => 400,
                     'default' => 'We collaborate with NGOs, businesses, academic institutions, and community groups that believe in sustainable development and social impact.'],
-                ['key' => 'image', 'label' => 'Banner background photo (optional)', 'type' => 'image', 'default' => '', 'alt' => '',
-                    'help' => 'Decorative background behind the title. Leave empty for the plain navy banner.'],
+                ['key' => 'image', 'label' => 'Banner background photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-05.jpg', 'alt' => '',
+                    'help' => 'Decorative background behind the title (covered by a dark veil so the text stays readable). Clear it to get the plain navy banner.'],
             ],
         ],
         [
             'key' => 'partner', 'label' => 'Group: Partners', 'toggle' => true,
             'help' => 'Shown only when at least one active organisation of the type "Partner" exists.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => '', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Partners', 'maxlength' => 120],
                 ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
             ],
@@ -42,6 +43,7 @@ return [
             'key' => 'funder', 'label' => 'Group: Funders', 'toggle' => true,
             'help' => 'Shown only when at least one active organisation of the type "Funder" exists.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => '', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Funders', 'maxlength' => 120],
                 ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
             ],
@@ -50,6 +52,7 @@ return [
             'key' => 'donor', 'label' => 'Group: Donors', 'toggle' => true,
             'help' => 'Shown only when at least one active organisation of the type "Donor" exists.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => '', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Donors', 'maxlength' => 120],
                 ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
             ],
@@ -58,6 +61,7 @@ return [
             'key' => 'collaborator', 'label' => 'Group: Collaborators', 'toggle' => true,
             'help' => 'Shown only when at least one active organisation of the type "Collaborator" exists.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => '', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Collaborators', 'maxlength' => 120],
                 ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
             ],
@@ -86,6 +90,8 @@ return [
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'The organisations we work with will be listed here soon. If your organisation would like to collaborate with us, we would love to hear from you.'],
                 ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Partner With Us', 'maxlength' => 60],
                 ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/involvement'],
+                ['key' => 'cta2_label', 'label' => 'Second button: text (optional)', 'type' => 'text', 'default' => 'Contact Us', 'maxlength' => 60],
+                ['key' => 'cta2_url', 'label' => 'Second button: link', 'type' => 'url', 'default' => '/contact'],
             ],
         ],
     ],

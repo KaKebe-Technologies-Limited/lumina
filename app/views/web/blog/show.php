@@ -6,10 +6,9 @@
 $cover = img_url($post['cover_image'] ?? '');
 $byline = trim((string) ($post['author_name'] ?? ''));
 $posted = format_date($post['published_at']);
-$metaLine = implode(' · ', array_filter([
-    $posted,
-    $byline !== '' ? trim((string) content('blog', 'post.by_label') . ' ' . $byline) : '',
-]));
+$bodyHtml = rich($post['body'] ?? '');
+$readMin = max(1, (int) ceil(str_word_count(strip_tags($bodyHtml)) / 200));
+$readLabel = trim((string) content('blog', 'post.read_time'));
 $ld = array_filter([
     '@context'      => 'https://schema.org',
     '@type'         => 'BlogPosting',
@@ -31,22 +30,28 @@ $this->start('head'); ?>
 <?= partial('partials/page-hero', [
     'title'   => $post['title'],
     'eyebrow' => $post['category'] ?? '',
-    'lead'    => $metaLine,
+    'lead'    => '',
 ]) ?>
 
 <article class="section post">
     <div class="container container--narrow">
+        <ul class="post-meta">
+            <?php if ($posted !== ''): ?><li><?= icon('calendar', 'icon--sm') ?> <time datetime="<?= e(format_date($post['published_at'], 'Y-m-d')) ?>"><?= e($posted) ?></time></li><?php endif; ?>
+            <?php if ($byline !== ''): ?><li><?= icon('user', 'icon--sm') ?> <?= e(trim((string) content('blog', 'post.by_label') . ' ' . $byline)) ?></li><?php endif; ?>
+            <?php if ($readLabel !== '' && $bodyHtml !== ''): ?><li><?= icon('clock', 'icon--sm') ?> <?= e(str_replace('{n}', (string) $readMin, $readLabel)) ?></li><?php endif; ?>
+        </ul>
+
         <?php if ($cover !== ''): ?>
             <figure class="post__cover">
-                <img src="<?= e($cover) ?>" alt="<?= e($post['cover_alt'] ?? '') ?>" width="1200" height="750" fetchpriority="high">
+                <img src="<?= e($cover) ?>" alt="<?= e($post['cover_alt'] ?? '') ?>" fetchpriority="high" decoding="async">
             </figure>
         <?php endif; ?>
 
         <?php if (trim((string) ($post['excerpt'] ?? '')) !== ''): ?>
-            <p class="lead post__excerpt"><?= e($post['excerpt']) ?></p>
+            <p class="post__excerpt"><?= e($post['excerpt']) ?></p>
         <?php endif; ?>
 
-        <div class="prose post__body"><?= rich($post['body'] ?? '') ?></div>
+        <div class="prose post__body"><?= $bodyHtml ?></div>
 
         <?= partial('web/blog/_share', [
             'share'       => $share,
@@ -74,24 +79,25 @@ $this->start('head'); ?>
             </nav>
         <?php endif; ?>
 
-        <p class="post__back"><a class="link-arrow" href="<?= e(url('blog')) ?>"><?= icon('arrow-left', 'icon--arrow') ?> <?= e(content('blog', 'post.back_label')) ?></a></p>
+        <p class="post__back"><a class="btn btn--outline btn--caps btn--sm" href="<?= e(url('blog')) ?>"><?= icon('arrow-left', 'icon--sm') ?> <?= e(content('blog', 'post.back_label')) ?></a></p>
     </div>
 </article>
 
 <?php if ($related): ?>
     <section class="section section--tint" aria-labelledby="related-title">
         <div class="container">
-            <div class="section__header"><h2 id="related-title"><?= e(content('blog', 'post.related_title')) ?></h2></div>
-            <div class="grid grid--3 grid--gap-lg">
-                <?php foreach ($related as $r): ?><?= partial('partials/post-card', ['post' => $r]) ?><?php endforeach; ?>
+            <?= partial('partials/section-head', ['title' => content('blog', 'post.related_title'), 'id' => 'related-title', 'align' => 'center']) ?>
+            <div class="grid grid--3 grid--gap-lg post-grid post-grid--n<?= min(count($related), 3) ?>">
+                <?php foreach ($related as $r): ?><?= partial('web/blog/_card', ['post' => $r]) ?><?php endforeach; ?>
             </div>
         </div>
     </section>
 <?php endif; ?>
 
-<?php section_begin('blog', 'subscribe', ['id' => 'subscribe']); ?>
+<?php section_begin('blog', 'subscribe', ['class' => 'section--panel', 'id' => 'subscribe']); ?>
     <?= partial('web/blog/_subscribe', [
         'id'          => 'post-subscribe',
+        'eyebrow'     => content('blog', 'subscribe.eyebrow'),
         'title'       => content('blog', 'subscribe.title'),
         'text'        => content('blog', 'subscribe.text'),
         'placeholder' => content('blog', 'subscribe.placeholder'),

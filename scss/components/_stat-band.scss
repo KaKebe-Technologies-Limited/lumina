@@ -1,0 +1,49 @@
+// Deep rounded STATS CARD: 2-4 columns, big gold numerals, white labels, thin vertical dividers (partials/stat-band.php).
+// Wrap in .container. --overlap pulls it up over the bottom of the .band above. Numerals: gold on navy = 5.0:1 (large text), labels white 11.6:1.
+.stat-band {
+    position: relative;
+    z-index: 3;
+    &--overlap { margin-top: -4.5rem; @include respond(md) { margin-top: -5.5rem; } }
+
+    &__card {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: $space-5 $space-3;
+        border-radius: $radius-panel;
+        background: $navy;
+        color: $white;
+        box-shadow: $shadow-lg;
+        @include respond(md) { padding: $space-6 $space-5; }
+    }
+    // column counts (desktop). 1 and 3 items stack on phones.
+    &--1 &__card { grid-template-columns: minmax(0, 1fr); }
+    &--3 &__card { grid-template-columns: minmax(0, 1fr); @include respond(md) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    &--2 &__card { @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    &--4 &__card { @include respond(md) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+    // dividers: phones = grid lines (2 columns) or horizontal rules (1 column); md+ = thin vertical dividers in one row
+    &__item {
+        padding: $space-4 $space-3;
+        text-align: center;
+        border: 0 solid rgba($white, 0.16);
+        &:nth-child(n+3) { border-top-width: 1px; }
+        &:nth-child(even) { border-left-width: 1px; }
+    }
+    &--1 &__item:nth-child(n), &--3 &__item:nth-child(n) { border-left-width: 0; border-top-width: 1px; }
+    &--1 &__item:first-child, &--3 &__item:first-child { border-top-width: 0; }
+    @include respond(md) {
+        &__item:nth-child(n), &--1 &__item:nth-child(n), &--3 &__item:nth-child(n) { border-top-width: 0; border-left-width: 1px; padding-block: $space-3; }
+        &__item:first-child, &--1 &__item:first-child, &--3 &__item:first-child { border-left-width: 0; }
+    }
+
+    &__value {
+        display: block;
+        font-family: $font-display;
+        font-size: fluid(2.4rem, '1.6rem + 2.8vw', 4.25rem);
+        font-weight: 600;
+        line-height: 1;
+        color: $gold;
+        font-variant-numeric: lining-nums tabular-nums;
+    }
+    &__label { display: block; max-width: 15rem; margin: $space-3 auto 0; font-size: $fs-sm; line-height: 1.45; color: rgba($white, 0.92); }
+}

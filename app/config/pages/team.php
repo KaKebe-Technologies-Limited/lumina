@@ -27,14 +27,15 @@ return [
                 ['key' => 'title', 'label' => 'Page heading', 'type' => 'text', 'default' => 'Our Team', 'maxlength' => 120],
                 ['key' => 'lead', 'label' => 'Intro paragraph', 'type' => 'textarea', 'rows' => 3, 'maxlength' => 400,
                     'default' => 'The Foundation is governed by a Board of Directors who provide oversight and strategic direction, supported by program coordinators and volunteers.'],
-                ['key' => 'image', 'label' => 'Banner background photo (optional)', 'type' => 'image', 'default' => '', 'alt' => '',
-                    'help' => 'Decorative background behind the title. Leave empty for the plain navy banner.'],
+                ['key' => 'image', 'label' => 'Banner background photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-03.jpg', 'alt' => '',
+                    'help' => 'Decorative background behind the title (covered by a dark veil so the text stays readable). Clear it to get the plain navy banner.'],
             ],
         ],
         [
             'key' => 'board', 'label' => 'Board of Directors', 'toggle' => true,
             'help' => 'Shown only when at least one active member of the group "Board of Directors" exists (Team > add a member).',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => '', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Meet Our Board of Directors', 'maxlength' => 120],
                 ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
             ],
@@ -43,6 +44,7 @@ return [
             'key' => 'staff', 'label' => 'Staff', 'toggle' => true,
             'help' => 'Shown only when at least one active member of the group "Staff" exists.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => '', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our Staff', 'maxlength' => 120],
                 ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
             ],
@@ -51,6 +53,7 @@ return [
             'key' => 'advisors', 'label' => 'Advisors', 'toggle' => true,
             'help' => 'Shown only when at least one active member of the group "Advisors" exists.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => '', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our Advisors', 'maxlength' => 120],
                 ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
             ],
@@ -59,6 +62,7 @@ return [
             'key' => 'volunteers', 'label' => 'Volunteers', 'toggle' => true,
             'help' => 'Shown only when at least one active member of the group "Volunteers" exists.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => '', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our Volunteers', 'maxlength' => 120],
                 ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
             ],
@@ -87,6 +91,8 @@ return [
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Our team profiles will appear here soon. In the meantime, learn more about who we are and what we do.'],
                 ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'About Us', 'maxlength' => 60],
                 ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/about'],
+                ['key' => 'cta2_label', 'label' => 'Second button: text (optional)', 'type' => 'text', 'default' => 'Contact Us', 'maxlength' => 60],
+                ['key' => 'cta2_url', 'label' => 'Second button: link', 'type' => 'url', 'default' => '/contact'],
             ],
         ],
     ],

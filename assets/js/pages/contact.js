@@ -8,7 +8,7 @@
     const form = document.querySelector('[data-contact-form]');
     if (!form) return;
     const bad = form.querySelector('.field--error input, .field--error textarea, .field--error select');
-    if (bad) {
+    if (bad && !document.querySelector('[data-error-summary]')) {      // the error summary (form-summary.js) takes the focus when there is one
         window.requestAnimationFrame(() => bad.focus());
     }
 })();

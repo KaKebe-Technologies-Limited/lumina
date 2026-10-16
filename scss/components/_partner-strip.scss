@@ -1,0 +1,15 @@
+// "Thanks to our partners" strip (footer + anywhere). partials/partner-strip.php - renders nothing when there are no partners.
+.partner-strip {
+    display: grid;
+    gap: $space-5;
+    align-items: center;
+    padding-block: $space-6;
+    @include respond(lg) { grid-template-columns: minmax(0, 0.38fr) minmax(0, 0.62fr); gap: $space-7; }
+
+    &__title { max-width: 18ch; font-family: $font-display; font-size: fluid(1.35rem, '1.1rem + 0.9vw', 1.9rem); font-weight: 600; line-height: 1.2; color: $navy; }
+    &__list { display: flex; flex-wrap: wrap; align-items: center; gap: $space-4 $space-6; }
+    &__item { display: inline-flex; align-items: center; min-height: 2.75rem; color: $navy; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; text-decoration: none; }
+    a.partner-strip__item:hover { color: $orange-text; }
+    &__item img { max-height: 2.9rem; width: auto; max-width: 9rem; object-fit: contain; filter: grayscale(1); opacity: 0.75; transition: filter $t-fast ease, opacity $t-fast ease; }
+    a.partner-strip__item:hover img, a.partner-strip__item:focus-visible img { filter: none; opacity: 1; }
+}

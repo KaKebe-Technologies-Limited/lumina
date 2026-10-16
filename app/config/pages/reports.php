@@ -27,8 +27,8 @@ return [
                 ['key' => 'title', 'label' => 'Page heading', 'type' => 'text', 'default' => 'Reports & Downloads', 'maxlength' => 120],
                 ['key' => 'lead', 'label' => 'Intro paragraph', 'type' => 'textarea', 'rows' => 3, 'maxlength' => 400,
                     'default' => 'Browse and download our reports, policies and other publications.'],
-                ['key' => 'image', 'label' => 'Banner background photo (optional)', 'type' => 'image', 'default' => '', 'alt' => '',
-                    'help' => 'Decorative background behind the title. Leave empty for the plain navy banner.'],
+                ['key' => 'image', 'label' => 'Banner background photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => '',
+                    'help' => 'Decorative background behind the title (covered by a dark veil so the text stays readable). Clear it to get the plain navy banner.'],
             ],
         ],
         [
@@ -57,6 +57,7 @@ return [
         [
             'key' => 'list', 'label' => 'Document list', 'help' => 'Heading, counters and button text used in the list of documents.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Downloads', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Available documents', 'maxlength' => 120],
                 ['key' => 'count_one', 'label' => 'Result count: one document', 'type' => 'text', 'default' => '1 document', 'maxlength' => 60],
                 ['key' => 'count_many', 'label' => 'Result count: several documents', 'type' => 'text', 'default' => '{n} documents', 'maxlength' => 60, 'help' => '{n} is replaced by the number.'],
@@ -89,6 +90,8 @@ return [
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Our reports and downloads will be published here soon. If you need a document in the meantime, please get in touch.'],
                 ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Contact Us', 'maxlength' => 60],
                 ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/contact'],
+                ['key' => 'cta2_label', 'label' => 'Second button: text (optional)', 'type' => 'text', 'default' => 'About Us', 'maxlength' => 60],
+                ['key' => 'cta2_url', 'label' => 'Second button: link', 'type' => 'url', 'default' => '/about'],
             ],
         ],
     ],

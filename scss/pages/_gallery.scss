@@ -1,15 +1,7 @@
-// pages/_gallery.scss - OWNED BY B2 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
-// Gallery page: album pills + the shared .gallery-grid / .lightbox components (components/_lightbox.scss, assets/js/main.js).
+// pages/_gallery.scss - B-INNER-B. Gallery page: album pills, masonry of rounded pictures and the shared lightbox (assets/js/main.js).
+// The tile / masonry / lightbox rules live in _blog.scss (the blog and activities pages reuse them).
 
 .page-gallery {
-    .gallery-grid > li { display: block; min-width: 0; }
-    .gallery-grid__item { cursor: zoom-in; }
-    .gallery-grid__item:focus-visible { outline-offset: 2px; }
-
-    // captions are always visible on touch screens, revealed on hover/focus from lg
-    .gallery-grid__caption { opacity: 1; @include respond(lg) { opacity: 0; } }
-    .gallery-grid__item:hover .gallery-grid__caption,
-    .gallery-grid__item:focus-visible .gallery-grid__caption { opacity: 1; }
-
-    .pills { justify-content: center; }
+    .section-head { margin-bottom: $space-6; }
+    .gallery-masonry { margin-top: $space-2; }
 }

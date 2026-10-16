@@ -1,4 +1,5 @@
-// Home-style hero (navy, glowing, arch-framed photo). Markup: any page may use .hero; B1 builds the home hero with it.
+// LEGACY home hero (navy, glowing, arch-framed photo). Superseded by .hero-photo (components/_hero-photo.scss);
+// delete this block once no view uses class="hero" any more (only app/views/web/home/index.php did at the time of the redesign).
 .hero {
     position: relative;
     overflow: hidden;
@@ -48,23 +49,39 @@
     }
 }
 
-// Inner-page banner (title + lead + breadcrumbs). partials/page-hero.php
+// Inner-page banner (partials/page-hero.php): photo or navy gradient, eyebrow, serif title, breadcrumbs, and the rounded white
+// "sheet" that cuts into the bottom edge (::after). --sheet-tint makes the sheet cream when the first section below is cream.
 .page-hero {
     position: relative;
+    isolation: isolate;
     overflow: hidden;
-    padding-block: $space-7 $space-8;
+    padding-block: $space-6 calc(var(--radius-sheet) + #{$space-6});
+    color: rgba($white, 0.92);
     background:
-        radial-gradient(40rem 20rem at 100% 0%, rgba($orange-accent, 0.22), transparent 60%),
-        $navy;
-    color: rgba($white, 0.9);
-    @include respond(lg) { padding-block: $space-8 $space-9; }
+        radial-gradient(46rem 24rem at 96% 10%, rgba($navy-light, 0.75), transparent 64%),
+        radial-gradient(30rem 18rem at 0% 100%, rgba($gold, 0.1), transparent 60%),
+        $navy-dark;
+    @include respond(lg) { padding-block: $space-7 calc(var(--radius-sheet) + #{$space-7}); }
 
-    &--image { background-size: cover; background-position: center; }
-    &--image::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba($navy-dark, 0.92), rgba($navy-dark, 0.55)); }
-    &__inner { @include container($container); position: relative; }
-    &__title { color: $white; max-width: 20ch; }
-    &__lead { margin-top: $space-4; max-width: 44rem; font-size: fluid(1.1rem, '1rem + 0.5vw', 1.35rem); color: rgba($white, 0.85); }
+    &__bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+    &--image::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba($navy-dark, 0.92) 0%, rgba($navy-dark, 0.7) 55%, rgba($navy-dark, 0.45) 100%); }
+    &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        z-index: 1;
+        height: var(--radius-sheet);
+        background: $white;
+        border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    }
+    &--sheet-tint::after { background: $surface; }
+    &--sheet-cool::after { background: $tint-cool; }
+    &__inner { @include container($container); position: relative; z-index: 2; }
+    &__title { color: $white; max-width: 22ch; font-size: fluid(2.3rem, '1.5rem + 3vw', 3.9rem); line-height: 1.1; }
+    &__lead { margin-top: $space-4; max-width: 44rem; font-size: fluid(1.08rem, '1rem + 0.45vw', 1.3rem); color: rgba($white, 0.9); }
     &__actions { display: flex; flex-wrap: wrap; gap: $space-3; margin-top: $space-5; }
-    .eyebrow { color: $gold; }
+    .eyebrow { margin-bottom: $space-3; }
     .breadcrumbs { margin-bottom: $space-5; }
 }

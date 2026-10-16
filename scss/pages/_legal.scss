@@ -1,72 +1,76 @@
-// pages/_legal.scss - OWNED BY B2 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
-// Privacy policy, unsubscribe page and owner-created ("custom") pages. Custom pages carry the body classes is-custom + template-<name>.
-
-.page-privacy,
-.is-custom {
-    // long-form reading: slightly larger copy, generous rhythm
-    .prose { font-size: $fs-md; line-height: 1.75; overflow-wrap: anywhere; }
-}
+// pages/_legal.scss - B-INNER-B. Privacy notice and owner-created ("custom") pages. Custom pages carry the body classes is-custom + template-<name>.
+// The unsubscribe page uses the .notice-hero block from _blog.scss. Reading typography (mixin reading-prose) is in _blog.scss.
 
 // ---- privacy notice ------------------------------------------------------------------------------------------------
 .page-privacy {
-    .legal__layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-6; @include respond(lg) { grid-template-columns: 17rem minmax(0, 1fr); gap: $space-8; align-items: start; } }
+    .legal__layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-6; @include respond(lg) { grid-template-columns: 18rem minmax(0, 1fr); gap: $space-8; align-items: start; } }
 
     .legal__toc {
         padding: $space-5;
-        border-radius: $radius-lg;
-        background: $surface;
+        border-radius: $radius-card;
+        background: $tint-cool;
         @include respond(lg) { position: sticky; top: #{$header-h + 24px}; }
-        ol { counter-reset: toc; display: grid; gap: $space-2; }
-        li { counter-increment: toc; display: flex; gap: $space-2; font-size: $fs-sm; }
-        li::before { content: counter(toc) '.'; flex: none; width: 1.5rem; color: $ink-soft; }
-        a { color: $navy; text-decoration: none; &:hover { color: $orange-dark; text-decoration: underline; } }
+        ol { counter-reset: toc; display: grid; gap: $space-2; margin: 0; padding: 0; list-style: none; }
+        li { counter-increment: toc; display: flex; gap: $space-2; font-size: $fs-sm; line-height: 1.4; }
+        li::before { content: counter(toc) '.'; flex: none; width: 1.6rem; font-weight: 600; color: $orange-text; }
+        a { color: $navy; text-decoration: none; &:hover { color: $orange-text; text-decoration: underline; } &:focus-visible { @include focus-ring; } }
     }
-    .legal__toc-title { margin-bottom: $space-3; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: $gold-text; font-family: $font-heading; }
+    .legal__toc-title { margin-bottom: $space-3; font-family: $font-heading; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: $navy; }
 
-    .legal__updated { margin-bottom: $space-5; font-size: $fs-sm; font-weight: 600; color: $ink-soft; }
+    .legal__updated {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: $space-5;
+        padding: 0.4rem 1rem;
+        border-radius: $radius-pill;
+        background: $tint-cool;
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        font-weight: 600;
+        color: $navy;
+        .icon { color: $orange-text; }
+    }
     .legal__section {
         scroll-margin-top: #{$header-h + 24px};
         padding-block: $space-5;
-        border-top: 1px solid $border;
+        border-top: 1px solid $line;
         &:first-of-type { border-top: 0; padding-top: 0; }
         h2 { display: flex; align-items: center; gap: $space-3; margin-bottom: $space-3; font-size: fluid(1.35rem, '1.15rem + 0.8vw', 1.8rem); }
     }
     .legal__num {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        display: inline-grid;
+        place-items: center;
         flex: none;
-        width: 2.25rem;
-        height: 2.25rem;
+        width: 2.5rem;
+        height: 2.5rem;
         border-radius: 50%;
         background: $navy;
         color: $gold;
+        font-family: $font-heading;
         font-size: $fs-sm;
         font-weight: 700;
     }
     .legal__body .prose { max-width: 70ch; }
 }
 
-// ---- unsubscribe -----------------------------------------------------------------------------------------------------
-.is-unsubscribe {
-    .notice-card {
-        padding: $space-7 $space-5;
-        @include card-surface($radius-xl);
-        @include respond(md) { padding: $space-8 $space-7; }
-        &__icon { display: inline-flex; margin-bottom: $space-3; color: $gold-deep; }
-        &__title { font-size: fluid(1.6rem, '1.3rem + 1.4vw', 2.4rem); }
-        &__actions { margin-top: $space-6; }
-    }
-}
-
-// ---- owner-created pages ---------------------------------------------------------------------------------------------------
+// ---- owner-created pages -----------------------------------------------------------------------------------------------------
 .is-custom {
-    .custom-page__figure { margin-bottom: $space-6; }
-    .custom-page__figure img { width: 100%; max-height: 32rem; object-fit: cover; border-radius: $radius-lg; box-shadow: $shadow; }
-    .custom-page__body.prose { max-width: none; }
+    .custom-page__figure { margin: 0 0 $space-6; }
+    .custom-page__figure img { display: block; width: 100%; max-height: 32rem; object-fit: cover; object-position: 50% 30%; border-radius: $radius-photo; box-shadow: $shadow-card; }
     &.template-default .custom-page__body.prose { max-width: 68ch; margin-inline: auto; }
 
-    .custom-page__children { margin-top: $space-8; padding-top: $space-6; border-top: 1px solid $border; h2 { margin-bottom: $space-4; } }
-    .custom-page__child { position: relative; list-style: none; }
-    .custom-page__updated { margin-top: $space-7; font-size: $fs-sm; color: $ink-soft; }
+    .custom-page__children { margin-top: $space-8; padding-top: $space-7; border-top: 1px solid $line; h2 { margin-bottom: $space-5; } }
+    .custom-page__list {
+        display: grid;
+        gap: $space-4;
+        grid-template-columns: minmax(0, 1fr);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        > li { display: flex; }
+        .feature-card { width: 100%; }
+    }
+    .custom-page__updated { display: flex; align-items: center; gap: 0.5rem; margin-top: $space-7; font-size: $fs-sm; color: $ink-soft; .icon { color: $orange-text; } }
 }

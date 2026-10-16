@@ -1,0 +1,47 @@
+// Testimonial / impact-story quote card on a pale tint (partials/quote-card.php). NO star ratings (nothing is invented).
+// Text: ink on $tint-cool 14:1, ink-soft on $tint-cool 5.3:1, name navy 10.3:1.
+.quote-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+    height: 100%;
+    padding: $space-5;
+    border-radius: $radius-card;
+    background: $tint-cool;
+    @include respond(md) { padding: $space-6 $space-5; }
+
+    &__mark { color: $cta; .icon { width: 2rem; height: 2rem; } }
+    &__text { font-size: $fs-sm; line-height: 1.7; color: $ink; @include line-clamp(7); }
+    &__person { display: flex; align-items: center; gap: $space-3; margin-top: auto; padding-top: $space-4; border-top: 1px solid rgba($navy, 0.12); }
+    &__avatar {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 3rem;
+        height: 3rem;
+        overflow: hidden;
+        border-radius: 50%;
+        background: $navy;
+        color: $gold;
+        font-family: $font-display;
+        font-weight: 600;
+        img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; }
+    }
+    &__name { display: block; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; color: $navy; a { color: inherit; text-decoration: none; &::after { content: ''; position: absolute; inset: 0; border-radius: inherit; } } }
+    &__role { display: block; font-size: $fs-xs; color: $ink-soft; }
+
+    // deep navy variant (white text 11.6:1, gold mark 5.0:1)
+    &--dark {
+        background: $navy;
+        color: $white;
+        .quote-card__text { color: rgba($white, 0.92); }
+        .quote-card__mark { color: $gold; }
+        .quote-card__name { color: $white; }
+        .quote-card__role { color: rgba($white, 0.82); }
+        .quote-card__person { border-color: rgba($white, 0.2); }
+        .quote-card__avatar { background: $white; color: $navy; }
+    }
+    // large single quote (mission / vision section): serif text, not clamped
+    &--large { padding: $space-6; .quote-card__text { font-family: $font-display; font-size: $fs-md; line-height: 1.55; -webkit-line-clamp: unset; display: block; overflow: visible; } }
+}

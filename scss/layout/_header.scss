@@ -1,14 +1,15 @@
-// Site header + responsive navigation (markup: views/layouts/main.php, behaviour: assets/js/main.js)
+// Site header + navigation (markup: partials/site-header.php, behaviour: assets/js/main.js).
+// White, sticky, shrinks on scroll. Desktop (>= nav breakpoint): logo | centred menu | Donate pill. Below: logo + hamburger that
+// opens an off-canvas drawer (focus trapped, Esc / backdrop / close button, background inert).
+// NEVER put backdrop-filter on .site-header itself: it would become the containing block of the fixed drawer.
 .site-header {
     position: sticky;
     top: 0;
     z-index: $z-header;
-    background: rgba($white, 0.96);
-    border-bottom: 1px solid transparent;
-    transition: box-shadow $t-base ease, border-color $t-base ease;
+    background: rgba($white, 0.97);
+    border-bottom: 1px solid $line;
+    transition: box-shadow $t-base ease;
 
-    // The frosted-glass blur lives on a pseudo-element, NOT on the header: any element with backdrop-filter becomes the containing
-    // block of its position:fixed descendants, which squeezed the mobile menu (.site-nav, fixed) into the 73 px header.
     &::before {
         content: '';
         position: absolute;
@@ -17,11 +18,7 @@
         pointer-events: none;
         backdrop-filter: saturate(1.4) blur(10px);
     }
-
-    &.is-scrolled {
-        border-bottom-color: $border;
-        box-shadow: 0 6px 24px rgba($navy-dark, 0.08);
-    }
+    &.is-scrolled { box-shadow: 0 8px 28px rgba($navy-dark, 0.1); }
 
     &__bar {
         @include container($container-wide);
@@ -30,8 +27,15 @@
         justify-content: space-between;
         gap: $space-4;
         min-height: $header-h;
+        transition: min-height $t-base ease;
         @include respond(lg) { min-height: $header-h-lg; }
+        @include respond(nav) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: $space-5; }
     }
+    &.is-scrolled &__bar { min-height: $header-h-shrunk; }
+
+    &__actions { display: flex; align-items: center; gap: $space-3; }
+    // specificity > .btn (which loads later): the pill appears from md up; below that the drawer carries the Donate button
+    & &__cta { display: none; @include respond(md) { display: inline-flex; } }
 }
 
 .brand {
@@ -41,35 +45,34 @@
     text-decoration: none;
     color: $navy;
     min-width: 0;
-    @include respond(nav) { flex: none; }
 
     &__logo {
-        width: 52px;
-        height: 52px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         flex: none;
-        @include respond(lg) { width: 60px; height: 60px; }
+        transition: width $t-base ease, height $t-base ease;
+        @include respond(lg) { width: 58px; height: 58px; }
     }
-    &__text {
-        display: flex;
-        flex-direction: column;
-        line-height: 1.1;
-        min-width: 0;
-    }
+    .is-scrolled & &__logo { @include respond(lg) { width: 46px; height: 46px; } }
+    &__text { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
     &__name {
         font-family: $font-heading;
         font-weight: 700;
-        font-size: 1.05rem;
+        font-size: 0.98rem;
         letter-spacing: -0.01em;
+        line-height: 1.15;
         color: $navy;
-        @include respond(lg) { font-size: 1.15rem; }
+        @include respond(lg) { font-size: 1.08rem; }
+        @include respond(nav) { max-width: 9.5rem; }          // two lines beside the centred menu ...
+        @include respond('2xl') { max-width: none; }          // ... one line on large screens
     }
     &__tag {
         display: none;
-        margin-top: 2px;
+        margin-top: 3px;
         font-size: 0.75rem;
         color: $ink-soft;
-        @include respond('2xl') { display: block; }      // the tagline needs the extra width of large screens; below that the menu gets it
+        @include respond('2xl') { display: block; }
     }
     &:hover { color: $navy; }
 }
@@ -81,10 +84,12 @@
     width: 46px;
     height: 46px;
     padding: 0;
-    border: 1px solid $border;
-    border-radius: $radius;
+    border: 1px solid $line;
+    border-radius: 50%;
     background: $white;
     color: $navy;
+    transition: background-color $t-fast ease, border-color $t-fast ease;
+    &:hover { background: $tint-cool; border-color: $border-strong; }
     @include respond(nav) { display: none; }
 
     &__bars,
@@ -101,57 +106,64 @@
     &__bars::before, &__bars::after { content: ''; position: absolute; left: 0; }
     &__bars::before { top: -6px; }
     &__bars::after { top: 6px; }
-    &[aria-expanded='true'] &__bars { background: transparent; }
-    &[aria-expanded='true'] &__bars::before { top: 0; transform: rotate(45deg); }
-    &[aria-expanded='true'] &__bars::after { top: 0; transform: rotate(-45deg); }
 }
 
-// ---- Navigation: mobile = slide-down sheet, desktop = inline ----
+// ---- Navigation: mobile = off-canvas drawer, desktop = centred inline menu -----------------------------------------
 .site-nav {
     position: fixed;
-    inset: $header-h 0 0 0;
-    padding: $space-5 $gutter $space-8;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    width: #{'min(88vw, 22.5rem)'};
+    padding: 0 0 $space-6;
     overflow-y: auto;
+    overscroll-behavior: contain;
     background: $white;
-    border-top: 1px solid $border;
-    transform: translateY(-8px);
-    opacity: 0;
+    box-shadow: -18px 0 48px rgba($navy-dark, 0.22);
+    transform: translateX(105%);
     visibility: hidden;
-    transition: opacity $t-base ease, transform $t-base ease, visibility 0s linear $t-base;
+    transition: transform $t-base $ease, visibility 0s linear $t-base;
 
-    &.is-open {
-        opacity: 1;
-        visibility: visible;
-        transform: none;
-        transition-delay: 0s;
-    }
+    &.is-open { transform: none; visibility: visible; transition-delay: 0s; }
 
     @include respond(nav) {
         position: static;
-        display: flex;
+        flex-direction: row;
         align-items: center;
+        justify-content: center;
+        width: auto;
         min-width: 0;
-        gap: $space-4;
         padding: 0;
         overflow: visible;
         background: transparent;
-        border: 0;
-        opacity: 1;
-        visibility: visible;
+        box-shadow: none;
         transform: none;
+        visibility: visible;
+        transition: none;
     }
+
+    // drawer header (hidden on desktop)
+    &__head { display: flex; align-items: center; justify-content: space-between; gap: $space-3; padding: $space-4 $space-4 $space-3 $space-5; border-bottom: 1px solid $line; @include respond(nav) { display: none; } }
+    &__title { font-family: $font-heading; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: $ink-soft; }
+    &__close { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid $line; border-radius: 50%; background: $white; color: $navy; &:hover { background: $tint-cool; } }
 
     &__list {
         display: flex;
         flex-direction: column;
-        gap: $space-1;
+        gap: 2px;
+        padding: $space-4 $space-4 0;
         @include respond(nav) {
             flex-direction: row;
             flex-wrap: wrap;            // an owner who adds menu items gets a second row, never an overlap with the logo
-            justify-content: flex-end;
+            justify-content: center;
             align-items: center;
-            gap: 0;
+            gap: 0 0.1rem;
+            padding: 0;
         }
+        @include respond('2xl') { gap: 0 0.35rem; }
     }
     &__item { position: relative; }
 
@@ -165,17 +177,20 @@
         color: $navy;
         text-decoration: none;
         transition: background-color $t-fast ease, color $t-fast ease;
+        &:hover { background: $tint-cool; color: $navy-dark; }
         @include respond(nav) {
-            padding: $space-2 0.45rem;
-            font-size: 0.92rem;
+            position: relative;
+            padding: $space-2 0.6rem;
+            font-size: 0.9rem;
             border-radius: $radius-pill;
+            &:hover { background: transparent; color: $orange-text; }
         }
-        @include respond('2xl') { padding: $space-2 0.8rem; font-size: 0.94rem; }
-        &:hover { background: $surface; color: $navy-dark; }
+        @include respond('2xl') { padding: $space-2 0.8rem; font-size: 0.95rem; }
     }
-    &__item.is-active > &__link {
-        color: $orange-dark;
-        background: rgba($gold, 0.1);     // 0.16 made $orange-dark on the tint 4.4:1 (below AA 4.5:1); 0.10 gives 4.9:1
+    // the active page: coloured text (orange 5.8:1 on white) + a short accent bar on desktop
+    &__item.is-active > &__link { color: $orange-text; background: rgba($gold, 0.14); }
+    @include respond(nav) {
+        &__item.is-active > &__link { background: transparent; &::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 1.25rem; height: 3px; border-radius: 3px; background: $gold; transform: translateX(-50%); } }
     }
 
     // dropdown
@@ -193,13 +208,14 @@
         border-radius: 50%;
         background: transparent;
         color: $navy;
-        .icon { transition: transform $t-fast ease; }
+        .icon { width: 1.1rem; height: 1.1rem; transition: transform $t-fast ease; }
         &[aria-expanded='true'] .icon { transform: rotate(180deg); }
         @include respond(nav) {
             position: static;
             width: 24px;
             height: 24px;
-            margin-left: -0.55rem;
+            margin-left: -0.5rem;
+            .icon { width: 0.9rem; height: 0.9rem; }
         }
     }
     &__item.has-children { display: flex; flex-wrap: wrap; align-items: center; > .site-nav__link { flex: 1 1 auto; } @include respond(nav) { flex-wrap: nowrap; > .site-nav__link { flex: none; } } }
@@ -211,32 +227,49 @@
         &.is-open { display: block; }
         @include respond(nav) {
             position: absolute;
-            top: 100%;
-            left: 0;
+            top: calc(100% + 0.4rem);
+            left: 50%;
             min-width: 15rem;
             padding: $space-2;
             background: $white;
-            border: 1px solid $border;
-            border-radius: $radius;
+            border: 1px solid $line;
+            border-radius: $radius-lg;
             box-shadow: $shadow-lg;
+            transform: translateX(-50%);
+            &::before { content: ''; position: absolute; left: 0; right: 0; top: -0.5rem; height: 0.5rem; }   // hover bridge
         }
         a {
             display: block;
             padding: $space-2 $space-4;
-            border-radius: $radius-sm;
+            border-radius: $radius;
             font-size: 0.95rem;
             color: $navy;
             text-decoration: none;
-            &:hover { background: $surface; }
+            &:hover { background: $tint-cool; color: $navy-dark; }
         }
-        li.is-active a { color: $orange-dark; font-weight: 600; }
+        li.is-active a { color: $orange-text; font-weight: 600; }
     }
     @include respond(nav) {
-        &__item.has-children:hover > &__sub { display: block; }
+        &__item.has-children:hover > &__sub, &__item.has-children:focus-within > &__sub { display: block; }
     }
 
-    &__cta { margin-top: $space-5; @include respond(nav) { margin-top: 0; } }
+    // drawer footer: Donate button + contact lines (below md the header has no Donate pill)
+    &__foot { margin-top: auto; padding: $space-5 $space-5 0; display: grid; gap: $space-4; @include respond(nav) { display: none; } }
+    & &__foot-cta { @include respond(md) { display: none; } }
+    &__contact { display: grid; gap: $space-2; font-size: $fs-sm; color: $ink-soft; a { color: $navy; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; word-break: break-word; &:hover { color: $orange-text; } } }
 }
 
-// Prevent background scroll while the mobile menu is open
+// dim layer behind the drawer
+.nav-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    background: rgba($navy-dark, 0.55);
+    opacity: 0;
+    transition: opacity $t-base ease;
+    &.is-open { opacity: 1; }
+    @include respond(nav) { display: none; }
+}
+
+// Prevent background scroll while the drawer is open
 body.nav-open { overflow: hidden; @include respond(nav) { overflow: auto; } }

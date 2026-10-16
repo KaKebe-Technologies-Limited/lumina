@@ -28,13 +28,14 @@ return [
                 ['key' => 'title', 'label' => 'Page heading', 'type' => 'text', 'default' => 'Events', 'maxlength' => 120],
                 ['key' => 'lead', 'label' => 'Intro paragraph', 'type' => 'textarea', 'rows' => 3, 'maxlength' => 400,
                     'default' => 'Stay informed about our workshops, events, and initiatives for community empowerment.'],
-                ['key' => 'image', 'label' => 'Banner background photo (optional)', 'type' => 'image', 'default' => '', 'alt' => '',
-                    'help' => 'Decorative background behind the title. Leave empty for the plain navy banner.'],
+                ['key' => 'image', 'label' => 'Banner background photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-04.jpg', 'alt' => '',
+                    'help' => 'Decorative background behind the title (covered by a dark veil so the text stays readable). Clear it to get the plain navy banner.'],
             ],
         ],
         [
             'key' => 'upcoming', 'label' => 'Upcoming events', 'help' => 'The list of events that have not ended yet.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Join us', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Upcoming Events', 'maxlength' => 120],
                 ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
                 ['key' => 'none_title', 'label' => 'Heading when there is no upcoming event', 'type' => 'text', 'default' => 'No upcoming events at the moment', 'maxlength' => 120],
@@ -44,6 +45,7 @@ return [
         [
             'key' => 'past', 'label' => 'Past events', 'toggle' => true, 'help' => 'Events that have already taken place (newest first). Shown only when there are some.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => '', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Past Events', 'maxlength' => 120],
                 ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
             ],
@@ -53,6 +55,7 @@ return [
             'fields' => [
                 ['key' => 'card_cta', 'label' => 'Link on an upcoming event card', 'type' => 'text', 'default' => 'View details', 'maxlength' => 40],
                 ['key' => 'card_cta_past', 'label' => 'Link on a past event card', 'type' => 'text', 'default' => 'View event', 'maxlength' => 40],
+                ['key' => 'past_badge', 'label' => 'Small badge on a past event photo', 'type' => 'text', 'default' => 'Past event', 'maxlength' => 40, 'help' => 'Leave empty to hide the badge.'],
             ],
         ],
         [
@@ -122,6 +125,8 @@ return [
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Our events will be announced here soon. In the meantime, see what we have been doing in our community.'],
                 ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'View Our Activities', 'maxlength' => 60],
                 ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/activities'],
+                ['key' => 'cta2_label', 'label' => 'Second button: text (optional)', 'type' => 'text', 'default' => 'Subscribe for Updates', 'maxlength' => 60],
+                ['key' => 'cta2_url', 'label' => 'Second button: link', 'type' => 'url', 'default' => '/blog#subscribe'],
             ],
         ],
     ],

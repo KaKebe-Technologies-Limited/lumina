@@ -1,42 +1,40 @@
-// pages/_errors.scss - OWNED BY B2 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
-// Themed error pages (404 / 403 / 500 / generic) and the maintenance page. The ErrorHandler gives the <body> the class "is-error".
+// pages/_errors.scss - B-INNER-B. Themed error pages (404 / 403 / 500 / generic) and the maintenance page. The ErrorHandler gives
+// the <body> the class "is-error". The hero block (.notice-hero) is shared with the unsubscribe page and lives in _blog.scss.
 
 .is-error {
     .error-page {
-        padding-block: $space-8;
-        @include respond(lg) { padding-block: $space-9; }
-
-        &__card { text-align: center; }
         &__code {
-            font-family: $font-heading;
-            font-size: fluid(5rem, '3rem + 10vw', 9rem);
+            margin: 0;
+            font-family: $font-display;
+            font-size: fluid(6rem, '3rem + 13vw', 11.5rem);
             font-weight: 700;
-            line-height: 1;
-            letter-spacing: -0.04em;
-            color: $gold-deep;
-            background: linear-gradient(135deg, $orange-accent, $gold-deep 55%, $navy-light);
+            line-height: 0.95;
+            letter-spacing: -0.02em;
+            background: linear-gradient(180deg, $gold 30%, $orange-accent);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
+            color: $gold;
         }
-        &__icon { display: inline-flex; align-items: center; justify-content: center; width: 5rem; height: 5rem; margin-bottom: $space-3; border-radius: 50%; background: rgba($gold, 0.25); color: $navy; }
-        &__title { margin-top: $space-3; font-size: fluid(1.8rem, '1.4rem + 2vw', 2.8rem); }
-        &__text { max-width: 36rem; margin: $space-4 auto 0; }
-        &__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: $space-3; margin-top: $space-6; }
-        &__links { margin-top: $space-8; }
-        &__links h2 { margin-bottom: $space-4; color: $ink-soft; }
-        &__links .pills { justify-content: center; }
+        &--maintenance .notice-hero__title { margin-top: $space-3; }
+
+        &__links h2 { margin-bottom: $space-4; color: $navy; font-family: $font-heading; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+        &__links .pills { margin-bottom: 0; }
         &__contact {
             display: inline-block;
-            margin-top: $space-7;
-            padding: $space-4 $space-6;
-            border-radius: $radius;
-            background: $surface;
+            min-width: #{'min(100%, 20rem)'};
+            margin: 0 auto $space-6;
+            padding: $space-5 $space-6;
+            border-radius: $radius-card;
+            background: $tint-cool;
             text-align: left;
-            h2 { margin-bottom: $space-2; }
-            li { display: flex; align-items: center; gap: $space-2; }
-            li + li { margin-top: $space-1; }
+            h2 { margin-bottom: $space-3; font-size: $fs-md; }
+            ul { margin: 0; padding: 0; list-style: none; }
+            li { display: flex; align-items: center; gap: $space-3; }
+            li + li { margin-top: $space-2; }
+            a { color: $navy; font-weight: 600; }
         }
+        &__contact-icon { display: inline-grid; place-items: center; flex: none; width: 2.25rem; height: 2.25rem; border-radius: 50%; background: $navy; color: $gold; }
         &__debug {
             margin-top: $space-7;
             text-align: left;
@@ -45,3 +43,5 @@
         }
     }
 }
+
+.is-error .error-page__contact + .error-page__links { margin-top: $space-6; }

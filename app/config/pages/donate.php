@@ -1,17 +1,20 @@
 <?php
 /**
- * Registry entry: DONATE PAGE  (OWNER: B1 "web-core").
+ * Registry entry: DONATE PAGE  (OWNER: B1 "web-core"; redesigned by B-INNER-A).
  * Default wording = the live Donate page (docs/live-snapshot/donate.txt). NOTE FOR THE OWNER: parts of the live wording (school supplies,
  * community health outreach, children and families) describe a wider scope than the digital-skills mission described elsewhere on the
  * site. They are kept as the faithful default; review them in Admin > Pages > Donate.
  * Account details (bank, mobile money, PayPal) and the online link are NOT copy: they come from Settings > Donations and are simply
  * hidden while empty. Pledges are stored in Admin > Donations with status "pledged" (a record of intent, never a payment).
+ * The quick-amount buttons of the pledge form are the ones of the donation panel (Site-wide content > Donation panel): suggestions only.
+ * Heading fields accept [[double brackets]] around the words that get the hand-drawn underline.
  */
+$hlHelp = 'Put [[double brackets]] around the words that get the hand-drawn underline.';
 return [
     'slug'  => 'donate',
     'title' => 'Donate',
     'route' => '/donate',
-    'help'  => 'Ways to give (details from Settings > Donations), what donations support, the pledge form and the FAQ.',
+    'help'  => 'Ways to give (details from Settings > Donations), what donations support, the pledge form and the FAQ. The pledge form can be pre-filled with ?amount=50&currency=USD.',
     'nav'   => ['label' => 'Donate', 'order' => 95, 'header' => true, 'footer' => true, 'button' => true],
     'seo'   => [
         'title'       => 'Support Our Life-Changing Programs',
@@ -23,17 +26,22 @@ return [
             'key' => 'hero', 'label' => 'Hero banner',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Main heading', 'type' => 'text', 'default' => 'Support Us', 'maxlength' => 140],
+                ['key' => 'title', 'label' => 'Main heading', 'type' => 'text', 'default' => 'Support [[Us]]', 'maxlength' => 140, 'help' => $hlHelp],
                 ['key' => 'lead', 'label' => 'Intro paragraph', 'type' => 'textarea', 'rows' => 3, 'default' => 'Your donations empower children and families through life-changing programs. Every contribution counts!'],
                 ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Donate to Support Lumina Africa Foundation'],
                 ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '', 'help' => 'Leave empty to use the online donation link from Settings > Donations (currently the GoFundMe campaign).'],
-                ['key' => 'image', 'label' => 'Background photo (optional)', 'type' => 'image', 'default' => '', 'help' => 'A wide photo darkened behind the heading. Leave empty for the plain navy banner.'],
+                ['key' => 'cta2_label', 'label' => 'Second button: text (optional)', 'type' => 'text', 'default' => 'Make a pledge', 'help' => 'Hidden while the pledge form section is switched off.'],
+                ['key' => 'cta2_url', 'label' => 'Second button: link', 'type' => 'url', 'default' => '#pledge'],
+                ['key' => 'image', 'label' => 'Background photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-03.jpg',
+                    'alt' => 'A trainer points at a screen while young people wearing headphones work at computers',
+                    'help' => 'A wide photo darkened behind the heading. Remove it for the plain navy banner.'],
             ],
         ],
         [
             'key' => 'ways', 'label' => 'Ways to give', 'help' => 'Only the methods that have details in Settings > Donations are shown.',
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Ways to give'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Ways to [[give]]', 'help' => $hlHelp],
                 ['key' => 'online_title', 'label' => 'Online donation: heading', 'type' => 'text', 'default' => 'Donate online'],
                 ['key' => 'bank_title', 'label' => 'Bank transfer: heading', 'type' => 'text', 'default' => 'Bank transfer'],
                 ['key' => 'mobile_title', 'label' => 'Mobile money: heading', 'type' => 'text', 'default' => 'Mobile money'],
@@ -49,17 +57,19 @@ return [
         [
             'key' => 'support', 'label' => 'What your support does', 'toggle' => true,
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Support Us'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Support [[Us]]', 'help' => $hlHelp],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 6, 'default' => 'Join us in making a significant difference for families in our community and beyond. Together, we can build a supportive environment that encourages growth, resilience, and hope for every family. Your involvement is essential in helping us achieve our goals and create lasting change. Let\'s work hand in hand to transform the lives of those who need it most.'],
                 ['key' => 'items', 'label' => 'Cards', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a card', 'max_rows' => 8,
                     'fields' => [
+                        ['key' => 'icon', 'label' => 'Icon (used when the card has no photo)', 'type' => 'select', 'options' => icon_options(), 'default' => 'heart'],
                         ['key' => 'title', 'label' => 'Title', 'type' => 'text'],
                         ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 4],
                         ['key' => 'image', 'label' => 'Photo (optional)', 'type' => 'image'],
                     ],
                     'default' => [
-                        ['title' => 'School Supplies', 'text' => 'Provide essential supplies for children in need, including food, clothing, educational materials, and hygiene products, to ensure they have a better chance at growing up healthy and successful in their lives.', 'image' => '', 'image_alt' => ''],
-                        ['title' => 'Digital Literacy', 'text' => 'Empower youth through essential training programs.', 'image' => '', 'image_alt' => ''],
+                        ['icon' => 'book-open', 'title' => 'School Supplies', 'text' => 'Provide essential supplies for children in need, including food, clothing, educational materials, and hygiene products, to ensure they have a better chance at growing up healthy and successful in their lives.', 'image' => '', 'image_alt' => ''],
+                        ['icon' => 'laptop', 'title' => 'Digital Literacy', 'text' => 'Empower youth through essential training programs.', 'image' => '', 'image_alt' => ''],
                     ],
                 ],
                 ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Donate to Support Lumina Africa Foundation'],
@@ -68,11 +78,13 @@ return [
         ],
         [
             'key' => 'pledge', 'label' => 'Pledge form', 'toggle' => true,
-            'help' => 'A form that records an intention to give (Admin > Donations, status "pledged"). It does not take payment.',
+            'help' => 'A form that records an intention to give (Admin > Donations, status "pledged"). It does not take payment. Visitors arriving from the donation panel (?amount=50&currency=USD) find the amount already filled in.',
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Make a pledge'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Make a [[pledge]]', 'help' => $hlHelp],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Tell us how you would like to give and we will follow up with you.'],
                 ['key' => 'note', 'label' => 'Notice (this is a record of intent, not a payment)', 'type' => 'textarea', 'rows' => 3, 'default' => 'This form records your intention to give. It is a pledge, not a payment: no money is taken here. We will contact you with the details to complete your gift.'],
+                ['key' => 'chips_label', 'label' => 'Quick amounts: label (the buttons come from Site-wide content > Donation panel)', 'type' => 'text', 'default' => 'Quick amounts'],
                 ['key' => 'name_label', 'label' => 'Field: name', 'type' => 'text', 'default' => 'Your name'],
                 ['key' => 'email_label', 'label' => 'Field: email', 'type' => 'text', 'default' => 'Email address'],
                 ['key' => 'phone_label', 'label' => 'Field: phone', 'type' => 'text', 'default' => 'Phone number'],
@@ -89,6 +101,7 @@ return [
                 ['key' => 'submit_label', 'label' => 'Submit button text', 'type' => 'text', 'default' => 'Submit my pledge'],
                 ['key' => 'sending_label', 'label' => 'Submit button text while sending', 'type' => 'text', 'default' => 'Sending...'],
                 ['key' => 'success', 'label' => 'Message after a successful pledge', 'type' => 'textarea', 'rows' => 2, 'default' => 'Thank you. Your pledge has been recorded (no payment has been taken). We will be in touch with the details.'],
+                ['key' => 'error_title', 'label' => 'Error summary: heading (shown above the form when something needs fixing)', 'type' => 'text', 'default' => 'Please check the following before sending'],
                 ['key' => 'err_required', 'label' => 'Error: required field is empty', 'type' => 'text', 'default' => 'Please fill in this field.'],
                 ['key' => 'err_email', 'label' => 'Error: invalid email', 'type' => 'text', 'default' => 'Please enter a valid email address.'],
                 ['key' => 'err_phone', 'label' => 'Error: invalid phone number', 'type' => 'text', 'default' => 'Please enter a valid phone number.'],
@@ -103,7 +116,9 @@ return [
             'key' => 'faq', 'label' => 'Frequently Asked Questions', 'toggle' => true,
             'help' => 'Questions come from Admin > FAQs (group "donate"); the list below is only used while that group has no active questions. The three live-site questions that promise mobile money / PayPal / Stripe payments, monthly giving and school-supply funding are left out until the foundation confirms them.',
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Frequently Asked Questions'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Frequently Asked [[Questions]]', 'help' => $hlHelp],
+                ['key' => 'image', 'label' => 'Photo beside the questions (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
                 ['key' => 'items', 'label' => 'Fallback questions (used only while Admin > FAQs has none for "donate")', 'type' => 'repeater', 'item_label' => 'question', 'add_label' => 'Add a question', 'max_rows' => 20,
                     'fields' => [
                         ['key' => 'question', 'label' => 'Question', 'type' => 'text', 'maxlength' => 300],

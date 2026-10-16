@@ -1,10 +1,12 @@
 <?php
 /**
- * Registry entry: INVOLVEMENT PAGE  (OWNER: B1 "web-core").
+ * Registry entry: INVOLVEMENT PAGE  (OWNER: B1 "web-core"; redesigned by B-INNER-A).
  * Default wording = the live Involvement page (docs/live-snapshot/involvement.txt). The live site sent people to two Google Forms
  * ("Partner With Us", "Volunteer With Us"); this rebuild has its own form (section "form") that stores requests in Admin > Involvement
  * and emails the notification address from Settings. The buttons below point at that form with the type pre-selected.
+ * Heading fields accept [[double brackets]] around the words that get the hand-drawn underline.
  */
+$hlHelp = 'Put [[double brackets]] around the words that get the hand-drawn underline.';
 return [
     'slug'  => 'involvement',
     'title' => 'Involvement',
@@ -21,27 +23,33 @@ return [
             'key' => 'hero', 'label' => 'Hero banner',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Join us in creating lasting change across Northern Uganda.'],
-                ['key' => 'title', 'label' => 'Main heading', 'type' => 'text', 'default' => 'Get Involved with Lumina Africa Foundation', 'maxlength' => 140],
+                ['key' => 'title', 'label' => 'Main heading', 'type' => 'text', 'default' => 'Get Involved with Lumina [[Africa Foundation]]', 'maxlength' => 140, 'help' => $hlHelp],
                 ['key' => 'lead', 'label' => 'Intro paragraph', 'type' => 'textarea', 'rows' => 4, 'default' => 'Whether you choose to volunteer, partner, or advocate, your contribution makes a real difference in transforming lives through healthcare access, educational empowerment, and digital inclusion.'],
                 ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Partner With Us'],
                 ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/involvement?type=partner#join', 'help' => '"/involvement?type=partner#join" opens the sign-up form below with "Partner" selected.'],
-                ['key' => 'image', 'label' => 'Background photo (optional)', 'type' => 'image', 'default' => '', 'help' => 'A wide photo darkened behind the heading. Leave empty for the plain navy banner.'],
+                ['key' => 'image', 'label' => 'Background photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-04.jpg',
+                    'alt' => 'Young people seated in the audience of an event',
+                    'help' => 'A wide photo darkened behind the heading. Remove it for the plain navy banner.'],
             ],
         ],
         [
             'key' => 'how', 'label' => 'How to get involved', 'toggle' => true,
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'How to Get Involved'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'How to Get [[Involved]]', 'help' => $hlHelp],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 5, 'default' => 'Join us in making a positive impact together. Our efforts can create a ripple effect in the community, inspiring others to take action, spreading awareness, and fostering a culture of collaboration and support. Together, we can achieve meaningful change and contribute to a brighter future for everyone.'],
                 ['key' => 'image', 'label' => 'Photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-04.jpg', 'alt' => 'Young people seated in the audience of an event'],
+                ['key' => 'image2', 'label' => 'Second photo (behind, optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
             ],
         ],
         [
             'key' => 'ways', 'label' => 'Ways to take part', 'toggle' => true, 'help' => 'The cards: volunteer, partner, advocate (or anything else you add).',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the cards (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading above the cards (optional)', 'type' => 'text', 'default' => '', 'help' => $hlHelp],
                 ['key' => 'items', 'label' => 'Cards', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a card', 'max_rows' => 8,
                     'fields' => [
-                        ['key' => 'icon', 'label' => 'Icon', 'type' => 'select', 'options' => ['heart' => 'Heart', 'users' => 'People', 'globe' => 'Globe', 'bell' => 'Megaphone / bell', 'star' => 'Star', 'book-open' => 'Book', 'briefcase' => 'Briefcase', 'award' => 'Award', 'shield' => 'Shield', 'layers' => 'Layers'], 'default' => 'heart'],
+                        ['key' => 'icon', 'label' => 'Icon', 'type' => 'select', 'options' => icon_options() + ['bell' => 'Megaphone / bell', 'layers' => 'Layers'], 'default' => 'heart'],
                         ['key' => 'title', 'label' => 'Title', 'type' => 'text'],
                         ['key' => 'tagline', 'label' => 'Short line', 'type' => 'text'],
                         ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 4],
@@ -65,7 +73,8 @@ return [
         [
             'key' => 'form', 'label' => 'Sign-up form', 'help' => 'Heading, labels and messages of the "Join us" form. Requests are stored in Admin > Involvement and emailed to the notification address in Settings.',
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Join Us Today'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Join Us [[Today]]', 'help' => $hlHelp],
                 ['key' => 'subtitle', 'label' => 'Sub-heading', 'type' => 'text', 'default' => 'Your support fuels transformation.'],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 4, 'default' => 'Becoming part of Lumina Africa Foundation means standing for hope, opportunity, and change. Whether you give your time, resources, or your voice, you are building the Africa we all dream of.'],
                 ['key' => 'name_label', 'label' => 'Field: name', 'type' => 'text', 'default' => 'Your Name'],
@@ -82,6 +91,7 @@ return [
                 ['key' => 'submit_label', 'label' => 'Submit button text', 'type' => 'text', 'default' => 'Join Us'],
                 ['key' => 'sending_label', 'label' => 'Submit button text while sending', 'type' => 'text', 'default' => 'Sending...'],
                 ['key' => 'success', 'label' => 'Message after a successful submission', 'type' => 'textarea', 'rows' => 2, 'default' => 'Thank you for getting involved. We will be in touch soon.'],
+                ['key' => 'error_title', 'label' => 'Error summary: heading (shown above the form when something needs fixing)', 'type' => 'text', 'default' => 'Please check the following before sending'],
                 ['key' => 'err_required', 'label' => 'Error: required field is empty', 'type' => 'text', 'default' => 'Please fill in this field.'],
                 ['key' => 'err_email', 'label' => 'Error: invalid email', 'type' => 'text', 'default' => 'Please enter a valid email address.'],
                 ['key' => 'err_phone', 'label' => 'Error: invalid phone number', 'type' => 'text', 'default' => 'Please enter a valid phone number.'],
@@ -91,9 +101,11 @@ return [
         ],
         [
             'key' => 'faq', 'label' => 'Frequently Asked Questions', 'toggle' => true,
-            'help' => 'The questions and answers shown on the involvement page.',
+            'help' => 'The questions and answers shown on the involvement page, next to a photo.',
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Frequently Asked Questions'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Frequently Asked [[Questions]]', 'help' => $hlHelp],
+                ['key' => 'image', 'label' => 'Photo beside the questions (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-03.jpg', 'alt' => 'A trainer points at a screen while young people wearing headphones work at computers'],
                 ['key' => 'items', 'label' => 'Questions', 'type' => 'repeater', 'item_label' => 'question', 'add_label' => 'Add a question', 'max_rows' => 20,
                     'fields' => [
                         ['key' => 'question', 'label' => 'Question', 'type' => 'text', 'maxlength' => 300],

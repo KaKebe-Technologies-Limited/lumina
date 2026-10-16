@@ -11,6 +11,23 @@
 // Design tokens exported as CSS custom properties (for inline styles / JS). Components use the Sass variables.
 :root {
     --navy: #{$navy};
+    --navy-light: #{$navy-light};
+    --cta: #{$cta};
+    --cta-hover: #{$cta-hover};
+    --orange-text: #{$orange-text};
+    --tint: #{$surface};
+    --tint-cool: #{$tint-cool};
+    --white: #{$white};
+    --line: #{$line};
+    --font-display: #{$font-display};
+    --radius-card: #{$radius-card};
+    --radius-photo: #{$radius-photo};
+    --radius-panel: #{$radius-panel};
+    --shadow-card: #{$shadow-card};
+    --shadow-lg: #{$shadow-lg};
+    --container: #{$container};
+    --header-h-shrunk: #{$header-h-shrunk};
+    --topbar-h: #{$topbar-h};
     --navy-dark: #{$navy-dark};
     --gold: #{$gold};
     --orange: #{$orange};
@@ -25,6 +42,9 @@
     --font-body: #{$font-body};
     --radius: #{$radius};
     --header-h: #{$header-h};
+    // the rounded top of a .sheet / page-hero sheet: smaller on phones, large from md up
+    --radius-sheet: 32px;
+    @include respond(md) { --radius-sheet: #{$radius-sheet}; }
 }
 
 @import 'base/reset';
@@ -35,10 +55,15 @@
 @import 'layout/container';
 @import 'layout/grid';
 @import 'layout/section';
+@import 'layout/topbar';
 @import 'layout/header';
 @import 'layout/footer';
 
 @import 'components/buttons';
+@import 'components/buttons-pill';
+@import 'components/section-head';
+@import 'components/sheet';
+@import 'components/hero-photo';
 @import 'components/cards';
 @import 'components/forms';
 @import 'components/hero';
@@ -57,6 +82,16 @@
 @import 'components/timeline';
 @import 'components/lightbox';
 @import 'components/filter-bar';
+@import 'components/feature-card';
+@import 'components/media';
+@import 'components/stat-band';
+@import 'components/band';
+@import 'components/carousel';
+@import 'components/quote-card';
+@import 'components/donate-panel';
+@import 'components/faq-split';
+@import 'components/partner-strip';
+@import 'components/video-modal';
 
 // ---- Page partials (one per page; owners in docs/ARCHITECTURE.md) ----
 @import 'pages/home';

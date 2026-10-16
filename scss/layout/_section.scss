@@ -7,12 +7,13 @@
     &--sm { padding-block: $space-6; @include respond(lg) { padding-block: $space-7; } }
     &--flush-top { padding-top: 0; }
     &--tint { background: $surface; }
+    &--cool { background: $tint-cool; }
+    &--spacious { padding-block: $space-9; @include respond(lg) { padding-block: $space-10; } }
     &--grey { background: $surface-alt; }
     &--navy {
         background: $navy;
         color: rgba($white, 0.9);
         h1, h2, h3, h4, .h2, .h3 { color: $white; }
-        .eyebrow { color: $gold; }
         .lead { color: rgba($white, 0.82); }
         a:not(.btn) { color: $gold; &:hover { color: $white; } }
     }
@@ -20,17 +21,11 @@
         background: $navy-dark;
         color: rgba($white, 0.9);
         h1, h2, h3, h4, .h2, .h3 { color: $white; }
-        .eyebrow { color: $gold; }
         .lead { color: rgba($white, 0.82); }
         a:not(.btn) { color: $gold; &:hover { color: $white; } }
     }
 
-    &__header {
-        max-width: 46rem;
-        margin-bottom: $space-7;
-        &--center { margin-inline: auto; text-align: center; }
-        > * + * { margin-top: $space-3; }
-    }
+    // .section__header is styled together with .section-head (components/_section-head.scss)
     &__footer {
         margin-top: $space-7;
         text-align: center;

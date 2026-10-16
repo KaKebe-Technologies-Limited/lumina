@@ -26,6 +26,8 @@ return [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => ''],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Privacy Policy', 'maxlength' => 140],
                 ['key' => 'lead', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 3, 'default' => 'How {site_name} collects, uses and protects the personal information you share with us through this website.'],
+                ['key' => 'image', 'label' => 'Banner background photo (optional)', 'type' => 'image', 'default' => '', 'alt' => '',
+                    'help' => 'Decorative background behind the title. Leave empty for the plain navy banner (recommended for a legal page).'],
             ],
         ],
         [

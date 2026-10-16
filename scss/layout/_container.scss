@@ -7,8 +7,12 @@
 // Page shell: footer sticks to the bottom on short pages
 .site-main {
     display: block;
+    overflow-x: clip;          // rotated photo stacks / carousels never create a horizontal scrollbar
 }
 
+// anchors (#pledge, #faq ...) land below the sticky header
+.section[id] { scroll-margin-top: calc(#{$header-h-shrunk} + 1rem); }
+
 body.has-sticky-header .site-main {
-    scroll-margin-top: $header-h;
+    scroll-margin-top: $header-h-shrunk;
 }

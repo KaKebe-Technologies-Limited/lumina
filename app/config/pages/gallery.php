@@ -23,6 +23,8 @@ return [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => ''],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Gallery', 'maxlength' => 140],
                 ['key' => 'lead', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 3, 'default' => 'Explore our latest events and initiatives in pictures.'],
+                ['key' => 'image', 'label' => 'Banner background photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-05.jpg', 'alt' => '',
+                    'help' => 'Decorative background behind the title (covered by a dark veil so the text stays readable). Clear it to get the plain navy banner.'],
             ],
         ],
         [
@@ -39,6 +41,8 @@ return [
                 ['key' => 'open_label', 'label' => 'Picture link: accessible label', 'type' => 'text', 'default' => 'View larger picture'],
                 ['key' => 'empty_title', 'label' => 'No pictures yet: heading', 'type' => 'text', 'default' => 'Pictures are coming soon'],
                 ['key' => 'empty_text', 'label' => 'No pictures yet: text', 'type' => 'textarea', 'rows' => 3, 'default' => 'We are preparing our gallery. Please check back soon to see our latest events and initiatives in pictures.'],
+                ['key' => 'empty_cta_label', 'label' => 'No pictures yet: button text (optional)', 'type' => 'text', 'default' => 'View Our Activities'],
+                ['key' => 'empty_cta_url', 'label' => 'No pictures yet: button link', 'type' => 'url', 'default' => '/activities'],
             ],
         ],
     ],

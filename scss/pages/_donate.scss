@@ -1,45 +1,56 @@
-// pages/_donate.scss - OWNED BY B1 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
-// Page-specific styles ONLY. Shared building blocks (.icon-tile .form-split ...) live in _home.scss.
+// pages/_donate.scss - B-INNER-A. Shared blocks (.ia-*) live at the top of _about.scss. Imported by main.scss.
 
 .page-donate {
+    // ways to give: feature cards, the CTA / copy button sits at the bottom
     .donate-way {
-        display: flex;
-        flex-direction: column;
-        gap: $space-3;
         min-width: 0;
         padding: $space-6 $space-5;
-        background: $white;
-        border: 1px solid $border;
-        border-radius: $radius-lg;
-        box-shadow: $shadow-sm;
-        h3 { margin-top: $space-2; }
         &__cta { margin-top: auto; padding-top: $space-3; }
     }
     .donate-details {
         padding: $space-4;
-        border-radius: $radius;
-        background: $surface;
-        border: 1px dashed $border-strong;
+        border-radius: $radius-card;
+        background: $tint-cool;
         font-size: $fs-sm;
         line-height: 1.7;
         overflow-wrap: anywhere;
         color: $ink;
     }
 
-    // "what your support does" cards
-    .donate-support__grid { display: grid; gap: $space-5; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    .donate-card {
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        background: $white;
-        border: 1px solid $border;
-        border-radius: $radius-lg;
-        box-shadow: $shadow-sm;
-        &__media img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
-        &__body { padding: $space-5; h3 { font-size: 1.25rem; } p { margin-top: $space-2; color: $ink-soft; } }
-    }
+    // "what your support does": cards with a photo (round chip on the edge) or an icon
+    .donate-support__grid .donate-card { text-align: left; }
+    .donate-support__grid > .card { height: auto; }
 
-    .donate-pledge { scroll-margin-top: $header-h; }
-    .donate-pledge .alert { align-items: flex-start; }
+    // pledge: notice on the navy panel + quick amounts
+    .donate-note {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-3;
+        padding: $space-4;
+        border: 1px solid rgba($white, 0.28);
+        border-radius: $radius-card;
+        background: rgba($white, 0.08);
+        font-size: $fs-sm;
+        line-height: 1.55;
+        color: rgba($white, 0.94);
+        .icon { flex: none; margin-top: 0.15rem; color: $gold; }
+    }
+    .donate-chips { gap: $space-2; }
+    .donate-chips__list { display: flex; flex-wrap: wrap; gap: $space-2; }
+    .donate-chip {
+        min-height: 2.75rem;
+        padding: 0.5rem 1.2rem;
+        border: 1px solid $ia-field-border;
+        border-radius: $radius-pill;
+        background: $white;
+        font-family: $font-heading;
+        font-size: $fs-sm;
+        font-weight: 600;
+        color: $navy;
+        cursor: pointer;
+        transition: background-color $t-fast ease, border-color $t-fast ease, color $t-fast ease;
+        &:hover { border-color: $navy; background: $tint-cool; }
+        &:focus-visible { outline: 3px solid $navy; outline-offset: 2px; }
+        &[aria-pressed='true'] { border-color: $navy; background: $navy; color: $white; }
+    }
 }

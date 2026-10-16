@@ -1,0 +1,27 @@
+// Full-bleed photo band with a dark overlay and centred copy (partials/band.php). Use --overlap when a .stat-band follows:
+// the band keeps extra bottom padding and the stat card is pulled up over it. White text on >= 0.62 navy-dark overlay.
+.band {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    place-items: center;
+    min-height: 26rem;
+    padding-block: $space-8;
+    color: $white;
+    text-align: center;
+    overflow: hidden;
+    background: $navy-dark;
+    @include respond(lg) { min-height: 32rem; }
+
+    &__bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: var(--focus, 50% 35%); }
+    &::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba($navy-dark, 0.66), rgba($navy-dark, 0.78)); }
+    &__inner { @include container($container-narrow + 120px); }
+    &__title { max-width: 20ch; margin-inline: auto; color: $white; font-size: fluid(2.1rem, '1.3rem + 3.2vw', 3.75rem); font-weight: 500; line-height: 1.12; }
+    &__text { max-width: 36rem; margin: $space-4 auto 0; font-size: fluid(1.02rem, '0.98rem + 0.3vw', 1.2rem); color: rgba($white, 0.92); }
+    &__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: $space-3; margin-top: $space-5; }
+    .eyebrow { margin-bottom: $space-3; }
+    &--overlap { padding-bottom: 9rem; @include respond(md) { padding-bottom: 11rem; } }
+}
+
+// the <section> that wraps a band (+ stat card): no section padding, only room below the overlapping stat card
+.section.band-section { padding-block: 0 $space-8; @include respond(lg) { padding-block: 0 $space-9; } }

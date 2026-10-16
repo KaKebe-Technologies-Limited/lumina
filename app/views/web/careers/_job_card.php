@@ -17,6 +17,6 @@ $closing = !empty($job['closing_date']) ? format_date($job['closing_date']) : ''
         </ul>
     </div>
     <div class="job-card__action">
-        <a class="btn btn--primary" href="<?= e($href) ?>"><?= e(content('careers', 'openings.card_button')) ?> <?= icon('arrow-right', 'icon--arrow') ?></a>
+        <a class="btn btn--cta btn--caps btn--sm" href="<?= e($href) ?>"><?= e(content('careers', 'openings.card_button')) ?><span class="visually-hidden">: <?= e($job['title']) ?></span></a>
     </div>
 </article>

@@ -1,9 +1,11 @@
 <?php
 /**
- * Registry entry: PROJECTS PAGE (list at /projects, detail at /projects/{slug})  (OWNER: B1 "web-core").
+ * Registry entry: PROJECTS PAGE (list at /projects, detail at /projects/{slug})  (OWNER: B1 "web-core"; redesigned by B-INNER-A).
  * The projects themselves (title, tagline, summary, body, image, status) are managed in Admin > Projects; this file holds the copy AROUND them.
  * Default wording = the live Projects page (docs/live-snapshot/projects.txt).
+ * Heading fields accept [[double brackets]] around the words that get the hand-drawn underline.
  */
+$hlHelp = 'Put [[double brackets]] around the words that get the hand-drawn underline.';
 return [
     'slug'  => 'projects',
     'title' => 'Projects',
@@ -20,17 +22,20 @@ return [
             'key' => 'hero', 'label' => 'Hero banner',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Main heading', 'type' => 'text', 'default' => 'Our Projects', 'maxlength' => 140],
+                ['key' => 'title', 'label' => 'Main heading', 'type' => 'text', 'default' => 'Our [[Projects]]', 'maxlength' => 140, 'help' => $hlHelp],
                 ['key' => 'lead', 'label' => 'Intro paragraph', 'type' => 'textarea', 'rows' => 5, 'default' => 'Lumina Africa Foundation implements structured and inclusive digital empowerment initiatives aimed at closing the digital access gap in Northern Uganda. Through practical, market-relevant skills training and employment linkages, our projects create tangible pathways to income generation, decent work, and long-term self-reliance for vulnerable youth.'],
                 ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Donate to Support Lumina Africa Foundation'],
                 ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '', 'help' => 'Leave empty to use the online donation link from Settings > Donations.'],
-                ['key' => 'image', 'label' => 'Background photo (optional)', 'type' => 'image', 'default' => '', 'help' => 'A wide photo darkened behind the heading. Leave empty for the plain navy banner.'],
+                ['key' => 'image', 'label' => 'Background photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg',
+                    'alt' => 'Young people seated at desks in a lecture hall',
+                    'help' => 'A wide photo darkened behind the heading. Remove it for the plain navy banner.'],
             ],
         ],
         [
             'key' => 'list', 'label' => 'Projects list', 'help' => 'The projects themselves come from Admin > Projects.',
             'fields' => [
-                ['key' => 'lead', 'label' => 'Statement above the list', 'type' => 'text', 'default' => 'We focus on translating digital access into real economic opportunity.'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the statement (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'lead', 'label' => 'Statement above the list', 'type' => 'text', 'default' => 'We focus on translating digital access into [[real economic opportunity]].', 'help' => $hlHelp],
                 ['key' => 'card_cta', 'label' => 'Link text on each project', 'type' => 'text', 'default' => 'Read more'],
                 ['key' => 'status_planned', 'label' => 'Status label: planned', 'type' => 'text', 'default' => 'Planned'],
                 ['key' => 'status_ongoing', 'label' => 'Status label: ongoing', 'type' => 'text', 'default' => 'Ongoing'],
@@ -44,7 +49,8 @@ return [
         [
             'key' => 'approach', 'label' => 'Our Approach', 'toggle' => true,
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our Approach'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our [[Approach]]', 'help' => $hlHelp],
                 ['key' => 'intro', 'label' => 'Intro', 'type' => 'text', 'default' => 'Across all programs, Lumina Africa Foundation operates with:'],
                 ['key' => 'items', 'label' => 'Practices', 'type' => 'repeater', 'item_label' => 'text', 'add_label' => 'Add a practice', 'max_rows' => 12,
                     'fields' => [['key' => 'text', 'label' => 'Practice', 'type' => 'text', 'maxlength' => 200]],
@@ -56,7 +62,8 @@ return [
                     ],
                 ],
                 ['key' => 'closing', 'label' => 'Closing statement', 'type' => 'textarea', 'rows' => 3, 'default' => 'We believe digital skills are not a luxury. They are a pathway to recovery, employment, and long-term resilience in post-conflict Northern Uganda.'],
-                ['key' => 'image', 'label' => 'Photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
+                ['key' => 'image', 'label' => 'Photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-03.jpg', 'alt' => 'A trainer points at a screen while young people wearing headphones work at computers'],
+                ['key' => 'image2', 'label' => 'Second photo (behind, optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
             ],
         ],
         [

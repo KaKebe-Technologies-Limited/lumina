@@ -5,11 +5,11 @@
 
     &__item {
         background: $white;
-        border: 1px solid $border;
-        border-radius: $radius;
+        border: 1px solid $line;
+        border-radius: $radius-lg;
         overflow: hidden;
-        transition: box-shadow $t-fast ease, border-color $t-fast ease;
-        &.is-open { border-color: $gold; box-shadow: $shadow-sm; }
+        transition: box-shadow $t-fast ease, border-color $t-fast ease, background-color $t-fast ease;
+        &.is-open { border-color: rgba($gold, 0.9); background: $white; box-shadow: $shadow-card; }
     }
     &__heading { margin: 0; font-size: inherit; }
     &__trigger {
@@ -26,8 +26,8 @@
         font-size: 1.05rem;
         font-weight: 600;
         color: $navy;
-        .icon { transition: transform $t-base ease; color: $orange-dark; }
-        &[aria-expanded='true'] .icon { transform: rotate(180deg); }
+        .icon { flex: none; width: 2rem; height: 2rem; padding: 0.4rem; border-radius: 50%; background: $tint-cool; transition: transform $t-base ease, background-color $t-fast ease; color: $navy; }
+        &[aria-expanded='true'] .icon { transform: rotate(180deg); background: $gold; }
         &:hover { background: $surface; }
     }
     &__panel { padding: 0 $space-5 $space-5; color: $ink-soft; > * + * { margin-top: $space-3; } }

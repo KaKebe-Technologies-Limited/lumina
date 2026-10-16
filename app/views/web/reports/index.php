@@ -1,6 +1,6 @@
 <?php
 /**
- * REPORTS & DOWNLOADS (/reports) - OWNED BY B7 "org-public".
+ * REPORTS & DOWNLOADS (/reports) - B-INNER-B restyle of the B7 view.
  * Vars: $documents (rows of the current page), $pagination, $everything (count of ALL public documents), $categories (category keys that have
  * documents), $years (years that have documents), $category / $year (active filter, '' / 0 = none), $filtered (bool).
  * Every visible string is read through content('reports', ...) so the owner can edit it in the admin (Pages > Reports & Downloads).
@@ -25,31 +25,43 @@ $countText = $count === 1
     : str_replace('{n}', (string) $count, (string) content('reports', 'list.count_many'));
 $contact = content_btn('reports', 'contact.cta');
 $empty = content_btn('reports', 'empty.cta');
+$empty2 = content_btn('reports', 'empty.cta2');
+$emptyActions = [];
+if ($empty['has']) {
+    $emptyActions[] = ['label' => $empty['label'], 'url' => $empty['url'], 'class' => 'btn--cta btn--caps'];
+}
+if ($empty2['has']) {
+    $emptyActions[] = ['label' => $empty2['label'], 'url' => $empty2['url'], 'class' => 'btn--outline btn--caps'];
+}
 ?>
 <?= partial('partials/page-hero', [
     'eyebrow' => content('reports', 'hero.eyebrow'),
     'title'   => content('reports', 'hero.title'),
     'lead'    => content('reports', 'hero.lead'),
-    'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt']] : null,
+    'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt'], 'focus' => '50% 45%'] : null,
+    'sheet'   => $everything === 0 ? 'tint' : 'white',
 ]) ?>
 
 <?php if ($everything === 0): ?>
-    <section class="section" id="reports-empty">
+    <section class="section section--tint" id="reports-empty">
         <div class="container container--narrow">
             <?= partial('partials/empty-state', [
                 'title'   => content('reports', 'empty.title'),
                 'text'    => content('reports', 'empty.text'),
                 'icon'    => 'file-text',
-                'actions' => $empty['has'] ? [['label' => $empty['label'], 'url' => $empty['url'], 'class' => 'btn--primary']] : [],
+                'actions' => $emptyActions,
             ]) ?>
         </div>
     </section>
 <?php else: ?>
     <?php section_begin('reports', 'list', ['labelledby' => 'documents-title']); ?>
-        <div class="reports-head">
-            <h2 id="documents-title"><?= e(content('reports', 'list.title')) ?></h2>
-            <p class="reports-head__count text-muted" aria-live="polite"><?= e($countText) ?></p>
-        </div>
+        <?= partial('partials/section-head', [
+            'eyebrow' => content('reports', 'list.eyebrow'),
+            'title'   => content('reports', 'list.title'),
+            'id'      => 'documents-title',
+            'align'   => 'center',
+        ]) ?>
+        <p class="reports-count" aria-live="polite"><?= icon('file-text', 'icon--sm') ?> <?= e($countText) ?></p>
 
         <?php if ($showFilter): ?>
             <form class="filter-bar" method="get" action="<?= e(url('reports')) ?>" aria-label="<?= e(content('reports', 'filters.legend')) ?>">
@@ -65,9 +77,9 @@ $empty = content_btn('reports', 'empty.cta');
                         'options' => $yearOptions, 'empty' => content('reports', 'filters.all_years'), 'value' => $year > 0 ? (string) $year : '',
                     ]) ?>
                 <?php endif; ?>
-                <button class="btn btn--primary" type="submit"><?= e(content('reports', 'filters.apply')) ?></button>
+                <button class="btn btn--primary btn--caps" type="submit"><?= e(content('reports', 'filters.apply')) ?></button>
                 <?php if ($filtered): ?>
-                    <a class="btn btn--ghost filter-bar__reset" href="<?= e(url('reports')) ?>"><?= e(content('reports', 'filters.reset')) ?></a>
+                    <a class="btn btn--ghost btn--caps filter-bar__reset" href="<?= e(url('reports')) ?>"><?= e(content('reports', 'filters.reset')) ?></a>
                 <?php endif; ?>
             </form>
         <?php endif; ?>
@@ -78,7 +90,7 @@ $empty = content_btn('reports', 'empty.cta');
                 'text'    => content('reports', 'no_results.text'),
                 'icon'    => 'search',
                 'actions' => trim((string) content('reports', 'no_results.cta_label')) !== ''
-                    ? [['label' => content('reports', 'no_results.cta_label'), 'url' => url('reports'), 'class' => 'btn--primary']] : [],
+                    ? [['label' => content('reports', 'no_results.cta_label'), 'url' => url('reports'), 'class' => 'btn--cta btn--caps']] : [],
             ]) ?>
         <?php else: ?>
             <div class="document-list">
@@ -95,13 +107,11 @@ $empty = content_btn('reports', 'empty.cta');
         <?php endif; ?>
     <?php section_end(); ?>
 
-    <?php section_begin('reports', 'contact', ['class' => 'section--tint', 'container' => 'container--narrow']); ?>
-        <div class="reports-contact text-center">
-            <h2><?= e(content('reports', 'contact.title')) ?></h2>
-            <?php if (trim((string) content('reports', 'contact.text')) !== ''): ?><p class="lead mt-3"><?= e(content('reports', 'contact.text')) ?></p><?php endif; ?>
-            <?php if ($contact['has']): ?>
-                <p class="mt-5"><a class="btn btn--primary btn--lg" href="<?= e($contact['url']) ?>"><?= e($contact['label']) ?></a></p>
-            <?php endif; ?>
-        </div>
+    <?php section_begin('reports', 'contact', ['bleed' => true, 'class' => 'section--band-wrap']); ?>
+        <?= partial('web/blog/_band', [
+            'title'   => content('reports', 'contact.title'),
+            'text'    => content('reports', 'contact.text'),
+            'actions' => [['label' => $contact['label'], 'url' => $contact['url'], 'external' => $contact['external']]],
+        ]) ?>
     <?php section_end(); ?>
 <?php endif; ?>

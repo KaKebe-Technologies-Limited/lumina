@@ -1,36 +1,54 @@
-// pages/_reports.scss - OWNED BY B7 "org-public" (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
-// Page-specific styles ONLY, scoped under .page-reports. Extends the shared .filter-bar and .document-row components.
+// pages/_reports.scss - B-INNER-B. Scoped under .page-reports. Pale filter panel with pill selects, rounded document rows with a navy file tile.
 
 .page-reports {
-    .reports-head {
+    .section-head { margin-bottom: $space-4; }
+    .reports-count {
         display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: $space-2 $space-5;
-        margin-bottom: $space-5;
-        &__count { font-size: $fs-sm; margin: 0; }
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: fit-content;
+        margin: 0 auto $space-6;
+        padding: 0.4rem 1.1rem;
+        border-radius: $radius-pill;
+        background: $tint-cool;
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        font-weight: 600;
+        color: $navy;
+        .icon { color: $orange-text; }
     }
 
     .filter-bar {
         align-items: flex-end;
         padding: $space-4 $space-5;
-        background: $surface;
-        border: 1px solid $border;
-        border-radius: $radius-lg;
+        background: $tint-cool;
+        border-radius: $radius-card;
         .field { flex: 1 1 12rem; max-width: 20rem; }
+        .field__label { font-family: $font-heading; font-size: $fs-xs; letter-spacing: 0.06em; text-transform: uppercase; color: $navy; }
+        .select { border-radius: $radius-pill; padding-left: 1.3rem; border-color: $control-border; }
         .btn { align-self: flex-end; }
     }
 
-    .document-row__cat { font-weight: 600; color: $navy; }
-    .document-row__type {
-        padding: 0 0.55rem;
-        border-radius: $radius-pill;
-        background: $surface-alt;
-        color: $ink;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-    }
+    .document-list { gap: $space-4; }
+    .document-row {
+        padding: $space-4 $space-5;
+        border-radius: $radius-card;
+        box-shadow: $shadow-sm;
+        &:hover { border-color: $gold; box-shadow: $shadow-card; }
 
-    .reports-contact { max-width: 40rem; margin-inline: auto; }
+        &__icon {
+            flex-direction: column;
+            gap: 2px;
+            width: 3.6rem;
+            height: 3.6rem;
+            border-radius: 16px;
+            background: $navy;
+            color: $gold;
+        }
+        &__ext { font-family: $font-heading; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; line-height: 1; color: $white; }
+        &__title { font-family: $font-display; font-size: 1.2rem; color: $navy; }
+        &__cat { font-weight: 600; color: $orange-text; }
+    }
+    .document-row__icon { display: inline-flex; }
 }

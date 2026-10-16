@@ -22,6 +22,8 @@ return [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => ''],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Latest Updates', 'maxlength' => 140],
                 ['key' => 'lead', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 3, 'default' => 'Stay informed about our workshops, events, and initiatives for community empowerment.'],
+                ['key' => 'image', 'label' => 'Banner background photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-04.jpg', 'alt' => '',
+                    'help' => 'Decorative background behind the title (covered by a dark veil so the text stays readable). Clear it to get the plain navy banner.'],
             ],
         ],
         [
@@ -30,6 +32,7 @@ return [
                 ['key' => 'sr_title', 'label' => 'Heading for screen readers (not shown on screen)', 'type' => 'text', 'default' => 'All posts', 'help' => 'Keeps a correct heading order above the post cards.'],
                 ['key' => 'filter_label', 'label' => 'Category filter: accessible label', 'type' => 'text', 'default' => 'Filter by category', 'help' => 'Read out by screen readers; not shown on screen.'],
                 ['key' => 'all_label', 'label' => 'Category filter: "all posts" button', 'type' => 'text', 'default' => 'All'],
+                ['key' => 'featured_label', 'label' => 'Small label on the newest post (large card)', 'type' => 'text', 'default' => 'Latest update', 'maxlength' => 40, 'help' => 'Leave empty to hide the label.'],
                 ['key' => 'empty_title', 'label' => 'No posts yet: heading', 'type' => 'text', 'default' => 'No updates yet'],
                 ['key' => 'empty_text', 'label' => 'No posts yet: text', 'type' => 'textarea', 'rows' => 3, 'default' => 'We have not published any updates yet. Please check back soon, or subscribe below to be told when we do.'],
                 ['key' => 'empty_category_text', 'label' => 'No posts in a category: text', 'type' => 'textarea', 'rows' => 2, 'default' => 'There are no updates in this category yet.'],
@@ -39,6 +42,7 @@ return [
         [
             'key' => 'subscribe', 'label' => 'Subscribe box', 'toggle' => true, 'help' => 'Newsletter sign-up shown under the list of posts.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Newsletter', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Subscribe for Updates'],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 4, 'default' => 'Stay informed about our latest events and news. We are continuously updating our offerings to ensure that you are always in the loop. Don’t miss out on the exciting activities and announcements that we have in store for you!'],
                 ['key' => 'placeholder', 'label' => 'Email box: placeholder', 'type' => 'text', 'default' => 'Your Email Address'],
@@ -49,6 +53,7 @@ return [
             'key' => 'gallery', 'label' => 'Gallery teaser', 'toggle' => true,
             'help' => 'A small strip of recent gallery pictures. It is hidden automatically until pictures have been added to the Gallery.',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'In pictures', 'maxlength' => 60],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Gallery'],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 5, 'default' => 'Explore our latest events and initiatives in pictures. Join us as we showcase a variety of community activities, highlights from recent gatherings, and behind-the-scenes moments that capture the essence of our organization. Whether it’s a memorable workshop, a lively festival, or a significant collaboration, we invite you to immerse yourself in these visual stories that reflect our commitment and vibrancy.'],
                 ['key' => 'button_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'View the gallery'],
@@ -69,6 +74,7 @@ return [
             'fields' => [
                 ['key' => 'back_label', 'label' => 'Link back to the list', 'type' => 'text', 'default' => 'Back to all updates'],
                 ['key' => 'by_label', 'label' => 'Author prefix', 'type' => 'text', 'default' => 'By'],
+                ['key' => 'read_time', 'label' => 'Reading time', 'type' => 'text', 'default' => '{n} min read', 'maxlength' => 40, 'help' => '{n} is replaced by the estimated minutes (about 200 words a minute). Leave empty to hide it.'],
                 ['key' => 'share_label', 'label' => 'Share heading', 'type' => 'text', 'default' => 'Share this update'],
                 ['key' => 'share_on', 'label' => 'Share link: accessible label', 'type' => 'text', 'default' => 'Share on {network}', 'help' => '{network} is replaced by Facebook, X, LinkedIn or WhatsApp.'],
                 ['key' => 'copy_label', 'label' => 'Copy-link button', 'type' => 'text', 'default' => 'Copy link'],

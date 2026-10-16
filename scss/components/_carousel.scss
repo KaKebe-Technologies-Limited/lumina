@@ -1,0 +1,48 @@
+// Card carousel: CSS scroll-snap track + prev/next buttons (assets/js/main.js, [data-carousel]). Works as a plain swipeable /
+// scrollable row without JS (buttons are shown only when JS runs). partials/carousel.php builds the markup.
+.carousel {
+    position: relative;
+
+    &__nav { display: none; flex: none; gap: $space-2; .js & { display: flex; } &[hidden] { display: none; } }
+    &__btn {
+        display: grid;
+        place-items: center;
+        width: 2.9rem;
+        height: 2.9rem;
+        padding: 0;
+        border: 1px solid $border-strong;
+        border-radius: 50%;
+        background: $white;
+        color: $navy;
+        transition: background-color $t-fast ease, color $t-fast ease, border-color $t-fast ease, opacity $t-fast ease;
+        &:hover:not(:disabled) { background: $navy; border-color: $navy; color: $white; }
+        &:disabled { opacity: 0.4; cursor: default; }
+    }
+
+    &__track {
+        display: flex;
+        gap: $space-5;
+        margin-inline: -0.5rem;
+        padding: 0.5rem 0.5rem $space-6;          // room for card shadows and the overlapping chip
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        scroll-padding-inline: 0.5rem;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        &::-webkit-scrollbar { display: none; }
+        &:focus-visible { @include focus-ring($navy, 2px); border-radius: $radius-card; }
+    }
+    &__slide {
+        flex: 0 0 #{'min(86%, 22rem)'};
+        display: flex;
+        scroll-snap-align: start;
+        > * { width: 100%; }
+        @include respond(md) { flex-basis: calc((100% - #{$space-5}) / 2); }
+        @include respond(lg) { flex-basis: calc((100% - #{$space-5 * 2}) / 3); }
+    }
+    // all slides fit: JS adds .is-static and the buttons disappear
+    &.is-static &__nav { display: none; }
+    // a footer line below the track (e.g. "View all programs")
+    &__foot { margin-top: $space-2; text-align: center; }
+}

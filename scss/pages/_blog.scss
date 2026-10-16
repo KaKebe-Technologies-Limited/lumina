@@ -1,135 +1,508 @@
-// pages/_blog.scss - OWNED BY B2 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
-// Blog index + post. Also holds the pieces the Activities pages reuse (.subscribe-box, .share, .post*, .teaser, the gallery strip):
-// those rules are scoped to BOTH page classes so nothing leaks to other pages.
+// pages/_blog.scss - B-INNER-B (inner pages group B). Imported by main.scss BEFORE the other inner-B partials, so it also holds the
+// shared pieces they reuse: filter pills, empty states, card extras (photo placeholder, tag, date chip), the navy newsletter panel,
+// the share row, reading typography, the post-meta chips, the gallery tiles and the "notice hero" used by the error / unsubscribe pages.
+// New components have page-specific names (.post-card, .subscribe-box, .gallery-tile, .story-tile ...) and are NOT scoped; the
+// overrides of SHARED classes (.pills, .empty-state, .section--*) are scoped to the inner-B body classes below.
 
-.page-blog,
-.page-activities {
-    // ---- newsletter box (web/blog/_subscribe.php) -----------------------------------------------------------------
-    .subscribe-box {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: $space-5;
-        align-items: center;
-        padding: $space-6 $space-5;
-        border-radius: $radius-xl;
-        color: rgba($white, 0.88);
-        background:
-            radial-gradient(28rem 14rem at 95% 0%, rgba($orange-accent, 0.32), transparent 60%),
-            radial-gradient(22rem 12rem at 0% 100%, rgba($gold, 0.22), transparent 60%),
-            $navy;
-        @include respond(md) { padding: $space-7; }
-        @include respond(lg) { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: $space-7; }
+// form-control outline that reaches 3:1 on white (the shared $border-strong is only 1.7:1)
+$control-border: #868F9C;
 
-        &__title { color: $white; font-size: fluid(1.5rem, '1.2rem + 1.2vw', 2.2rem); }
-        &__text { margin-top: $space-3; max-width: 40rem; color: rgba($white, 0.86); }
-        &__form {
-            display: flex;
-            flex-direction: column;
-            gap: $space-3;
-            @include respond(sm) { flex-direction: row; align-items: stretch; }
-            .input { flex: 1; min-width: 0; border-color: transparent; }
-            .btn { flex: none; }
-        }
+$inner-b: '.page-blog, .page-news, .page-activities, .page-gallery, .page-team, .page-partners, .page-reports, .page-events, .page-stories, .page-privacy, .is-custom, .is-error, .is-unsubscribe';
+
+// ---- reading typography (articles, event / story / custom pages, privacy notice) ---------------------------------------
+@mixin reading-prose {
+    max-width: none;
+    font-size: fluid(1.0625rem, '1rem + 0.25vw', 1.1875rem);
+    line-height: 1.8;
+    color: $ink;
+    overflow-wrap: anywhere;
+
+    > * + * { margin-top: 1.35em; }
+    h2 { margin-top: 2.2em; font-size: fluid(1.6rem, '1.3rem + 1vw', 2.2rem); }
+    h3 { margin-top: 1.9em; font-size: fluid(1.3rem, '1.15rem + 0.5vw', 1.65rem); }
+    h4 { margin-top: 1.7em; }
+    h2 + *, h3 + *, h4 + * { margin-top: 0.7em; }
+    ul, ol { padding-left: 1.5em; }
+    li + li { margin-top: 0.5em; }
+    li::marker { color: $cta; font-weight: 700; }
+    a {
+        color: $orange-text;
+        font-weight: 500;
+        text-decoration: underline;
+        text-decoration-color: rgba($gold, 0.95);
+        text-decoration-thickness: 2px;
+        text-underline-offset: 0.22em;
+        &:hover { color: $navy; text-decoration-color: $navy; }
     }
-
-    // ---- share row (web/blog/_share.php) ---------------------------------------------------------------------------
-    .share {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: $space-3 $space-5;
-        margin-top: $space-7;
-        padding-top: $space-5;
-        border-top: 1px solid $border;
-
-        &__title {
-            font-family: $font-heading;
-            font-size: $fs-xs;
-            font-weight: 600;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: $ink-soft;
-        }
-        &__list { display: flex; flex-wrap: wrap; gap: $space-2; }
-        &__link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.45rem;
-            min-width: 2.75rem;
-            height: 2.75rem;
-            padding: 0 0.9rem;
-            border: 1px solid $border-strong;
-            border-radius: $radius-pill;
-            background: $white;
-            color: $navy;
-            font-family: inherit;
-            font-size: $fs-sm;
-            font-weight: 600;
-            text-decoration: none;
-            cursor: pointer;
-            transition: background-color $t-fast ease, color $t-fast ease, border-color $t-fast ease;
-            &:hover { background: $navy; border-color: $navy; color: $white; }
-            &.is-copied { background: $success-bg; border-color: $success; color: $success; }
-        }
+    blockquote {
+        position: relative;
+        padding: $space-5 $space-5 $space-5 $space-6;
+        border: 0;
+        border-radius: $radius-card;
+        background: $tint-cool;
+        font-size: fluid(1.15rem, '1.05rem + 0.5vw', 1.45rem);
+        font-style: normal;
+        line-height: 1.5;
+        color: $navy;
+        &::before { content: ''; position: absolute; left: 0; top: 1.25rem; bottom: 1.25rem; width: 4px; border-radius: 4px; background: $gold; }
     }
-
-    // ---- article / activity body -------------------------------------------------------------------------------------
-    .post {
-        &__cover {
-            margin-bottom: $space-6;
-            img { width: 100%; height: auto; max-height: 34rem; object-fit: cover; border-radius: $radius-lg; box-shadow: $shadow; }
-        }
-        &__excerpt { margin-bottom: $space-5; font-weight: 500; color: $navy; }
-        &__body { max-width: none; font-size: $fs-md; line-height: 1.75; }
-        &__body.prose > * + * { margin-top: 1.25em; }
-        &__body.prose h2 { font-size: fluid(1.5rem, '1.2rem + 1vw', 2rem); }
-        &__body.prose h3 { font-size: fluid(1.2rem, '1.05rem + 0.5vw', 1.5rem); }
-        &__back { margin-top: $space-6; }
-    }
-
-    // older / newer navigation
-    .post-nav {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: $space-4;
-        margin-top: $space-7;
-        @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-
-        &__link {
-            display: flex;
-            flex-direction: column;
-            gap: $space-1;
-            padding: $space-4 $space-5;
-            border: 1px solid $border;
-            border-radius: $radius;
-            background: $white;
-            text-decoration: none;
-            color: $navy;
-            transition: border-color $t-fast ease, box-shadow $t-fast ease;
-            &:hover { border-color: $gold; box-shadow: $shadow-sm; }
-            &--newer { text-align: right; align-items: flex-end; @include respond(md) { grid-column: 2; } }
-        }
-        &__label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: $orange-dark; }
-        &__title { font-family: $font-heading; font-weight: 600; line-height: 1.3; }
-    }
-
-    // contact teaser
-    .teaser { .lead { max-width: 36rem; margin-inline: auto; } }
-
-    // small gallery strip under the blog list / activities story
-    .gallery-grid--strip {
-        grid-template-columns: repeat(auto-fit, minmax(8.5rem, 11rem));
-        justify-content: center;
-    }
-    .gallery-grid > li { display: block; min-width: 0; }
+    img { height: auto; border-radius: $radius-photo; box-shadow: $shadow-card; }
+    figure { margin-block: 2em; }
+    hr { height: 1px; margin-block: 2.5em; border: 0; background: $line; }
+    table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+    pre, code { font-family: $font-mono; font-size: 0.9em; }
+    pre { overflow-x: auto; padding: $space-4; border-radius: $radius; background: $surface; }
 }
 
+.post__body.prose,
+.event-detail__body.prose,
+.story-detail .prose,
+.custom-page__body.prose,
+.legal__body .prose,
+.story-split__body.prose { @include reading-prose; }
+
+// ---- filter pills --------------------------------------------------------------------------------------------------------
+#{$inner-b} {
+    .pills {
+        gap: $space-2;
+        margin-bottom: $space-6;
+        padding: 0;
+        list-style: none;
+        &--center { justify-content: center; }
+    }
+    .news-filter .pills { margin-bottom: $space-6; }
+    .pills__item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 2.75rem;
+        padding: 0.55rem 1.3rem;
+        border-color: $line;
+        background: $white;
+        box-shadow: $shadow-sm;
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        transition: background-color $t-fast ease, border-color $t-fast ease, color $t-fast ease, box-shadow $t-base ease;
+        &:hover { border-color: $navy; background: $white; color: $navy; box-shadow: $shadow; }
+        &.is-active, &.is-active:hover { border-color: $navy; background: $navy; color: $white; box-shadow: 0 8px 18px rgba($navy-dark, 0.25); }
+        &:focus-visible { @include focus-ring; }
+    }
+    .pills__count {
+        display: inline-grid;
+        place-items: center;
+        min-width: 1.45rem;
+        height: 1.45rem;
+        padding: 0 0.4rem;
+        border-radius: $radius-pill;
+        background: rgba($navy, 0.08);
+        font-size: 0.7rem;
+        line-height: 1;
+    }
+    .pills__item.is-active .pills__count { background: rgba($white, 0.2); }
+
+    // below lg the title / intro run across the whole banner: a stronger, even veil keeps white text above 4.5:1 on the photos
+    .page-hero--image::before { @include respond-down(lg) { background: linear-gradient(180deg, rgba($navy-dark, 0.8), rgba($navy-dark, 0.72)); } }
+
+    // 44px touch targets for the small pill buttons and the "read more" links of the cards
+    main .btn--sm { min-height: 2.75rem; }
+    .card__footer .link-arrow { display: inline-flex; align-items: center; min-height: 2.75rem; }
+
+    // ---- sections used by the inner-B views ------------------------------------------------------------------------------
+    .section--band-wrap { padding-block: 0; }
+    .section--panel { padding-block: $space-7; @include respond(lg) { padding-block: $space-8; } }
+    .section--teaser { padding-block: $space-8; @include respond(lg) { padding-block: $space-9; } }
+
+    // ---- empty states: a warm card with a round navy icon, never a dashed box -------------------------------------------
+    .empty-state {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        padding: $space-8 $space-5;
+        border: 1px solid $line;
+        border-radius: $radius-panel;
+        background: $white;
+        box-shadow: $shadow-card;
+        color: $ink-soft;
+        &::before, &::after { content: ''; position: absolute; z-index: -1; border-radius: 50%; pointer-events: none; }
+        &::before { top: -4.5rem; right: -3.5rem; width: 14rem; height: 14rem; background: rgba($gold, 0.2); }
+        &::after { bottom: -6rem; left: -4rem; width: 15rem; height: 15rem; background: $tint-cool; }
+        @include respond(md) { padding: $space-9 $space-7; }
+
+        &__icon {
+            display: inline-grid;
+            place-items: center;
+            width: 5.25rem;
+            height: 5.25rem;
+            margin-bottom: $space-4;
+            border-radius: 50%;
+            background: $navy;
+            color: $gold;
+            box-shadow: 0 0 0 8px rgba($gold, 0.22);
+        }
+        &__title { font-family: $font-display; font-size: fluid(1.6rem, '1.3rem + 1.2vw', 2.2rem); color: $navy; }
+        &__text { max-width: 36rem; margin-top: $space-3; font-size: $fs-base; line-height: 1.65; }
+        &__actions { margin-top: $space-6; }
+    }
+}
+
+// ---- card extras: photo placeholder tile, category tag, date chip ----------------------------------------------------------
+.card__media--ph {
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(18rem 10rem at 88% 8%, rgba($navy-light, 0.95), transparent 62%),
+        radial-gradient(14rem 9rem at 0% 100%, rgba($gold, 0.16), transparent 60%),
+        $navy;
+}
+.card__ph {
+    display: grid;
+    place-items: center;
+    width: 5rem;
+    height: 5rem;
+    border: 1.5px solid rgba($gold, 0.55);
+    border-radius: 50%;
+    background: rgba($white, 0.06);
+    color: $gold;
+}
+.card__tag {
+    position: absolute;
+    top: $space-4;
+    left: $space-4;
+    z-index: 1;
+    max-width: calc(100% - 2rem);
+    padding: 0.3rem 0.9rem;
+    border-radius: $radius-pill;
+    background: $white;
+    box-shadow: $shadow-sm;
+    font-family: $font-heading;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: $navy;
+    @include truncate;
+}
+.card__chip--date {
+    top: -1.95rem;
+    flex-direction: column;
+    gap: 3px;
+    width: 3.9rem;
+    height: 3.9rem;
+    line-height: 1;
+    text-align: center;
+}
+.card__chip-day { font-family: $font-display; font-size: 1.35rem; font-weight: 700; color: $gold; }
+.card__chip-month { font-family: $font-heading; font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: $white; }
+.card__chip--date.card__chip { display: flex; align-items: center; justify-content: center; }
+.card__meta-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+.card__body--chip .card__meta { min-height: 1.2rem; }
+
+// ---- blog / news / press listing: the newest post as a large feature card, then the grid ----------------------------------
+.post-card {
+    box-shadow: $shadow-card;
+    .card__title { font-size: fluid(1.25rem, '1.1rem + 0.45vw', 1.5rem); }
+
+    &--feature {
+        height: auto;
+        border-radius: $radius-panel;
+        @include respond(lg) {
+            flex-direction: row;
+            min-height: 27rem;
+            // the photo fills the row height without driving it (a tall photo must not stretch the card)
+            .card__media { flex: 0 0 52%; aspect-ratio: auto; min-height: 100%; img { position: absolute; inset: 0; } }
+            .card__body { justify-content: center; gap: $space-4; padding: $space-8 $space-7; }
+        }
+        .card__body { padding: $space-6 $space-5; }
+        .card__title { font-size: fluid(1.6rem, '1.2rem + 1.5vw', 2.5rem); line-height: 1.15; }
+        .card__text { font-size: $fs-base; line-height: 1.65; @include line-clamp(5); }
+        .card__footer { margin-top: $space-3; padding-top: 0; }
+        .post-card__badge { margin-bottom: 0; color: $orange-text; }
+    }
+}
+.post-card--feature + .post-grid { margin-top: $space-7; @include respond(lg) { margin-top: $space-8; } }
+// one or two cards: keep them a normal width and centred instead of leaving empty grid columns
+.post-grid--n1 { @include respond(md) { grid-template-columns: minmax(0, 26rem); justify-content: center; } }
+.post-grid--n2 { @include respond(md) { grid-template-columns: repeat(2, minmax(0, 26rem)); justify-content: center; } }
+
+// ---- newsletter panel (web/blog/_subscribe.php): deep navy, rounded, gold pill button ---------------------------------------
+.subscribe-box {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: $space-5;
+    align-items: center;
+    overflow: hidden;
+    padding: $space-7 $space-5;
+    border-radius: $radius-panel;
+    color: rgba($white, 0.9);
+    background:
+        radial-gradient(30rem 16rem at 92% 0%, rgba($navy-light, 0.85), transparent 62%),
+        radial-gradient(22rem 12rem at 0% 100%, rgba($gold, 0.14), transparent 60%),
+        $navy;
+    @include respond(md) { padding: $space-8 $space-7; }
+    @include respond(lg) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: $space-7; }
+
+    .eyebrow { color: rgba($white, 0.92); margin-bottom: $space-3; }
+    &__title { color: $white; font-size: fluid(1.7rem, '1.3rem + 1.6vw', 2.6rem); }
+    &__text { max-width: 38rem; margin-top: $space-3; color: rgba($white, 0.88); }
+    &__form {
+        display: flex;
+        flex-direction: column;
+        gap: $space-3;
+        @include respond(sm) { flex-flow: row wrap; align-items: stretch; }
+        .input { flex: 1 1 14rem; min-width: 0; min-height: 3.4rem; padding-inline: 1.5rem; border-color: transparent; border-radius: $radius-pill; }
+        .btn { flex: none; }
+    }
+}
+
+// ---- share row (web/blog/_share.php) -------------------------------------------------------------------------------------------
+.share {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-3 $space-5;
+    margin-top: $space-7;
+    padding-top: $space-5;
+    border-top: 1px solid $line;
+
+    &__title {
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: $navy;
+    }
+    &__list { display: flex; flex-wrap: wrap; gap: $space-2; margin: 0; padding: 0; list-style: none; }
+    &__link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        min-width: 2.75rem;
+        height: 2.75rem;
+        padding: 0 0.9rem;
+        border: 1px solid $border-strong;
+        border-radius: $radius-pill;
+        background: $white;
+        color: $navy;
+        font-family: inherit;
+        font-size: $fs-sm;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color $t-fast ease, color $t-fast ease, border-color $t-fast ease;
+        &:hover { background: $navy; border-color: $navy; color: $white; }
+        &:focus-visible { @include focus-ring; }
+        &.is-copied { background: $success-bg; border-color: $success; color: $success; }
+    }
+}
+
+// ---- article / activity shell ----------------------------------------------------------------------------------------------------
+.post {
+    &__cover {
+        margin: 0 0 $space-6;
+        img {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            max-height: 34rem;
+            object-fit: cover;
+            object-position: 50% 30%;
+            border-radius: $radius-photo;
+            box-shadow: $shadow-card;
+        }
+    }
+    &__excerpt {
+        margin: 0 0 $space-6;
+        padding-bottom: $space-6;
+        border-bottom: 1px solid $line;
+        font-family: $font-display;
+        font-size: fluid(1.25rem, '1.1rem + 0.6vw', 1.65rem);
+        font-weight: 500;
+        line-height: 1.45;
+        color: $navy;
+    }
+    &__back { margin-top: $space-6; }
+}
+
+// date / author / reading-time chips above an article
+.post-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2 $space-3;
+    margin: 0 0 $space-6;
+    padding: 0;
+    list-style: none;
+    li {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 1rem;
+        border-radius: $radius-pill;
+        background: $tint-cool;
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        font-weight: 600;
+        color: $navy;
+    }
+    .icon { color: $orange-text; }
+}
+
+// older / newer navigation
+.post-nav {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: $space-4;
+    margin-top: $space-7;
+    @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    &__link {
+        display: flex;
+        flex-direction: column;
+        gap: $space-1;
+        padding: $space-4 $space-5;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        background: $white;
+        text-decoration: none;
+        color: $navy;
+        transition: border-color $t-fast ease, box-shadow $t-base ease, transform $t-base $ease;
+        &:hover { border-color: $gold; box-shadow: $shadow-card; transform: translateY(-2px); }
+        &:focus-visible { @include focus-ring; }
+        &--newer { align-items: flex-end; text-align: right; @include respond(md) { grid-column: 2; } }
+    }
+    &__label { display: inline-flex; align-items: center; gap: 0.4rem; font-family: $font-heading; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: $orange-text; }
+    &__title { font-family: $font-display; font-size: 1.1rem; font-weight: 600; line-height: 1.3; }
+}
+
+// small "talk to us" teaser
+.teaser {
+    &__icon { display: inline-grid; place-items: center; width: 4rem; height: 4rem; margin-bottom: $space-4; border-radius: 50%; background: $navy; color: $gold; box-shadow: 0 0 0 7px rgba($gold, 0.22); }
+    .lead { max-width: 36rem; margin-inline: auto; }
+}
+
+// ---- gallery tiles: masonry (keeps proportions, no cropped faces) and a small square strip -----------------------------------------
+.gallery-masonry {
+    column-count: 2;
+    column-gap: $space-3;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    @include respond(md) { column-count: 3; column-gap: $space-4; }
+    @include respond(xl) { column-count: 4; }
+}
+.gallery-tile {
+    display: block;
+    min-width: 0;
+    &--masonry { break-inside: avoid; margin-bottom: $space-3; @include respond(md) { margin-bottom: $space-4; } }
+
+    &__link {
+        position: relative;
+        display: block;
+        overflow: hidden;
+        border-radius: $radius-card;
+        background: $surface-alt;
+        box-shadow: $shadow-sm;
+        cursor: zoom-in;
+        transition: box-shadow $t-base ease;
+        img { display: block; width: 100%; height: auto; transition: transform 600ms $ease; }
+        &:hover { box-shadow: $shadow-lg; }
+        &:hover img { transform: scale(1.04); }
+        &:focus-visible { @include focus-ring; }
+        @include reduced-motion { &:hover img { transform: none; } }
+    }
+    &__caption {
+        position: absolute;
+        inset: auto 0 0 0;
+        padding: 2.75rem $space-4 $space-3;
+        background: linear-gradient(transparent, rgba($navy-dark, 0.9));
+        color: $white;
+        font-size: $fs-xs;
+        line-height: 1.4;
+        transition: opacity $t-base ease, transform $t-base ease;
+        // always readable on touch screens; revealed on hover / focus from lg
+        @include respond(lg) { opacity: 0; transform: translateY(6px); }
+    }
+    &__link:hover &__caption, &__link:focus-visible &__caption { opacity: 1; transform: none; }
+
+    &--strip &__link { aspect-ratio: 1; img { height: 100%; object-fit: cover; object-position: 50% 25%; } }
+}
+.gallery-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space-3;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    @include respond(md) { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 12.5rem)); justify-content: center; gap: $space-4; }
+}
+
+// the shared lightbox overlay (appended to <body> by assets/js/main.js) gets the same rounded look on the gallery pages
+.page-gallery, .page-blog, .page-activities {
+    .lightbox { background: rgba($navy-dark, 0.95); }
+    .lightbox__img { border-radius: $radius-card; }
+    .lightbox__caption { max-width: 40rem; font-size: $fs-sm; }
+    .lightbox__btn { &:focus-visible { @include focus-ring($gold); } }
+}
+
+// ---- notice hero: error pages, maintenance and the unsubscribe page share it -----------------------------------------------------
+.notice-hero {
+    &__top {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        padding: $space-8 0 calc(var(--radius-sheet) + #{$space-7});
+        text-align: center;
+        color: rgba($white, 0.92);
+        background:
+            radial-gradient(46rem 24rem at 96% 10%, rgba($navy-light, 0.75), transparent 64%),
+            radial-gradient(30rem 18rem at 0% 100%, rgba($gold, 0.12), transparent 60%),
+            $navy-dark;
+        @include respond(lg) { padding-top: $space-9; }
+        &::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -1px;
+            z-index: 1;
+            height: var(--radius-sheet);
+            border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+            background: $white;
+        }
+        > .container { position: relative; z-index: 2; }
+    }
+    &__icon {
+        display: inline-grid;
+        place-items: center;
+        width: 5.5rem;
+        height: 5.5rem;
+        margin-bottom: $space-3;
+        border: 1.5px solid rgba($gold, 0.6);
+        border-radius: 50%;
+        background: rgba($white, 0.06);
+        color: $gold;
+    }
+    &__title { max-width: 20ch; margin: $space-2 auto 0; font-size: fluid(2.1rem, '1.4rem + 2.8vw', 3.6rem); line-height: 1.12; color: $white; }
+    &__text { max-width: 36rem; margin: $space-4 auto 0; font-size: fluid(1.08rem, '1rem + 0.4vw', 1.3rem); line-height: 1.55; color: rgba($white, 0.9); }
+    &__buttons, &__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: $space-3; margin-top: $space-6; }
+    &__body { min-height: $space-7; padding: 0 0 $space-8; text-align: center; &:empty { display: none; } }
+    &__actions { margin-top: 0; }
+}
+
+// ---- blog page-specific --------------------------------------------------------------------------------------------------------------
 .page-blog {
     // article header: long headlines need more room than the standard banner allows
-    &.is-post .page-hero__title { max-width: 30ch; font-size: fluid(1.9rem, '1.4rem + 2.2vw', 3rem); }
-    &.is-post .page-hero__lead { font-size: $fs-md; }
-    &.is-post .eyebrow { margin-bottom: $space-2; }
-
-    .pills { margin-bottom: $space-6; }
+    &.is-post .page-hero__title { max-width: 30ch; }
 }
+.is-post .page-hero__title,
+.is-activity .page-hero__title,
+.is-detail .page-hero__title { max-width: 30ch; font-size: fluid(1.9rem, '1.4rem + 2.2vw', 3.1rem); }
+.is-post .page-hero__lead,
+.is-activity .page-hero__lead,
+.is-detail .page-hero__lead { font-size: $fs-md; }

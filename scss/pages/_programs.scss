@@ -1,24 +1,22 @@
-// pages/_programs.scss - OWNED BY B1 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
-// Page-specific styles ONLY. Shared building blocks (.callout .checklist .home-photo .icon-tile .principle ...) live in _home.scss.
+// pages/_programs.scss - B-INNER-A. Shared blocks (.ia-*) live at the top of _about.scss. Imported by main.scss.
 
 .page-programs {
-    .programs-accountability__box {
-        display: grid;
-        gap: $space-6;
-        align-items: center;
-        @include respond(lg) { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: $space-8; }
-    }
+    // accountability: practices in a white rounded card beside the heading
     .programs-accountability__list {
-        padding: $space-6;
+        padding: $space-5;
         background: $white;
-        border: 1px solid $border;
-        border-radius: $radius-lg;
-        box-shadow: $shadow-sm;
-        .checklist { font-size: $fs-md; }
+        border: 1px solid $line;
+        border-radius: $radius-panel;
+        box-shadow: $shadow-card;
+        @include respond(md) { padding: $space-6; }
+        .ia-checklist { font-size: $fs-md; }
     }
     .programs-accountability__intro { margin-bottom: $space-4; font-family: $font-heading; font-weight: 600; color: $navy; }
 
-    // single-column layout of the detail page when the program has no image
-    .split--single { @include respond(md) { grid-template-columns: minmax(0, 1fr); } }
+    // impact: figures card under the text + photo stack
+    .programs-impact__stats { margin-top: $space-7; @include respond(lg) { margin-top: $space-8; } }
+
+    // detail page
     .programs-detail .prose { max-width: none; }
+    .programs-detail .ia-photo img { aspect-ratio: 4 / 3; }
 }

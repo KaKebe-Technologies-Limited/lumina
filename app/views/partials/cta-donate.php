@@ -21,10 +21,10 @@ $secondary = content_btn('global', 'cta.secondary');
             <?php if ($text !== ''): ?><p class="cta__text"><?= e($text) ?></p><?php endif; ?>
             <div class="cta__actions">
                 <?php if ($primaryLabel !== '' && $primaryHref !== ''): ?>
-                    <a class="btn btn--accent btn--lg" href="<?= e($primaryHref) ?>"<?= is_external($primaryHref) ? ' target="_blank" rel="noopener noreferrer"' : '' ?>><?= icon('heart') ?> <?= e($primaryLabel) ?></a>
+                    <a class="btn btn--cta btn--caps btn--lg" href="<?= e($primaryHref) ?>"<?= is_external($primaryHref) ? ' target="_blank" rel="noopener noreferrer"' : '' ?>><?= e($primaryLabel) ?></a>
                 <?php endif; ?>
                 <?php if ($secondary['has']): ?>
-                    <a class="btn btn--outline-light btn--lg" href="<?= e($secondary['url']) ?>"><?= e($secondary['label']) ?></a>
+                    <a class="btn btn--outline-light btn--caps btn--lg" href="<?= e($secondary['url']) ?>"><?= e($secondary['label']) ?></a>
                 <?php endif; ?>
             </div>
         </div>

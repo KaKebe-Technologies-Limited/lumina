@@ -1,6 +1,8 @@
 <?php
 /** Single activity. Vars: $activity (row), $more (rows), $absUrl, $share. Labels: content('activities', 'detail.*'). */
 $img = img_url($activity['image'] ?? '');
+$when = to_datetime($activity['activity_date'] ?? null);
+$place = trim((string) ($activity['location'] ?? ''));
 $this->start('scripts'); ?>
 <script src="<?= e(asset('js/pages/blog.js')) ?>" defer></script>
 <?php $this->end(); ?>
@@ -11,22 +13,22 @@ $this->start('scripts'); ?>
     'lead'    => (string) ($activity['summary'] ?? ''),
 ]) ?>
 
-<article class="section activity">
+<article class="section post activity">
     <div class="container container--narrow">
-        <?php if (!empty($activity['activity_date']) || !empty($activity['location'])): ?>
+        <?php if ($when || $place !== ''): ?>
             <dl class="activity__facts">
-                <?php if (!empty($activity['activity_date'])): ?>
-                    <div><dt><?= icon('calendar', 'icon--sm') ?> <?= e(content('activities', 'detail.date_label')) ?></dt><dd><time datetime="<?= e(format_date($activity['activity_date'], 'Y-m-d')) ?>"><?= e(format_date($activity['activity_date'])) ?></time></dd></div>
+                <?php if ($when): ?>
+                    <div class="activity__fact"><dt><?= icon('calendar', 'icon--sm') ?> <?= e(content('activities', 'detail.date_label')) ?></dt><dd><time datetime="<?= e($when->format('Y-m-d')) ?>"><?= e(format_date($activity['activity_date'])) ?></time></dd></div>
                 <?php endif; ?>
-                <?php if (!empty($activity['location'])): ?>
-                    <div><dt><?= icon('map-pin', 'icon--sm') ?> <?= e(content('activities', 'detail.location_label')) ?></dt><dd><?= e($activity['location']) ?></dd></div>
+                <?php if ($place !== ''): ?>
+                    <div class="activity__fact"><dt><?= icon('map-pin', 'icon--sm') ?> <?= e(content('activities', 'detail.location_label')) ?></dt><dd><?= e($place) ?></dd></div>
                 <?php endif; ?>
             </dl>
         <?php endif; ?>
 
         <?php if ($img !== ''): ?>
             <figure class="post__cover">
-                <img src="<?= e($img) ?>" alt="<?= e($activity['image_alt'] ?? '') ?>" width="1200" height="750" fetchpriority="high">
+                <img src="<?= e($img) ?>" alt="<?= e($activity['image_alt'] ?? '') ?>" fetchpriority="high" decoding="async">
             </figure>
         <?php endif; ?>
 
@@ -41,24 +43,25 @@ $this->start('scripts'); ?>
             'copiedLabel' => content('activities', 'detail.copied_label'),
         ]) ?>
 
-        <p class="post__back"><a class="link-arrow" href="<?= e(url('activities')) ?>"><?= icon('arrow-left', 'icon--arrow') ?> <?= e(content('activities', 'detail.back_label')) ?></a></p>
+        <p class="post__back"><a class="btn btn--outline btn--caps btn--sm" href="<?= e(url('activities')) ?>"><?= icon('arrow-left', 'icon--sm') ?> <?= e(content('activities', 'detail.back_label')) ?></a></p>
     </div>
 </article>
 
 <?php if ($more): ?>
     <section class="section section--tint" aria-labelledby="more-title">
         <div class="container">
-            <div class="section__header"><h2 id="more-title"><?= e(content('activities', 'detail.more_title')) ?></h2></div>
-            <div class="grid grid--3 grid--gap-lg">
+            <?= partial('partials/section-head', ['title' => content('activities', 'detail.more_title'), 'id' => 'more-title', 'align' => 'center']) ?>
+            <div class="grid grid--3 grid--gap-lg post-grid post-grid--n<?= min(count($more), 3) ?>">
                 <?php foreach ($more as $a): ?><?= partial('web/activities/_card', ['activity' => $a]) ?><?php endforeach; ?>
             </div>
         </div>
     </section>
 <?php endif; ?>
 
-<?php section_begin('activities', 'subscribe', ['id' => 'subscribe']); ?>
+<?php section_begin('activities', 'subscribe', ['class' => 'section--panel', 'id' => 'subscribe']); ?>
     <?= partial('web/blog/_subscribe', [
         'id'          => 'activity-subscribe',
+        'eyebrow'     => content('activities', 'subscribe.eyebrow'),
         'title'       => content('activities', 'subscribe.title'),
         'text'        => content('activities', 'subscribe.text'),
         'placeholder' => content('activities', 'subscribe.placeholder'),

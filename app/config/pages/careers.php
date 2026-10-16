@@ -1,9 +1,10 @@
 <?php
 /**
- * Registry entry: CAREERS (job list, job page labels, general expression-of-interest form). OWNER: B2 "web-content".
+ * Registry entry: CAREERS (job list, job page labels, general expression-of-interest form). OWNER: B2 "web-content"; redesigned by B-INNER-A.
  * Wording: https://www.luminaafricafoundation.com/careers (see docs/live-snapshot/careers.txt). Vacancies themselves are
  * written in the admin under Content > Jobs; applications arrive under Inbox > Applications.
  */
+$hlHelp = 'Put [[double brackets]] around the words that get the hand-drawn underline.';
 return [
     'slug'  => 'careers',
     'title' => 'Careers',
@@ -20,18 +21,22 @@ return [
             'key' => 'hero', 'label' => 'Page banner',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Careers at Lumina Africa Foundation', 'maxlength' => 140],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Careers at Lumina [[Africa Foundation]]', 'maxlength' => 140, 'help' => $hlHelp],
                 ['key' => 'lead', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 5, 'default' => 'At Lumina Africa Foundation, we believe in people. Our impact is driven by passionate individuals who dedicate their time, talent, and energy to transforming lives. Whether you are a volunteer, intern, or professional, joining our team means becoming part of a movement that is lighting the path to opportunity for youth, women, and marginalized communities in Northern Uganda and beyond.'],
                 ['key' => 'cta1_label', 'label' => 'First button: text', 'type' => 'text', 'default' => 'Job Openings'],
                 ['key' => 'cta1_url', 'label' => 'First button: link', 'type' => 'url', 'default' => '#openings'],
                 ['key' => 'cta2_label', 'label' => 'Second button: text', 'type' => 'text', 'default' => 'Volunteer Opportunities'],
                 ['key' => 'cta2_url', 'label' => 'Second button: link', 'type' => 'url', 'default' => '#volunteer'],
+                ['key' => 'image', 'label' => 'Background photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-03.jpg',
+                    'alt' => 'A trainer pointing at a screen while young people work at computers in a training room',
+                    'help' => 'A wide photo darkened behind the heading. Remove it for the plain navy banner.'],
             ],
         ],
         [
             'key' => 'openings', 'label' => 'Job openings', 'help' => 'Vacancies are listed automatically from Content > Jobs. When there are none, the "no openings" text and the general application form are shown.',
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Job Openings'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Job [[Openings]]', 'help' => $hlHelp],
                 ['key' => 'intro', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 3, 'default' => 'Occasionally, we seek talented individuals to enhance our expanding team. If you have a passion for social impact and a commitment to excellence, we would be thrilled to collaborate with you.'],
                 ['key' => 'available_label', 'label' => 'Heading above the vacancies', 'type' => 'text', 'default' => 'Available Positions:'],
                 ['key' => 'none_text', 'label' => 'When there are no vacancies', 'type' => 'text', 'default' => 'Currently, there are no openings.'],
@@ -45,7 +50,8 @@ return [
         [
             'key' => 'why', 'label' => 'Why Join Us?', 'toggle' => true,
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Why Join Us?'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Why [[Join Us]]?', 'help' => $hlHelp],
                 ['key' => 'items', 'label' => 'Reasons', 'type' => 'repeater', 'item_label' => 'text', 'add_label' => 'Add a reason', 'max_rows' => 10,
                     'fields' => [['key' => 'text', 'label' => 'Text', 'type' => 'textarea']],
                     'default' => [
@@ -54,13 +60,15 @@ return [
                         ['text' => 'Receive mentorship and growth opportunities while contributing to real impact.'],
                         ['text' => 'Join a team that values integrity, collaboration, and innovation.'],
                     ]],
-                ['key' => 'image', 'label' => 'Photo', 'type' => 'image', 'default' => 'assets/img/site/photo-03.jpg', 'alt' => 'A trainer pointing at a screen while young people work at computers in a training room'],
+                ['key' => 'image', 'label' => 'Photo', 'type' => 'image', 'default' => 'assets/img/site/photo-04.jpg', 'alt' => 'Young people seated in the audience of an event'],
+                ['key' => 'image2', 'label' => 'Second photo (behind, optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-05.jpg', 'alt' => 'Young people seated in a training room, one of them typing on a laptop'],
             ],
         ],
         [
             'key' => 'process', 'label' => 'Our Recruitment Process', 'toggle' => true,
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our Recruitment Process'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our Recruitment [[Process]]', 'help' => $hlHelp],
                 ['key' => 'steps', 'label' => 'Steps', 'type' => 'repeater', 'item_label' => 'text', 'add_label' => 'Add a step', 'max_rows' => 10,
                     'fields' => [['key' => 'text', 'label' => 'Step', 'type' => 'textarea']],
                     'default' => [
@@ -75,7 +83,7 @@ return [
             'key' => 'volunteer', 'label' => 'Volunteer opportunities', 'toggle' => true,
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Opportunities Available'],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Volunteer Opportunities'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Volunteer [[Opportunities]]', 'help' => $hlHelp],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Volunteers are at the heart of what we do. By donating your time and skills, you help us extend our reach and maximize our impact.'],
                 ['key' => 'roles_title', 'label' => 'Roles heading', 'type' => 'text', 'default' => 'Roles include:'],
                 ['key' => 'roles', 'label' => 'Roles', 'type' => 'repeater', 'item_label' => 'text', 'add_label' => 'Add a role', 'max_rows' => 12,
@@ -93,14 +101,17 @@ return [
         [
             'key' => 'equal', 'label' => 'Equal Opportunity Statement', 'toggle' => true,
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Equal Opportunity Statement'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Equal Opportunity [[Statement]]', 'help' => $hlHelp],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Lumina Africa Foundation is an equal opportunity organization. We celebrate diversity and are committed to creating an inclusive environment for all staff, volunteers, and partners.'],
             ],
         ],
         [
             'key' => 'faq', 'label' => 'Career Page FAQs', 'toggle' => true,
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Career Page FAQs'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Career Page [[FAQs]]', 'help' => $hlHelp],
+                ['key' => 'image', 'label' => 'Photo beside the questions (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
                 ['key' => 'items', 'label' => 'Questions and answers', 'type' => 'repeater', 'item_label' => 'question', 'add_label' => 'Add a question', 'max_rows' => 20,
                     'fields' => [
                         ['key' => 'question', 'label' => 'Question', 'type' => 'text'],
@@ -119,7 +130,8 @@ return [
             'key' => 'apply', 'label' => 'General application (Join Our Talent Network)',
             'help' => 'The form used when there is no specific vacancy (an expression of interest). Its field labels are in the "Application form wording" section below.',
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Join Our Talent Network'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Join Our Talent [[Network]]', 'help' => $hlHelp],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Stay updated on job openings and HR news.'],
                 ['key' => 'message_help', 'label' => 'Message box: help text', 'type' => 'text', 'default' => 'Tell us about yourself and how you would like to be involved.'],
             ],
@@ -127,7 +139,7 @@ return [
         [
             'key' => 'cta', 'label' => 'Get Involved Today (closing band)', 'toggle' => true,
             'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Get Involved Today'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Get Involved [[Today]]', 'help' => $hlHelp],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Your skills, passion, and dedication can change lives. Join us and be part of the journey to empower communities and inspire the next generation.'],
                 ['key' => 'quote', 'label' => 'Closing line', 'type' => 'textarea', 'rows' => 2, 'default' => 'At Lumina Africa Foundation, this is more than a career. It’s a calling to serve, inspire, and transform.'],
             ],
@@ -179,6 +191,7 @@ return [
                 ['key' => 'success', 'label' => 'Success message (general application)', 'type' => 'textarea', 'rows' => 2, 'default' => 'Thank you. Your details have been received and our HR & Programs team will be in touch if a suitable opportunity arises.'],
                 ['key' => 'success_job', 'label' => 'Success message (specific job)', 'type' => 'textarea', 'rows' => 2, 'default' => 'Thank you. Your application has been received. Our HR & Programs team will review it and contact shortlisted candidates.'],
                 ['key' => 'closed_error', 'label' => 'Error: vacancy already closed', 'type' => 'text', 'default' => 'Sorry, applications for this position have closed.'],
+                ['key' => 'error_title', 'label' => 'Error summary: heading (shown above the form when something needs fixing)', 'type' => 'text', 'default' => 'Please check the following before sending'],
                 ['key' => 'err_required', 'label' => 'Error: required field', 'type' => 'text', 'default' => 'Please fill in this field.'],
                 ['key' => 'err_email', 'label' => 'Error: invalid email', 'type' => 'text', 'default' => 'Please enter a valid email address.'],
                 ['key' => 'err_phone', 'label' => 'Error: invalid phone', 'type' => 'text', 'default' => 'Please enter a valid phone number.'],

@@ -62,53 +62,6 @@ $b1-pages: '.page-home, .page-about, .page-programs, .page-projects, .page-invol
         }
     }
 
-    // click-to-play video poster (no request to YouTube before the click)
-    .video-facade {
-        position: relative;
-        overflow: hidden;
-        aspect-ratio: 16 / 9;
-        border-radius: $radius-lg;
-        background:
-            radial-gradient(26rem 14rem at 85% 0%, rgba($orange-accent, 0.35), transparent 60%),
-            radial-gradient(22rem 12rem at 0% 100%, rgba($gold, 0.25), transparent 60%),
-            $navy-dark;
-        box-shadow: $shadow;
-        iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-        &__poster {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: $space-3;
-            padding: $space-5;
-            text-align: center;
-            text-decoration: none;
-            color: $white;
-            &:hover { color: $white; }
-            &:focus-visible { @include focus-ring($gold, -6px); }
-        }
-        &__icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 4.5rem;
-            height: 4.5rem;
-            border-radius: 50%;
-            background: $orange-accent;
-            color: $navy-dark;
-            box-shadow: 0 0 0 10px rgba($orange-accent, 0.25);
-            transition: transform $t-base $ease, box-shadow $t-base $ease;
-            svg { margin-left: 3px; }
-        }
-        &__label { font-family: $font-heading; font-weight: 600; font-size: $fs-sm; letter-spacing: 0.08em; text-transform: uppercase; color: $gold; }
-        &__title { max-width: 28ch; font-family: $font-heading; font-weight: 600; font-size: fluid(1rem, '0.9rem + 0.5vw', 1.25rem); line-height: 1.3; }
-        @include reduced-motion { &__icon { transition: none; } }
-    }
-
-    .video-facade__poster:hover .video-facade__icon { transform: scale(1.08); box-shadow: 0 0 0 14px rgba($orange-accent, 0.3); }
-
     // icon in a soft gold square (cards)
     .icon-tile {
         display: inline-flex;
@@ -154,119 +107,174 @@ $b1-pages: '.page-home, .page-about, .page-programs, .page-projects, .page-invol
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// HOME
+// HOME  (layout language: docs/DESIGN.md; every block below composes the shared components and only adds page layout)
+// Order on the page: hero > help > who + challenge > volunteer band + stats card > mission > featured carousel > donate panel
+//   > stories > faq > why digital > founder > impact > background > contact
 // ---------------------------------------------------------------------------------------------------------------------
 .page-home {
-    // hero: the bundled portrait photo carries a third-party banner along its bottom edge - crop it out (object-position top)
-    .home-hero__media {
-        img {
-            aspect-ratio: 1200 / 1318;
-            object-fit: cover;
-            object-position: center top;
+    // a text block that is alone in a two-column split (its photo is missing) stays a readable column
+    .split > :only-child { grid-column: 1 / -1; max-width: 46rem; margin-inline: auto; }
+
+    // ---- 1. HERO: let the three-line headline breathe (the shared copy column is narrower than the headline wants) -------
+    .hero-photo__title { text-wrap: balance; font-size: fluid(2.4rem, '1.2rem + 3vw', 3.6rem); }
+    .hero-photo__copy { @include respond(lg) { max-width: 50rem; } }
+    .hero-photo__lead { max-width: 34rem; }
+    .hero-photo::before { @include respond(lg) { background: linear-gradient(90deg, rgba($navy-dark, 0.92) 0%, rgba($navy-dark, 0.8) 46%, rgba($navy-dark, 0.62) 66%, rgba($navy-dark, 0.08) 100%); } }
+
+    // ---- 2. HOW WE HELP: outlined cards (2 x 2) + tall rounded photo --------------------------------------------------
+    .home-help__cards {
+        display: grid;
+        gap: $space-4;
+        grid-template-columns: minmax(0, 1fr);
+        // 2 columns while the block is stacked (sm), 1 column in the narrow text column beside the photo (md), 2 again from lg
+        @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @include respond(md) { grid-template-columns: minmax(0, 1fr); }
+        @include respond(lg) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        // an odd last card (3 or 1 cards) spans the row instead of leaving a hole
+        > :last-child:nth-child(odd) { @include respond(sm) { grid-column: 1 / -1; } @include respond(md) { grid-column: auto; } @include respond(lg) { grid-column: 1 / -1; } }
+        .feature-card { height: 100%; }
+    }
+    // the photo grows to the height of the cards beside it (4:5 when stacked on a phone)
+    .home-help__media {
+        margin: 0;
+        @include respond(md) { align-self: stretch; }
+        img { box-shadow: $shadow-lg; object-position: 62% 40%; @include respond(md) { height: 100%; min-height: 26rem; aspect-ratio: auto; } }
+    }
+    .home-help__grid--solo {
+        .home-help__cards { @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); > :last-child:nth-child(odd) { grid-column: auto; } } }
+    }
+
+    // ---- 3. WHO WE ARE: tilted photo stack + copy ---------------------------------------------------------------------
+    .home-who .photo-stack { margin-block: $space-3 $space-5; }
+    .home-who .prose { max-width: 38rem; }
+
+    // ---- 3b. THE CHALLENGE: a white rounded card on the same cream background --------------------------------------
+    .home-challenge__card {
+        display: grid;
+        gap: $space-4;
+        padding: $space-6 $space-5;
+        border: 1px solid $line;
+        border-radius: $radius-panel;
+        background: $white;
+        box-shadow: $shadow-card;
+        @include respond(md) { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: $space-4 $space-7; align-items: start; padding: $space-7; }
+        &--photo {
+            @include respond(md) {
+                grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+                .home-challenge__head, .home-challenge__body { grid-column: 1; }
+                .home-challenge__media { grid-column: 2; grid-row: 1 / span 2; align-self: stretch; }
+            }
         }
     }
-    .home-hero__badge {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: $space-4;
-        margin-inline: auto;
-        width: fit-content;
-        display: flex;
-        align-items: center;
-        gap: 0.45rem;
-        max-width: calc(100% - 2rem);
-        padding: 0.5rem 1rem;
-        border-radius: $radius-pill;
-        background: rgba($navy-dark, 0.88);
-        border: 1px solid rgba($gold, 0.6);
-        color: $white;
-        font-family: $font-heading;
-        font-size: $fs-sm;
-        font-weight: 600;
-        line-height: 1.2;
-        box-shadow: $shadow;
-        .icon { color: $gold; }
+    .home-challenge__title { margin-top: $space-2; font-size: fluid(1.9rem, '1.4rem + 1.6vw', 2.75rem); }
+    .home-challenge__body { max-width: none; p { font-size: $fs-md; line-height: 1.7; } }
+    .home-challenge__media {
+        margin: 0;
+        img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: $radius-photo; @include respond(md) { height: 100%; aspect-ratio: auto; } }
+    }
+    // optional photos beside the long-form text keep a fixed shape while they load
+    .home-why .split__media img, .home-impact .split__media img { aspect-ratio: 4 / 3; object-fit: cover; }
+
+    // ---- 5. VISION & MISSION ------------------------------------------------------------------------------------------
+    .home-mission__grid { &--solo > div { grid-column: 1 / -1; } }
+    .home-mission__lower {
+        display: grid;
+        gap: $space-6;
+        margin-top: $space-7;
+        @include respond(lg) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-8; align-items: center; }
+        > :only-child { grid-column: 1 / -1; }
+    }
+    .home-mission__cards { display: grid; gap: $space-4; }
+    .home-mission__cards .feature-card__text { font-size: $fs-md; line-height: 1.6; color: $ink; }
+    .home-mission__rows {
+        .feature-card {
+            border-width: 0 0 1px;
+            border-color: $line;
+            border-radius: 0;
+            padding: $space-4 0;
+            &:last-child { border-bottom-width: 0; }
+            &:hover { box-shadow: none; }
+        }
+        .feature-card__icon { background: $tint-cool; }
+    }
+    .home-mission__mosaic { margin-top: $space-8; @include respond(lg) { margin-top: $space-9; } }
+
+    // ---- 6. FEATURED PROGRAMS: the carousel track needs nothing extra; keep the footer button tidy -------------------
+    .home-featured .carousel__foot { margin-top: $space-3; }
+    // 44px touch targets for the small pills inside the shared cards / chips
+    .home-featured .card__footer .btn--sm, .home-donate .donate-panel__chip { min-height: 2.75rem; }
+
+    // ---- 7. DONATION PANEL: the shared panel's single grid column is `auto`, so on phones the form's intrinsic width stretches it and
+    // `overflow: hidden` clips the right edge. Pin the column to the panel width (gap reported to the design architect).
+    .home-donate .donate-panel {
+        grid-template-columns: minmax(0, 1fr);
+        @include respond(lg) { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
+        > * { min-width: 0; }
+        // a little smaller on phones so the whole placeholder ("Enter an amount") fits in the field
+        .donate-panel__input { padding-inline: $space-4; font-size: 1.1rem; @include respond(sm) { padding-inline: $space-5; font-size: 1.35rem; } }
+        .donate-panel__currency { padding-inline: $space-4 $space-3; @include respond(sm) { padding-inline: $space-5 $space-4; } }
     }
 
-    .home-hero__copy { min-width: 0; }
+    // ---- 8. STORIES ----------------------------------------------------------------------------------------------------
+    .home-stories .cards-center > * { max-width: 26rem; }
+    // white cards on the pale-navy band (the shared card is pale navy itself and would disappear on it)
+    .home-stories .quote-card { background: $white; border: 1px solid $line; box-shadow: $shadow-card; }
 
-    // vision & mission
-    .home-vm { padding-bottom: $space-7; @include respond(lg) { padding-bottom: $space-8; } }
-    .home-vm__eyebrow { display: block; text-align: center; margin-bottom: $space-6; font-size: $fs-sm; }
-    .home-vm__grid { display: grid; gap: $space-5; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-6; } }
-    .home-vm__card {
-        padding: $space-6;
-        border-radius: $radius-lg;
-        background: rgba($white, 0.07);
-        border: 1px solid rgba($white, 0.16);
-        h3 { margin-top: $space-4; font-size: fluid(1.35rem, '1.15rem + 0.8vw', 1.8rem); color: $white; }
-        p { margin-top: $space-3; font-size: $fs-md; line-height: 1.6; color: rgba($white, 0.9); }
-    }
-    .home-vm__icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 3.5rem;
-        height: 3.5rem;
-        border-radius: 50%;
-        background: $gold;
-        color: $navy-dark;
+    // ---- 10a. WHY DIGITAL INCLUSION MATTERS ----------------------------------------------------------------------------
+    .home-why .prose { max-width: none; p { font-size: $fs-md; line-height: 1.75; } }
+    .home-why .prose blockquote {
+        margin-block: $space-5;
+        padding: $space-5 $space-6;
+        border-left: 5px solid $gold;
+        border-radius: 0 $radius-card $radius-card 0;
+        background: $surface;
+        font-family: $font-display;
+        font-size: fluid(1.25rem, '1.05rem + 1vw', 1.75rem);
+        line-height: 1.4;
+        color: $navy;
     }
 
-    // statistics (sits directly under the vision & mission band)
-    .home-vm + .home-stats { padding-top: 0; }
-    .home-stats__title { text-align: center; margin-bottom: $space-6; }
-    .home-stats .stats { max-width: 52rem; margin-inline: auto; justify-content: center; }
-
-    // projects
-    .home-project__media {
-        background: linear-gradient(135deg, $navy, $navy-light);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .home-project__num { font-family: $font-heading; font-weight: 700; font-size: 3rem; line-height: 1; color: $gold; }
-    .home-project .card__media { @include respond-down(md) { aspect-ratio: 16 / 9; } }
-    .home-project .card__footer .link-arrow { font-size: $fs-sm; }
-    .home-project:hover .link-arrow .icon { transform: translateX(4px); }
-    .home-project:hover .link-arrow { color: $navy; }
-
-    // founder
+    // ---- 10b. FOUNDER STORY --------------------------------------------------------------------------------------------
     .home-founder__photo {
         max-width: 26rem;
         margin-inline: auto;
         width: 100%;
+        @include respond(lg) { position: sticky; top: calc(var(--header-h-shrunk) + #{$space-6}); }
         img { aspect-ratio: 4 / 5; object-position: center top; box-shadow: $shadow-lg; }
         figcaption { margin-top: $space-4; text-align: center; font-family: $font-heading; font-weight: 600; color: $navy; }
-        &::after { display: none; }
     }
-    .home-why .split { margin-top: 0; }
-    .home-video__link { margin-top: $space-3; font-size: $fs-sm; a { font-weight: 600; white-space: nowrap; } }
+    .home-founder .prose { max-width: 40rem; }
 
+    // ---- 10c. OUR IMPACT (deep navy band) -----------------------------------------------------------------------------
+    .home-impact__inner { max-width: 52rem; margin-inline: auto; text-align: center; }
+    .home-impact .prose { max-width: none; p { font-size: fluid(1.05rem, '1rem + 0.45vw', 1.3rem); line-height: 1.7; color: rgba($white, 0.92); } }
+    .home-impact .split__media img { box-shadow: $shadow-lg; }
+
+    // ---- 10d. BACKGROUND & RATIONALE -----------------------------------------------------------------------------------
     .home-background .prose { max-width: none; }
     .home-background .prose p { font-size: $fs-md; line-height: 1.75; }
 
-    // contact teaser
+    // ---- 10e. CONTACT TEASER -------------------------------------------------------------------------------------------
     .home-contact__box {
         display: grid;
         gap: $space-6;
         align-items: center;
-        padding: $space-6 $space-5;
-        border-radius: $radius-xl;
+        padding: $space-6 $space-4;
+        border: 1px solid $line;
+        border-radius: $radius-panel;
         background: $white;
-        border: 1px solid $border;
-        box-shadow: $shadow;
+        box-shadow: $shadow-card;
+        @include respond(sm) { padding: $space-6 $space-5; }
         @include respond(md) { padding: $space-7; }
         @include respond(lg) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: $space-8; }
     }
     .home-contact__list {
         display: grid;
         gap: $space-4;
-        li { display: flex; align-items: flex-start; gap: $space-4; min-width: 0; }
+        li { display: flex; align-items: flex-start; gap: $space-3; min-width: 0; @include respond(sm) { gap: $space-4; } }
         li > .icon { margin-top: 0.15rem; padding: 0.6rem; box-sizing: content-box; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: rgba($gold, 0.28); color: $navy; flex: none; }
         li > span { display: flex; flex-direction: column; min-width: 0; overflow-wrap: break-word; }
-        a { font-weight: 600; }
+        a { font-weight: 600; font-size: $fs-sm; @include respond(sm) { font-size: inherit; } }
     }
     .home-contact__label { font-size: $fs-xs; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: $ink-soft; }
 }

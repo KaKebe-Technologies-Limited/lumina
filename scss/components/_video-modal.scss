@@ -1,0 +1,32 @@
+// Accessible video lightbox. assets/js/main.js builds it on click of [data-video-lightbox] and injects a youtube-nocookie iframe
+// ONLY then (nothing is requested from YouTube before the visitor presses play). Esc / backdrop / Close button dismiss it.
+.video-modal {
+    position: fixed;
+    inset: 0;
+    z-index: $z-modal;
+    display: grid;
+    place-items: center;
+    padding: $space-4;
+    background: rgba($navy-dark, 0.92);
+    animation: lightbox-in $t-base ease;
+
+    &__dialog { position: relative; width: 100%; max-width: 62rem; }
+    &__frame { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: $radius-card; background: #000; box-shadow: $shadow-lg; iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; } }
+    &__title { margin-bottom: $space-3; padding-right: 3.5rem; color: $white; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; }
+    &__close {
+        position: absolute;
+        top: -0.25rem;
+        right: 0;
+        display: grid;
+        place-items: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: rgba($white, 0.16);
+        color: $white;
+        &:hover { background: $gold; color: $navy-dark; }
+    }
+    &__fallback { margin-top: $space-3; font-size: $fs-xs; color: rgba($white, 0.85); a { color: $gold; } }
+}

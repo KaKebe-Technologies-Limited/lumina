@@ -30,12 +30,20 @@
         gap: $space-7;
     }
     @include respond(lg) { gap: $space-8; }
+    // DOM order = text first, media second (media on the right). --reverse puts the first child on the right instead.
     &--reverse > :first-child { @include respond(md) { order: 2; } }
+    // 55 / 45 and 45 / 55 splits
+    &--wide-text { @include respond(md) { grid-template-columns: 1.15fr 0.85fr; } }
+    &--wide-media { @include respond(md) { grid-template-columns: 0.85fr 1.15fr; } }
     &--start { align-items: start; }
     &__media {
-        img { width: 100%; border-radius: $radius-lg; box-shadow: $shadow; }
+        img { width: 100%; border-radius: $radius-photo; box-shadow: $shadow-card; }
+        // a single rounded photo with a pale offset block behind it (use when there is only one picture)
+        &--frame { position: relative; isolation: isolate; &::before { content: ''; position: absolute; z-index: -1; inset: 6% -4% -5% 8%; border-radius: $radius-photo; background: $tint-cool; } }
     }
     // arch-shaped portrait frame (brand motif)
-    &__media--arch img { border-radius: 999px 999px $radius-lg $radius-lg; aspect-ratio: 4 / 5; object-fit: cover; }
+    &__media--arch img { border-radius: 999px 999px $radius-card $radius-card; aspect-ratio: 4 / 5; object-fit: cover; }
+    // tall portrait with very large corners (reference: "how we help" side photo)
+    &__media--portrait img { aspect-ratio: 4 / 5; object-fit: cover; border-radius: $radius-sheet; }
     // NOTE (libsass): never write min()/max()/clamp() with mixed units directly - wrap in #{'...'} or use fluid().
 }

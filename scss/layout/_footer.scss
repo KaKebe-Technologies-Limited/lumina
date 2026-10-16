@@ -1,11 +1,39 @@
-// Site footer (markup: views/layouts/main.php)
+// Footer (partials/site-footer.php): [partners strip] + newsletter row on white, then the deep navy multi-column footer with a
+// rounded top. Text on $navy-dark: white 16.2:1, rgba(white,.82) >= 11:1, gold 7.0:1.
+
+// ---- Above the footer proper: partners strip + newsletter row ------------------------------------------------------------
+.footer-pre {
+    background: $white;
+    // the navy footer below has a rounded top: leave the corners showing white instead of the page colour
+    padding-bottom: $radius-sheet;
+    margin-bottom: -#{$radius-sheet};
+    .partner-strip + .newsletter-row { border-top: 1px solid $line; }
+}
+
+.newsletter-row {
+    display: grid;
+    gap: $space-4;
+    align-items: center;
+    padding-block: $space-6;
+    @include respond(lg) { grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); gap: $space-7; }
+
+    &__title { font-family: $font-display; font-size: fluid(1.35rem, '1.1rem + 0.9vw', 1.9rem); font-weight: 600; line-height: 1.2; color: $navy; }
+    &__text { margin-top: $space-2; max-width: 34rem; color: $ink-soft; font-size: $fs-sm; }
+    &__form { display: flex; flex-direction: column; gap: $space-3; @include respond(sm) { flex-direction: row; align-items: stretch; } }
+    &__form .input { flex: 1; min-width: 0; padding: 0.9rem $space-5; border-radius: $radius-pill; background: $tint-cool; border-color: transparent; &::placeholder { color: $ink-soft; } &:hover { border-color: $border-strong; } &:focus { background: $white; } }
+}
+
+// ---- The footer ----------------------------------------------------------------------------------------------------------
 .site-footer {
+    position: relative;
     margin-top: auto;
     background: $navy-dark;
-    color: rgba($white, 0.82);
+    border-radius: $radius-sheet $radius-sheet 0 0;
+    color: rgba($white, 0.84);
     font-size: $fs-sm;
+    @include respond-down(md) { border-radius: 32px 32px 0 0; }
 
-    a { color: rgba($white, 0.9); text-decoration: none; &:hover { color: $gold; text-decoration: underline; } }
+    a { color: rgba($white, 0.92); text-decoration: none; &:hover { color: $gold; text-decoration: underline; } }
 
     &__grid {
         @include container($container);
@@ -13,36 +41,39 @@
         gap: $space-7;
         padding-block: $space-8 $space-7;
         @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        @include respond(lg) { grid-template-columns: 1.4fr 1fr 1.2fr 1.3fr; gap: $space-6; }
+        @include respond(lg) { grid-template-columns: 1.3fr 1.25fr 1fr 1.4fr; gap: $space-6; }
     }
 
-    &__brand { display: flex; flex-direction: column; gap: $space-3; }
-    &__logo { width: 72px; height: 72px; border-radius: 50%; }
-    &__name { font-family: $font-heading; font-size: 1.25rem; font-weight: 700; color: $white; }
+    &__brand { display: flex; flex-direction: column; align-items: flex-start; gap: $space-3; }
+    &__logo { width: 64px; height: 64px; border-radius: 50%; }
+    &__name { font-family: $font-display; font-size: 1.4rem; font-weight: 600; line-height: 1.2; color: $white; }
     &__tagline { font-style: italic; color: $gold; }
-    &__reg { font-size: $fs-xs; opacity: 0.8; }
+    &__blurb { max-width: 22rem; line-height: 1.65; }
+    &__reg { font-size: $fs-xs; opacity: 0.85; }
 
     &__title {
         margin-bottom: $space-4;
         font-family: $font-heading;
         font-size: 1rem;
         font-weight: 600;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.02em;
+        line-height: 1.3;
         color: $white;
-        &::after { content: ''; display: block; width: 2.25rem; height: 2px; margin-top: $space-2; background: $gold; border-radius: 2px; }
+        &::after { content: ''; display: block; width: 2.25rem; height: 3px; margin-top: $space-2; background: $gold; border-radius: 3px; }
     }
 
-    &__links { display: grid; gap: $space-2; li a { display: inline-block; padding-block: 2px; } }
+    &__links { display: grid; align-items: start; gap: $space-2; li a { display: inline-block; padding-block: 2px; } }
+    &__links--cols { @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: $space-5; } }
 
-    &__contact { display: grid; gap: $space-3; li { display: flex; gap: $space-3; align-items: flex-start; } .icon { margin-top: 3px; color: $gold; } }
+    &__contact { display: grid; gap: $space-3; li { display: flex; gap: $space-3; align-items: flex-start; overflow-wrap: anywhere; } .icon { margin-top: 3px; color: $gold; } }
 
     &__bottom {
-        border-top: 1px solid rgba($white, 0.12);
+        border-top: 1px solid rgba($white, 0.14);
         > div {
             @include container($container);
             display: flex;
             flex-direction: column;
-            gap: $space-3;
+            gap: $space-2 $space-5;
             padding-block: $space-5;
             font-size: $fs-xs;
             @include respond(md) { flex-direction: row; justify-content: space-between; align-items: center; }
@@ -53,22 +84,23 @@
 .social-list {
     display: flex;
     flex-wrap: wrap;
-    gap: $space-2;
+    gap: 0.4rem;
+    margin-top: $space-2;
     a {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 42px;
-        height: 42px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
-        border: 1px solid rgba($white, 0.25);
+        border: 1px solid rgba($white, 0.28);
         color: $white;
         transition: background-color $t-fast ease, color $t-fast ease, border-color $t-fast ease;
         &:hover { background: $gold; border-color: $gold; color: $navy-dark; text-decoration: none; }
     }
 }
 
-// Newsletter signup (footer + anywhere)
+// Newsletter signup (legacy markup used inside the navy footer; kept for views that embed .newsletter)
 .newsletter {
     &__form { display: flex; flex-direction: column; gap: $space-2; margin-top: $space-3; }
     &__form .input { flex: 1; min-width: 0; }
@@ -103,5 +135,5 @@
     pointer-events: none;
     transition: opacity $t-base ease, transform $t-base ease, background-color $t-fast ease;
     &.is-visible { opacity: 1; transform: none; pointer-events: auto; }
-    &:hover { background: $orange-dark; }
+    &:hover { background: $cta; }
 }

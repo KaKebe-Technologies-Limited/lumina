@@ -553,3 +553,6 @@ function label_from(?string $value): string
 {
     return ucfirst(str_replace('_', ' ', (string) $value));
 }
+
+// Design-system helpers (highlight(), youtube_id(), photo_tag(), icon_options() ...): docs/DESIGN.md
+require_once __DIR__ . '/helpers_design.php';

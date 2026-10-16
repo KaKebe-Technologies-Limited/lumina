@@ -1,54 +1,54 @@
-// pages/_partners.scss - OWNED BY B7 "org-public" (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
-// Page-specific styles ONLY, scoped under .page-partners. Partner cards: logo tile on top, name, description, link-out below.
+// pages/_partners.scss - B-INNER-B. Scoped under .page-partners. Partner cards: a pale logo tile on top, serif name, description, link-out below.
 
 .page-partners {
+    // centred rows whatever the number of organisations (1 card never sits alone on the left of an empty grid)
     .partner-cards {
-        display: grid;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
         gap: $space-5;
-        grid-template-columns: minmax(0, 1fr);
-        @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        @include respond(lg) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: $space-6; }
+        @include respond(lg) { gap: $space-6; }
     }
 
     .partner-card {
         display: flex;
         flex-direction: column;
-        height: 100%;
+        flex: 0 1 100%;
+        max-width: 26rem;
         overflow: hidden;
         background: $white;
-        border: 1px solid $border;
-        border-radius: $radius-lg;
+        border: 1px solid $line;
+        border-radius: $radius-card;
         box-shadow: $shadow-sm;
+        @include respond(md) { flex-basis: calc(50% - #{$space-5 / 2}); max-width: none; }
+        @include respond(lg) { flex-basis: calc(33.333% - #{$space-6 * 2 / 3}); }
         @include hover-lift;
 
         &__logo {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 9.5rem;
+            min-height: 10rem;
             padding: $space-5;
-            background: $white;
-            border-bottom: 1px solid $border;
+            background: $surface;
             img { max-width: 100%; max-height: 6rem; width: auto; height: auto; object-fit: contain; }
         }
         &__initial {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 4.5rem;
-            height: 4.5rem;
+            display: inline-grid;
+            place-items: center;
+            width: 4.75rem;
+            height: 4.75rem;
             border-radius: 50%;
-            background: linear-gradient(135deg, $navy, $navy-light);
+            background: $navy;
             color: $gold;
-            font-family: $font-heading;
+            font-family: $font-display;
             font-size: 2rem;
             font-weight: 700;
+            box-shadow: 0 0 0 6px rgba($gold, 0.22);
         }
         &__body { display: flex; flex-direction: column; flex: 1; gap: $space-2; padding: $space-5; }
-        &__name { font-size: 1.15rem; }
-        &__desc { font-size: $fs-sm; color: $ink-soft; > * + * { margin-top: $space-2; } }
-        &__link { margin-top: auto; padding-top: $space-3; font-size: $fs-sm; }
+        &__name { font-size: 1.3rem; a { color: $navy; text-decoration: none; &:hover { color: $orange-text; } } }
+        &__desc { font-size: $fs-sm; line-height: 1.6; color: $ink-soft; > * + * { margin-top: $space-2; } }
+        &__link { margin-top: auto; padding-top: $space-3; font-size: $fs-sm; font-weight: 600; }
     }
-
-    .partners-join { max-width: 40rem; margin-inline: auto; }
 }

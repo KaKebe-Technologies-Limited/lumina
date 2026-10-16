@@ -8,8 +8,8 @@
     align-items: center;
     padding: $space-4 $space-5;
     background: $white;
-    border: 1px solid $border;
-    border-radius: $radius;
+    border: 1px solid $line;
+    border-radius: $radius-lg;
     transition: border-color $t-fast ease, box-shadow $t-fast ease;
     @include respond(md) { grid-template-columns: auto 1fr auto; }
     &:hover { border-color: $gold; box-shadow: $shadow-sm; }

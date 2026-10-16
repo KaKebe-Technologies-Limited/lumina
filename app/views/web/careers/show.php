@@ -27,10 +27,10 @@ $this->start('head'); ?>
     'lead'    => (string) ($job['summary'] ?? ''),
 ]) ?>
 
-<section class="section job-page">
+<section class="section job-page" aria-label="<?= e($job['title']) ?>">
     <div class="container">
         <div class="job-page__layout">
-            <div class="job-page__main">
+            <div class="job-page__main" data-reveal>
                 <?php if (trim((string) ($job['description'] ?? '')) !== ''): ?>
                     <h2 class="job-page__heading"><?= e(content('careers', 'job.description_title')) ?></h2>
                     <div class="prose"><?= rich($job['description']) ?></div>
@@ -50,14 +50,14 @@ $this->start('head'); ?>
                 <?php endif; ?>
             </div>
 
-            <aside class="job-page__aside" aria-label="<?= e($job['title']) ?>">
-                <dl class="job-facts">
-                    <div><dt><?= e(content('careers', 'job.type_label')) ?></dt><dd><?= e(job_type_label($job['employment_type'])) ?></dd></div>
-                    <?php if (!empty($job['department'])): ?><div><dt><?= e(content('careers', 'job.department_label')) ?></dt><dd><?= e($job['department']) ?></dd></div><?php endif; ?>
-                    <?php if (!empty($job['location'])): ?><div><dt><?= e(content('careers', 'job.location_label')) ?></dt><dd><?= e($job['location']) ?></dd></div><?php endif; ?>
-                    <?php if ($closing !== ''): ?><div><dt><?= e(content('careers', 'job.closing_label')) ?></dt><dd><time datetime="<?= e(format_date($job['closing_date'], 'Y-m-d')) ?>"><?= e($closing) ?></time></dd></div><?php endif; ?>
+            <aside class="ia-aside" aria-label="<?= e($job['title']) ?>" data-reveal>
+                <dl class="ia-facts">
+                    <div class="ia-facts__row"><span class="ia-facts__icon" aria-hidden="true"><?= icon('briefcase') ?></span><div><dt><?= e(content('careers', 'job.type_label')) ?></dt><dd><?= e(job_type_label($job['employment_type'])) ?></dd></div></div>
+                    <?php if (!empty($job['department'])): ?><div class="ia-facts__row"><span class="ia-facts__icon" aria-hidden="true"><?= icon('layers') ?></span><div><dt><?= e(content('careers', 'job.department_label')) ?></dt><dd><?= e($job['department']) ?></dd></div></div><?php endif; ?>
+                    <?php if (!empty($job['location'])): ?><div class="ia-facts__row"><span class="ia-facts__icon" aria-hidden="true"><?= icon('map-pin') ?></span><div><dt><?= e(content('careers', 'job.location_label')) ?></dt><dd><?= e($job['location']) ?></dd></div></div><?php endif; ?>
+                    <?php if ($closing !== ''): ?><div class="ia-facts__row"><span class="ia-facts__icon" aria-hidden="true"><?= icon('calendar') ?></span><div><dt><?= e(content('careers', 'job.closing_label')) ?></dt><dd><time datetime="<?= e(format_date($job['closing_date'], 'Y-m-d')) ?>"><?= e($closing) ?></time></dd></div></div><?php endif; ?>
                 </dl>
-                <p><a class="link-arrow" href="<?= e(url('careers')) ?>"><?= icon('arrow-left', 'icon--arrow') ?> <?= e(content('careers', 'job.back_label')) ?></a></p>
+                <p><a class="btn btn--outline btn--caps btn--block" href="<?= e(url('careers')) ?>"><?= icon('arrow-left', 'icon--sm') ?> <?= e(content('careers', 'job.back_label')) ?></a></p>
             </aside>
         </div>
     </div>
@@ -69,10 +69,10 @@ $this->start('head'); ?>
             <div class="no-openings">
                 <span class="no-openings__icon"><?= icon('briefcase', 'icon--xl') ?></span>
                 <p class="no-openings__title" id="apply-title"><?= e(content('careers', 'job.closed_text')) ?></p>
-                <p><a class="btn btn--primary" href="<?= e(url('careers')) ?>#openings"><?= e(content('careers', 'job.closed_button')) ?></a></p>
+                <p><a class="btn btn--cta btn--caps" href="<?= e(url('careers')) ?>#openings"><?= e(content('careers', 'job.closed_button')) ?></a></p>
             </div>
         <?php else: ?>
-            <div class="section__header section__header--center"><h2 id="apply-title"><?= e(content('careers', 'job.apply_title')) ?></h2></div>
+            <?= partial('partials/section-head', ['title' => (string) content('careers', 'job.apply_title'), 'align' => 'center', 'id' => 'apply-title']) ?>
             <?= partial('web/careers/_apply_form', [
                 'action'      => url('careers/' . $job['slug'] . '/apply'),
                 'idPrefix'    => 'job',

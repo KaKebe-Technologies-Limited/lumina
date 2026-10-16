@@ -1,0 +1,15 @@
+// Section heading block: eyebrow + serif H2 + optional lead (partials/section-head.php). .section__header is the older alias.
+.section-head,
+.section__header {
+    max-width: 46rem;
+    margin-bottom: $space-7;
+    > * + * { margin-top: $space-3; }
+    > .eyebrow + * { margin-top: 0; }
+    &__lead, .lead { max-width: 40rem; }
+    &--center, &.section__header--center { margin-inline: auto; text-align: center; .lead, .section-head__lead { margin-inline: auto; } }
+    // title on the left, actions (carousel arrows, "view all" button) on the right
+    &--split { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: $space-4 $space-6; > * + * { margin-top: 0; } }
+    &__text { max-width: 44rem; > * + * { margin-top: $space-3; } > .eyebrow + * { margin-top: 0; } }
+    &__actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; }
+    &__lead { font-size: fluid(1.05rem, '1rem + 0.35vw', 1.25rem); color: $ink-soft; line-height: 1.6; }
+}

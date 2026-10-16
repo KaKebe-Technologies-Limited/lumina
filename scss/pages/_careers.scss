@@ -1,10 +1,9 @@
-// pages/_careers.scss - OWNED BY B2 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
-// Careers index, vacancy page and application form.
+// pages/_careers.scss - B-INNER-A (careers index, vacancy page, application form). Shared blocks (.ia-*) live at the top of _about.scss.
 
 .page-careers {
     // ---- vacancy list ----------------------------------------------------------------------------------------------
-    .job-list__title { margin-bottom: $space-4; font-size: $fs-md; color: $ink-soft; }
-    .job-list { display: grid; gap: $space-4; }
+    .job-list__title { max-width: 62rem; margin: 0 auto $space-4; font-family: $font-heading; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: $ink-soft; }
+    .job-list { display: grid; gap: $space-4; max-width: 62rem; margin-inline: auto; }
 
     .job-card {
         display: grid;
@@ -12,12 +11,15 @@
         gap: $space-4;
         align-items: center;
         padding: $space-5;
-        @include card-surface($radius-lg);
+        background: $white;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        box-shadow: $shadow-sm;
         @include hover-lift;
         @include respond(md) { grid-template-columns: minmax(0, 1fr) auto; padding: $space-5 $space-6; }
 
-        &__tags { display: flex; flex-wrap: wrap; gap: $space-2; margin-bottom: $space-3; }
-        &__title { font-size: 1.3rem; a { color: $heading; text-decoration: none; &:hover { color: $orange-dark; } } }
+        &__tags { display: flex; flex-wrap: wrap; gap: $space-2; margin-bottom: $space-3; .badge { border-radius: $radius-pill; padding-inline: 0.85rem; } }
+        &__title { font-size: fluid(1.3rem, '1.1rem + 0.7vw', 1.7rem); a { color: $navy; text-decoration: none; &:hover { color: $orange-text; } } }
         &__text { margin-top: $space-2; color: $ink-soft; max-width: 46rem; }
         &__facts {
             display: flex;
@@ -27,62 +29,83 @@
             font-size: $fs-sm;
             color: $ink-soft;
             li { display: inline-flex; align-items: center; gap: 0.4rem; }
+            .icon { color: $orange-text; }
         }
     }
 
     // ---- "no openings" notice -------------------------------------------------------------------------------------------
     .no-openings {
+        max-width: 46rem;
+        margin-inline: auto;
         padding: $space-7 $space-5;
         text-align: center;
-        border: 2px dashed $border-strong;
-        border-radius: $radius-lg;
-        background: $surface;
-        &__icon { display: inline-flex; margin-bottom: $space-3; color: $gold-deep; }
-        &__title { font-family: $font-heading; font-size: 1.3rem; font-weight: 600; color: $heading; }
+        border: 1px solid $line;
+        border-radius: $radius-panel;
+        background: $tint-cool;
+        &__icon { display: inline-grid; place-items: center; width: 4rem; height: 4rem; margin-bottom: $space-3; border-radius: 50%; background: $white; color: $navy; }
+        &__title { font-family: $font-display; font-size: fluid(1.35rem, '1.15rem + 0.8vw', 1.8rem); font-weight: 600; color: $navy; }
         &__text { max-width: 34rem; margin: $space-3 auto 0; color: $ink-soft; }
         p + p { margin-top: $space-3; }
         .btn { margin-top: $space-4; }
     }
 
     // ---- why join us ---------------------------------------------------------------------------------------------------
-    .split--single { display: block; }
-    .check-list {
-        display: grid;
-        gap: $space-4;
-        li { display: flex; align-items: flex-start; gap: $space-3; font-size: $fs-md; }
-        .icon { margin-top: 0.15em; color: $orange-dark; }
-    }
+    .ia-checklist--roomy { gap: $space-4; font-size: $fs-md; }
 
     // ---- recruitment steps -------------------------------------------------------------------------------------------------
-    .timeline__text { color: $ink; font-size: $fs-md; padding-top: 0.55rem; }
-
-    // ---- volunteer band (navy) ------------------------------------------------------------------------------------------------
-    .role-card {
-        padding: $space-5 $space-6;
-        border: 1px solid rgba($white, 0.18);
-        border-radius: $radius-lg;
-        background: rgba($white, 0.07);
-        &__title { margin-bottom: $space-4; font-size: $fs-md; color: #E8BD74; }     // $gold on this translucent card was 4.06:1; this is 5.3:1
-        &__list { display: grid; gap: $space-3; }
-        &__list li { display: flex; align-items: flex-start; gap: $space-3; }
-        &__list .icon { margin-top: 0.25em; color: $gold; }
+    .ia-steps {
+        display: grid;
+        gap: $space-4;
+        grid-template-columns: repeat(auto-fit, minmax(#{'min(100%, 13.5rem)'}, 1fr));
+    }
+    .ia-step {
+        padding: $space-5;
+        background: $white;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        transition: border-color $t-fast ease, box-shadow $t-base ease;
+        &:hover { border-color: rgba($gold, 0.9); box-shadow: $shadow-card; }
+        &__num { display: grid; place-items: center; width: 3.2rem; height: 3.2rem; margin-bottom: $space-4; border-radius: 50%; background: $navy; font-family: $font-display; font-size: 1.4rem; font-weight: 600; color: $gold; }
+        &__text { font-size: $fs-base; line-height: 1.55; color: $ink; }
     }
 
-    // ---- closing band -----------------------------------------------------------------------------------------------------------
-    .careers-cta__quote { font-family: $font-heading; font-size: fluid(1.1rem, '1rem + 0.5vw', 1.4rem); font-weight: 500; color: $gold; }
+    // ---- volunteer panel (deep navy) -----------------------------------------------------------------------------------------
+    .careers-volunteer { padding-top: 0; }      // follows the (white) recruitment steps: no double padding
+    .role-card {
+        padding: $space-5;
+        border: 1px solid rgba($white, 0.2);
+        border-radius: $radius-card;
+        background: rgba($white, 0.07);
+        @include respond(md) { padding: $space-6; }
+        &__title { margin-bottom: $space-4; font-family: $font-heading; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #E8BD74; }     // gold on this translucent card: 5.3:1
+        &__list { display: grid; gap: $space-3; }
+        &__list li { display: flex; align-items: flex-start; gap: $space-3; color: rgba($white, 0.96); }
+        &__tick { flex: none; display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; margin-top: 0.1rem; border-radius: 50%; background: $gold; color: $navy-dark; .icon { width: 0.8rem; height: 0.8rem; stroke-width: 3; } }
+    }
+
+    // ---- closing band ----------------------------------------------------------------------------------------------------------
+    .careers-cta__quote { max-width: 38rem; margin: $space-5 auto 0; font-family: $font-display; font-size: fluid(1.15rem, '1rem + 0.5vw', 1.5rem); font-weight: 500; line-height: 1.4; color: $gold; }
 
     // ---- application form ------------------------------------------------------------------------------------------------------------
     .apply-form {
-        input[type='file'] { padding: 0.65rem 0.8rem; background: $surface; cursor: pointer; }
+        input[type='file'] {
+            min-height: 3.25rem;
+            padding: 0.5rem 0.75rem;
+            background: $tint-cool;
+            cursor: pointer;
+        }
         input[type='file']::file-selector-button {
             margin-right: $space-3;
-            padding: 0.45rem 1rem;
+            padding: 0.55rem 1.2rem;
             border: 0;
             border-radius: $radius-pill;
             background: $navy;
             color: $white;
             font-family: $font-heading;
+            font-size: $fs-xs;
             font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
             cursor: pointer;
         }
         .check a { font-weight: 600; }
@@ -90,18 +113,7 @@
 
     // ---- vacancy page ----------------------------------------------------------------------------------------------------------------
     .job-page {
-        &__layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-7; @include respond(lg) { grid-template-columns: minmax(0, 1fr) 20rem; align-items: start; gap: $space-8; } }
-        &__heading { margin-top: $space-6; margin-bottom: $space-3; font-size: fluid(1.35rem, '1.15rem + 0.8vw', 1.8rem); &:first-child { margin-top: 0; } }
-        &__aside { @include respond(lg) { position: sticky; top: #{$header-h + 24px}; } }
-    }
-    .job-facts {
-        display: grid;
-        gap: $space-4;
-        margin-bottom: $space-5;
-        padding: $space-5;
-        border-radius: $radius-lg;
-        background: $surface;
-        dt { font-size: $fs-xs; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: $gold-text; }
-        dd { margin-top: 2px; font-weight: 600; color: $navy; }
+        &__layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-7; @include respond(lg) { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; gap: $space-8; } }
+        &__heading { margin-top: $space-6; margin-bottom: $space-3; font-size: fluid(1.4rem, '1.15rem + 0.8vw', 1.9rem); &:first-child { margin-top: 0; } }
     }
 }

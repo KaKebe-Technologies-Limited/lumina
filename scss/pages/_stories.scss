@@ -1,5 +1,24 @@
-// pages/_stories.scss - OWNED BY B7 "org-public" (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
-// Page-specific styles ONLY, scoped under .page-stories. Reuses the shared .story-card; adds the single-story layout.
+// pages/_stories.scss - B-INNER-B. Impact stories: photo cards, or a pale quote card when a story has no photo (never a placeholder picture).
+// The single-story layout is at the bottom. Scoped to .page-stories / the shared tile classes below.
+
+.story-tile {
+    box-shadow: $shadow-card;
+    .card__title { font-size: fluid(1.25rem, '1.1rem + 0.45vw', 1.5rem); }
+    .card__text { @include line-clamp(5); }
+
+    &--text {
+        border-color: transparent;
+        background: $tint-cool;
+        box-shadow: none;
+        .card__body { padding: $space-6 $space-5; }
+    }
+    &__mark { display: inline-grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: $white; color: $cta; box-shadow: $shadow-sm; .icon { width: 1.5rem; height: 1.5rem; } }
+    &__person { display: flex; align-items: center; gap: $space-3; margin-top: auto; padding-top: $space-4; border-top: 1px solid rgba($navy, 0.12); }
+    &__avatar { display: grid; place-items: center; flex: none; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: $navy; color: $gold; font-family: $font-display; font-weight: 600; }
+    &__name { display: block; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; color: $navy; }
+    &__role { display: block; font-size: $fs-xs; color: $ink-soft; }
+    .card__footer { padding-top: $space-3; }
+}
 
 .page-stories {
     .story-grid { align-items: stretch; }
@@ -8,26 +27,43 @@
         align-items: center;
         justify-content: center;
         gap: $space-2;
+        width: fit-content;
+        max-width: 100%;
         margin: $space-7 auto 0;
-        max-width: 40rem;
+        padding: 0.6rem 1.25rem;
+        border-radius: $radius-pill;
+        background: $tint-cool;
         font-size: $fs-sm;
+        color: $navy;
+        .icon { flex: none; color: $orange-text; }
     }
-    .stories-join { max-width: 40rem; margin-inline: auto; }
 
     // ---- single story -------------------------------------------------------------------------------------------------
-    .story-back { margin-bottom: $space-5; }
+    .story-back { margin-bottom: $space-6; }
     .story-detail__layout {
         display: grid;
         gap: $space-6;
         grid-template-columns: minmax(0, 1fr);
         &--media { @include respond(lg) { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: $space-8; align-items: start; } }
+        &:not(.story-detail__layout--media) .story-detail__body { max-width: 46rem; margin-inline: auto; }
     }
-    .story-detail__media { margin: 0; img { width: 100%; border-radius: $radius-lg; box-shadow: $shadow; } }
+    .story-detail__media {
+        position: relative;
+        isolation: isolate;
+        margin: 0;
+        &::before { content: ''; position: absolute; z-index: -1; inset: 5% -4% -5% 8%; border-radius: $radius-sheet; background: $tint-cool; }
+        img { display: block; width: 100%; border-radius: $radius-sheet; box-shadow: $shadow-card; }
+    }
     .story-person {
-        margin-bottom: $space-5;
-        padding-left: $space-4;
-        border-left: 4px solid $gold;
-        &__name { display: block; font-family: $font-heading; font-size: 1.15rem; font-weight: 600; color: $navy; }
+        display: flex;
+        align-items: center;
+        gap: $space-4;
+        margin-bottom: $space-6;
+        padding: $space-4 $space-5;
+        border-radius: $radius-card;
+        background: $tint-cool;
+        &__avatar { display: grid; place-items: center; flex: none; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: $navy; color: $gold; font-family: $font-display; font-size: 1.35rem; font-weight: 600; }
+        &__name { display: block; font-family: $font-display; font-size: 1.25rem; font-weight: 600; color: $navy; }
         &__meta { display: block; font-size: $fs-sm; color: $ink-soft; }
     }
 }

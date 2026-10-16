@@ -7,11 +7,13 @@
 use App\Services\Web\TextTokens;
 
 $updated = trim((string) content('privacy', 'notice.updated'));
+$heroImg = content_img('privacy', 'hero.image');
 ?>
 <?= partial('partials/page-hero', [
     'title'   => content('privacy', 'hero.title'),
     'eyebrow' => content('privacy', 'hero.eyebrow'),
     'lead'    => TextTokens::text((string) content('privacy', 'hero.lead')),
+    'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt'], 'focus' => '50% 40%'] : null,
 ]) ?>
 
 <section class="section legal">
@@ -30,7 +32,7 @@ $updated = trim((string) content('privacy', 'notice.updated'));
 
             <div class="legal__body">
                 <?php if ($updated !== ''): ?>
-                    <p class="legal__updated"><?= e(content('privacy', 'notice.updated_label')) ?>: <time><?= e($updated) ?></time></p>
+                    <p class="legal__updated"><?= icon('clock', 'icon--sm') ?> <?= e(content('privacy', 'notice.updated_label')) ?>: <time><?= e($updated) ?></time></p>
                 <?php endif; ?>
                 <?php foreach ($items as $i => $item): ?>
                     <section class="legal__section" id="section-<?= (int) $i + 1 ?>"<?= trim((string) $item['title']) !== '' ? ' aria-labelledby="section-' . ((int) $i + 1) . '-title"' : '' ?>>

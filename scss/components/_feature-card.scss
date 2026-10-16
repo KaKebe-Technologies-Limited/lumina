@@ -1,0 +1,44 @@
+// Outlined feature card: icon + serif title (+ one line). partials/feature-card.php. .feature is the older name, same look.
+.feature-card,
+.feature {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+    padding: $space-5;
+    background: $white;
+    border: 1px solid $line;
+    border-radius: $radius-card;
+    transition: border-color $t-fast ease, box-shadow $t-base ease, transform $t-base $ease;
+    &:hover { border-color: rgba($gold, 0.9); box-shadow: $shadow-card; }
+
+    &__icon {
+        display: inline-grid;
+        place-items: center;
+        flex: none;
+        width: 2.9rem;
+        height: 2.9rem;
+        border-radius: 50%;
+        background: rgba($gold, 0.22);
+        color: $navy;
+    }
+    &__body { display: flex; flex-direction: column; gap: $space-2; min-width: 0; }
+    &__title { font-family: $font-display; font-size: 1.25rem; font-weight: 600; line-height: 1.25; color: $navy; a { color: inherit; text-decoration: none; &::after { content: ''; position: absolute; inset: 0; border-radius: inherit; } } }
+    &__text { font-size: $fs-sm; line-height: 1.6; color: $ink-soft; }
+
+    // icon on the left, text on the right (mission / vision feature rows)
+    &--row { flex-direction: row; align-items: flex-start; gap: $space-4; padding: $space-4 $space-5; }
+    // borderless variant for use inside tint boxes
+    &--plain { border-color: transparent; background: transparent; padding: 0; &:hover { box-shadow: none; border-color: transparent; } }
+    &--tint { background: $tint-cool; border-color: transparent; }
+}
+
+// A responsive row of feature cards: 1 column on phones, 3 from md (use --2 / --4 for other counts)
+.feature-row {
+    display: grid;
+    gap: $space-4;
+    grid-template-columns: minmax(0, 1fr);
+    @include respond(md) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    &--2 { @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    &--4 { @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); } @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+}

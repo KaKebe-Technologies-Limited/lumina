@@ -2,7 +2,7 @@
 /**
  * Card for a projects row. Vars: $project (DB row), $cta (link label; default content('global','labels.read_more')),
  * $statusLabels (optional map status => label for the badge; the badge is hidden when not given).
- * Links to /projects/{slug}.
+ * Links to /projects/{slug}. The footer is a small orange pill; status badge stays on the photo.
  */
 $href = url('projects/' . $project['slug']);
 $cta = $cta ?? (string) content('global', 'labels.read_more');
@@ -25,6 +25,6 @@ $statusBadge = ['planned' => 'info', 'ongoing' => 'success', 'completed' => 'neu
         <?php endif; ?>
         <h3 class="card__title"><a href="<?= e($href) ?>"><?= e($project['title']) ?></a></h3>
         <?php if (!empty($project['summary'])): ?><p class="card__text"><?= e($project['summary']) ?></p><?php endif; ?>
-        <div class="card__footer"><a class="link-arrow" href="<?= e($href) ?>"><?= e($cta) ?><span class="visually-hidden">: <?= e($project['title']) ?></span> <?= icon('arrow-right', 'icon--arrow') ?></a></div>
+        <div class="card__footer"><a class="btn btn--cta btn--caps btn--sm" href="<?= e($href) ?>"><?= e($cta) ?><span class="visually-hidden">: <?= e($project['title']) ?></span></a></div>
     </div>
 </article>

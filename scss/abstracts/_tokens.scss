@@ -18,6 +18,13 @@ $orange-accent: #E07341 !default;   // live-site accent; navy-dark text on it = 
 $teal:          #4A7C85 !default;   // 4.65:1 on white
 $teal-dark:     #3D6870 !default;   // 6.2:1 on white
 
+// ---- Redesign additions (KidHope-inspired layout language; see docs/DESIGN.md) ------------------------------
+$cta:           #B85A14 !default;   // THE orange pill (white text 4.66:1). Hover: $cta-hover
+$cta-hover:     #9A470C !default;   // white text 6.4:1
+$orange-text:   #A64B0C !default;   // orange TEXT on white / cream / pale-navy tint (5.1:1 on the pale-navy tint, 5.8:1 on white)
+$tint-cool:     #EEF1F6 !default;   // very pale navy tint (quote cards, mission/vision boxes). navy 10.3:1, ink-soft 5.3:1
+$line:          #E4E1DA !default;   // thin 1px borders on white
+
 // ---- Neutrals ----------------------------------------------------------------------
 $ink:           #1D1E20 !default;   // body text, 16.7:1 on white
 $heading:       #2C2F31 !default;
@@ -41,6 +48,7 @@ $info-bg:       #E6F1F8 !default;
 // ---- Typography -------------------------------------------------------------------------
 $font-heading:  'Poppins', 'Segoe UI', system-ui, -apple-system, sans-serif !default;
 $font-body:     'DM Sans', 'Segoe UI', system-ui, -apple-system, sans-serif !default;
+$font-display:  'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif !default;   // h1-h3, big numerals, quotes
 $font-mono:     ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !default;
 
 $fs-xs:   0.8125rem;
@@ -75,10 +83,16 @@ $radius:      12px;
 $radius-lg:   20px;
 $radius-xl:   32px;
 $radius-pill: 999px;
+$radius-card:  24px;       // cards, tint boxes, panels
+$radius-photo: 28px;       // photographs
+$radius-sheet: 56px;       // rounded-top "sheet" that overlaps the previous section (desktop; 32px on phones via --radius-sheet)
+$radius-panel: 40px;       // deep navy bands: stat card, donate panel
 
 $shadow-sm: 0 1px 2px rgba($navy-dark, 0.08), 0 1px 3px rgba($navy-dark, 0.06);
 $shadow:    0 6px 18px rgba($navy-dark, 0.10), 0 2px 6px rgba($navy-dark, 0.06);
 $shadow-lg: 0 18px 44px rgba($navy-dark, 0.16), 0 6px 14px rgba($navy-dark, 0.08);
+
+$shadow-card: 0 10px 30px rgba($navy-dark, 0.08), 0 1px 3px rgba($navy-dark, 0.06);
 
 $ease:      cubic-bezier(0.2, 0.7, 0.2, 1);
 $t-fast:    150ms;
@@ -91,7 +105,10 @@ $container-narrow: 760px;
 $container-wide:   1360px;
 $gutter:           1.25rem;      // side padding on phones
 $header-h:         72px;
-$header-h-lg:      84px;
+$header-h-lg:      88px;
+$header-h-shrunk:  64px;
+$topbar-h:         38px;
+$drawer-w:         22.5rem;
 
 $breakpoints: (
     'sm': 576px,

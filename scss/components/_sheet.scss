@@ -1,0 +1,17 @@
+// "Sheet": a block with a large rounded top that overlaps the bottom of the photo above it (hero, page-hero, band).
+// Usage: <section class="section sheet"> ... </section>   (white)   or class="section sheet sheet--tint" / "sheet--cool".
+// --radius-sheet is 32px on phones and 56px from md up (scss/main.scss :root).
+.sheet {
+    position: relative;
+    z-index: 2;
+    margin-top: calc(var(--radius-sheet) * -1);
+    background: $white;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    &--tint { background: $surface; }
+    &--cool { background: $tint-cool; }
+    &--navy { background: $navy; color: rgba($white, 0.9); h2, h3 { color: $white; } }
+    // a sheet that follows another sheet needs no overlap of its own
+    &--stacked { margin-top: calc(var(--radius-sheet) * -1); }
+    // plain section directly after a sheet that wants the same rounded cut-in (no negative margin)
+    &--flat { margin-top: 0; }
+}

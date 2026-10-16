@@ -1,0 +1,69 @@
+// Deep navy donation panel with amount input, chips and buttons, plus a photo collage (partials/donate-panel.php).
+// It is a pledge / redirect, never a payment form: the form is a GET to the donate page (it prefills the pledge form).
+.donate-panel {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    gap: $space-6;
+    padding: $space-6 $space-5;
+    overflow: hidden;
+    border-radius: $radius-panel;
+    color: $white;
+    background:
+        radial-gradient(28rem 16rem at 100% 0%, rgba($navy-light, 0.8), transparent 62%),
+        $navy;
+    @include respond(md) { padding: $space-7; }
+    @include respond(lg) { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); align-items: center; gap: $space-7; padding: $space-8 $space-7; }
+
+    &__title { color: $white; font-size: fluid(2rem, '1.4rem + 2.2vw', 3.25rem); line-height: 1.1; max-width: 16ch; }
+    &__text { margin-top: $space-3; max-width: 34rem; color: rgba($white, 0.9); }
+
+    &__form { margin-top: $space-5; max-width: 34rem; }
+    &__label { display: block; margin-bottom: $space-2; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba($white, 0.92); }
+    // [currency] [amount .............]
+    &__field { display: flex; align-items: stretch; overflow: hidden; border-radius: $radius-pill; background: $white; box-shadow: 0 0 0 3px transparent; transition: box-shadow $t-fast ease; &:focus-within { box-shadow: 0 0 0 3px rgba($gold, 0.7); } }
+    &__currency {
+        display: grid;
+        place-items: center;
+        padding: 0 $space-4 0 $space-5;
+        font-family: $font-heading;
+        font-weight: 600;
+        color: $navy;
+        background: $tint-cool;
+        border-right: 1px solid $line;
+    }
+    &__input { flex: 1; min-width: 0; padding: 0.95rem $space-5; border: 0; border-radius: 0; background: transparent; font-family: $font-display; font-size: 1.35rem; font-weight: 600; color: $navy-dark; &:focus { outline: none; } &::placeholder { color: $ink-soft; font-weight: 400; } }
+
+    &__chips { display: flex; flex-wrap: wrap; gap: $space-2; margin-top: $space-4; }
+    &__chip {
+        padding: 0.45rem 1.1rem;
+        border: 1.5px solid rgba($white, 0.5);
+        border-radius: $radius-pill;
+        background: transparent;
+        font-family: $font-heading;
+        font-size: $fs-sm;
+        font-weight: 600;
+        color: $white;
+        transition: background-color $t-fast ease, color $t-fast ease, border-color $t-fast ease;
+        &:hover { border-color: $white; background: rgba($white, 0.12); }
+        &[aria-pressed='true'] { background: $gold; border-color: $gold; color: $navy-dark; }
+    }
+    &__actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; margin-top: $space-5; }
+    &__note { margin-top: $space-4; max-width: 32rem; font-size: $fs-xs; color: rgba($white, 0.82); }
+
+    &__media { position: relative; min-height: 18rem; @include respond(lg) { min-height: 26rem; } }
+    // collage: three rounded photos that overlap
+    &__photo {
+        position: absolute;
+        margin: 0;
+        overflow: hidden;
+        border-radius: $radius-photo;
+        border: 5px solid rgba($white, 0.9);
+        box-shadow: 0 16px 36px rgba($navy-dark, 0.4);
+        img { width: 100%; height: 100%; object-fit: cover; }
+        &:nth-child(1) { left: 0; top: 6%; width: 52%; height: 66%; transform: rotate(-4deg); }
+        &:nth-child(2) { right: 0; top: 0; width: 46%; height: 52%; transform: rotate(4deg); }
+        &:nth-child(3) { right: 8%; bottom: 0; width: 50%; height: 50%; transform: rotate(-2deg); z-index: 2; }
+        &:only-child { left: 12%; right: 12%; top: 0; bottom: 0; width: auto; height: auto; transform: rotate(-2deg); }
+    }
+}
