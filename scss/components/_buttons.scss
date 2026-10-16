@@ -1,0 +1,58 @@
+// Buttons. <a class="btn btn--primary">, <button class="btn btn--accent btn--lg">. All variants meet WCAG AA text contrast.
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.8rem 1.65rem;
+    border: 2px solid transparent;
+    border-radius: $radius-pill;
+    font-family: $font-heading;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color $t-fast ease, color $t-fast ease, border-color $t-fast ease, transform $t-fast ease, box-shadow $t-fast ease;
+
+    &:hover { transform: translateY(-1px); text-decoration: none; }
+    &:active { transform: translateY(0); }
+    &[disabled], &.is-loading { opacity: 0.6; pointer-events: none; }
+    @include reduced-motion { &:hover { transform: none; } }
+
+    // navy fill (white text 11.6:1)
+    &--primary { background: $navy; color: $white; &:hover { background: $navy-dark; color: $white; } }
+    // orange fill (navy-dark text 5.2:1)
+    &--accent { background: $orange-accent; color: $navy-dark; &:hover { background: $gold; color: $navy-dark; } }
+    // gold fill (navy-dark text 7:1)
+    &--gold { background: $gold; color: $navy-dark; &:hover { background: $white; color: $navy-dark; } }
+    // solid orange with white text (5.0:1)
+    &--orange { background: $orange-dark; color: $white; &:hover { background: $navy; color: $white; } }
+    &--outline { background: transparent; border-color: $navy; color: $navy; &:hover { background: $navy; color: $white; } }
+    // for dark sections
+    &--outline-light { background: transparent; border-color: rgba($white, 0.7); color: $white; &:hover { background: $white; border-color: $white; color: $navy-dark; } }
+    &--ghost { background: transparent; color: $navy; padding-inline: 0.75rem; &:hover { background: $surface; color: $navy; } }
+    &--link { background: none; padding: 0; border: 0; border-radius: 0; color: $orange-dark; text-decoration: underline; font-weight: 600; &:hover { color: $navy; transform: none; } }
+    &--danger { background: $danger; color: $white; &:hover { background: darken($danger, 8%); color: $white; } }
+
+    &--sm { padding: 0.5rem 1.05rem; font-size: $fs-sm; }
+    &--lg { padding: 1rem 2.1rem; font-size: 1.05rem; }
+    &--block { display: flex; width: 100%; }
+    &--icon { padding: 0.65rem; border-radius: 50%; aspect-ratio: 1; }
+
+    .icon { transition: transform $t-fast ease; }
+    &:hover .icon--arrow { transform: translateX(3px); }
+}
+
+// text link with arrow ("Read more")
+.link-arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: $orange-dark;
+    .icon { transition: transform $t-fast ease; }
+    &:hover { color: $navy; .icon { transform: translateX(4px); } }
+}

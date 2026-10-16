@@ -1,0 +1,20 @@
+// Call-to-action band (partials/cta-donate.php)
+.cta {
+    position: relative;
+    overflow: hidden;
+    padding: $space-7 $space-5;
+    border-radius: $radius-xl;
+    text-align: center;
+    color: rgba($white, 0.9);
+    background:
+        radial-gradient(30rem 16rem at 90% 0%, rgba($orange-accent, 0.35), transparent 60%),
+        radial-gradient(24rem 14rem at 0% 100%, rgba($gold, 0.25), transparent 60%),
+        $navy;
+    @include respond(md) { padding: $space-8 $space-7; }
+
+    &__title { color: $white; max-width: 22ch; margin-inline: auto; }
+    &__text { max-width: 40rem; margin: $space-4 auto 0; color: rgba($white, 0.85); }
+    &__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: $space-3; margin-top: $space-6; }
+}
+
+.cta-wrap { padding-block: $space-7; @include respond(lg) { padding-block: $space-8; } }

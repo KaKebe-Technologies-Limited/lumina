@@ -1,0 +1,55 @@
+// Data tables. <div class="table-wrap"><table class="table table--striped">...</table></div>
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    background: $white;
+    border: 1px solid $border;
+    border-radius: $radius-lg;
+    -webkit-overflow-scrolling: touch;
+    .card > & { border: 0; border-radius: 0; }
+}
+
+.table {
+    width: 100%;
+    min-width: 36rem;
+    font-size: 0.92rem;
+
+    th, td { padding: 0.8rem $space-4; text-align: left; vertical-align: middle; border-bottom: 1px solid $border; }
+    thead th {
+        position: sticky;
+        top: 0;
+        background: $surface;
+        font-family: $font-heading;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: $ink-soft;
+        white-space: nowrap;
+    }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: rgba($gold, 0.07); }
+    &--striped tbody tr:nth-child(even) { background: rgba($surface, 0.7); }
+    &--striped tbody tr:nth-child(even):hover { background: rgba($gold, 0.1); }
+
+    .col-narrow { width: 1%; white-space: nowrap; }
+    .col-num { text-align: right; font-variant-numeric: tabular-nums; }
+    .col-actions { width: 1%; white-space: nowrap; text-align: right; }
+    .cell-title { font-weight: 600; color: $navy; a { color: inherit; text-decoration: none; &:hover { color: $orange-dark; } } }
+    .cell-sub { display: block; font-size: $fs-xs; color: $ink-soft; font-weight: 400; }
+    .cell-thumb { width: 56px; height: 40px; object-fit: cover; border-radius: $radius-sm; background: $surface-alt; }
+    tr.is-unread td { font-weight: 600; background: rgba($orange-accent, 0.07); }
+}
+
+.table__actions { display: inline-flex; gap: $space-1; justify-content: flex-end; }
+
+// Mobile: stack rows as cards when .table--stack
+@include respond-down(md) {
+    .table--stack {
+        min-width: 0;
+        thead { @include visually-hidden; }
+        tr { display: block; padding: $space-3 0; border-bottom: 1px solid $border; }
+        td { display: flex; justify-content: space-between; gap: $space-4; border: 0; padding: 0.3rem $space-4; text-align: right; }
+        td::before { content: attr(data-label); font-weight: 700; font-size: $fs-xs; text-transform: uppercase; letter-spacing: 0.06em; color: $ink-soft; text-align: left; }
+    }
+}

@@ -1,0 +1,178 @@
+// admin/_dashboard.scss - OWNED BY B3 (see docs/ARCHITECTURE.md ownership table). Imported by admin.scss.
+// Dashboard only: stat tile extras, "before you launch" notice, the dependency-free 30-day chart, recent lists, shortcuts.
+// Chart colours are the validated categorical slots 1-3 of the data-viz palette (blue, orange, aqua): distinct for colour-blind
+// readers, and never the only cue (legend names, tooltips and a table carry the same information).
+
+.admin-dashboard {
+    // ---- before you launch
+    .dash-launch {
+        margin-bottom: $space-5;
+        padding: $space-4 $space-5;
+        background: $warning-bg;
+        border: 1px solid rgba($gold-deep, 0.45);
+        border-radius: $radius-lg;
+        &__title { display: flex; align-items: center; gap: $space-2; margin-bottom: $space-3; font-size: 1rem; color: $warning; }
+        &__list { display: grid; gap: $space-3; }
+        &__list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3; }
+        &__list li > div { flex: 1 1 22rem; min-width: 0; }
+        &__list strong { display: block; color: $ink; }
+        &__list span { display: block; font-size: $fs-sm; color: $ink-soft; max-width: 46rem; }
+    }
+
+    // ---- tiles (the shared .stat-tile becomes a small grid: icon + number on one row, label and detail underneath)
+    .dash-tiles { align-items: stretch; }
+    .stat-tile {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas: 'icon value' 'label label' 'sub sub';
+        align-content: start;
+        gap: 0.15rem $space-3;
+        min-width: 0;
+        padding: $space-4;
+        &__text { display: contents; }
+        &__icon { grid-area: icon; width: 42px; height: 42px; margin-bottom: $space-2; }
+        &__value { grid-area: value; align-self: start; padding-top: 0.2rem; font-size: 1.75rem; overflow-wrap: anywhere; }
+        &__value--small { font-size: 1.1rem; line-height: 1.3; padding-top: 0.35rem; }
+        &__label { grid-area: label; font-size: $fs-sm; color: $ink; }
+        &__sub { grid-area: sub; margin-top: 1px; font-size: $fs-xs; color: $ink-soft; overflow-wrap: anywhere; }
+        &--alert { border-color: rgba($orange-dark, 0.55); background: lighten($orange-accent, 33%); }
+        &--alert .stat-tile__icon { background: $orange-accent; color: $navy-dark; }
+    }
+
+    // ---- layout of the two columns
+    .dash-main, .dash-aside { display: grid; gap: $space-5; align-content: start; min-width: 0; }
+    .dash-main .card + .card, .dash-aside .card + .card, .dash-recent .card + .card { margin-top: 0; }
+    .dash-recent {
+        display: grid;
+        gap: $space-5;
+        @include respond(xl) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        &__wide { @include respond(xl) { grid-column: 1 / -1; } }
+    }
+    .dash-empty, .dash-note { padding: $space-4 $space-5; margin: 0; color: $ink-soft; font-size: $fs-sm; }
+    .dash-note { padding-bottom: 0; }
+
+    // ---- recent lists
+    .dash-list {
+        li + li { border-top: 1px solid $border; }
+        a {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: $space-3;
+            padding: $space-3 $space-5;
+            color: $ink;
+            text-decoration: none;
+            &:hover { background: rgba($gold, 0.1); }
+            &:focus-visible { @include focus-ring; outline-offset: -3px; }
+        }
+        &__main { min-width: 0; display: grid; strong { color: $navy; @include truncate; } span { font-size: $fs-xs; color: $ink-soft; @include truncate; } }
+        &__meta { flex: none; display: grid; justify-items: end; gap: 2px; font-size: $fs-xs; color: $ink-soft; }
+    }
+
+    // ---- shortcuts, checklist, activity
+    .dash-actions {
+        display: grid;
+        padding: $space-2;
+        a { display: flex; align-items: center; gap: $space-3; padding: 0.65rem $space-3; border-radius: $radius; color: $navy; font-weight: 600; text-decoration: none; &:hover { background: $surface; color: $orange-dark; } }
+        .icon { color: $orange-dark; }
+    }
+    .dash-check {
+        display: grid;
+        gap: $space-3;
+        padding: $space-4 $space-5 $space-5;
+        li { display: flex; gap: $space-3; align-items: flex-start; }
+        &__mark { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 1.35rem; height: 1.35rem; margin-top: 2px; border: 2px solid $border-strong; border-radius: 50%; color: $white; }
+        .is-done &__mark { background: $success; border-color: $success; }
+        &__text { display: grid; font-size: $fs-sm; strong { color: $navy; } span { color: $ink-soft; font-size: $fs-xs; } a { font-weight: 600; } }
+    }
+    .dash-activity {
+        li { padding: $space-3 $space-5; }
+        li + li { border-top: 1px solid $border; }
+        &__text { display: block; font-size: $fs-sm; overflow-wrap: anywhere; }
+        &__meta { display: block; margin-top: 2px; font-size: $fs-xs; color: $ink-soft; }
+    }
+
+    // ---- 30-day chart
+    .dash-chart {
+        --dash-1: #2a78d6;
+        --dash-2: #eb6834;
+        --dash-3: #1baf7a;
+        &__sub { margin: 2px 0 0; font-size: $fs-sm; color: $ink-soft; }
+        &__frame { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: $space-2; }
+        &__y { display: flex; flex-direction: column; justify-content: space-between; height: 11rem; font-size: $fs-xs; line-height: 1; color: $ink-soft; text-align: right; font-variant-numeric: tabular-nums; }
+        &__plot {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(30, minmax(0, 1fr));
+            gap: 2px;
+            height: 11rem;
+            margin-bottom: 1.6rem;
+            border-top: 1px solid $border;
+            border-bottom: 1px solid $border-strong;
+            background-image: linear-gradient(to bottom, transparent calc(50% - 1px), $border calc(50% - 1px), $border 50%, transparent 50%);
+        }
+    }
+    .dash-bar {
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        height: 100%;
+        border-radius: 4px;
+        cursor: default;
+        &:hover { background: rgba($navy, 0.06); }
+        &:focus-visible { @include focus-ring($navy, 1px); }
+        &__stack { display: flex; flex-direction: column-reverse; gap: 2px; width: 100%; max-width: 1.5rem; }
+        &__seg { flex-basis: 0; min-height: 3px; background: var(--dash-1); &--2 { background: var(--dash-2); } &--3 { background: var(--dash-3); } }
+        &__seg:last-child { border-radius: 4px 4px 0 0; }
+        &__x { position: absolute; top: 100%; left: 50%; margin-top: 0.4rem; transform: translateX(-50%); font-size: $fs-xs; color: $ink-soft; white-space: nowrap; pointer-events: none; }
+        &:last-child &__x { transform: translateX(-72%); }
+        &::after {
+            content: attr(data-tip);
+            position: absolute;
+            z-index: 6;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            padding: 0.4rem 0.65rem;
+            border-radius: $radius-sm;
+            background: $navy-dark;
+            color: $white;
+            font-size: $fs-xs;
+            line-height: 1.35;
+            white-space: nowrap;
+            transform: translateX(-50%);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity $t-fast ease;
+        }
+        &--start::after { left: 0; transform: none; }
+        &--end::after { left: auto; right: 0; transform: none; }
+        &:hover::after, &:focus-visible::after { opacity: 1; visibility: visible; }
+    }
+    .dash-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-1 $space-4;
+        font-size: $fs-sm;
+        color: $ink;
+        strong { font-variant-numeric: tabular-nums; margin-left: 2px; }
+    }
+    .dash-swatch {
+        display: inline-block;
+        width: 0.8rem;
+        height: 0.8rem;
+        margin-right: 0.4rem;
+        border-radius: 3px;
+        vertical-align: -1px;
+        background: var(--dash-1);
+        &--2 { background: var(--dash-2); }
+        &--3 { background: var(--dash-3); }
+    }
+    .dash-table {
+        margin-top: $space-4;
+        summary { cursor: pointer; font-size: $fs-sm; font-weight: 600; color: $orange-dark; }
+        .table-wrap { margin-top: $space-3; max-height: 18rem; overflow: auto; }
+        .table { min-width: 0; }
+    }
+}

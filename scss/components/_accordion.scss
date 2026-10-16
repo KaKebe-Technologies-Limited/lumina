@@ -1,0 +1,35 @@
+// Accessible accordion (FAQ). JS: [data-accordion] > .accordion__item > button[data-accordion-trigger] + [data-accordion-panel]
+.accordion {
+    display: grid;
+    gap: $space-3;
+
+    &__item {
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius;
+        overflow: hidden;
+        transition: box-shadow $t-fast ease, border-color $t-fast ease;
+        &.is-open { border-color: $gold; box-shadow: $shadow-sm; }
+    }
+    &__heading { margin: 0; font-size: inherit; }
+    &__trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: $space-4;
+        width: 100%;
+        padding: $space-4 $space-5;
+        border: 0;
+        background: transparent;
+        text-align: left;
+        font-family: $font-heading;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: $navy;
+        .icon { transition: transform $t-base ease; color: $orange-dark; }
+        &[aria-expanded='true'] .icon { transform: rotate(180deg); }
+        &:hover { background: $surface; }
+    }
+    &__panel { padding: 0 $space-5 $space-5; color: $ink-soft; > * + * { margin-top: $space-3; } }
+    &__panel[hidden] { display: none; }
+}

@@ -1,0 +1,80 @@
+// =====================================================================================
+// PUBLIC SITE STYLESHEET  ->  assets/css/main.css + main.min.css  (python bin/build-scss.py)
+// FOUNDATION-OWNED. Agents add rules ONLY inside their own scss/pages/_<page>.scss partial (already imported below).
+// libsass 3.6: classic @import only (no @use / @forward / sass:math).
+// =====================================================================================
+
+@import 'abstracts/tokens';
+@import 'abstracts/functions';
+@import 'abstracts/mixins';
+
+// Design tokens exported as CSS custom properties (for inline styles / JS). Components use the Sass variables.
+:root {
+    --navy: #{$navy};
+    --navy-dark: #{$navy-dark};
+    --gold: #{$gold};
+    --orange: #{$orange};
+    --orange-dark: #{$orange-dark};
+    --orange-accent: #{$orange-accent};
+    --teal: #{$teal};
+    --ink: #{$ink};
+    --ink-soft: #{$ink-soft};
+    --surface: #{$surface};
+    --border: #{$border};
+    --font-heading: #{$font-heading};
+    --font-body: #{$font-body};
+    --radius: #{$radius};
+    --header-h: #{$header-h};
+}
+
+@import 'base/reset';
+@import 'base/typography';
+@import 'base/utilities';
+@import 'base/a11y';
+
+@import 'layout/container';
+@import 'layout/grid';
+@import 'layout/section';
+@import 'layout/header';
+@import 'layout/footer';
+
+@import 'components/buttons';
+@import 'components/cards';
+@import 'components/forms';
+@import 'components/hero';
+@import 'components/stats';
+@import 'components/badge';
+@import 'components/alerts';
+@import 'components/pagination';
+@import 'components/breadcrumbs';
+@import 'components/cta';
+@import 'components/accordion';
+@import 'components/team-card';
+@import 'components/partner-grid';
+@import 'components/document-row';
+@import 'components/event-card';
+@import 'components/story-card';
+@import 'components/timeline';
+@import 'components/lightbox';
+@import 'components/filter-bar';
+
+// ---- Page partials (one per page; owners in docs/ARCHITECTURE.md) ----
+@import 'pages/home';
+@import 'pages/about';
+@import 'pages/programs';
+@import 'pages/projects';
+@import 'pages/involvement';
+@import 'pages/donate';
+@import 'pages/blog';
+@import 'pages/activities';
+@import 'pages/gallery';
+@import 'pages/careers';
+@import 'pages/contact';
+@import 'pages/legal';
+@import 'pages/errors';
+@import 'pages/team';
+@import 'pages/partners';
+@import 'pages/reports';
+@import 'pages/events';
+@import 'pages/stories';
+@import 'pages/news';

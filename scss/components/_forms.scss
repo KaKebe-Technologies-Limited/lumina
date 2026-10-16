@@ -1,0 +1,65 @@
+// Public forms. Markup comes from partials/form-field.php (.field > .field__label + .input + .field__help/.field__error).
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    min-width: 0;
+
+    &__label { font-weight: 600; font-size: $fs-sm; color: $heading; }
+    &__req { color: $danger; margin-left: 2px; }
+    &__help { font-size: $fs-xs; color: $ink-soft; }
+    &__error { font-size: $fs-sm; font-weight: 500; color: $danger; }
+    &--error .input, &--error .textarea, &--error .select { border-color: $danger; box-shadow: 0 0 0 1px $danger; }
+}
+
+.input, .textarea, .select {
+    display: block;
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1.5px solid $border-strong;
+    border-radius: $radius;
+    background: $white;
+    color: $ink;
+    line-height: 1.4;
+    transition: border-color $t-fast ease, box-shadow $t-fast ease;
+    &::placeholder { color: lighten($ink-soft, 12%); }
+    &:hover { border-color: $navy-light; }
+    &:focus { outline: none; border-color: $navy; box-shadow: 0 0 0 3px rgba($gold, 0.45); }
+    &[disabled] { background: $surface-alt; cursor: not-allowed; }
+}
+.textarea { min-height: 9rem; resize: vertical; }
+.select {
+    appearance: none;
+    padding-right: 2.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232C3950' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.9rem center;
+    background-size: 1.1rem;
+}
+
+.form-grid {
+    display: grid;
+    gap: $space-5;
+    @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); .field--full { grid-column: 1 / -1; } }
+}
+
+.check {
+    display: flex;
+    gap: $space-3;
+    align-items: flex-start;
+    font-size: $fs-sm;
+    input { width: 1.2rem; height: 1.2rem; margin-top: 0.2rem; accent-color: $navy; flex: none; }
+}
+
+.form-actions { display: flex; flex-wrap: wrap; gap: $space-3; align-items: center; margin-top: $space-5; }
+.form-note { font-size: $fs-xs; color: $ink-soft; }
+
+// A card-like wrapper for forms on cream/white pages
+.form-card {
+    padding: $space-5;
+    background: $white;
+    border: 1px solid $border;
+    border-radius: $radius-lg;
+    box-shadow: $shadow;
+    @include respond(md) { padding: $space-7; }
+}

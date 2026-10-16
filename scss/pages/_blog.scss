@@ -1,0 +1,135 @@
+// pages/_blog.scss - OWNED BY B2 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Blog index + post. Also holds the pieces the Activities pages reuse (.subscribe-box, .share, .post*, .teaser, the gallery strip):
+// those rules are scoped to BOTH page classes so nothing leaks to other pages.
+
+.page-blog,
+.page-activities {
+    // ---- newsletter box (web/blog/_subscribe.php) -----------------------------------------------------------------
+    .subscribe-box {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: $space-5;
+        align-items: center;
+        padding: $space-6 $space-5;
+        border-radius: $radius-xl;
+        color: rgba($white, 0.88);
+        background:
+            radial-gradient(28rem 14rem at 95% 0%, rgba($orange-accent, 0.32), transparent 60%),
+            radial-gradient(22rem 12rem at 0% 100%, rgba($gold, 0.22), transparent 60%),
+            $navy;
+        @include respond(md) { padding: $space-7; }
+        @include respond(lg) { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: $space-7; }
+
+        &__title { color: $white; font-size: fluid(1.5rem, '1.2rem + 1.2vw', 2.2rem); }
+        &__text { margin-top: $space-3; max-width: 40rem; color: rgba($white, 0.86); }
+        &__form {
+            display: flex;
+            flex-direction: column;
+            gap: $space-3;
+            @include respond(sm) { flex-direction: row; align-items: stretch; }
+            .input { flex: 1; min-width: 0; border-color: transparent; }
+            .btn { flex: none; }
+        }
+    }
+
+    // ---- share row (web/blog/_share.php) ---------------------------------------------------------------------------
+    .share {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-3 $space-5;
+        margin-top: $space-7;
+        padding-top: $space-5;
+        border-top: 1px solid $border;
+
+        &__title {
+            font-family: $font-heading;
+            font-size: $fs-xs;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: $ink-soft;
+        }
+        &__list { display: flex; flex-wrap: wrap; gap: $space-2; }
+        &__link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            min-width: 2.75rem;
+            height: 2.75rem;
+            padding: 0 0.9rem;
+            border: 1px solid $border-strong;
+            border-radius: $radius-pill;
+            background: $white;
+            color: $navy;
+            font-family: inherit;
+            font-size: $fs-sm;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color $t-fast ease, color $t-fast ease, border-color $t-fast ease;
+            &:hover { background: $navy; border-color: $navy; color: $white; }
+            &.is-copied { background: $success-bg; border-color: $success; color: $success; }
+        }
+    }
+
+    // ---- article / activity body -------------------------------------------------------------------------------------
+    .post {
+        &__cover {
+            margin-bottom: $space-6;
+            img { width: 100%; height: auto; max-height: 34rem; object-fit: cover; border-radius: $radius-lg; box-shadow: $shadow; }
+        }
+        &__excerpt { margin-bottom: $space-5; font-weight: 500; color: $navy; }
+        &__body { max-width: none; font-size: $fs-md; line-height: 1.75; }
+        &__body.prose > * + * { margin-top: 1.25em; }
+        &__body.prose h2 { font-size: fluid(1.5rem, '1.2rem + 1vw', 2rem); }
+        &__body.prose h3 { font-size: fluid(1.2rem, '1.05rem + 0.5vw', 1.5rem); }
+        &__back { margin-top: $space-6; }
+    }
+
+    // older / newer navigation
+    .post-nav {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: $space-4;
+        margin-top: $space-7;
+        @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+        &__link {
+            display: flex;
+            flex-direction: column;
+            gap: $space-1;
+            padding: $space-4 $space-5;
+            border: 1px solid $border;
+            border-radius: $radius;
+            background: $white;
+            text-decoration: none;
+            color: $navy;
+            transition: border-color $t-fast ease, box-shadow $t-fast ease;
+            &:hover { border-color: $gold; box-shadow: $shadow-sm; }
+            &--newer { text-align: right; align-items: flex-end; @include respond(md) { grid-column: 2; } }
+        }
+        &__label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: $orange-dark; }
+        &__title { font-family: $font-heading; font-weight: 600; line-height: 1.3; }
+    }
+
+    // contact teaser
+    .teaser { .lead { max-width: 36rem; margin-inline: auto; } }
+
+    // small gallery strip under the blog list / activities story
+    .gallery-grid--strip {
+        grid-template-columns: repeat(auto-fit, minmax(8.5rem, 11rem));
+        justify-content: center;
+    }
+    .gallery-grid > li { display: block; min-width: 0; }
+}
+
+.page-blog {
+    // article header: long headlines need more room than the standard banner allows
+    &.is-post .page-hero__title { max-width: 30ch; font-size: fluid(1.9rem, '1.4rem + 2.2vw', 3rem); }
+    &.is-post .page-hero__lead { font-size: $fs-md; }
+    &.is-post .eyebrow { margin-bottom: $space-2; }
+
+    .pills { margin-bottom: $space-6; }
+}

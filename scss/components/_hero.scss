@@ -1,0 +1,70 @@
+// Home-style hero (navy, glowing, arch-framed photo). Markup: any page may use .hero; B1 builds the home hero with it.
+.hero {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(60rem 30rem at 85% -10%, rgba($orange-accent, 0.28), transparent 60%),
+        radial-gradient(40rem 26rem at -5% 110%, rgba($gold, 0.2), transparent 60%),
+        $navy-dark;
+    color: rgba($white, 0.9);
+
+    &__inner {
+        @include container($container);
+        display: grid;
+        gap: $space-7;
+        align-items: center;
+        padding-block: $space-8;
+        @include respond(lg) { grid-template-columns: 1.15fr 0.85fr; padding-block: $space-9; gap: $space-8; }
+    }
+
+    &__eyebrow { color: $gold; }
+    &__title { color: $white; font-size: fluid(2.2rem, '1.4rem + 2.8vw', 3.6rem); line-height: 1.08; }
+    &__title em { font-style: normal; color: $gold; }
+    &__lead { margin-top: $space-4; max-width: 38rem; font-size: fluid(1.1rem, '1rem + 0.5vw', 1.35rem); color: rgba($white, 0.84); }
+    &__actions { display: flex; flex-wrap: wrap; gap: $space-3; margin-top: $space-6; }
+
+    &__media {
+        position: relative;
+        max-width: 26rem;
+        margin-inline: auto;
+        width: 100%;
+        img {
+            width: 100%;
+            aspect-ratio: 4 / 5;
+            object-fit: cover;
+            border-radius: 999px 999px $radius-xl $radius-xl;
+            box-shadow: $shadow-lg;
+            border: 6px solid rgba($gold, 0.55);
+        }
+        &::after {
+            content: '';
+            position: absolute;
+            z-index: -1;
+            inset: 14% -8% -6% 18%;
+            border-radius: 999px 999px $radius-xl $radius-xl;
+            background: rgba($orange-accent, 0.35);
+            filter: blur(40px);
+        }
+    }
+}
+
+// Inner-page banner (title + lead + breadcrumbs). partials/page-hero.php
+.page-hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: $space-7 $space-8;
+    background:
+        radial-gradient(40rem 20rem at 100% 0%, rgba($orange-accent, 0.22), transparent 60%),
+        $navy;
+    color: rgba($white, 0.9);
+    @include respond(lg) { padding-block: $space-8 $space-9; }
+
+    &--image { background-size: cover; background-position: center; }
+    &--image::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba($navy-dark, 0.92), rgba($navy-dark, 0.55)); }
+    &__inner { @include container($container); position: relative; }
+    &__title { color: $white; max-width: 20ch; }
+    &__lead { margin-top: $space-4; max-width: 44rem; font-size: fluid(1.1rem, '1rem + 0.5vw', 1.35rem); color: rgba($white, 0.85); }
+    &__actions { display: flex; flex-wrap: wrap; gap: $space-3; margin-top: $space-5; }
+    .eyebrow { color: $gold; }
+    .breadcrumbs { margin-bottom: $space-5; }
+}

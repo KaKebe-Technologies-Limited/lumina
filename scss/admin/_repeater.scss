@@ -1,0 +1,57 @@
+// Repeater (add / remove / reorder rows). Hooks documented in docs/ARCHITECTURE.md; behaviour in assets/js/admin.js.
+//   <div class="repeater" data-repeater data-repeater-prefix="blocks[values.items]" data-max-rows="12">
+//     <div class="repeater__list" data-repeater-list> <div class="repeater__row" data-repeater-row> ...inputs... </div> </div>
+//     <template data-repeater-template> <div class="repeater__row" data-repeater-row>...name="blocks[values.items][__INDEX__][title]"...</div> </template>
+//     <button type="button" class="btn btn--outline btn--sm" data-repeater-add>Add item</button>
+//   </div>
+.admin {
+    .repeater {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);      // not the implicit `auto` track: it grew to the longest nowrap row title
+        min-width: 0;
+        gap: $space-3;
+        &__list { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: $space-3; }
+        &__row {
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            min-width: 0;
+            gap: $space-3;
+            padding: $space-4;
+            border: 1px solid $border-strong;
+            border-radius: $radius;
+            background: $white;
+            box-shadow: $shadow-sm;
+            &.is-dragging { opacity: 0.5; }
+            &.is-drop-target { border-color: $orange-accent; box-shadow: 0 0 0 2px rgba($orange-accent, 0.4); }
+        }
+        &__row-head { display: flex; align-items: center; justify-content: space-between; gap: $space-3; padding-bottom: $space-2; border-bottom: 1px dashed $border; }
+        &__row-title { font-family: $font-heading; font-weight: 600; font-size: 0.9rem; color: $navy; @include truncate; }
+        &__handle { cursor: grab; color: $ink-soft; display: inline-flex; padding: 0.25rem; &:active { cursor: grabbing; } }
+        &__tools { display: inline-flex; gap: 2px; flex: none; }
+        &__tool { display: inline-flex; padding: 0.35rem; border: 0; border-radius: $radius-sm; background: transparent; color: $ink-soft; &:hover { background: $surface-alt; color: $navy; } &[disabled] { opacity: 0.3; pointer-events: none; } &--danger:hover { background: $danger-bg; color: $danger; } }
+        &__fields { display: grid; gap: $space-3; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); .field--full { grid-column: 1 / -1; } } }
+        &__empty { padding: $space-4; text-align: center; color: $ink-soft; border: 1px dashed $border-strong; border-radius: $radius; font-size: $fs-sm; }
+        &__list:not(:empty) + &__empty, &__list:not(:empty) ~ &__empty { display: none; }
+        &__footer { display: flex; justify-content: space-between; align-items: center; gap: $space-3; flex-wrap: wrap; }
+    }
+
+    // generic re-orderable list (menus, gallery): [data-reorder] > [data-reorder-item]
+    .reorder-list { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: $space-2; }
+    .reorder-item {
+        display: flex;
+        flex-wrap: wrap;                 // narrow screens: the tools drop below the text instead of pushing the page wider
+        align-items: center;
+        min-width: 0;
+        gap: $space-3;
+        padding: $space-3 $space-4;
+        border: 1px solid $border;
+        border-radius: $radius;
+        background: $white;
+        &.is-dragging { opacity: 0.5; }
+        &.is-drop-target { border-color: $orange-accent; }
+        &__handle { cursor: grab; color: $ink-soft; }
+        &__body { flex: 1 1 9rem; min-width: 0; }
+        &__tools { display: inline-flex; gap: 2px; }
+    }
+}

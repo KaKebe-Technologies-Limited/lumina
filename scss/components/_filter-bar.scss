@@ -1,0 +1,41 @@
+// Public filter bar / pills (reports year+category, events upcoming/past, blog categories)
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-3;
+    align-items: flex-end;
+    margin-bottom: $space-6;
+    .field { min-width: 11rem; }
+    &__reset { align-self: flex-end; }
+}
+
+.pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2;
+    &__item {
+        padding: 0.45rem 1.1rem;
+        border: 1px solid $border-strong;
+        border-radius: $radius-pill;
+        background: $white;
+        color: $navy;
+        font-size: $fs-sm;
+        font-weight: 600;
+        text-decoration: none;
+        &:hover { background: $surface; color: $navy; }
+        &.is-active { background: $navy; border-color: $navy; color: $white; }
+    }
+}
+
+.empty-state {
+    padding: $space-8 $space-5;
+    text-align: center;
+    border: 2px dashed $border-strong;
+    border-radius: $radius-lg;
+    background: $surface;
+    color: $ink-soft;
+    &__icon { display: inline-flex; margin-bottom: $space-3; color: $gold-deep; }
+    &__title { font-size: 1.25rem; color: $heading; }
+    &__text { max-width: 32rem; margin: $space-2 auto 0; }
+    &__actions { margin-top: $space-5; display: flex; justify-content: center; gap: $space-3; flex-wrap: wrap; }
+}

@@ -1,0 +1,38 @@
+# User uploads: NOTHING here is ever executed, and only plain images are served.
+Options -Indexes -ExecCGI -Includes
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phar .pl .py .cgi
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .php8 .phar
+
+# Allow-list: serve only image files. Anything else (even if one slipped in) is refused.
+<FilesMatch "^.+$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+<FilesMatch "\.(jpe?g|png|gif|webp|ico)$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Allow from all
+    </IfModule>
+</FilesMatch>
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; sandbox"
+    Header set Cache-Control "public, max-age=2592000"
+</IfModule>

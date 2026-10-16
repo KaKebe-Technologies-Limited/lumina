@@ -1,0 +1,45 @@
+// pages/_donate.scss - OWNED BY B1 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Page-specific styles ONLY. Shared building blocks (.icon-tile .form-split ...) live in _home.scss.
+
+.page-donate {
+    .donate-way {
+        display: flex;
+        flex-direction: column;
+        gap: $space-3;
+        min-width: 0;
+        padding: $space-6 $space-5;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+        h3 { margin-top: $space-2; }
+        &__cta { margin-top: auto; padding-top: $space-3; }
+    }
+    .donate-details {
+        padding: $space-4;
+        border-radius: $radius;
+        background: $surface;
+        border: 1px dashed $border-strong;
+        font-size: $fs-sm;
+        line-height: 1.7;
+        overflow-wrap: anywhere;
+        color: $ink;
+    }
+
+    // "what your support does" cards
+    .donate-support__grid { display: grid; gap: $space-5; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .donate-card {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+        &__media img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+        &__body { padding: $space-5; h3 { font-size: 1.25rem; } p { margin-top: $space-2; color: $ink-soft; } }
+    }
+
+    .donate-pledge { scroll-margin-top: $header-h; }
+    .donate-pledge .alert { align-items: flex-start; }
+}

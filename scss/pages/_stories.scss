@@ -1,0 +1,33 @@
+// pages/_stories.scss - OWNED BY B7 "org-public" (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Page-specific styles ONLY, scoped under .page-stories. Reuses the shared .story-card; adds the single-story layout.
+
+.page-stories {
+    .story-grid { align-items: stretch; }
+    .stories-consent {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: $space-2;
+        margin: $space-7 auto 0;
+        max-width: 40rem;
+        font-size: $fs-sm;
+    }
+    .stories-join { max-width: 40rem; margin-inline: auto; }
+
+    // ---- single story -------------------------------------------------------------------------------------------------
+    .story-back { margin-bottom: $space-5; }
+    .story-detail__layout {
+        display: grid;
+        gap: $space-6;
+        grid-template-columns: minmax(0, 1fr);
+        &--media { @include respond(lg) { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: $space-8; align-items: start; } }
+    }
+    .story-detail__media { margin: 0; img { width: 100%; border-radius: $radius-lg; box-shadow: $shadow; } }
+    .story-person {
+        margin-bottom: $space-5;
+        padding-left: $space-4;
+        border-left: 4px solid $gold;
+        &__name { display: block; font-family: $font-heading; font-size: 1.15rem; font-weight: 600; color: $navy; }
+        &__meta { display: block; font-size: $fs-sm; color: $ink-soft; }
+    }
+}

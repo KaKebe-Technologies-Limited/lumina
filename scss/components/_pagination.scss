@@ -1,0 +1,31 @@
+// partials/pagination.php
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: $space-2;
+    margin-top: $space-7;
+
+    &__item {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.75rem;
+        height: 2.75rem;
+        padding: 0 $space-3;
+        border: 1px solid $border-strong;
+        border-radius: $radius-pill;
+        background: $white;
+        color: $navy;
+        font-weight: 600;
+        font-size: $fs-sm;
+        text-decoration: none;
+        transition: background-color $t-fast ease, color $t-fast ease;
+        &:hover { background: $surface; color: $navy; }
+    }
+    &__item.is-current { background: $navy; border-color: $navy; color: $white; pointer-events: none; }
+    &__item.is-disabled { opacity: 0.4; pointer-events: none; }
+    &__gap { padding: 0 $space-1; color: $ink-soft; }
+    &__summary { width: 100%; text-align: center; font-size: $fs-xs; color: $ink-soft; margin-top: $space-1; }
+}

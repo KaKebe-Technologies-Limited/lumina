@@ -1,0 +1,54 @@
+// Accessibility helpers: focus, skip link, reduced motion, honeypot.
+:focus {
+    outline: none;
+}
+
+:focus-visible {
+    @include focus-ring;
+}
+
+.skip-link {
+    position: absolute;
+    top: 0;
+    left: 1rem;
+    z-index: $z-toast;
+    padding: $space-3 $space-5;
+    background: $navy-dark;
+    color: $white;
+    font-weight: 600;
+    border-radius: 0 0 $radius $radius;
+    text-decoration: none;
+    transform: translateY(-120%);
+    transition: transform $t-fast ease;
+    &:focus {
+        transform: translateY(0);
+        color: $white;
+    }
+}
+
+// Spam-trap wrapper (also hidden inline by Honeypot::field())
+.hp-field {
+    position: absolute !important;
+    left: -9999px !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+@include reduced-motion {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+// Forced-colors / high contrast: keep focus visible
+@media (forced-colors: active) {
+    :focus-visible {
+        outline: 3px solid Highlight;
+    }
+}

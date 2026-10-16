@@ -1,0 +1,22 @@
+// partials/document-row.php (reports & downloads list)
+.document-list { display: grid; gap: $space-3; }
+
+.document-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: $space-4;
+    align-items: center;
+    padding: $space-4 $space-5;
+    background: $white;
+    border: 1px solid $border;
+    border-radius: $radius;
+    transition: border-color $t-fast ease, box-shadow $t-fast ease;
+    @include respond(md) { grid-template-columns: auto 1fr auto; }
+    &:hover { border-color: $gold; box-shadow: $shadow-sm; }
+
+    &__icon { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 12px; background: rgba($orange-accent, 0.16); color: $orange-dark; }
+    &__title { font-size: 1.05rem; font-family: $font-heading; font-weight: 600; color: $heading; }
+    &__meta { display: flex; flex-wrap: wrap; gap: $space-1 $space-4; margin-top: 2px; font-size: $fs-xs; color: $ink-soft; }
+    &__desc { margin-top: $space-1; font-size: $fs-sm; color: $ink-soft; }
+    &__action { grid-column: 1 / -1; @include respond(md) { grid-column: auto; } }
+}

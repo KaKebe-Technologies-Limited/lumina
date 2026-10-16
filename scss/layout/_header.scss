@@ -1,0 +1,242 @@
+// Site header + responsive navigation (markup: views/layouts/main.php, behaviour: assets/js/main.js)
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: $z-header;
+    background: rgba($white, 0.96);
+    border-bottom: 1px solid transparent;
+    transition: box-shadow $t-base ease, border-color $t-base ease;
+
+    // The frosted-glass blur lives on a pseudo-element, NOT on the header: any element with backdrop-filter becomes the containing
+    // block of its position:fixed descendants, which squeezed the mobile menu (.site-nav, fixed) into the 73 px header.
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        backdrop-filter: saturate(1.4) blur(10px);
+    }
+
+    &.is-scrolled {
+        border-bottom-color: $border;
+        box-shadow: 0 6px 24px rgba($navy-dark, 0.08);
+    }
+
+    &__bar {
+        @include container($container-wide);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: $space-4;
+        min-height: $header-h;
+        @include respond(lg) { min-height: $header-h-lg; }
+    }
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-3;
+    text-decoration: none;
+    color: $navy;
+    min-width: 0;
+    @include respond(nav) { flex: none; }
+
+    &__logo {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        flex: none;
+        @include respond(lg) { width: 60px; height: 60px; }
+    }
+    &__text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+        min-width: 0;
+    }
+    &__name {
+        font-family: $font-heading;
+        font-weight: 700;
+        font-size: 1.05rem;
+        letter-spacing: -0.01em;
+        color: $navy;
+        @include respond(lg) { font-size: 1.15rem; }
+    }
+    &__tag {
+        display: none;
+        margin-top: 2px;
+        font-size: 0.75rem;
+        color: $ink-soft;
+        @include respond('2xl') { display: block; }      // the tagline needs the extra width of large screens; below that the menu gets it
+    }
+    &:hover { color: $navy; }
+}
+
+.nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    border: 1px solid $border;
+    border-radius: $radius;
+    background: $white;
+    color: $navy;
+    @include respond(nav) { display: none; }
+
+    &__bars,
+    &__bars::before,
+    &__bars::after {
+        display: block;
+        width: 20px;
+        height: 2px;
+        background: currentColor;
+        border-radius: 2px;
+        transition: transform $t-base ease, opacity $t-fast ease;
+    }
+    &__bars { position: relative; }
+    &__bars::before, &__bars::after { content: ''; position: absolute; left: 0; }
+    &__bars::before { top: -6px; }
+    &__bars::after { top: 6px; }
+    &[aria-expanded='true'] &__bars { background: transparent; }
+    &[aria-expanded='true'] &__bars::before { top: 0; transform: rotate(45deg); }
+    &[aria-expanded='true'] &__bars::after { top: 0; transform: rotate(-45deg); }
+}
+
+// ---- Navigation: mobile = slide-down sheet, desktop = inline ----
+.site-nav {
+    position: fixed;
+    inset: $header-h 0 0 0;
+    padding: $space-5 $gutter $space-8;
+    overflow-y: auto;
+    background: $white;
+    border-top: 1px solid $border;
+    transform: translateY(-8px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity $t-base ease, transform $t-base ease, visibility 0s linear $t-base;
+
+    &.is-open {
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        transition-delay: 0s;
+    }
+
+    @include respond(nav) {
+        position: static;
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        gap: $space-4;
+        padding: 0;
+        overflow: visible;
+        background: transparent;
+        border: 0;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+    }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+        gap: $space-1;
+        @include respond(nav) {
+            flex-direction: row;
+            flex-wrap: wrap;            // an owner who adds menu items gets a second row, never an overlap with the logo
+            justify-content: flex-end;
+            align-items: center;
+            gap: 0;
+        }
+    }
+    &__item { position: relative; }
+
+    &__link {
+        display: block;
+        padding: $space-3 $space-4;
+        border-radius: $radius;
+        font-family: $font-heading;
+        font-size: 1rem;
+        font-weight: 500;
+        color: $navy;
+        text-decoration: none;
+        transition: background-color $t-fast ease, color $t-fast ease;
+        @include respond(nav) {
+            padding: $space-2 0.45rem;
+            font-size: 0.92rem;
+            border-radius: $radius-pill;
+        }
+        @include respond('2xl') { padding: $space-2 0.8rem; font-size: 0.94rem; }
+        &:hover { background: $surface; color: $navy-dark; }
+    }
+    &__item.is-active > &__link {
+        color: $orange-dark;
+        background: rgba($gold, 0.1);     // 0.16 made $orange-dark on the tint 4.4:1 (below AA 4.5:1); 0.10 gives 4.9:1
+    }
+
+    // dropdown
+    &__sub-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: $navy;
+        .icon { transition: transform $t-fast ease; }
+        &[aria-expanded='true'] .icon { transform: rotate(180deg); }
+        @include respond(nav) {
+            position: static;
+            width: 24px;
+            height: 24px;
+            margin-left: -0.55rem;
+        }
+    }
+    &__item.has-children { display: flex; flex-wrap: wrap; align-items: center; > .site-nav__link { flex: 1 1 auto; } @include respond(nav) { flex-wrap: nowrap; > .site-nav__link { flex: none; } } }
+
+    &__sub {
+        display: none;
+        flex-basis: 100%;
+        padding: 0 0 $space-2 $space-5;
+        &.is-open { display: block; }
+        @include respond(nav) {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 15rem;
+            padding: $space-2;
+            background: $white;
+            border: 1px solid $border;
+            border-radius: $radius;
+            box-shadow: $shadow-lg;
+        }
+        a {
+            display: block;
+            padding: $space-2 $space-4;
+            border-radius: $radius-sm;
+            font-size: 0.95rem;
+            color: $navy;
+            text-decoration: none;
+            &:hover { background: $surface; }
+        }
+        li.is-active a { color: $orange-dark; font-weight: 600; }
+    }
+    @include respond(nav) {
+        &__item.has-children:hover > &__sub { display: block; }
+    }
+
+    &__cta { margin-top: $space-5; @include respond(nav) { margin-top: 0; } }
+}
+
+// Prevent background scroll while the mobile menu is open
+body.nav-open { overflow: hidden; @include respond(nav) { overflow: auto; } }

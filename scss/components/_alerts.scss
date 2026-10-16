@@ -1,0 +1,27 @@
+// Alerts + flash messages (partials/flash.php renders .flash-stack > .alert)
+.alert {
+    display: flex;
+    gap: $space-3;
+    align-items: flex-start;
+    padding: $space-4 $space-5;
+    border-radius: $radius;
+    border: 1px solid transparent;
+    font-size: $fs-sm;
+    line-height: 1.5;
+    > .icon { margin-top: 2px; }
+    &__body { flex: 1; min-width: 0; }
+    &__title { font-weight: 700; display: block; }
+    &__close { margin: -0.25rem -0.5rem 0 0; padding: 0.25rem; border: 0; background: transparent; color: inherit; opacity: 0.7; border-radius: 50%; &:hover { opacity: 1; } }
+
+    &--success { background: $success-bg; border-color: rgba($success, 0.3); color: darken($success, 8%); }
+    &--error, &--danger { background: $danger-bg; border-color: rgba($danger, 0.3); color: darken($danger, 6%); }
+    &--warning { background: $warning-bg; border-color: rgba($warning, 0.3); color: $warning; }
+    &--info { background: $info-bg; border-color: rgba($info, 0.3); color: darken($info, 6%); }
+}
+
+.flash-stack {
+    @include container($container-narrow);
+    display: grid;
+    gap: $space-3;
+    padding-block: $space-4;
+}

@@ -1,0 +1,229 @@
+// admin/_org.scss - OWNED BY B8 "org-admin" (see docs/ARCHITECTURE.md ownership table). Imported by admin.scss.
+// Organisation screens: team, partners, documents, events (+registrations), impact stories.
+// Everything is scoped under .admin-org (the wrapper every org view starts with); shared admin components are reused as-is.
+// Reusable pieces defined here (documented in the B8 report): .org-bulk, .org-sort, .org-person, .org-avatar, .org-logo,
+// .org-fileicon, .org-filecur, .inline-form, .org-order, .org-badges, .org-danger, .consent-card, .org-figure.
+
+.admin-org {
+    // ---- list furniture ---------------------------------------------------------------------------------------
+    .org-sort {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+        &:hover { color: $orange-dark; }
+        &.is-active { color: $navy; }
+        .icon { flex: none; }
+    }
+
+    .org-bulk {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-3;
+        margin-bottom: $space-3;
+        .select { width: auto; min-width: 15rem; max-width: 100%; }
+        &__count { font-size: $fs-sm; color: $ink-soft; }
+    }
+
+    .org-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: $space-3;
+        margin-top: $space-4;
+        .result-count { margin: 0; }
+        .pagination { margin: 0; }
+    }
+
+    .table tbody tr.is-selected td { background: rgba($gold, 0.16); }
+    .table input[type='checkbox'] { width: 1.1rem; height: 1.1rem; accent-color: $navy; cursor: pointer; }
+    .table th .org-sort { font: inherit; letter-spacing: inherit; text-transform: inherit; }
+    // the reset makes every svg display:block; icons that sit inside a line of text must flow with it
+    .cell-sub .icon, .card__title .icon, .form-note .icon { display: inline-block; vertical-align: -0.15em; margin-right: 0.15rem; }
+    .table .badge, .org-badges .badge { white-space: nowrap; }
+    .table .cell-sub + .cell-sub, .table .cell-sub + .badge { margin-top: 0.15rem; }
+
+    .inline-form { display: inline-flex; margin: 0; }
+    .table__actions { align-items: center; flex-wrap: nowrap; }
+    .table a.cell-title { color: $navy; font-weight: 600; text-decoration: none; &:hover { color: $orange-dark; text-decoration: underline; } }
+    .org-order { display: inline-flex; gap: 2px; }
+    .org-badges { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+    .org-danger { color: $danger; &:hover { background: $danger-bg; color: $danger; } }
+    .form-note { margin-top: $space-2; }
+    .text-muted { color: $ink-soft; }
+
+    // ---- people / logos / files ------------------------------------------------------------------------------------
+    .org-person {
+        display: flex;
+        align-items: center;
+        gap: $space-3;
+        min-width: 0;
+        text-align: left;
+        &__text { display: flex; flex-direction: column; min-width: 0; }
+    }
+
+    .org-avatar {
+        flex: none;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: $surface-alt;
+        &--initials {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: $navy;
+            color: $gold;
+            font-family: $font-heading;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.02em;
+        }
+    }
+
+    .org-logo {
+        flex: none;
+        width: 64px;
+        height: 44px;
+        object-fit: contain;
+        padding: 3px;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-sm;
+        &--empty { display: inline-flex; align-items: center; justify-content: center; color: $ink-soft; background: $surface; }
+    }
+
+    .cell-thumb--empty { display: inline-flex; align-items: center; justify-content: center; color: $ink-soft; background: $surface; border: 1px solid $border; }
+
+    .org-fileicon {
+        position: relative;
+        display: inline-flex;
+        flex: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 52px;
+        border-radius: $radius-sm;
+        background: $surface;
+        border: 1px solid $border;
+        color: $navy;
+        line-height: 1;
+        b { margin-top: 3px; font-family: $font-heading; font-size: 0.6rem; letter-spacing: 0.04em; color: $orange-dark; }
+    }
+
+    .org-filecur {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-3;
+        padding: $space-3 $space-4;
+        background: $surface;
+        border: 1px solid $border;
+        border-radius: $radius;
+        &__text { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 12rem; word-break: break-word; }
+        &--missing { border-color: $danger; background: $danger-bg; }
+    }
+
+    // ---- forms -----------------------------------------------------------------------------------------------------
+    &__aside {
+        min-width: 0;
+        // the side column is narrow: stack the image preview above its controls
+        .image-field { grid-template-columns: 1fr; }
+        .image-field__file { max-width: 100%; }
+        .image-field__preview { max-width: 14rem; }
+    }
+    .filters .field { flex-basis: 11rem; }
+    .filters .field--grow { flex: 1 1 14rem; }
+    .filters .field--small { flex: 0 1 8rem; }
+    .card-grid > div, .card-grid > section, .card-grid > form { min-width: 0; }
+
+    .org-push-end { margin-left: auto; }
+    .form-actions--inline {
+        position: static;
+        margin: $space-4 0 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        backdrop-filter: none;
+    }
+
+    &__details {
+        > summary {
+            cursor: pointer;
+            list-style: none;
+            border-bottom: 0;
+            &::-webkit-details-marker { display: none; }
+            &::after {
+                content: '';
+                flex: none;
+                width: 0.5rem;
+                height: 0.5rem;
+                margin-left: auto;
+                border: solid $ink-soft;
+                border-width: 0 2px 2px 0;
+                transform: rotate(45deg);
+                transition: transform $t-fast ease;
+            }
+            &:focus-visible { @include focus-ring; }
+        }
+        margin-bottom: $space-4;
+        &[open] > summary::after { transform: rotate(-135deg); }
+        &[open] > summary { border-bottom: 1px solid $border; }
+        > .card__body > * + * { margin-top: $space-4; }
+    }
+
+    .org-figure { display: flex; align-items: baseline; gap: $space-2; margin: 0; }
+    .org-figure__value { font-family: $font-heading; font-size: 1.9rem; font-weight: 700; line-height: 1; color: $navy; }
+    .stat-tile > span:last-child { display: block; }
+
+    // story consent: deliberately prominent
+    .consent-card {
+        border-left: 4px solid $gold;
+        .card__title { display: inline-flex; align-items: center; gap: $space-2; }
+    }
+    .consent-check {
+        padding: $space-3 $space-4;
+        background: $surface;
+        border: 1px solid $border-strong;
+        border-radius: $radius;
+        font-size: 0.92rem;
+        line-height: 1.5;
+        input { width: 1.35rem; height: 1.35rem; margin-top: 0.1rem; }
+    }
+
+    // ---- reorder screens (behaviour: admin.js [data-reorder]) ---------------------------------------------------------
+    .reorder-item {
+        .org-avatar, .org-logo { flex: none; }
+        &__body { display: flex; flex-direction: column; min-width: 0; }
+        &__handle { display: inline-flex; padding: 0.35rem; touch-action: none; }
+        &.is-dragging { opacity: 0.5; box-shadow: $shadow; }
+    }
+
+    // ---- mobile ------------------------------------------------------------------------------------------------------
+    @include respond-down(md) {
+        .table__actions { flex-wrap: wrap; justify-content: flex-end; }
+        // stacked cards: the 1%-wide desktop columns must grow to the full card width
+        .table--stack td.col-narrow, .table--stack td.col-actions { width: auto; white-space: normal; }
+        .table--stack td.col-narrow { justify-content: flex-start; gap: $space-3; }
+        .table--stack td[data-label='Actions'] { justify-content: flex-end; }
+        .table--stack td[data-label='Actions']::before { content: none; }
+        .table--stack td[data-label='Select']::before { content: none; }
+        .org-bulk .select { flex: 1 1 12rem; }
+        .stat-grid { margin-bottom: $space-4; }
+    }
+}
+
+// multi-line table cells (title + sub line): keep the lines stacked, also inside the flex cells of the mobile card layout
+.admin-org {
+    .org-stack { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+    .org-stack > .cell-sub { display: block; }
+    @include respond-down(md) {
+        .org-stack { align-items: flex-end; text-align: right; }
+    }
+}

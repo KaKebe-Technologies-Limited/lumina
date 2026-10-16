@@ -1,0 +1,41 @@
+// Responsive grids. Children flow into equal columns; add --auto for fluid card grids.
+.grid {
+    display: grid;
+    gap: $space-5;
+    grid-template-columns: minmax(0, 1fr);
+
+    &--gap-lg { gap: $space-6; @include respond(lg) { gap: $space-7; } }
+    &--gap-sm { gap: $space-3; }
+
+    &--2 { @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    &--3 {
+        @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @include respond(lg) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    &--4 {
+        @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    &--auto { grid-template-columns: repeat(auto-fill, minmax(#{'min(100%, 17rem)'}, 1fr)); }
+    &--center { align-items: center; }
+}
+
+// Text + media two-column block. Stacks on mobile, side by side from md.
+.split {
+    display: grid;
+    gap: $space-6;
+    align-items: center;
+    @include respond(md) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: $space-7;
+    }
+    @include respond(lg) { gap: $space-8; }
+    &--reverse > :first-child { @include respond(md) { order: 2; } }
+    &--start { align-items: start; }
+    &__media {
+        img { width: 100%; border-radius: $radius-lg; box-shadow: $shadow; }
+    }
+    // arch-shaped portrait frame (brand motif)
+    &__media--arch img { border-radius: 999px 999px $radius-lg $radius-lg; aspect-ratio: 4 / 5; object-fit: cover; }
+    // NOTE (libsass): never write min()/max()/clamp() with mixed units directly - wrap in #{'...'} or use fluid().
+}

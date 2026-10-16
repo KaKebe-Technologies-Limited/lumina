@@ -1,0 +1,107 @@
+// pages/_careers.scss - OWNED BY B2 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Careers index, vacancy page and application form.
+
+.page-careers {
+    // ---- vacancy list ----------------------------------------------------------------------------------------------
+    .job-list__title { margin-bottom: $space-4; font-size: $fs-md; color: $ink-soft; }
+    .job-list { display: grid; gap: $space-4; }
+
+    .job-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: $space-4;
+        align-items: center;
+        padding: $space-5;
+        @include card-surface($radius-lg);
+        @include hover-lift;
+        @include respond(md) { grid-template-columns: minmax(0, 1fr) auto; padding: $space-5 $space-6; }
+
+        &__tags { display: flex; flex-wrap: wrap; gap: $space-2; margin-bottom: $space-3; }
+        &__title { font-size: 1.3rem; a { color: $heading; text-decoration: none; &:hover { color: $orange-dark; } } }
+        &__text { margin-top: $space-2; color: $ink-soft; max-width: 46rem; }
+        &__facts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: $space-2 $space-5;
+            margin-top: $space-3;
+            font-size: $fs-sm;
+            color: $ink-soft;
+            li { display: inline-flex; align-items: center; gap: 0.4rem; }
+        }
+    }
+
+    // ---- "no openings" notice -------------------------------------------------------------------------------------------
+    .no-openings {
+        padding: $space-7 $space-5;
+        text-align: center;
+        border: 2px dashed $border-strong;
+        border-radius: $radius-lg;
+        background: $surface;
+        &__icon { display: inline-flex; margin-bottom: $space-3; color: $gold-deep; }
+        &__title { font-family: $font-heading; font-size: 1.3rem; font-weight: 600; color: $heading; }
+        &__text { max-width: 34rem; margin: $space-3 auto 0; color: $ink-soft; }
+        p + p { margin-top: $space-3; }
+        .btn { margin-top: $space-4; }
+    }
+
+    // ---- why join us ---------------------------------------------------------------------------------------------------
+    .split--single { display: block; }
+    .check-list {
+        display: grid;
+        gap: $space-4;
+        li { display: flex; align-items: flex-start; gap: $space-3; font-size: $fs-md; }
+        .icon { margin-top: 0.15em; color: $orange-dark; }
+    }
+
+    // ---- recruitment steps -------------------------------------------------------------------------------------------------
+    .timeline__text { color: $ink; font-size: $fs-md; padding-top: 0.55rem; }
+
+    // ---- volunteer band (navy) ------------------------------------------------------------------------------------------------
+    .role-card {
+        padding: $space-5 $space-6;
+        border: 1px solid rgba($white, 0.18);
+        border-radius: $radius-lg;
+        background: rgba($white, 0.07);
+        &__title { margin-bottom: $space-4; font-size: $fs-md; color: #E8BD74; }     // $gold on this translucent card was 4.06:1; this is 5.3:1
+        &__list { display: grid; gap: $space-3; }
+        &__list li { display: flex; align-items: flex-start; gap: $space-3; }
+        &__list .icon { margin-top: 0.25em; color: $gold; }
+    }
+
+    // ---- closing band -----------------------------------------------------------------------------------------------------------
+    .careers-cta__quote { font-family: $font-heading; font-size: fluid(1.1rem, '1rem + 0.5vw', 1.4rem); font-weight: 500; color: $gold; }
+
+    // ---- application form ------------------------------------------------------------------------------------------------------------
+    .apply-form {
+        input[type='file'] { padding: 0.65rem 0.8rem; background: $surface; cursor: pointer; }
+        input[type='file']::file-selector-button {
+            margin-right: $space-3;
+            padding: 0.45rem 1rem;
+            border: 0;
+            border-radius: $radius-pill;
+            background: $navy;
+            color: $white;
+            font-family: $font-heading;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .check a { font-weight: 600; }
+    }
+
+    // ---- vacancy page ----------------------------------------------------------------------------------------------------------------
+    .job-page {
+        &__layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-7; @include respond(lg) { grid-template-columns: minmax(0, 1fr) 20rem; align-items: start; gap: $space-8; } }
+        &__heading { margin-top: $space-6; margin-bottom: $space-3; font-size: fluid(1.35rem, '1.15rem + 0.8vw', 1.8rem); &:first-child { margin-top: 0; } }
+        &__aside { @include respond(lg) { position: sticky; top: #{$header-h + 24px}; } }
+    }
+    .job-facts {
+        display: grid;
+        gap: $space-4;
+        margin-bottom: $space-5;
+        padding: $space-5;
+        border-radius: $radius-lg;
+        background: $surface;
+        dt { font-size: $fs-xs; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: $gold-text; }
+        dd { margin-top: 2px; font-weight: 600; color: $navy; }
+    }
+}

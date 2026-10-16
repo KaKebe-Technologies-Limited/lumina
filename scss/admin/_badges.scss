@@ -1,0 +1,6 @@
+// Status badges. Use the shared .badge--* variants; map statuses with the status_badge partial / these helper classes.
+.admin {
+    .badge { font-size: 0.74rem; padding: 0.15rem 0.6rem; text-transform: capitalize; }
+    // dot indicator inside a badge
+    .badge--dot::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: currentColor; }
+}

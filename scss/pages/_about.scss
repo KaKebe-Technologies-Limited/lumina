@@ -1,0 +1,108 @@
+// pages/_about.scss - OWNED BY B1 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Page-specific styles ONLY. Shared building blocks (.callout .checklist .home-photo .icon-tile ...) live in _home.scss.
+
+.page-about {
+    .about-story__emphasis {
+        font-family: $font-heading;
+        font-size: fluid(1.15rem, '1rem + 0.6vw', 1.5rem);
+        font-weight: 600;
+        line-height: 1.35;
+        color: $navy;
+        padding-left: $space-4;
+        border-left: 4px solid $orange-accent;
+    }
+
+    // founder quote
+    .about-quote__box {
+        display: grid;
+        gap: $space-6;
+        align-items: center;
+        max-width: 62rem;
+        margin-inline: auto;
+        @include respond(md) { grid-template-columns: 14rem minmax(0, 1fr); gap: $space-7; }
+    }
+    .about-quote__photo {
+        width: 12rem;
+        max-width: 100%;
+        aspect-ratio: 4 / 5;
+        object-fit: cover;
+        object-position: center top;
+        margin-inline: auto;
+        border-radius: 999px 999px $radius-lg $radius-lg;
+        border: 5px solid rgba($gold, 0.7);
+        box-shadow: $shadow;
+        @include respond(md) { width: 100%; }
+    }
+    .about-quote__text {
+        position: relative;
+        font-family: $font-heading;
+        font-size: fluid(1.1rem, '1rem + 0.6vw', 1.5rem);
+        font-weight: 500;
+        line-height: 1.55;
+        color: $navy;
+        &::before { content: '\201C'; display: block; margin-bottom: -1.2rem; font-family: Georgia, serif; font-size: 5rem; line-height: 1; color: $gold; }
+        p + p { margin-top: $space-4; }
+    }
+    .about-quote__cite { display: block; margin-top: $space-4; font-family: $font-body; font-size: $fs-base; font-weight: 700; font-style: normal; color: $orange-dark; &::before { content: '\2014\00a0'; } }
+
+    // vision & mission
+    .about-vm__grid { display: grid; gap: $space-5; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-6; } }
+    .about-vm__card {
+        padding: $space-6;
+        border-radius: $radius-lg;
+        background: $white;
+        border: 1px solid $border;
+        border-top: 5px solid $orange-accent;
+        box-shadow: $shadow-sm;
+        h3 { margin-top: $space-4; font-size: fluid(1.4rem, '1.2rem + 0.7vw', 1.8rem); }
+        p { margin-top: $space-3; font-size: $fs-md; line-height: 1.65; color: $ink-soft; }
+    }
+    .about-vm__card + .about-vm__card { border-top-color: $gold; }
+
+    // second vision / mission wording (navy banner, hidden by default)
+    .about-banner__eyebrow { display: block; text-align: center; margin-bottom: $space-6; font-size: $fs-sm; }
+    .about-banner__grid { display: grid; gap: $space-5; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-6; } }
+    .about-banner__card {
+        padding: $space-6;
+        border-radius: $radius-lg;
+        background: rgba($white, 0.07);
+        border: 1px solid rgba($white, 0.16);
+        h3 { font-size: fluid(1.35rem, '1.15rem + 0.8vw', 1.8rem); color: $white; }
+        p { margin-top: $space-3; font-size: $fs-md; line-height: 1.6; color: rgba($white, 0.9); }
+    }
+
+    // values
+    .about-values__grid { display: grid; gap: $space-4; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } @include respond(lg) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: $space-5; } }
+    .about-value {
+        display: flex;
+        align-items: center;
+        gap: $space-4;
+        padding: $space-4 $space-5;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+        h3 { font-size: 1.1rem; line-height: 1.3; }
+        p { margin-top: $space-1; font-size: $fs-sm; color: $ink-soft; }
+    }
+
+    // governance
+    .about-governance__grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: $space-5;
+        > * { flex: 0 1 15.5rem; min-width: #{'min(100%, 13rem)'}; }
+    }
+
+    // location
+    .about-location__address { display: flex; align-items: flex-start; gap: $space-3; line-height: 1.5; .icon { color: $orange-dark; margin-top: 0.15rem; } }
+    .about-location__map {
+        overflow: hidden;
+        border-radius: $radius-lg;
+        border: 1px solid $border;
+        box-shadow: $shadow;
+        aspect-ratio: 4 / 3;
+        iframe { display: block; width: 100%; height: 100%; border: 0; }
+    }
+}

@@ -1,0 +1,99 @@
+// pages/_team.scss - OWNED BY B7 "org-public" (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Page-specific styles ONLY, scoped under .page-team. Reuses the shared .team-card component and extends it:
+//  - equal-height cards, the whole biography is visible by default (no JavaScript needed)
+//  - with JavaScript (class .has-bio-dialog on <html>, set by assets/js/pages/team.js) long biographies are cut to an excerpt
+//    and the full text opens in a modal <dialog class="bio-dialog">.
+
+.page-team {
+    // centred, equal-width cards whatever the number of members
+    .team-grid {
+        grid-template-columns: repeat(auto-fit, minmax(13.5rem, 16.5rem));
+        justify-content: center;
+        align-items: stretch;
+    }
+    .team-card { height: 100%; }
+    .section__header { margin-inline: auto; text-align: center; }
+
+    // the shared card clamps the bio to 4 lines; show it in full unless the JS enhancement is active
+    .team-card__bio {
+        display: block;
+        overflow: visible;
+        -webkit-line-clamp: unset;
+        > * + * { margin-top: $space-2; }
+    }
+    .team-card--long .team-card__bio--full { text-align: left; }
+    .team-card__bio--short { display: none; }
+    .team-card__more { align-self: center; margin-top: $space-3; }
+    .team-card__links { margin-top: auto; }
+
+    .team-join { max-width: 40rem; margin-inline: auto; }
+
+    // ---- modal biography --------------------------------------------------------------------------------------------
+    .bio-dialog {
+        position: fixed;
+        width: #{'min(calc(100% - 2rem), 46rem)'};
+        max-height: calc(100vh - 2rem);
+        padding: 0;
+        border: 0;
+        border-radius: $radius-lg;
+        background: $white;
+        color: $ink;
+        box-shadow: $shadow-lg;
+        overflow: auto;
+        overscroll-behavior: contain;
+
+        &::backdrop { background: rgba($navy-dark, 0.7); }
+
+        &__close {
+            position: absolute;
+            top: $space-3;
+            right: $space-3;
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.75rem;
+            height: 2.75rem;
+            border: 0;
+            border-radius: 50%;
+            background: $surface;
+            color: $navy;
+            cursor: pointer;
+            &:hover { background: $navy; color: $white; }
+            &:focus-visible { @include focus-ring; }
+        }
+
+        &__inner {
+            display: grid;
+            gap: $space-5;
+            padding: $space-7 $space-5 $space-6;
+            @include respond(md) { padding: $space-7 $space-6; &.has-media { grid-template-columns: 13rem minmax(0, 1fr); gap: $space-6; } }
+        }
+        &__media img {
+            width: 100%;
+            max-width: 16rem;
+            aspect-ratio: 4 / 5;
+            object-fit: cover;
+            object-position: center top;
+            border-radius: $radius;
+            background: $surface-alt;
+        }
+        &__name { font-size: $fs-xl; padding-right: 2.5rem; }
+        &__role { margin-top: $space-1; font-weight: 600; color: $orange-dark; }
+        &__text { margin-top: $space-4; }
+        &__links {
+            display: flex;
+            gap: $space-2;
+            margin-top: $space-4;
+            a { display: inline-flex; padding: 0.55rem; border-radius: 50%; color: $navy; background: $surface; &:hover { background: $navy; color: $white; } }
+        }
+    }
+}
+
+body.page-team.is-dialog-open { overflow: hidden; }
+
+// JS-enhanced cards: short excerpt + "Read bio" button
+.has-bio-dialog .page-team {
+    .team-card--long .team-card__bio--full { display: none; }
+    .team-card--long .team-card__bio--short { display: block; @include line-clamp(4); }
+}

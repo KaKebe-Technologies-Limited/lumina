@@ -1,0 +1,68 @@
+// pages/_contact.scss - OWNED BY B2 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Contact page: form + office details + map.
+
+.page-contact {
+    .contact-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: $space-7;
+        @include respond(lg) { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: $space-8; align-items: start; }
+        &--single { @include respond(lg) { grid-template-columns: minmax(0, 46rem); justify-content: center; } }
+    }
+    .contact-form__title { margin-bottom: $space-3; font-size: fluid(1.5rem, '1.2rem + 1.2vw', 2.1rem); }
+    .contact-form .form-card { margin-top: $space-5; }
+
+    .contact-details {
+        > h2 { font-size: fluid(1.5rem, '1.2rem + 1.2vw', 2.1rem); }
+        > p { margin-top: $space-3; }
+    }
+    .contact-cards { display: grid; gap: $space-4; margin-top: $space-5; }
+    .contact-card {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-4;
+        padding: $space-4 $space-5;
+        @include card-surface($radius);
+        &__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 12px;
+            background: rgba($gold, 0.25);
+            color: $navy;
+        }
+        &__title { margin-bottom: 2px; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: $gold-text; font-family: $font-heading; }
+        > div { min-width: 0; }
+        &__text { font-style: normal; color: $ink; line-height: 1.6; overflow-wrap: break-word; }
+        &__text a { font-weight: 500; text-decoration: none; &:hover { text-decoration: underline; } }
+    }
+    .contact-social { margin-top: $space-5; .contact-card__title { margin-bottom: $space-3; } }
+    .social-list--dark a { border-color: $border-strong; color: $navy; &:hover { background: $navy; border-color: $navy; color: $white; } }
+
+    // map
+    .map-frame {
+        overflow: hidden;
+        border-radius: $radius-lg;
+        box-shadow: $shadow;
+        aspect-ratio: 16 / 9;
+        min-height: 18rem;
+        background: $surface-alt;
+        iframe { display: block; width: 100%; height: 100%; border: 0; }
+    }
+    .map-fallback {
+        padding: $space-7 $space-5;
+        text-align: center;
+        border: 2px dashed $border-strong;
+        border-radius: $radius-lg;
+        background: $white;
+        &__icon { display: inline-flex; margin-bottom: $space-3; color: $gold-deep; }
+        &__text { color: $ink-soft; }
+        &__address { margin-top: $space-2; font-family: $font-heading; font-weight: 600; font-size: $fs-md; color: $navy; }
+        .btn { margin-top: $space-4; }
+    }
+
+    .closing-line { font-family: $font-heading; font-size: fluid(1.25rem, '1.05rem + 1vw', 1.9rem); font-weight: 500; line-height: 1.4; color: $white; text-wrap: balance; }
+}

@@ -1,0 +1,46 @@
+// =====================================================================================
+// ADMIN STYLESHEET  ->  assets/css/admin.css + admin.min.css  (python bin/build-scss.py)
+// FOUNDATION-OWNED. Agents add rules ONLY inside their own scss/admin/_<area>.scss partial (already imported below).
+// The admin bundle re-uses the public form/button/badge/alert/pagination components so shared partials look the same
+// in both bundles; admin-specific overrides live in scss/admin/*.
+// =====================================================================================
+
+@import 'abstracts/tokens';
+@import 'abstracts/functions';
+@import 'abstracts/mixins';
+
+@import 'base/reset';
+@import 'base/utilities';
+@import 'base/a11y';
+
+// shared building blocks (identical class names on the public site)
+@import 'components/buttons';
+@import 'components/forms';
+@import 'components/badge';
+@import 'components/alerts';
+@import 'components/pagination';
+@import 'components/breadcrumbs';
+@import 'components/filter-bar';
+
+// admin-specific
+@import 'admin/base';
+@import 'admin/layout';
+@import 'admin/cards';
+@import 'admin/buttons';
+@import 'admin/badges';
+@import 'admin/alerts';
+@import 'admin/tables';
+@import 'admin/forms';
+@import 'admin/field-types';
+@import 'admin/filters';
+@import 'admin/pagination';
+@import 'admin/editor';
+@import 'admin/repeater';
+@import 'admin/login';
+
+// ---- Area partials (owners in docs/ARCHITECTURE.md) ----
+@import 'admin/dashboard';
+@import 'admin/pages-editor';
+@import 'admin/content';
+@import 'admin/inbox';
+@import 'admin/org';

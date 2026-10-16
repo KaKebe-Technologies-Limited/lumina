@@ -1,0 +1,31 @@
+// Sass helper functions (libsass 3.6 compatible: classic features only).
+
+// rem from px: rem(24) -> 1.5rem
+@function rem($px, $base: 16) {
+    @return ($px / $base) * 1rem;
+}
+
+// Responsive font-size / spacing: fluid(1.75rem, '1.1rem + 2vw', 2.75rem) -> clamp(...)
+// The middle argument MUST be a quoted string (so Sass does not try to add rem and vw).
+@function fluid($min, $preferred, $max) {
+    @return unquote('clamp(#{$min}, #{$preferred}, #{$max})');
+}
+
+// Look up a breakpoint width: bp(md) -> 768px
+@function bp($name) {
+    @if map-has-key($breakpoints, $name) {
+        @return map-get($breakpoints, $name);
+    }
+    @error 'Unknown breakpoint #{$name}';
+}
+
+// Spacing by step number: space(5) -> 1.5rem
+@function space($step) {
+    $map: (1: $space-1, 2: $space-2, 3: $space-3, 4: $space-4, 5: $space-5, 6: $space-6, 7: $space-7, 8: $space-8, 9: $space-9, 10: $space-10);
+    @return map-get($map, $step);
+}
+
+// Strip the unit of a number
+@function strip-unit($n) {
+    @return $n / ($n * 0 + 1);
+}

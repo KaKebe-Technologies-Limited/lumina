@@ -1,0 +1,91 @@
+# =====================================================================================
+# Lumina Africa Foundation - root .htaccess  (WEB ROOT = PROJECT ROOT, no public/ folder)
+#   * real files below assets/ and uploads/ (only) are served directly
+#   * everything else is rewritten to index.php (front controller), even when a file of that name exists
+#   * app code (app/, bin/, database/, ...) and secrets (.env, *.sql, ...) are never served
+# Works at http://localhost/lumina/, at a domain root, or in any sub-folder (no RewriteBase).
+# Needs: AllowOverride All (XAMPP default) and mod_rewrite.
+# =====================================================================================
+
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+ServerSignature Off
+AddDefaultCharset UTF-8
+
+# ---- 1. Block secrets, source and tooling files wherever they are ----
+<FilesMatch "(^\.env|\.(env|sql|md|py|log|ini|bak|sh|dist|lock|scss|map|yml|yaml|eml|swp)$|^(composer|package)(-lock)?\.json$)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Only the front controller may be executed from the web root; other scripts are refused.
+<FilesMatch "\.(php[0-9]?|phtml|phar)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+<FilesMatch "^index\.php$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Allow from all
+    </IfModule>
+</FilesMatch>
+
+# ---- 2. Headers ----
+# Security headers + CSP for every dynamic page are sent by the application itself (App\Core\Response). Static files get
+# X-Content-Type-Options from assets/.htaccess and uploads/.htaccess. (Not repeated here to avoid duplicate headers.)
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+</IfModule>
+
+<IfModule mod_mime.c>
+    AddType image/webp .webp
+    AddType font/woff2 .woff2
+    AddType text/javascript .js
+</IfModule>
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json application/xml text/xml image/svg+xml
+</IfModule>
+
+# ---- 3. Routing ----
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Internal folders: forbidden even if their own .htaccess were missing.
+    RewriteRule ^(app|bin|database|docs|scss|storage|tools|vendor|tests|node_modules|\.git)(/|$) - [F,NC,L]
+
+    # Dotfiles / dot-folders (but allow /.well-known/).
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+
+    # Sensitive file types anywhere.
+    RewriteRule \.(env|sql|md|py|log|ini|bak|sh|lock|scss|eml)$ - [F,NC,L]
+
+    # ALLOW-LIST: only real files below assets/ and uploads/ are served directly (their own .htaccess then restricts the
+    # file types). A backup, dump, log or key file dropped anywhere else in the project root is never handed out: it is
+    # answered by the application (404), whatever its name or extension.
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^(assets|uploads)/ - [L]
+
+    # Everything else is the application (clean URLs).
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Without mod_rewrite the app cannot route; refuse to serve rather than expose source.
+<IfModule !mod_rewrite.c>
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</IfModule>

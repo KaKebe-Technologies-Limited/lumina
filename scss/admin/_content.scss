@@ -1,0 +1,300 @@
+// admin/_content.scss - OWNED BY B4 "admin-content" (programs, projects, posts, activities, gallery, jobs + the rich-text editor extras).
+// Imported by admin.scss. Area-specific admin styles ONLY: reuses the shared admin components (card, table, filters, tabs, switch,
+// image-field, editor). Do not edit admin.scss or the shared partials - add rules here.
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Lists (index screens)
+// ---------------------------------------------------------------------------------------------------------------------
+.admin {
+    // forms that only wrap a button (toggle / delete / move) must not break table cells
+    .inline-form { display: inline-flex; margin: 0; }
+
+    .content-tabs__count {
+        display: inline-block;
+        min-width: 1.5rem;
+        margin-left: 0.25rem;
+        padding: 0 0.4rem;
+        border-radius: $radius-pill;
+        background: $surface-alt;
+        color: $ink-soft;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.45rem;
+        text-align: center;
+    }
+    .tabs__item.is-active .content-tabs__count { background: $navy; color: $white; }
+
+    .th-sort {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: inherit;
+        text-decoration: none;
+        &:hover { color: $navy; }
+        &.is-sorted { color: $navy; }
+        &:focus-visible { @include focus-ring; border-radius: 3px; }
+    }
+
+    .cell-thumb--empty {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: $ink-soft;
+    }
+    .table .cell-title .badge { margin-left: $space-2; vertical-align: middle; }
+
+    // one-click Active / Inactive pill
+    .status-toggle {
+        padding: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        border-radius: $radius-pill;
+        &:hover .badge { box-shadow: 0 0 0 2px rgba($navy, 0.25); }
+        &:focus-visible { @include focus-ring; }
+    }
+
+    .status-cell { display: flex; flex-direction: column; align-items: flex-start; gap: $space-1; }
+    .link-button {
+        padding: 0;
+        border: 0;
+        background: none;
+        font-size: $fs-xs;
+        font-weight: 600;
+        color: $orange-dark;
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+        cursor: pointer;
+        &:hover { color: $navy; }
+    }
+
+    .btn-danger-hover:hover { background: $danger-bg; color: $danger; }
+    .list-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3; margin-top: $space-4; .pagination { margin: 0; } }
+    .result-count { margin: 0 0 $space-3; }
+    .list-footer .result-count { margin: 0; }
+    .form-note { margin-top: $space-3; }
+
+    .table--stack td[data-label="Picture"]:empty { display: none; }
+    @include respond-down(md) {
+        .table--stack .col-actions { text-align: right; }
+        .table--stack td.col-narrow { justify-content: flex-start; }
+        .table--stack td.col-narrow::before { content: none; }
+        .table--stack td.cell-main { display: block; text-align: left; }
+        .table--stack td.cell-main::before { display: block; margin-bottom: 2px; }
+        .table--stack td.cell-main .cell-title { display: block; }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Forms
+// ---------------------------------------------------------------------------------------------------------------------
+.admin {
+    .content-main > * + *,
+    .content-aside > * + * { margin-top: $space-5; }
+    .content-main, .content-aside { min-width: 0; }
+    .content-aside .card__body { display: grid; gap: $space-4; }
+    .content-aside .card__body > * + * { margin-top: 0; }
+    // the aside is narrow: stack the picture preview above its controls instead of side by side
+    .content-aside .image-field { grid-template-columns: minmax(0, 1fr); }
+    .image-field__file { max-width: 100%; min-width: 0; }
+    .image-field__controls .input { min-width: 0; }
+
+    .card--danger { border-color: rgba($danger, 0.35); margin-top: $space-6; .card__header { background: $danger-bg; border-bottom-color: rgba($danger, 0.2); } .card__title { color: $danger; } }
+
+    .form-actions--plain { position: static; margin: $space-4 0 0; padding: 0; background: none; border: 0; backdrop-filter: none; }
+    .field--grow { min-width: 12rem; }
+    [data-show-for][hidden] { display: none !important; }
+
+    // sticky save bar: keep the required-note on its own line on narrow screens
+    .form-actions .required-note { margin-left: auto; @include respond-down(md) { display: none; } }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Rich-text editor extras (base styles live in _editor.scss, frozen). Markup is generated by assets/js/admin-editor.js.
+// ---------------------------------------------------------------------------------------------------------------------
+.admin {
+    .editor {
+        &.is-disabled { opacity: 0.6; pointer-events: none; }
+        &__toolbar { align-items: center; }
+        &__group { display: inline-flex; gap: 2px; align-items: center; }
+        &__btn {
+            .icon { width: 1.05rem; height: 1.05rem; }
+            &[disabled] { opacity: 0.35; cursor: not-allowed; }
+            &:focus-visible { @include focus-ring($navy, 1px); }
+            &--italic { font-style: italic; font-family: $font-body; }
+            &--underline { text-decoration: underline; font-family: $font-body; }
+            &--bold { font-family: $font-body; }
+            &--wide { padding: 0 0.7rem; }
+        }
+        &__area {
+            &.is-empty::before { content: attr(data-placeholder); color: $ink-soft; pointer-events: none; display: block; position: absolute; }
+            position: relative;
+            &:focus-visible { outline: none; }
+            h2 { font-size: 1.35rem; }
+            h3 { font-size: 1.15rem; }
+            h4 { font-size: 1rem; }
+            figure { margin: 0.9em 0; }
+            figcaption { font-size: $fs-xs; color: $ink-soft; }
+            img.is-selected { outline: 3px solid $orange-accent; outline-offset: 2px; }
+            img.img-left { float: left; margin: 0 1rem 0.5rem 0; max-width: 45%; }
+            img.img-right { float: right; margin: 0 0 0.5rem 1rem; max-width: 45%; }
+            img.img-full { display: block; width: 100%; }
+            table { border-collapse: collapse; width: 100%; }
+            th, td { border: 1px solid $border-strong; padding: 0.35rem 0.6rem; }
+            pre, code { font-family: $font-mono; }
+            &::after { content: ''; display: block; clear: both; }
+        }
+        &__source {
+            display: block;
+            width: 100%;
+            min-height: 14rem;
+            max-height: 36rem;
+            margin: 0;
+            padding: $space-4;
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+            font-family: $font-mono;
+            font-size: 0.86rem;
+            line-height: 1.5;
+            resize: vertical;
+            background: $surface-alt;
+            &:focus { box-shadow: none; border: 0; outline: none; }
+        }
+        &__panel {
+            display: grid;
+            gap: $space-3;
+            padding: $space-3 $space-4;
+            border-bottom: 1px solid $border;
+            background: $info-bg;
+            @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
+            .field { gap: 0.25rem; }
+            .field--full { grid-column: 1 / -1; }
+            &__actions { display: flex; flex-wrap: wrap; gap: $space-2; align-items: center; grid-column: 1 / -1; }
+            &__title { grid-column: 1 / -1; font-family: $font-heading; font-weight: 600; font-size: 0.88rem; color: $navy; margin: 0; }
+            &__status { font-size: $fs-xs; color: $ink-soft; }
+            &[hidden] { display: none; }
+        }
+        &__status { display: flex; justify-content: space-between; gap: $space-3; flex-wrap: wrap; }
+        &__error { color: $danger; font-weight: 600; }
+        &__live { @include visually-hidden; }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Gallery manager
+// ---------------------------------------------------------------------------------------------------------------------
+html:not(.js) .js-only { display: none; }
+html.js [data-upload-fallback] { display: none; }
+
+.admin {
+    .gallery-upload { display: grid; gap: $space-4; @include respond(lg) { grid-template-columns: 18rem minmax(0, 1fr); align-items: start; } }
+
+    .dropzone {
+        position: relative;
+        border: 2px dashed $border-strong;
+        border-radius: $radius-lg;
+        background: $surface;
+        transition: border-color $t-fast ease, background-color $t-fast ease;
+        &.is-dragover { border-color: $orange-dark; background: rgba($orange-accent, 0.12); }
+        &:focus-within { border-color: $navy; box-shadow: 0 0 0 3px rgba($gold, 0.45); }
+        &__input { @include visually-hidden; }
+        &__label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: $space-2;
+            padding: $space-6 $space-4;
+            text-align: center;
+            color: $navy;
+            cursor: pointer;
+        }
+        &__title { font-size: 1.05rem; strong { color: $orange-dark; text-decoration: underline; } }
+        &__hint { font-size: $fs-xs; color: $ink-soft; }
+    }
+
+    .upload-queue { display: grid; gap: $space-3; margin: $space-4 0 0; padding: 0; list-style: none; &:empty { display: none; } }
+    .upload-summary { margin-top: $space-3; font-weight: 600; }
+    .upload-item {
+        display: grid;
+        grid-template-columns: 4.5rem minmax(0, 1fr);
+        gap: $space-3;
+        padding: $space-3;
+        border: 1px solid $border;
+        border-radius: $radius;
+        background: $white;
+        &.is-error { border-color: $danger; background: $danger-bg; }
+        &.is-done { border-color: rgba($success, 0.45); }
+        &__thumb { width: 4.5rem; height: 4.5rem; border-radius: $radius-sm; background: $surface-alt; object-fit: cover; overflow: hidden; display: flex; align-items: center; justify-content: center; color: $ink-soft; img { width: 100%; height: 100%; object-fit: cover; } }
+        &__body { min-width: 0; display: grid; gap: $space-2; }
+        &__name { font-weight: 600; font-size: $fs-sm; @include truncate; }
+        &__status { font-size: $fs-xs; color: $ink-soft; }
+        &.is-error &__status { color: $danger; font-weight: 600; }
+        &__fields { display: grid; gap: $space-2; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        &__fields .field { gap: 0.2rem; }
+        progress { width: 100%; height: 0.5rem; border-radius: $radius-pill; accent-color: $orange-dark; }
+    }
+
+    .bulk-bar {
+        position: sticky;
+        top: $admin-topbar-h;
+        z-index: 4;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-3 $space-4;
+        margin-bottom: $space-3;
+        padding: $space-3 $space-4;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius;
+        box-shadow: $shadow-sm;
+        &__count { font-size: $fs-sm; color: $ink-soft; font-weight: 600; }
+        &__actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; margin-left: auto; }
+        &__album { display: inline-flex; gap: $space-2; align-items: center; .input { width: 11rem; padding: 0.35rem 0.6rem; font-size: 0.85rem; } }
+        .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+    }
+
+    .gallery-admin {
+        display: grid;
+        gap: $space-4;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    }
+    .gallery-tile {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid $border;
+        border-radius: $radius;
+        background: $white;
+        overflow: hidden;
+        box-shadow: $shadow-sm;
+        &.is-hidden img { opacity: 0.45; filter: grayscale(0.7); }
+        &.needs-alt { border-color: $warning; }
+        &.is-dragging { opacity: 0.4; }
+        &.is-drop-before { box-shadow: -4px 0 0 0 $orange-accent; }
+        &.is-drop-after { box-shadow: 4px 0 0 0 $orange-accent; }
+        &__check {
+            position: absolute;
+            top: $space-2;
+            left: $space-2;
+            z-index: 2;
+            display: inline-flex;
+            padding: 0.2rem;
+            border-radius: $radius-sm;
+            background: rgba($white, 0.92);
+            box-shadow: $shadow-sm;
+            input { width: 1.2rem; height: 1.2rem; accent-color: $navy; }
+        }
+        &__media { display: block; aspect-ratio: 4 / 3; background: $surface-alt; img { width: 100%; height: 100%; object-fit: cover; } }
+        &__body { flex: 1; padding: $space-2 $space-3 0; }
+        &__alt { margin: 0; font-size: $fs-xs; color: $ink; line-height: 1.35; overflow-wrap: anywhere; }
+        &__meta { margin: $space-1 0 0; display: flex; flex-wrap: wrap; gap: $space-1; .badge { font-size: 0.7rem; } }
+        &__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: $space-2; margin-top: auto; }
+        &__handle { display: inline-flex; padding: 0.25rem; color: $ink-soft; cursor: grab; &:active { cursor: grabbing; } }
+        .btn--icon { padding: 0.3rem; }
+    }
+}

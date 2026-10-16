@@ -1,0 +1,26 @@
+// Admin login / forced password change (layouts/admin_login.php)
+.auth {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: $space-5 $gutter;
+    background:
+        radial-gradient(50rem 24rem at 100% 0%, rgba($orange-accent, 0.25), transparent 60%),
+        radial-gradient(40rem 22rem at 0% 100%, rgba($gold, 0.2), transparent 60%),
+        $navy-dark;
+
+    &__card {
+        width: 100%;
+        max-width: 26rem;
+        padding: $space-6 $space-5;
+        background: $white;
+        border-radius: $radius-xl;
+        box-shadow: $shadow-lg;
+        @include respond(sm) { padding: $space-7 $space-6; }
+    }
+    &__brand { display: flex; flex-direction: column; align-items: center; gap: $space-2; margin-bottom: $space-5; text-align: center; img { width: 84px; height: 84px; border-radius: 50%; } strong { font-family: $font-heading; font-size: 1.2rem; color: $navy; } span { font-size: $fs-sm; color: $ink-soft; } }
+    &__title { margin-bottom: $space-1; font-size: 1.35rem; text-align: center; }
+    &__form { display: grid; gap: $space-4; margin-top: $space-5; }
+    &__footer { margin-top: $space-5; text-align: center; font-size: $fs-sm; a { color: $ink-soft; } }
+    .alert { margin-bottom: 0; }
+}

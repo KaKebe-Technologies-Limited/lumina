@@ -1,0 +1,5 @@
+.admin {
+    .pagination { margin-top: $space-5; justify-content: flex-start; }
+    .pagination__item { min-width: 2.2rem; height: 2.2rem; border-radius: $radius; font-size: 0.85rem; }
+    .pagination__summary { width: auto; margin: 0 0 0 auto; }
+}

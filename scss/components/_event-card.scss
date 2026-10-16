@@ -1,0 +1,35 @@
+// partials/event-card.php
+.event-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: $space-4;
+    padding: $space-5;
+    background: $white;
+    border: 1px solid $border;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-sm;
+    @include hover-lift;
+    position: relative;
+    @include respond(md) { gap: $space-5; }
+
+    &__date {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 4.5rem;
+        height: 5rem;
+        border-radius: $radius;
+        background: $navy;
+        color: $white;
+        text-align: center;
+        line-height: 1;
+        flex: none;
+    }
+    &__day { font-family: $font-heading; font-size: 1.75rem; font-weight: 700; color: $gold; }
+    &__month { margin-top: 4px; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+    &__title { font-size: 1.2rem; a { color: $heading; text-decoration: none; &::after { content: ''; position: absolute; inset: 0; } &:hover { color: $orange-dark; } } }
+    &__meta { display: flex; flex-wrap: wrap; gap: $space-1 $space-4; margin-top: $space-2; font-size: $fs-sm; color: $ink-soft; span { display: inline-flex; align-items: center; gap: 0.35rem; } }
+    &__text { margin-top: $space-3; font-size: $fs-sm; color: $ink-soft; @include line-clamp(3); }
+    &--past { opacity: 0.85; .event-card__date { background: $ink-soft; } }
+}

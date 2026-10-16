@@ -1,0 +1,33 @@
+# Secrets / local config
+.env
+.env.*
+!.env.example
+
+# Runtime data: keep only the folder skeleton + its deny-all .htaccess
+storage/*
+!storage/.gitkeep
+!storage/.htaccess
+
+# User uploads: keep the folder + its hardening .htaccess
+uploads/*
+!uploads/.gitkeep
+!uploads/.htaccess
+
+# Dependencies / build caches
+vendor/*
+!vendor/.gitkeep
+!vendor/.htaccess
+node_modules/
+*.map
+__pycache__/
+*.pyc
+.sass-cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.log
+*.swp

@@ -1,0 +1,65 @@
+// pages/_events.scss - OWNED BY B7 "org-public" (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Page-specific styles ONLY, scoped under .page-events. Reuses the shared .event-card; adds the list grid, the single-event layout,
+// the facts panel and the registration form.
+
+.page-events {
+    .event-list {
+        display: grid;
+        gap: $space-4;
+        grid-template-columns: minmax(0, 1fr);
+        @include respond(lg) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-5; }
+    }
+    .event-card { height: 100%; }
+
+    // ---- single event ------------------------------------------------------------------------------------------------
+    .event-back { margin-bottom: $space-5; }
+
+    .event-detail {
+        display: grid;
+        gap: $space-6;
+        grid-template-columns: minmax(0, 1fr);
+        @include respond(lg) { grid-template-columns: minmax(0, 1fr) 21rem; gap: $space-8; align-items: start; }
+
+        // facts first on phones, in the sidebar on desktop
+        &__aside { order: -1; @include respond(lg) { order: 0; position: sticky; top: calc(#{$header-h} + 1.5rem); } }
+        &__media { margin: 0 0 $space-6; img { width: 100%; max-height: 30rem; object-fit: cover; border-radius: $radius-lg; box-shadow: $shadow; } }
+        &__heading { margin-bottom: $space-4; }
+    }
+
+    .event-facts {
+        display: flex;
+        flex-direction: column;
+        gap: $space-4;
+        padding: $space-5;
+        background: $surface;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+
+        &__list { display: grid; gap: $space-4; margin: 0; }
+        &__item dt {
+            display: flex;
+            align-items: center;
+            gap: $space-2;
+            font-size: $fs-xs;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: $orange-dark;
+        }
+        &__item dd { margin: $space-1 0 0; font-weight: 600; color: $heading; }
+        &__time { display: block; font-weight: 400; color: $ink-soft; }
+        &__places { display: flex; align-items: center; gap: $space-2; margin: 0; font-size: $fs-sm; font-weight: 600; color: $navy; }
+    }
+
+    // ---- registration -------------------------------------------------------------------------------------------------
+    .event-register {
+        margin-top: $space-8;
+        scroll-margin-top: calc(#{$header-h} + 1.5rem);
+        > h2 { margin-bottom: $space-4; }
+        &__intro { margin-bottom: $space-4; color: $ink-soft; }
+        &__form { padding: $space-5; @include respond(md) { padding: $space-6; } .alert { margin-bottom: $space-5; } }
+        &__external { margin-top: $space-5; }
+        &__done:focus { outline: none; }
+        .alert .alert__body > p + p { margin-top: $space-2; }
+    }
+}

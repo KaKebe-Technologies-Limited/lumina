@@ -1,0 +1,24 @@
+// pages/_programs.scss - OWNED BY B1 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Page-specific styles ONLY. Shared building blocks (.callout .checklist .home-photo .icon-tile .principle ...) live in _home.scss.
+
+.page-programs {
+    .programs-accountability__box {
+        display: grid;
+        gap: $space-6;
+        align-items: center;
+        @include respond(lg) { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: $space-8; }
+    }
+    .programs-accountability__list {
+        padding: $space-6;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+        .checklist { font-size: $fs-md; }
+    }
+    .programs-accountability__intro { margin-bottom: $space-4; font-family: $font-heading; font-weight: 600; color: $navy; }
+
+    // single-column layout of the detail page when the program has no image
+    .split--single { @include respond(md) { grid-template-columns: minmax(0, 1fr); } }
+    .programs-detail .prose { max-width: none; }
+}

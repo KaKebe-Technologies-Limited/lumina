@@ -1,0 +1,28 @@
+// pages/_activities.scss - OWNED BY B2 (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Activities index + single activity. Shared pieces (subscribe box, share row, post body, gallery strip) live in _blog.scss.
+
+.page-activities {
+    // story with no photo: let the text use a comfortable reading width instead of half the page
+    .split--single { display: block; .prose { max-width: 62rem; } }
+
+    .activity-gallery {
+        margin-top: $space-7;
+        &__title { margin-bottom: $space-5; font-size: fluid(1.25rem, '1.1rem + 0.7vw', 1.6rem); }
+    }
+
+    // card meta line (date + place): icons need inline layout (svg is display:block in the reset)
+    .card__meta-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+    // single activity: date/location facts
+    .activity__facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-3 $space-6;
+        margin-bottom: $space-6;
+        padding: $space-4 $space-5;
+        border-radius: $radius;
+        background: $surface;
+        dt { display: inline-flex; align-items: center; gap: 0.4rem; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: $gold-text; }
+        dd { margin-top: 2px; font-weight: 600; color: $navy; }
+    }
+}

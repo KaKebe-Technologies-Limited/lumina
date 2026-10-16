@@ -1,0 +1,14 @@
+.container {
+    @include container($container);
+    &--narrow { max-width: $container-narrow; }
+    &--wide { max-width: $container-wide; }
+}
+
+// Page shell: footer sticks to the bottom on short pages
+.site-main {
+    display: block;
+}
+
+body.has-sticky-header .site-main {
+    scroll-margin-top: $header-h;
+}

@@ -1,0 +1,108 @@
+// =====================================================================================
+// DESIGN TOKENS - shared by main.scss (public) and admin.scss. FOUNDATION-OWNED.
+// Brand colours were sampled from assets/img/brand/logo-512.png (embroidered patch):
+//   navy field  ~ #2C3950   gold ring/lettering ~ #D6A151   orange Africa map ~ #BE7229
+// Text contrast (WCAG AA) is noted next to each pairing that agents are expected to use.
+// =====================================================================================
+
+// ---- Brand palette --------------------------------------------------------------
+$navy:          #2C3950 !default;   // logo field. white on navy = 11.6:1
+$navy-dark:     #172036 !default;   // deep shadow of the patch. white = 16.2:1, gold = 7.0:1
+$navy-light:    #3C4E6E !default;
+$gold:          #D6A151 !default;   // logo lettering. on navy-dark = 7.0:1, on navy = 5.0:1 (use for text ONLY on navy)
+$gold-deep:     #C47E0D !default;   // live-site gold; DECORATIVE only on white (3.3:1)
+$gold-text:     #8A5A06 !default;   // gold-looking text on white/cream = 5.9:1
+$orange:        #CC651A !default;   // live-site orange; large text / icons / borders (3.9:1 on white)
+$orange-dark:   #B4540F !default;   // orange for text + white-text buttons: 5.0:1 on white
+$orange-accent: #E07341 !default;   // live-site accent; navy-dark text on it = 5.2:1; links on navy
+$teal:          #4A7C85 !default;   // 4.65:1 on white
+$teal-dark:     #3D6870 !default;   // 6.2:1 on white
+
+// ---- Neutrals ----------------------------------------------------------------------
+$ink:           #1D1E20 !default;   // body text, 16.7:1 on white
+$heading:       #2C2F31 !default;
+$ink-soft:      #5A6470 !default;   // secondary text, 6.0:1 on white, 5.4:1 on cream
+$surface:       #F7F3EC !default;   // warm cream section background
+$surface-alt:   #F1F1F1 !default;   // live-site light grey
+$border:        #E3DDD2 !default;
+$border-strong: #CFC7B8 !default;
+$white:         #FFFFFF !default;
+
+// ---- Status colours (text-safe on white) --------------------------------------------
+$success:       #1E7B45 !default;
+$success-bg:    #E7F5EC !default;
+$warning:       #8A5A06 !default;
+$warning-bg:    #FFF4DC !default;
+$danger:        #B42318 !default;
+$danger-bg:     #FDECEA !default;
+$info:          #1F5F8B !default;
+$info-bg:       #E6F1F8 !default;
+
+// ---- Typography -------------------------------------------------------------------------
+$font-heading:  'Poppins', 'Segoe UI', system-ui, -apple-system, sans-serif !default;
+$font-body:     'DM Sans', 'Segoe UI', system-ui, -apple-system, sans-serif !default;
+$font-mono:     ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !default;
+
+$fs-xs:   0.8125rem;
+$fs-sm:   0.9375rem;
+$fs-base: 1.0625rem;
+$fs-md:   1.1875rem;
+$fs-lg:   1.375rem;
+$fs-xl:   1.75rem;
+$fs-2xl:  2.25rem;
+$fs-3xl:  3rem;
+$fs-4xl:  3.75rem;
+
+$lh-tight: 1.15;
+$lh-snug:  1.3;
+$lh-base:  1.65;
+
+// ---- Spacing scale (4px base) -----------------------------------------------------------------
+$space-1: 0.25rem;
+$space-2: 0.5rem;
+$space-3: 0.75rem;
+$space-4: 1rem;
+$space-5: 1.5rem;
+$space-6: 2rem;
+$space-7: 3rem;
+$space-8: 4rem;
+$space-9: 6rem;
+$space-10: 8rem;
+
+// ---- Shape, shadow, motion -----------------------------------------------------------------------
+$radius-sm:   6px;
+$radius:      12px;
+$radius-lg:   20px;
+$radius-xl:   32px;
+$radius-pill: 999px;
+
+$shadow-sm: 0 1px 2px rgba($navy-dark, 0.08), 0 1px 3px rgba($navy-dark, 0.06);
+$shadow:    0 6px 18px rgba($navy-dark, 0.10), 0 2px 6px rgba($navy-dark, 0.06);
+$shadow-lg: 0 18px 44px rgba($navy-dark, 0.16), 0 6px 14px rgba($navy-dark, 0.08);
+
+$ease:      cubic-bezier(0.2, 0.7, 0.2, 1);
+$t-fast:    150ms;
+$t-base:    250ms;
+$t-slow:    600ms;
+
+// ---- Layout -------------------------------------------------------------------------------------------
+$container:        1180px;
+$container-narrow: 760px;
+$container-wide:   1360px;
+$gutter:           1.25rem;      // side padding on phones
+$header-h:         72px;
+$header-h-lg:      84px;
+
+$breakpoints: (
+    'sm': 576px,
+    'md': 768px,
+    'lg': 992px,
+    'xl': 1200px,
+    'nav': 1280px,          // the header menu goes inline from here (it needs about 1250 px next to the logo); below it: hamburger
+    '2xl': 1400px
+) !default;
+
+$z-header: 100;
+$z-overlay: 200;
+$z-modal: 300;
+$z-toast: 400;

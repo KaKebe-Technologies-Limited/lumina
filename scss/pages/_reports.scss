@@ -1,0 +1,36 @@
+// pages/_reports.scss - OWNED BY B7 "org-public" (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Page-specific styles ONLY, scoped under .page-reports. Extends the shared .filter-bar and .document-row components.
+
+.page-reports {
+    .reports-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: $space-2 $space-5;
+        margin-bottom: $space-5;
+        &__count { font-size: $fs-sm; margin: 0; }
+    }
+
+    .filter-bar {
+        align-items: flex-end;
+        padding: $space-4 $space-5;
+        background: $surface;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        .field { flex: 1 1 12rem; max-width: 20rem; }
+        .btn { align-self: flex-end; }
+    }
+
+    .document-row__cat { font-weight: 600; color: $navy; }
+    .document-row__type {
+        padding: 0 0.55rem;
+        border-radius: $radius-pill;
+        background: $surface-alt;
+        color: $ink;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+    }
+
+    .reports-contact { max-width: 40rem; margin-inline: auto; }
+}

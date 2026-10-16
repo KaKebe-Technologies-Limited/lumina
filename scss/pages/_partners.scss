@@ -1,0 +1,54 @@
+// pages/_partners.scss - OWNED BY B7 "org-public" (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Page-specific styles ONLY, scoped under .page-partners. Partner cards: logo tile on top, name, description, link-out below.
+
+.page-partners {
+    .partner-cards {
+        display: grid;
+        gap: $space-5;
+        grid-template-columns: minmax(0, 1fr);
+        @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @include respond(lg) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: $space-6; }
+    }
+
+    .partner-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+        @include hover-lift;
+
+        &__logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 9.5rem;
+            padding: $space-5;
+            background: $white;
+            border-bottom: 1px solid $border;
+            img { max-width: 100%; max-height: 6rem; width: auto; height: auto; object-fit: contain; }
+        }
+        &__initial {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 4.5rem;
+            height: 4.5rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, $navy, $navy-light);
+            color: $gold;
+            font-family: $font-heading;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        &__body { display: flex; flex-direction: column; flex: 1; gap: $space-2; padding: $space-5; }
+        &__name { font-size: 1.15rem; }
+        &__desc { font-size: $fs-sm; color: $ink-soft; > * + * { margin-top: $space-2; } }
+        &__link { margin-top: auto; padding-top: $space-3; font-size: $fs-sm; }
+    }
+
+    .partners-join { max-width: 40rem; margin-inline: auto; }
+}

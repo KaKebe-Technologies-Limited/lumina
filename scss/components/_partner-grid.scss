@@ -1,0 +1,29 @@
+// partials/partner-grid.php
+.partner-grid {
+    display: grid;
+    gap: $space-4;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @include respond(md) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: $space-5; }
+}
+
+.partner-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: $space-3;
+    min-height: 9rem;
+    padding: $space-4;
+    background: $white;
+    border: 1px solid $border;
+    border-radius: $radius-lg;
+    text-align: center;
+    text-decoration: none;
+    color: $navy;
+    transition: border-color $t-fast ease, box-shadow $t-fast ease;
+    &:hover { border-color: $gold; box-shadow: $shadow; color: $navy; }
+    img { max-height: 4.5rem; width: auto; max-width: 100%; object-fit: contain; }
+    &__name { font-family: $font-heading; font-weight: 600; font-size: $fs-sm; }
+    &__type { font-size: $fs-xs; color: $ink-soft; text-transform: uppercase; letter-spacing: 0.08em; }
+}

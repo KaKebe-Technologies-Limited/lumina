@@ -1,0 +1,19 @@
+// List filters. <form class="filters" method="get"> ... </form> (data-autosubmit on selects submits on change)
+.admin {
+    .filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: $space-3;
+        margin-bottom: $space-4;
+        padding: $space-4;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        .field { min-width: 10rem; flex: 0 1 14rem; }
+        .field--grow { flex: 1 1 16rem; }
+        &__actions { display: flex; gap: $space-2; align-items: flex-end; }
+    }
+    .search-input { position: relative; .icon { position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: $ink-soft; pointer-events: none; } .input { padding-left: 2.4rem; } }
+    .result-count { font-size: $fs-sm; color: $ink-soft; }
+}

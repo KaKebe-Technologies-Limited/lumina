@@ -1,0 +1,76 @@
+// Small utility classes. Prefer component classes; use these for one-off tweaks.
+.visually-hidden {
+    @include visually-hidden;
+}
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mt-0 { margin-top: 0 !important; }
+.mt-3 { margin-top: $space-3 !important; }
+.mt-4 { margin-top: $space-4 !important; }
+.mt-5 { margin-top: $space-5 !important; }
+.mt-6 { margin-top: $space-6 !important; }
+.mt-7 { margin-top: $space-7 !important; }
+.mb-0 { margin-bottom: 0 !important; }
+.mb-3 { margin-bottom: $space-3 !important; }
+.mb-4 { margin-bottom: $space-4 !important; }
+.mb-5 { margin-bottom: $space-5 !important; }
+.mb-6 { margin-bottom: $space-6 !important; }
+.mx-auto { margin-inline: auto; }
+
+// Vertical rhythm: children separated by a gap
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+    &--sm { gap: $space-2; }
+    &--lg { gap: $space-6; }
+}
+
+// Horizontal wrapping group (buttons, tags)
+.cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-3;
+    &--center { justify-content: center; }
+    &--end { justify-content: flex-end; }
+    &--between { justify-content: space-between; }
+}
+
+.flow-hidden { overflow: hidden; }
+.w-full { width: 100%; }
+.nowrap { white-space: nowrap; }
+
+// Only show at / above a breakpoint
+.show-md { display: none; @include respond(md) { display: initial; } }
+.hide-md { @include respond(md) { display: none !important; } }
+
+// SVG icon sizing (inline icons from icon())
+.icon {
+    width: 1.25em;
+    height: 1.25em;
+    flex: none;
+    vertical-align: -0.2em;
+    &--sm { width: 1em; height: 1em; }
+    &--lg { width: 1.6em; height: 1.6em; }
+    &--xl { width: 2.25em; height: 2.25em; }
+}
+
+// Scroll-reveal (main.js adds .is-visible). Content stays visible without JS.
+.js [data-reveal] {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity $t-slow $ease, transform $t-slow $ease;
+    &.is-visible {
+        opacity: 1;
+        transform: none;
+    }
+    @include reduced-motion {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}

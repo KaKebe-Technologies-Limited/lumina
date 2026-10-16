@@ -1,0 +1,6 @@
+.admin {
+    .alert { border-radius: $radius; margin-bottom: $space-3; }
+    .alert + .alert { margin-top: $space-2; }
+    // sticky inline notice (e.g. unsaved changes)
+    .notice-bar { position: sticky; bottom: $space-4; z-index: $z-header; display: flex; align-items: center; justify-content: space-between; gap: $space-4; flex-wrap: wrap; padding: $space-3 $space-5; background: $navy-dark; color: $white; border-radius: $radius-lg; box-shadow: $shadow-lg; }
+}

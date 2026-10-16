@@ -1,0 +1,30 @@
+// Admin forms: compact controls, 2-column grids, sections. Reuses .field/.input/.textarea/.select from components/_forms.
+.admin {
+    .field { gap: 0.35rem; }
+    .field__label { font-size: 0.86rem; color: $navy; }
+    .field__help { font-size: 0.78rem; overflow-wrap: anywhere; }      // long web addresses in the help text must wrap, not widen the page
+    .input, .textarea, .select { padding: 0.6rem 0.8rem; border-radius: $radius; font-size: 0.95rem; border-width: 1px; }
+    .textarea { min-height: 7rem; }
+    .textarea--tall { min-height: 16rem; }
+    .input--code { font-family: $font-mono; font-size: 0.88rem; }
+
+    .form-grid { gap: $space-4; }
+    .form-grid--3 { @include respond(lg) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .form-section + .form-section { margin-top: $space-6; padding-top: $space-6; border-top: 1px solid $border; }
+    .form-section__title { margin-bottom: $space-1; }
+    .form-section__help { margin-bottom: $space-4; color: $ink-soft; font-size: $fs-sm; }
+
+    .form-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
+        margin: $space-5 (-$space-4) 0;
+        padding: $space-3 $space-4;
+        background: rgba($white, 0.96);
+        border-top: 1px solid $border;
+        backdrop-filter: blur(6px);
+        @include respond(lg) { margin-inline: 0; border-radius: 0 0 $radius-lg $radius-lg; }
+    }
+    .input-group { display: flex; gap: $space-2; > .input { flex: 1; min-width: 0; } }
+    .required-note { font-size: $fs-xs; color: $ink-soft; }
+}

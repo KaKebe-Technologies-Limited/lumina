@@ -1,0 +1,29 @@
+// pages/_news.scss - OWNED BY B7 "org-public" (see docs/ARCHITECTURE.md ownership table). Imported by main.scss.
+// Page-specific styles ONLY, scoped under .page-news (the layout puts this class on /news AND /press). Reuses .card / .pills.
+
+.page-news {
+    .news-grid { align-items: stretch; }
+    .news-filter {
+        margin-bottom: $space-6;
+        .pills { margin: 0; padding: 0; list-style: none; }
+    }
+    .news-link { max-width: 40rem; margin-inline: auto; }
+
+    // ---- single article -----------------------------------------------------------------------------------------------
+    .article {
+        &__back { margin-bottom: $space-5; }
+        &__meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: $space-2 $space-5;
+            margin: 0 0 $space-5;
+            padding: 0;
+            list-style: none;
+            font-size: $fs-sm;
+            color: $ink-soft;
+            li { display: inline-flex; align-items: center; gap: $space-2; }
+        }
+        &__cover { margin: 0 0 $space-6; img { width: 100%; border-radius: $radius-lg; box-shadow: $shadow; } }
+        &__external { margin-top: $space-6; }
+    }
+}

@@ -1,0 +1,55 @@
+// Gallery grid + lightbox (assets/js/main.js builds the overlay for a[data-lightbox])
+.gallery-grid {
+    display: grid;
+    gap: $space-3;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @include respond(md) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: $space-4; }
+
+    &__item {
+        position: relative;
+        display: block;
+        aspect-ratio: 1;
+        overflow: hidden;
+        border-radius: $radius;
+        background: $surface-alt;
+        img { width: 100%; height: 100%; object-fit: cover; transition: transform 500ms $ease; }
+        &:hover img { transform: scale(1.06); }
+        @include reduced-motion { &:hover img { transform: none; } }
+    }
+    &__caption { position: absolute; inset: auto 0 0 0; padding: $space-4 $space-3 $space-2; background: linear-gradient(transparent, rgba($navy-dark, 0.85)); color: $white; font-size: $fs-xs; opacity: 0; transition: opacity $t-base ease; }
+    &__item:hover &__caption, &__item:focus-visible &__caption { opacity: 1; }
+}
+
+.lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: $z-modal;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: $space-5;
+    background: rgba($navy-dark, 0.94);
+    animation: lightbox-in $t-base ease;
+
+    &__figure { max-width: #{'min(100%, 72rem)'}; max-height: 100%; display: flex; flex-direction: column; align-items: center; gap: $space-3; }
+    &__img { max-height: 80vh; width: auto; border-radius: $radius; box-shadow: $shadow-lg; }
+    &__caption { color: rgba($white, 0.9); text-align: center; font-size: $fs-sm; }
+    &__btn {
+        position: absolute;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba($white, 0.14);
+        color: $white;
+        &:hover { background: $gold; color: $navy-dark; }
+        &--close { top: $space-4; right: $space-4; }
+        &--prev { left: $space-4; top: 50%; transform: translateY(-50%); }
+        &--next { right: $space-4; top: 50%; transform: translateY(-50%); }
+    }
+}
+@keyframes lightbox-in { from { opacity: 0; } to { opacity: 1; } }

@@ -1,0 +1,30 @@
+// Admin typography + page background. The admin <body> has class "admin".
+$admin-bg: #F4F2EE;
+$admin-sidebar-w: 264px;
+$admin-topbar-h: 64px;
+
+body.admin {
+    background: $admin-bg;
+    font-size: 0.97rem;
+    line-height: 1.55;
+    color: $ink;
+}
+
+.admin {
+    h1, h2, h3, h4, h5 {
+        margin: 0;
+        font-family: $font-heading;
+        font-weight: 600;
+        line-height: 1.25;
+        color: $navy;
+    }
+    h1 { font-size: 1.65rem; }
+    h2 { font-size: 1.25rem; }
+    h3 { font-size: 1.05rem; }
+    h4 { font-size: 0.95rem; }
+    a:not([class]) { color: $orange-dark; text-underline-offset: 0.18em; &:hover { color: $navy; } }
+    code, kbd { font-family: $font-mono; font-size: 0.88em; padding: 0.1em 0.4em; background: $surface-alt; border-radius: 4px; }
+    p + p { margin-top: $space-3; }
+    .muted, .text-muted { color: $ink-soft; }
+    .small { font-size: $fs-xs; }
+}

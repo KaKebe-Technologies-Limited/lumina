@@ -1,0 +1,158 @@
+// Admin shell: sidebar + topbar + content. Markup: views/layouts/admin.php. JS: admin.js [data-sidebar-toggle].
+.admin-shell {
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: $z-overlay;
+    display: flex;
+    flex-direction: column;
+    width: $admin-sidebar-w;
+    max-width: 86vw;
+    background: $navy-dark;
+    color: rgba($white, 0.82);
+    transform: translateX(-100%);
+    transition: transform $t-base $ease;
+    overflow-y: auto;
+
+    @include respond(lg) { transform: none; }
+    body.admin-nav-open & { transform: none; box-shadow: $shadow-lg; }
+
+    &__brand {
+        display: flex;
+        align-items: center;
+        gap: $space-3;
+        padding: $space-4 $space-5;
+        min-height: $admin-topbar-h;
+        border-bottom: 1px solid rgba($white, 0.1);
+        color: $white;
+        text-decoration: none;
+        img { width: 38px; height: 38px; border-radius: 50%; }
+        strong { display: block; font-family: $font-heading; font-size: 0.98rem; line-height: 1.1; }
+        small { display: block; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: $gold; }
+        &:hover { color: $white; }
+    }
+    &__nav { flex: 1; padding: $space-4 $space-3; }
+    &__user { padding: $space-4 $space-5; border-top: 1px solid rgba($white, 0.1); font-size: $fs-sm; strong { display: block; color: $white; } span { color: $gold; font-size: $fs-xs; text-transform: uppercase; letter-spacing: 0.08em; } form { margin-top: $space-3; } }
+}
+
+.admin-nav {
+    &__group + &__group { margin-top: $space-5; }
+    &__heading {
+        padding: 0 $space-3 $space-2;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba($white, 0.5);
+    }
+    &__list { display: grid; gap: 2px; }
+    &__link {
+        display: flex;
+        align-items: center;
+        gap: $space-3;
+        padding: 0.6rem $space-3;
+        border-radius: $radius;
+        color: rgba($white, 0.86);
+        font-weight: 500;
+        text-decoration: none;
+        transition: background-color $t-fast ease, color $t-fast ease;
+        .icon { opacity: 0.85; }
+        &:hover { background: rgba($white, 0.08); color: $white; }
+        &.is-active { background: $gold; color: $navy-dark; font-weight: 600; .icon { opacity: 1; } }
+    }
+    &__badge {
+        margin-left: auto;
+        min-width: 1.5rem;
+        padding: 0 0.45rem;
+        border-radius: $radius-pill;
+        background: $orange-accent;
+        color: $navy-dark;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.5rem;
+        text-align: center;
+    }
+    &__link.is-active &__badge { background: $navy-dark; color: $gold; }
+}
+
+.admin-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: $z-overlay - 1;
+    background: rgba($navy-dark, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity $t-base ease, visibility $t-base ease;
+    body.admin-nav-open & { opacity: 1; visibility: visible; }
+    @include respond(lg) { display: none; }
+}
+
+.admin-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    @include respond(lg) { margin-left: $admin-sidebar-w; }
+}
+
+.admin-topbar {
+    position: sticky;
+    top: 0;
+    z-index: $z-header;
+    display: flex;
+    align-items: center;
+    gap: $space-4;
+    min-height: $admin-topbar-h;
+    padding: 0 $space-4;
+    background: rgba($white, 0.94);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid $border;
+    @include respond(lg) { padding: 0 $space-6; }
+
+    &__toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border: 1px solid $border;
+        border-radius: $radius;
+        background: $white;
+        color: $navy;
+        @include respond(lg) { display: none; }
+    }
+    &__title { font-family: $font-heading; font-weight: 600; font-size: 1.05rem; color: $navy; @include truncate; min-width: 0; }
+    &__spacer { flex: 1; }
+    &__actions { display: flex; align-items: center; gap: $space-3; }
+}
+
+.admin-content {
+    flex: 1;
+    width: 100%;
+    max-width: 1280px;
+    padding: $space-5 $space-4 $space-8;
+    @include respond(lg) { padding: $space-6 $space-6 $space-8; }
+    &--wide { max-width: none; }
+}
+
+.admin-footer { padding: $space-4 $space-6; font-size: $fs-xs; color: $ink-soft; text-align: center; }
+
+// Page header: title + actions
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-4;
+    margin-bottom: $space-5;
+    &__title { margin: 0; }
+    &__subtitle { margin-top: $space-1; color: $ink-soft; max-width: 46rem; }
+    &__actions { display: flex; flex-wrap: wrap; gap: $space-2; }
+}
+
+.admin .breadcrumbs { margin-bottom: $space-3; color: $ink-soft; font-size: $fs-xs; li { opacity: 1; } a { color: $ink-soft; &:hover { color: $orange-dark; } } }
+
+// Toast-like flash area at top of content
+.admin .flash-stack { max-width: none; padding: 0 0 $space-4; }

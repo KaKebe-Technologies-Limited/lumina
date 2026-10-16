@@ -1,0 +1,220 @@
+// admin/_inbox.scss - OWNED BY B5 (see docs/ARCHITECTURE.md ownership table). Imported by admin.scss.
+// Area-specific admin styles ONLY (messages, subscribers, involvement, applications, donations + the printable receipt).
+// Scoped under .admin-inbox (and body.admin-receipt); reuses the shared admin components. Do not edit admin.scss or other admin partials.
+
+.admin-inbox {
+    // ---- status tabs with counts
+    .inbox-tabs { gap: 0 $space-1; .tabs__item { white-space: nowrap; } }
+    .inbox-count {
+        display: inline-block;
+        min-width: 1.5rem;
+        margin-left: 0.2rem;
+        padding: 0 0.45rem;
+        border-radius: $radius-pill;
+        background: $surface-alt;
+        color: $ink-soft;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.5rem;
+        text-align: center;
+    }
+    .tabs__item.is-active .inbox-count { background: $navy; color: $white; }
+
+    // ---- bulk action bar + selectable rows
+    .inbox-bulk {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-2;
+        .select { width: auto; min-width: 12rem; max-width: 100%; }
+        &__count { font-size: $fs-sm; font-weight: 600; color: $ink-soft; }
+    }
+    .toolbar .result-count { margin: 0; }
+    .table-wrap { position: relative; }          // keeps the visually-hidden helper text inside the scroll container
+    .table tbody tr.is-selected td { background: rgba($gold, 0.16); }
+    @include respond(md) { .table th, .table td { padding-inline: 0.7rem; } }
+    .table input[type='checkbox'] { width: 1.1rem; height: 1.1rem; accent-color: $navy; cursor: pointer; }
+
+    // ---- mobile: rows become cards (replaces the generic two-column .table--stack look for the inbox lists)
+    @include respond-down(md) {
+        .filters .field { flex: 1 1 100%; }
+        .inbox-bulk .select { flex: 1 1 12rem; }
+        .table--stack {
+            tbody tr { position: relative; display: block; padding: $space-3 $space-4 $space-3 $space-4; border-bottom: 1px solid $border; }
+            tbody tr:last-child { border-bottom: 0; }
+            tbody tr.is-unread { background: rgba($orange-accent, 0.08); box-shadow: inset 3px 0 0 $orange-accent; }
+            tbody tr.is-selected { background: rgba($gold, 0.16); }
+            tbody tr td, tbody tr.is-unread td, tbody tr.is-selected td { display: block; padding: $space-1 0; border: 0; background: transparent; text-align: left; }
+            td::before { display: block; margin-bottom: 1px; }
+            td[data-label='']::before, td.col-narrow::before { display: none; }
+            td.col-narrow { position: absolute; top: $space-3; right: $space-4; width: auto; padding: 0; }
+            td.col-num { text-align: left; }
+            td.col-actions { width: auto; padding-top: $space-2; text-align: left; }
+            .table__actions { flex-wrap: wrap; justify-content: flex-start; }
+            .table__actions form { display: inline-flex; }
+        }
+        .inbox-preview { max-width: none; }
+    }
+
+    // icon-only row buttons: the text is for screen readers (and for the stacked mobile cards)
+    @include respond(md) { .inbox-btn-text { @include visually-hidden; } }
+    @include respond-down(md) { .inbox-btn-text { margin-left: 0.35rem; } }
+    .inbox-tags { display: flex; flex-wrap: wrap; gap: $space-1; margin-top: $space-1; .badge { margin: 0; } }
+
+    // ---- list cells
+    .inbox-subject { display: block; font-weight: 600; color: $navy; }
+    .inbox-preview { max-width: 30rem; .cell-sub { @include line-clamp(2); } }
+    .table .badge + .badge { margin-left: $space-1; }
+    .inbox-amount { display: block; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .inbox-readonly { padding: 0.6rem 0.8rem; background: $surface-alt; border: 1px solid $border; border-radius: $radius; font-family: $font-mono; font-size: 0.9rem; }
+
+    // ---- detail pages: main column + aside
+    // main column + aside only when there is room for both (the sidebar already takes 264px at lg)
+    .card-grid--main-aside {
+        align-items: start;
+        @include respond(lg) { grid-template-columns: minmax(0, 1fr); }
+        @include respond(xl) { grid-template-columns: minmax(0, 1fr) 20rem; }
+    }
+    .inbox-main, .inbox-aside { display: grid; gap: $space-5; align-content: start; min-width: 0; .card + .card { margin-top: 0; } }
+    .inbox-aside .definition-list {
+        grid-template-columns: 1fr;
+        gap: $space-1;
+        dd { margin: 0 0 $space-3; overflow-wrap: anywhere; }
+    }
+    .inbox-subheading { margin: $space-5 0 $space-2; font-size: 0.95rem; }
+    .inbox-message {
+        max-width: 70ch;
+        font-size: 1rem;
+        line-height: 1.7;
+        overflow-wrap: anywhere;
+        p + p { margin-top: $space-3; }
+    }
+    .inbox-siblings { display: flex; justify-content: space-between; gap: $space-2; }
+    .inbox-danger { border-color: rgba($danger, 0.3); }
+    .inbox-file {
+        display: flex;
+        align-items: center;
+        gap: $space-4;
+        flex-wrap: wrap;
+        .icon { color: $navy; flex: none; }
+        .btn { margin-left: auto; }
+        strong { display: block; overflow-wrap: anywhere; }
+    }
+
+    // ---- reply composer + history
+    .inbox-reply {
+        > summary { list-style: none; cursor: pointer; &::-webkit-details-marker { display: none; } }
+        &[open] > summary { margin-bottom: $space-4; }
+        form > * + * { margin-top: $space-4; }
+    }
+    .inbox-thread { display: grid; gap: $space-5; margin: 0; padding: 0; list-style: none; }
+    .inbox-thread__item { padding-left: $space-4; border-left: 3px solid $gold; }
+    .inbox-thread__meta { font-size: $fs-sm; color: $ink-soft; }
+    .inbox-thread__subject { margin-top: 2px; font-weight: 600; color: $navy; }
+    .inbox-thread__body { margin-top: $space-2; line-height: 1.6; overflow-wrap: anywhere; p + p { margin-top: $space-2; } }
+
+    // ---- subscribers: collapsible "add" card
+    .inbox-add {
+        margin-bottom: $space-5;
+        > details > summary {
+            list-style: none;
+            cursor: pointer;
+            &::-webkit-details-marker { display: none; }
+            &:hover .card__title { color: $orange-dark; }
+            &:focus-visible { @include focus-ring; }
+        }
+        > details[open] > summary { border-bottom: 1px solid $border; }
+        > details:not([open]) > summary { border-bottom: 0; }
+        .card__title { display: inline-flex; align-items: center; gap: $space-2; }
+    }
+
+    // ---- donations: totals
+    .inbox-notice { margin: 0 0 $space-3; padding: $space-2 $space-4; border-radius: $radius; background: $info-bg; color: $info; font-size: $fs-sm; font-weight: 500; }
+    .inbox-stats { display: grid; gap: $space-4; margin-bottom: $space-5; grid-template-columns: repeat(auto-fit, minmax(#{'min(15rem, 100%)'}, 1fr)); .stat-tile { align-items: flex-start; min-width: 0; } }
+    .inbox-stack { display: flex; flex-direction: column; gap: 2px; font-size: 1.15rem; line-height: 1.25; }
+    .inbox-breakdown {
+        display: grid;
+        gap: $space-5;
+        margin-bottom: $space-5;
+        grid-template-columns: repeat(auto-fit, minmax(#{'min(22rem, 100%)'}, 1fr));
+        align-items: start;
+        .card + .card { margin-top: 0; }
+        .card { overflow: hidden; }
+        .table { min-width: 0; }
+        .card__header { padding-block: $space-3; }
+        .col-num .inbox-amount { text-align: right; }
+    }
+}
+
+// ---- printable donation receipt (standalone page)
+body.admin-receipt {
+    padding: $space-5 $space-4 $space-7;
+    background: $surface-alt;
+
+    .receipt-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: $space-3;
+        max-width: 46rem;
+        margin: 0 auto $space-4;
+    }
+    .receipt {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: $space-6 $space-5;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow;
+        @include respond(md) { padding: $space-7 $space-7 $space-6; }
+    }
+    .receipt__head { display: flex; align-items: center; gap: $space-4; margin-bottom: $space-5; padding-bottom: $space-4; border-bottom: 3px solid $gold; }
+    .receipt__head > div { min-width: 0; }
+    .receipt__logo { flex: none; width: 72px; height: 72px; border-radius: 50%; }
+    .receipt__org { font-size: 1.35rem; }
+    .receipt__line { margin: 0; font-size: $fs-sm; color: $ink-soft; overflow-wrap: anywhere; }
+    .receipt__title { margin-bottom: $space-4; font-size: 0.95rem; letter-spacing: 0.14em; text-transform: uppercase; color: $ink-soft; }
+    .receipt__grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0 $space-4;
+        margin: 0;
+        dt { margin-top: $space-3; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: $ink-soft; }
+        dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+        @include respond(sm) {
+            grid-template-columns: 11rem 1fr;
+            dt { margin-top: 0; padding: $space-2 0; }
+            dd { margin: 0; padding: $space-2 0; }
+        }
+    }
+    .receipt__muted { color: $ink-soft; font-size: $fs-sm; }
+    .receipt__amount {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: $space-2 $space-4;
+        margin: $space-5 0 0;
+        padding: $space-4 $space-5;
+        background: $surface;
+        border-radius: $radius;
+        strong { font-family: $font-heading; font-size: 1.8rem; line-height: 1.2; color: $navy; }
+    }
+    .receipt__amount-label { font-size: $fs-sm; font-weight: 600; color: $ink-soft; }
+    .receipt__thanks { margin: $space-5 0 0; }
+    .receipt__sign { max-width: 16rem; margin-top: $space-8; }
+    .receipt__sign-line { border-bottom: 1px solid $ink; }
+    .receipt__sign-label { margin-top: $space-1; font-size: $fs-xs; color: $ink-soft; }
+}
+
+@media print {
+    @page { margin: 16mm; }
+    body.admin-receipt {
+        padding: 0;
+        background: #fff;
+        .no-print { display: none !important; }
+        .receipt { max-width: none; padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+    }
+}

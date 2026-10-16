@@ -1,0 +1,17 @@
+// Admin tweaks of the shared .btn component: tighter, squarer.
+.admin {
+    .btn {
+        padding: 0.55rem 1.1rem;
+        border-radius: $radius;
+        font-size: 0.9rem;
+        &--sm { padding: 0.35rem 0.75rem; font-size: 0.82rem; border-radius: $radius-sm; }
+        &--lg { padding: 0.75rem 1.5rem; font-size: 1rem; }
+        &--primary { background: $navy; &:hover { background: $navy-dark; } }
+        &--accent { background: $orange-dark; color: $white; &:hover { background: $navy; color: $white; } }
+        &--outline { border-width: 1.5px; border-color: $border-strong; color: $navy; &:hover { background: $navy; border-color: $navy; color: $white; } }
+        &--ghost { color: $ink-soft; &:hover { background: $surface-alt; color: $navy; } }
+        &--icon { padding: 0.45rem; border-radius: $radius; }
+    }
+    .btn-group { display: inline-flex; gap: $space-1; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: $space-2; }
+}

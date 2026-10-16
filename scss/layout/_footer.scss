@@ -1,0 +1,107 @@
+// Site footer (markup: views/layouts/main.php)
+.site-footer {
+    margin-top: auto;
+    background: $navy-dark;
+    color: rgba($white, 0.82);
+    font-size: $fs-sm;
+
+    a { color: rgba($white, 0.9); text-decoration: none; &:hover { color: $gold; text-decoration: underline; } }
+
+    &__grid {
+        @include container($container);
+        display: grid;
+        gap: $space-7;
+        padding-block: $space-8 $space-7;
+        @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @include respond(lg) { grid-template-columns: 1.4fr 1fr 1.2fr 1.3fr; gap: $space-6; }
+    }
+
+    &__brand { display: flex; flex-direction: column; gap: $space-3; }
+    &__logo { width: 72px; height: 72px; border-radius: 50%; }
+    &__name { font-family: $font-heading; font-size: 1.25rem; font-weight: 700; color: $white; }
+    &__tagline { font-style: italic; color: $gold; }
+    &__reg { font-size: $fs-xs; opacity: 0.8; }
+
+    &__title {
+        margin-bottom: $space-4;
+        font-family: $font-heading;
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: $white;
+        &::after { content: ''; display: block; width: 2.25rem; height: 2px; margin-top: $space-2; background: $gold; border-radius: 2px; }
+    }
+
+    &__links { display: grid; gap: $space-2; li a { display: inline-block; padding-block: 2px; } }
+
+    &__contact { display: grid; gap: $space-3; li { display: flex; gap: $space-3; align-items: flex-start; } .icon { margin-top: 3px; color: $gold; } }
+
+    &__bottom {
+        border-top: 1px solid rgba($white, 0.12);
+        > div {
+            @include container($container);
+            display: flex;
+            flex-direction: column;
+            gap: $space-3;
+            padding-block: $space-5;
+            font-size: $fs-xs;
+            @include respond(md) { flex-direction: row; justify-content: space-between; align-items: center; }
+        }
+    }
+}
+
+.social-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2;
+    a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 1px solid rgba($white, 0.25);
+        color: $white;
+        transition: background-color $t-fast ease, color $t-fast ease, border-color $t-fast ease;
+        &:hover { background: $gold; border-color: $gold; color: $navy-dark; text-decoration: none; }
+    }
+}
+
+// Newsletter signup (footer + anywhere)
+.newsletter {
+    &__form { display: flex; flex-direction: column; gap: $space-2; margin-top: $space-3; }
+    &__form .input { flex: 1; min-width: 0; }
+    &__note { margin-top: $space-2; font-size: $fs-xs; opacity: 0.75; }
+}
+.site-footer .input {
+    background: rgba($white, 0.08);
+    border-color: rgba($white, 0.25);
+    color: $white;
+    &::placeholder { color: rgba($white, 0.6); }
+    &:focus { border-color: $gold; background: rgba($white, 0.12); }
+}
+
+// Back to top
+.back-to-top {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: $z-header;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border: 0;
+    border-radius: 50%;
+    background: $navy;
+    color: $white;
+    box-shadow: $shadow;
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    transition: opacity $t-base ease, transform $t-base ease, background-color $t-fast ease;
+    &.is-visible { opacity: 1; transform: none; pointer-events: auto; }
+    &:hover { background: $orange-dark; }
+}
