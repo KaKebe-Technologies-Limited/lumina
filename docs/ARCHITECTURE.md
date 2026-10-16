@@ -238,7 +238,7 @@ Exact signatures are in the generated reference below. Conventions that matter:
 | `stats` | `group_key('home') label value_number prefix suffix description icon sort_order is_active` |
 | `pages` | `slug(unique) title type(registry\|custom) subtitle body template hero_image hero_image_alt seo_title seo_description og_image is_published show_in_nav show_in_footer nav_label nav_order parent_slug(FK pages.slug) updated_by` |
 | `content_blocks` | `page_slug(FK pages.slug, cascade) block_key value(mediumtext, JSON for repeaters) updated_by` UNIQUE(page_slug, block_key) |
-| `programs` | `slug title tagline summary body image image_alt icon is_featured is_active sort_order seo_title seo_description` |
+| `programs` | `slug title tagline summary body image image_alt icon status(planned\|ongoing\|completed, default planned) is_featured is_active sort_order seo_title seo_description` |
 | `projects` | as programs + `program_id(FK, set null) status(planned\|ongoing\|completed) location start_date end_date` |
 | `posts` | `post_type(blog\|news\|press) slug(unique) title excerpt body cover_image cover_alt category status(draft\|published) published_at author_id author_name source_name external_url is_featured seo_*` |
 | `activities` | `slug title summary body image image_alt activity_date location is_active sort_order seo_*` |

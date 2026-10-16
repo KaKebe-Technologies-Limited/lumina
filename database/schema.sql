@@ -157,6 +157,7 @@ CREATE TABLE IF NOT EXISTS `programs` (
   `image` VARCHAR(255) NULL,
   `image_alt` VARCHAR(255) NULL,
   `icon` VARCHAR(40) NULL,
+  `status` ENUM('planned','ongoing','completed') NOT NULL DEFAULT 'planned',
   `is_featured` TINYINT(1) NOT NULL DEFAULT 0,
   `is_active` TINYINT(1) NOT NULL DEFAULT 1,
   `sort_order` INT NOT NULL DEFAULT 0,
@@ -168,6 +169,14 @@ CREATE TABLE IF NOT EXISTS `programs` (
   UNIQUE KEY `uq_programs_slug` (`slug`),
   KEY `ix_programs_list` (`is_active`, `sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Migration (idempotent, works on MySQL and MariaDB): databases created before programs.status existed get the column here.
+-- New programs default to 'planned'; the owner sets 'ongoing' / 'completed' in Admin > Programs only when that is true.
+SET @lumina_has_programs_status = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'programs' AND column_name = 'status');
+SET @lumina_ddl = IF(@lumina_has_programs_status = 0, 'ALTER TABLE `programs` ADD COLUMN `status` ENUM(''planned'',''ongoing'',''completed'') NOT NULL DEFAULT ''planned'' AFTER `icon`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
 
 CREATE TABLE IF NOT EXISTS `projects` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,

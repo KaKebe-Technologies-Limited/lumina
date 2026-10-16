@@ -1,22 +1,511 @@
-// pages/_programs.scss - B-INNER-A. Shared blocks (.ia-*) live at the top of _about.scss. Imported by main.scss.
+// pages/_programs.scss - PLANNED PROGRAMS (/programs and /programs/{slug}). Imported by main.scss after _about.scss (shared .ia-* blocks).
+// Markup: app/views/web/programs/{index,show}.php + partials/programs-{hero,pillar}.php. Components / tokens: docs/DESIGN.md.
+// Every class is prefixed programs- / pillar-card and scoped under .page-programs (selectors that mention two blocks are written out in full:
+// a nested "&--x &__y" would repeat the .page-programs prefix and never match).
 
-.page-programs {
-    // accountability: practices in a white rounded card beside the heading
-    .programs-accountability__list {
+// ------------------------------------------------------------------------------------------------------------------
+// HERO (partials/programs-hero.php) - the page-hero look with a multi-line title, a copy panel and a meta row
+// ------------------------------------------------------------------------------------------------------------------
+.page-programs .programs-hero {
+    &__meta { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; margin-bottom: $space-4; }
+    // pillar number: gold ring on the navy hero (gold on navy-dark 7.0:1)
+    &__num {
+        display: inline-grid;
+        place-items: center;
+        min-width: 3rem;
+        height: 3rem;
+        padding-inline: 0.5rem;
+        border: 2px solid $gold;
+        border-radius: $radius-pill;
+        font-family: $font-display;
+        font-size: 1.15rem;
+        font-weight: 600;
+        line-height: 1;
+        color: $gold;
+    }
+    &__title {
+        max-width: 24ch;
+        font-size: fluid(2.1rem, '1.3rem + 2.9vw', 3.6rem);
+        text-wrap: balance;
+    }
+    &__line { display: block; }
+    // breadcrumb links: 44 px tall hit area without changing the hero's height
+    .breadcrumbs a { display: inline-block; padding-block: 0.7rem; margin-block: -0.7rem; }
+    &__grid { display: grid; gap: $space-5; margin-top: $space-5; }
+    &__lead { margin-top: 0; max-width: 40rem; }
+    &__label { font-weight: 700; color: $gold; }
+    // the intro paragraphs + vision sentence sit in a translucent navy panel (white text >= 6:1 even over a white photo patch)
+    &__panel {
         padding: $space-5;
+        border: 1px solid rgba($white, 0.18);
+        border-radius: $radius-card;
+        background: rgba($navy-dark, 0.74);
+        > * + * { margin-top: $space-4; }
+        @include respond(md) { padding: $space-6; }
+    }
+    &__para { font-size: $fs-base; line-height: 1.65; color: rgba($white, 0.94); }
+    &__vision {
+        padding-left: $space-4;
+        border-left: 4px solid $gold;
+        font-family: $font-display;
+        font-size: fluid(1.1rem, '1rem + 0.5vw', 1.4rem);
+        font-weight: 500;
+        line-height: 1.4;
+        color: $white;
+    }
+}
+.page-programs .programs-hero--panel .programs-hero__grid {
+    @include respond(lg) { grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); gap: $space-7; align-items: start; }
+}
+.page-programs .programs-hero--panel .programs-hero__title { max-width: none; }
+.page-programs .programs-hero--panel .programs-hero__main { @include respond(lg) { padding-top: $space-3; } }
+
+// ------------------------------------------------------------------------------------------------------------------
+// SHARED LIST GRIDS (priorities, audience, ways to help, interventions)
+// ------------------------------------------------------------------------------------------------------------------
+.page-programs .programs-grid {
+    display: grid;
+    gap: $space-4;
+    grid-template-columns: minmax(0, 1fr);
+    > li { min-width: 0; display: flex; }
+    @include respond(lg) { gap: $space-5; }
+}
+.page-programs .programs-grid--priorities {
+    @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @include respond(xl) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    > li > .feature-card { flex: 1 1 auto; min-width: 0; }
+}
+.page-programs .programs-grid--audience {
+    @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @include respond(xl) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.page-programs .programs-grid--ways {
+    @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @include respond(lg) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.page-programs .programs-grid--interventions {
+    @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @include respond(lg) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+// ------------------------------------------------------------------------------------------------------------------
+// #pillars - three large alternating split cards (partials/programs-pillar.php)
+// ------------------------------------------------------------------------------------------------------------------
+.page-programs .programs-pillars__list {
+    display: grid;
+    gap: $space-6;
+    @include respond(lg) { gap: $space-8; }
+    > li { min-width: 0; }
+}
+.page-programs .pillar-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
+    background: $white;
+    border: 1px solid $line;
+    border-radius: $radius-panel;
+    box-shadow: $shadow-card;
+    @include respond(lg) { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+
+    &__media {
+        position: relative;
+        margin: 0;
+        aspect-ratio: 16 / 10;
+        background: $surface-alt;
+        img { display: block; width: 100%; height: 100%; object-fit: cover; }
+        @include respond(lg) { aspect-ratio: auto; min-height: 100%; }
+    }
+    // pillar number on the photo: navy disc, gold numerals (5.0:1)
+    &__num {
+        position: absolute;
+        top: $space-4;
+        left: $space-4;
+        display: grid;
+        place-items: center;
+        width: 3.6rem;
+        height: 3.6rem;
+        border: 3px solid $white;
+        border-radius: 50%;
+        background: $navy;
+        color: $gold;
+        font-family: $font-display;
+        font-size: 1.3rem;
+        font-weight: 600;
+        line-height: 1;
+        box-shadow: $shadow;
+    }
+    &__num-inline { color: $gold-text; }
+    &__body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: $space-3;
+        min-width: 0;
+        padding: $space-5;
+        @include respond(md) { padding: $space-6; }
+        @include respond(lg) { padding: $space-7; gap: $space-4; }
+    }
+    &__top { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; }
+    &__icon {
+        display: inline-grid;
+        place-items: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        background: rgba($gold, 0.22);
+        color: $navy;
+    }
+    &__title {
+        font-size: fluid(1.55rem, '1.2rem + 1.3vw', 2.3rem);
+        line-height: 1.15;
+        text-wrap: balance;
+        a { color: $navy; text-decoration: none; &:hover { color: $orange-text; text-decoration: underline; text-underline-offset: 0.18em; } }
+    }
+    &__focus { font-size: $fs-md; line-height: 1.5; color: $ink; }
+    &__focus-label { font-weight: 700; color: $navy; }
+    &__summary { color: $ink-soft; line-height: 1.65; }
+    &__chips { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; margin-top: $space-1; }
+    &__chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.3rem 0.8rem;
+        border: 1px solid $border-strong;
+        border-radius: 1rem;
+        background: $surface;
+        font-size: $fs-xs;
+        font-weight: 500;
+        line-height: 1.35;
+        color: $navy;
+    }
+    // "+N": the only interactive chip (44 px target) -> the full list on the pillar page
+    &__chip--more {
+        justify-content: center;
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+        border-color: $navy;
+        border-radius: $radius-pill;
+        background: $navy;
+        font-family: $font-heading;
+        font-weight: 600;
+        color: $white;
+        text-decoration: none;
+        &:hover { background: $navy-dark; color: $white; }
+    }
+    &__actions { margin-top: $space-2; }
+}
+// every second card has the photo on the right (large screens; on phones the photo is always on top)
+.page-programs .pillar-card--reverse .pillar-card__media { @include respond(lg) { order: 2; } }
+.page-programs .pillar-card--reverse .pillar-card__num { @include respond(lg) { left: auto; right: $space-4; } }
+.page-programs .pillar-card--no-photo { @include respond(lg) { grid-template-columns: minmax(0, 1fr); } }
+
+// ------------------------------------------------------------------------------------------------------------------
+// CROSS-CUTTING PRIORITIES use partials/feature-card (no custom CSS). AUDIENCE cards + geographic band
+// ------------------------------------------------------------------------------------------------------------------
+.page-programs .programs-audience {
+    align-items: flex-start;
+    gap: $space-3;
+    padding: $space-4 $space-5;
+    background: $white;
+    border: 1px solid $line;
+    border-radius: $radius-card;
+    line-height: 1.55;
+    color: $ink;
+    &__text { min-width: 0; }
+}
+.page-programs .programs-geo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $space-4;
+    margin-top: $space-7;
+    padding: $space-6 $space-5;
+    border-radius: $radius-panel;
+    color: $white;
+    background:
+        radial-gradient(28rem 14rem at 100% 0%, rgba($navy-light, 0.8), transparent 62%),
+        radial-gradient(22rem 12rem at 0% 100%, rgba($gold, 0.1), transparent 60%),
+        $navy;
+    @include respond(md) { flex-direction: row; align-items: center; gap: $space-6; padding: $space-7; }
+    &__icon {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 4rem;
+        height: 4rem;
+        border: 1px solid rgba($gold, 0.55);
+        border-radius: 50%;
+        background: rgba($gold, 0.16);
+        color: $gold;
+    }
+    &__text {
+        max-width: 52rem;
+        font-family: $font-display;
+        font-size: fluid(1.15rem, '1rem + 0.7vw', 1.6rem);
+        font-weight: 500;
+        line-height: 1.4;
+        color: $white;
+    }
+}
+
+// ------------------------------------------------------------------------------------------------------------------
+// IMPLEMENTATION APPROACH: vertical timeline on phones/tablets, three columns with connectors from lg
+// ------------------------------------------------------------------------------------------------------------------
+.page-programs .programs-steps {
+    display: grid;
+    gap: $space-5;
+    max-width: 46rem;
+    margin-inline: auto;
+    @include respond(lg) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: $space-7 $space-6; max-width: none; }
+}
+.page-programs .programs-step {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: $space-4;
+    min-width: 0;
+    @include respond(lg) { flex-direction: column; gap: $space-4; }
+
+    &__num {
+        position: relative;
+        z-index: 1;
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 3.4rem;
+        height: 3.4rem;
+        border-radius: 50%;
+        background: $navy;
+        color: $gold;
+        font-family: $font-display;
+        font-size: 1.2rem;
+        font-weight: 600;
+        line-height: 1;
+        box-shadow: 0 0 0 5px $white;
+    }
+    &__body {
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+        padding: $space-4 $space-5;
         background: $white;
         border: 1px solid $line;
-        border-radius: $radius-panel;
-        box-shadow: $shadow-card;
-        @include respond(md) { padding: $space-6; }
-        .ia-checklist { font-size: $fs-md; }
+        border-radius: $radius-card;
+        box-shadow: $shadow-sm;
+        @include respond(lg) { flex: 1 1 auto; padding: $space-5; }
     }
-    .programs-accountability__intro { margin-bottom: $space-4; font-family: $font-heading; font-weight: 600; color: $navy; }
+    &__title { font-size: 1.25rem; line-height: 1.25; color: $navy; }
+    &__text { margin-top: $space-2; font-size: $fs-sm; line-height: 1.65; color: $ink-soft; }
 
-    // impact: figures card under the text + photo stack
-    .programs-impact__stats { margin-top: $space-7; @include respond(lg) { margin-top: $space-8; } }
+    // the rail: vertical between the discs on phones...
+    &::before {
+        content: '';
+        position: absolute;
+        left: 1.7rem;
+        top: 3.4rem;
+        bottom: -$space-5;
+        width: 2px;
+        margin-left: -1px;
+        background: linear-gradient(180deg, $gold, rgba($gold, 0.25));
+    }
+    &:last-child::before { display: none; }
+    // ...horizontal between the columns from lg
+    @include respond(lg) {
+        &::before {
+            left: 4.2rem;
+            right: -#{$space-6};
+            top: 1.7rem;
+            bottom: auto;
+            width: auto;
+            height: 2px;
+            margin: -1px 0 0;
+            background: linear-gradient(90deg, $gold, rgba($gold, 0.25));
+        }
+        &:nth-child(3n)::before { display: none; }
+    }
+}
 
-    // detail page
-    .programs-detail .prose { max-width: none; }
-    .programs-detail .ia-photo img { aspect-ratio: 4 / 3; }
+// ------------------------------------------------------------------------------------------------------------------
+// PARTNERSHIPS: ways to help (icon list) + navy call-to-action band
+// ------------------------------------------------------------------------------------------------------------------
+.page-programs .programs-partners__list-intro {
+    max-width: 46rem;
+    margin: 0 auto $space-6;
+    text-align: center;
+    font-size: $fs-md;
+    line-height: 1.6;
+    color: $ink;
+}
+.page-programs .programs-way {
+    align-items: center;
+    gap: $space-4;
+    padding: $space-4 $space-5;
+    background: $surface;
+    border: 1px solid transparent;
+    border-radius: $radius-card;
+    line-height: 1.5;
+    color: $ink;
+    &__icon {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 2.9rem;
+        height: 2.9rem;
+        border-radius: 50%;
+        background: $navy;
+        color: $gold;
+    }
+    &__text { min-width: 0; font-weight: 500; }
+}
+.page-programs .programs-cta {
+    margin-top: $space-7;
+    > :first-child { margin-top: 0; }
+    .cta__text { font-size: $fs-md; }
+    &__lead {
+        max-width: 40rem;
+        margin: $space-4 auto 0;
+        font-family: $font-display;
+        font-size: fluid(1.25rem, '1.05rem + 1vw', 1.9rem);
+        font-weight: 500;
+        line-height: 1.3;
+        color: $white;
+        text-wrap: balance;
+    }
+}
+
+// ------------------------------------------------------------------------------------------------------------------
+// COMMITMENT TO RESPONSIBLE DEVELOPMENT: calm bordered block, readable measure, sign-off
+// ------------------------------------------------------------------------------------------------------------------
+.page-programs .programs-commitment {
+    max-width: 48rem;
+    margin-inline: auto;
+    padding: $space-6 $space-5;
+    background: $white;
+    border: 1px solid $border-strong;
+    border-radius: $radius-panel;
+    @include respond(md) { padding: $space-7; }
+    .section-head { margin-bottom: $space-4; }
+    &__icon {
+        display: grid;
+        place-items: center;
+        width: 3.4rem;
+        height: 3.4rem;
+        margin-bottom: $space-4;
+        border-radius: 50%;
+        background: $tint-cool;
+        color: $navy;
+    }
+    &__body { max-width: 62ch; font-size: $fs-md; line-height: 1.7; color: $ink; }
+    &__sign {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        margin-top: $space-6;
+        padding-top: $space-5;
+        border-top: 1px solid $line;
+    }
+    &__name { font-family: $font-display; font-size: 1.3rem; font-weight: 600; color: $navy; }
+    &__tagline { font-style: italic; color: $ink-soft; }
+}
+
+// ------------------------------------------------------------------------------------------------------------------
+// PILLAR PAGE (/programs/{slug})
+// ------------------------------------------------------------------------------------------------------------------
+.page-programs .programs-detail {
+    &__grid {
+        display: grid;
+        gap: $space-6;
+        @include respond(lg) { grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.8fr); gap: $space-8; align-items: start; }
+    }
+    &__grid--solo { grid-template-columns: minmax(0, 1fr); max-width: 46rem; margin-inline: auto; }
+    &__main { min-width: 0; }
+    &__prose { max-width: 62ch; font-size: $fs-md; line-height: 1.7; color: $ink; }
+    &__main > * + * { margin-top: $space-6; }
+}
+// "Our intended contribution": the body's first <h3> block, shown as a callout
+.page-programs .programs-callout {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+    padding: $space-5;
+    border-left: 6px solid $gold;
+    border-radius: $radius-card;
+    background: $tint-cool;
+    @include respond(sm) { flex-direction: row; align-items: flex-start; gap: $space-5; padding: $space-6; }
+    &__icon { flex: none; display: grid; place-items: center; width: 3.2rem; height: 3.2rem; border-radius: 50%; background: $navy; color: $gold; }
+    &__body { flex: 1; min-width: 0; max-width: 62ch; color: $ink; line-height: 1.7; }
+    &__body h2 { margin-top: 0; font-size: fluid(1.4rem, '1.15rem + 0.9vw', 1.9rem); color: $navy; }
+    &__body h2 + * { margin-top: $space-3; }
+}
+// status + disclaimer note (registry wording)
+.page-programs .programs-note {
+    padding: $space-5;
+    background: $surface;
+    border: 1px solid $line;
+    border-radius: $radius-card;
+    > * + * { margin-top: $space-4; }
+    @include respond(lg) { position: sticky; top: calc(#{$header-h-shrunk} + #{$space-5}); }
+    &__status { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; }
+    &__label { font-family: $font-heading-caps; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: $ink-soft; }
+    &__text { font-size: $fs-sm; line-height: 1.65; color: $ink-soft; }
+    &__link { display: inline-flex; align-items: center; gap: $space-2; min-height: 2.75rem; font-weight: 600; text-decoration: none; &:hover { text-decoration: underline; } }
+}
+// proposed areas of intervention (cards link to /projects/{slug})
+.page-programs .programs-intervention {
+    position: relative;
+    flex-direction: column;
+    gap: $space-3;
+    padding: $space-5;
+    background: $white;
+    border: 1px solid $line;
+    border-radius: $radius-card;
+    transition: border-color $t-fast ease, box-shadow $t-base ease, transform $t-base $ease;
+    &:hover { border-color: rgba($gold, 0.9); box-shadow: $shadow-card; transform: translateY(-2px); }
+    @include reduced-motion { &:hover { transform: none; } }
+    &:focus-within { outline: 3px solid $orange-dark; outline-offset: 3px; }
+    &__title { font-size: 1.25rem; line-height: 1.25; color: $navy; }
+    &__text { font-size: $fs-sm; line-height: 1.65; color: $ink-soft; }
+    &__link {
+        display: inline-flex;
+        align-items: center;
+        align-self: flex-start;
+        gap: $space-2;
+        min-height: 2.75rem;
+        margin-top: auto;
+        font-family: $font-heading;
+        font-size: $fs-sm;
+        font-weight: 600;
+        color: $orange-text;
+        text-decoration: none;
+        &:hover { text-decoration: underline; text-underline-offset: 0.18em; }
+        &:focus-visible { outline: none; }
+        // the whole card is the click target
+        &::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+    }
+}
+.page-programs .programs-interventions__empty { max-width: 40rem; margin-inline: auto; text-align: center; }
+
+// previous / next pillar
+.page-programs .programs-pager-wrap { padding-top: $space-7; @include respond(lg) { padding-top: $space-8; } }
+.page-programs .programs-pager {
+    display: grid;
+    gap: $space-4;
+    @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    &__link {
+        display: flex;
+        flex-direction: column;
+        gap: $space-1;
+        min-height: 4.5rem;
+        padding: $space-4 $space-5;
+        background: $white;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        color: $navy;
+        text-decoration: none;
+        transition: border-color $t-fast ease, box-shadow $t-base ease;
+        &:hover { border-color: rgba($gold, 0.9); box-shadow: $shadow-card; .programs-pager__title { color: $orange-text; } }
+    }
+    &__link--prev { @include respond(md) { grid-column: 1; } }
+    &__link--next { align-items: flex-end; text-align: right; @include respond(md) { grid-column: 2; } }
+    &__dir { display: inline-flex; align-items: center; gap: $space-2; font-family: $font-heading-caps; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: $ink-soft; }
+    &__title { font-family: $font-display; font-size: 1.2rem; font-weight: 600; line-height: 1.25; color: $navy; }
 }

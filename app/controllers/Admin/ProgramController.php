@@ -8,10 +8,13 @@ use App\Core\Database;
 use App\Core\Icons;
 use App\Core\Request;
 use App\Core\Response;
+use App\Models\Program;
 
 /** Admin CRUD for `programs` (/admin/programs). OWNER: B4. Engine: Content\CrudController. */
 final class ProgramController extends CrudController
 {
+    private const STATUS_LABELS = ['planned' => 'Planned program area', 'ongoing' => 'Ongoing', 'completed' => 'Completed'];
+
     protected function config(): array
     {
         return [
@@ -42,12 +45,17 @@ final class ProgramController extends CrudController
 
     protected function defaults(): array
     {
-        return ['is_active' => 1, 'is_featured' => 0, 'sort_order' => $this->nextSortOrder()];
+        return ['is_active' => 1, 'is_featured' => 0, 'status' => 'planned', 'sort_order' => $this->nextSortOrder()];
     }
 
     protected function formData(?array $row): array
     {
-        return ['icons' => Icons::names()];
+        return ['icons' => Icons::names(), 'statuses' => self::STATUS_LABELS];
+    }
+
+    protected function listData(): array
+    {
+        return ['statuses' => self::STATUS_LABELS];
     }
 
     protected function rules(?array $row): array
@@ -60,9 +68,10 @@ final class ProgramController extends CrudController
                 'summary' => 'nullable|max:5000',
                 'body'    => 'nullable|max:400000',
                 'icon'    => 'nullable|in:' . implode(',', Icons::names()),
+                'status'  => 'required|in:' . implode(',', Program::STATUSES),
             ] + $this->commonRules(),
-            'labels' => ['title' => 'Title', 'tagline' => 'Tagline', 'summary' => 'Summary', 'seo_title' => 'SEO title', 'seo_description' => 'SEO description', 'sort_order' => 'Display order'],
-            'messages' => ['icon.in' => 'Please choose an icon from the list.'],
+            'labels' => ['title' => 'Title', 'status' => 'Program status', 'tagline' => 'Tagline', 'summary' => 'Summary', 'seo_title' => 'SEO title', 'seo_description' => 'SEO description', 'sort_order' => 'Display order'],
+            'messages' => ['icon.in' => 'Please choose an icon from the list.', 'status.in' => 'Please choose a status from the list.'],
         ];
     }
 
@@ -76,6 +85,7 @@ final class ProgramController extends CrudController
             'summary'         => $this->plain($valid['summary']),
             'body'            => $this->html($request->post('body')),
             'icon'            => $valid['icon'] !== '' && $valid['icon'] !== null ? (string) $valid['icon'] : null,
+            'status'          => (string) $valid['status'],
             'is_featured'     => $request->bool('is_featured') ? 1 : 0,
             'is_active'       => $request->bool('is_active') ? 1 : 0,
             'sort_order'      => $request->int('sort_order', 0),

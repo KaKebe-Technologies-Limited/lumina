@@ -50,7 +50,7 @@ $this->start('scripts'); ?>
                 <div class="card__body">
                     <?= partial('partials/form-field', ['name' => 'program_id', 'label' => 'Program', 'type' => 'select', 'value' => $v('program_id'), 'empty' => 'Not linked to a program', 'options' => $programs,
                         'help' => $programs === [] ? 'Add a program first if you want to link projects to it.' : 'The program this project belongs to.']) ?>
-                    <?= partial('partials/form-field', ['name' => 'status', 'label' => 'Stage', 'type' => 'select', 'value' => $v('status', 'ongoing'), 'options' => $statuses, 'required' => true]) ?>
+                    <?= partial('partials/form-field', ['name' => 'status', 'label' => 'Stage', 'type' => 'select', 'value' => $v('status', 'planned'), 'options' => $statuses, 'required' => true]) ?>
                     <?= partial('partials/form-field', ['name' => 'location', 'label' => 'Location', 'maxlength' => 190, 'value' => $v('location'), 'help' => 'For example a town or district.']) ?>
                     <?= partial('partials/form-field', ['name' => 'start_date', 'label' => 'Start date', 'type' => 'date', 'value' => $v('start_date')]) ?>
                     <?= partial('partials/form-field', ['name' => 'end_date', 'label' => 'End date', 'type' => 'date', 'value' => $v('end_date'), 'help' => 'Leave empty if the project has no end date yet.']) ?>

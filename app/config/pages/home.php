@@ -58,11 +58,11 @@ return [
         // ------------------------------------------------------------------ 2. how we help
         [
             'key' => 'help', 'label' => '2. How we help (feature cards + tall photo)', 'toggle' => true, 'default_visible' => true,
-            'help' => 'Up to four outlined cards for the foundation\'s focus areas, with a tall portrait photo beside them.',
+            'help' => 'Outlined cards for the three planned program pillars, with a tall portrait photo beside them.',
             'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'How We Help'],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Practical digital skills and [[pathways to opportunity]]', 'help' => $hl],
-                ['key' => 'lead', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 3, 'default' => 'We equip vulnerable young people in Northern Uganda with practical digital skills, and connect trained youth to real income pathways.'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Our planned programs'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Building [[Pathways to Opportunity]]', 'help' => $hl],
+                ['key' => 'lead', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 3, 'default' => 'Our planned interventions focus on three interconnected pillars: Health, Education, and Technology & Innovation.'],
                 ['key' => 'items', 'label' => 'Cards', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a card', 'max_rows' => 4,
                     'fields' => [
                         ['key' => 'icon', 'label' => 'Icon', 'type' => 'select', 'options' => icon_options(), 'default' => 'check-circle'],
@@ -71,10 +71,9 @@ return [
                         ['key' => 'url', 'label' => 'Link (optional)', 'type' => 'url'],
                     ],
                     'default' => [
-                        ['icon' => 'laptop', 'title' => 'Digital Skills', 'text' => 'Practical digital skills and structured pathways to economic opportunity.', 'url' => '/programs/digital-pathways-for-youth'],
-                        ['icon' => 'briefcase', 'title' => 'Employability & Internships', 'text' => 'Training without opportunity is incomplete: we connect trained youth to real income pathways.', 'url' => '/programs/digital-employability-internship-linkages'],
-                        ['icon' => 'users', 'title' => 'Inclusive Access', 'text' => 'Youth without formal academic certificates are not excluded from digital opportunity.', 'url' => '/programs/inclusive-digital-access-for-out-of-school-youth'],
-                        ['icon' => 'banknote', 'title' => 'Digital Entrepreneurship', 'text' => 'Supporting youth to move from skills to income through small digital enterprises.', 'url' => '/programs/youth-digital-entrepreneurship-micro-income-development'],
+                        ['icon' => 'heart', 'title' => 'Health & Community Wellbeing', 'text' => 'Promoting health awareness and supporting healthier communities.', 'url' => '/programs/health-community-wellbeing'],
+                        ['icon' => 'graduation-cap', 'title' => 'Education, Skills & Youth Development', 'text' => 'Expanding learning opportunities and preparing young people for the future.', 'url' => '/programs/education-skills-youth-development'],
+                        ['icon' => 'laptop', 'title' => 'Technology, Digital Inclusion & Innovation', 'text' => 'Expanding access to technology and preparing young people for the digital economy.', 'url' => '/programs/technology-digital-inclusion-innovation'],
                     ]],
                 ['key' => 'image', 'label' => 'Tall photo (portrait)', 'type' => 'image', 'default' => 'assets/img/site/photo-04.jpg',
                     'alt' => 'Young people seated in the audience of an event, some smiling',
@@ -179,13 +178,13 @@ return [
             'key' => 'projects', 'label' => '6. Featured programs & projects (carousel)', 'toggle' => true, 'default_visible' => true,
             'help' => 'A swipeable row of cards taken from Admin > Programs (and any extra, separate projects from Admin > Projects). The cards below are only used while both lists are empty.',
             'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Our Programs'],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Empowerment [[Projects]]', 'help' => $hl],
-                ['key' => 'intro', 'label' => 'Intro', 'type' => 'text', 'default' => 'Discover our initiatives empowering youth and communities.'],
-                ['key' => 'limit', 'label' => 'How many cards to show', 'type' => 'number', 'default' => 8, 'min' => 1, 'max' => 12],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Our planned programs'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our three planned program [[pillars]]', 'help' => $hl],
+                ['key' => 'intro', 'label' => 'Intro', 'type' => 'text', 'default' => 'Our planned interventions focus on three interconnected pillars: Health, Education, and Technology & Innovation.'],
+                ['key' => 'limit', 'label' => 'How many cards to show', 'type' => 'number', 'default' => 3, 'min' => 1, 'max' => 12],
                 ['key' => 'card_cta', 'label' => 'Card button text', 'type' => 'text', 'default' => 'Learn more'],
-                ['key' => 'cta_label', 'label' => 'Button below the cards: text (optional)', 'type' => 'text', 'default' => 'View all projects'],
-                ['key' => 'cta_url', 'label' => 'Button below the cards: link', 'type' => 'url', 'default' => '/projects'],
+                ['key' => 'cta_label', 'label' => 'Button below the cards: text (optional)', 'type' => 'text', 'default' => 'Explore Our Planned Programs'],
+                ['key' => 'cta_url', 'label' => 'Button below the cards: link', 'type' => 'url', 'default' => '/programs'],
                 ['key' => 'items', 'label' => 'Fallback cards (used only while Admin > Programs and Projects are empty)', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a card', 'max_rows' => 8,
                     'fields' => [
                         ['key' => 'title', 'label' => 'Title', 'type' => 'text'],
@@ -195,10 +194,9 @@ return [
                         ['key' => 'image', 'label' => 'Image', 'type' => 'image'],
                     ],
                     'default' => [
-                        ['title' => 'Digital Pathways for Youth', 'subtitle' => 'Bridging the Digital Divide', 'text' => 'Digital Pathways for Youth is our flagship program designed to equip vulnerable young people in Northern Uganda with practical digital skills and structured pathways to economic opportunity.', 'url' => '/projects', 'image' => '', 'image_alt' => ''],
-                        ['title' => 'Digital Employability & Internship Linkages', 'subtitle' => 'From Skills to Work', 'text' => 'Training without opportunity is incomplete. The Digital Employability & Internship Linkages Program connects trained youth to real income pathways.', 'url' => '/projects', 'image' => '', 'image_alt' => ''],
-                        ['title' => 'Inclusive Digital Access for Out-of-School Youth', 'subtitle' => 'No Youth Left Behind', 'text' => 'Northern Uganda’s conflict history disrupted education for many young people. This program ensures that youth without formal academic certificates are not excluded from digital opportunity.', 'url' => '/projects', 'image' => '', 'image_alt' => ''],
-                        ['title' => 'Youth Digital Entrepreneurship & Micro-Income Development', 'subtitle' => 'Building Self-Reliance', 'text' => 'This program supports youth to transition from skills acquisition to income generation through small digital enterprises.', 'url' => '/projects', 'image' => '', 'image_alt' => ''],
+                        ['title' => 'Health & Community Wellbeing', 'subtitle' => 'Planned program area', 'text' => 'Promoting health awareness and supporting healthier communities.', 'url' => '/programs/health-community-wellbeing', 'image' => '', 'image_alt' => ''],
+                        ['title' => 'Education, Skills & Youth Development', 'subtitle' => 'Planned program area', 'text' => 'Expanding learning opportunities and preparing young people for the future.', 'url' => '/programs/education-skills-youth-development', 'image' => '', 'image_alt' => ''],
+                        ['title' => 'Technology, Digital Inclusion & Innovation', 'subtitle' => 'Planned program area', 'text' => 'Expanding access to technology and preparing young people for the digital economy.', 'url' => '/programs/technology-digital-inclusion-innovation', 'image' => '', 'image_alt' => ''],
                     ],
                 ],
             ],

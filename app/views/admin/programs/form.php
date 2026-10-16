@@ -1,6 +1,6 @@
 <?php
 /**
- * Program create/edit form. OWNER: B4. Vars: $c $row $isNew $id $action $listUrl $publicUrl $icons.
+ * Program create/edit form. OWNER: B4. Vars: $c $row $isNew $id $action $listUrl $publicUrl $icons $statuses (status => admin label).
  * Values come from old() input after a validation error, else from the row.
  */
 $v = static fn(string $k, mixed $d = '') => old($k, $row[$k] ?? $d);
@@ -37,6 +37,13 @@ $this->start('scripts'); ?>
         </div>
 
         <aside class="content-aside" aria-label="Program settings">
+            <section class="card" aria-labelledby="c-status">
+                <div class="card__header"><h2 class="card__title" id="c-status">Program status</h2></div>
+                <div class="card__body">
+                    <?= partial('partials/form-field', ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'value' => $v('status', 'planned'), 'options' => $statuses, 'required' => true,
+                        'help' => 'Shown to visitors as a badge. Keep it on "Planned program area" until the program is really running; only then choose "Ongoing" or "Completed".']) ?>
+                </div>
+            </section>
             <section class="card" aria-labelledby="c-vis">
                 <div class="card__header"><h2 class="card__title" id="c-vis">Visibility</h2></div>
                 <div class="card__body">

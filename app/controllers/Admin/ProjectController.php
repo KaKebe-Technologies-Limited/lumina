@@ -46,7 +46,7 @@ final class ProjectController extends CrudController
 
     protected function defaults(): array
     {
-        return ['is_active' => 1, 'is_featured' => 0, 'status' => 'ongoing', 'program_id' => (int) request()?->int('program', 0) ?: null, 'sort_order' => $this->nextSortOrder()];
+        return ['is_active' => 1, 'is_featured' => 0, 'status' => 'planned', 'program_id' => (int) request()?->int('program', 0) ?: null, 'sort_order' => $this->nextSortOrder()];
     }
 
     protected function formData(?array $row): array

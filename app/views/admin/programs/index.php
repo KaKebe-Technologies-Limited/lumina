@@ -1,8 +1,9 @@
 <?php
 /**
  * Programs list. OWNER: B4. Vars from Content\CrudController::index(): $c $rows $pagination $q $filters $tabs $sort $dir $defaultSort $canReorder
- * $perPage $returnQs $listUrl $hasFilters $total.
+ * $perPage $returnQs $listUrl $hasFilters $total, plus $statuses (status => admin label).
  */
+$statusTone = ['ongoing' => 'success', 'planned' => 'info', 'completed' => 'neutral'];
 $th = static fn(string $label, string $key, string $class = ''): string => partial('admin/_content/th-sort', [
     'label' => $label, 'key' => $key, 'sort' => $sort, 'dir' => $dir, 'defaultSort' => $defaultSort, 'listUrl' => $listUrl, 'class' => $class,
 ]);
@@ -33,7 +34,8 @@ $th = static fn(string $label, string $key, string $class = ''): string => parti
                 <th scope="col" class="col-narrow"><span class="visually-hidden">Picture</span></th>
                 <?= $th('Program', 'title') ?>
                 <?= $th('Order', 'order', 'col-num') ?>
-                <th scope="col">Status</th>
+                <th scope="col">Stage</th>
+                <th scope="col">On website</th>
                 <?= $th('Updated', 'updated') ?>
                 <th scope="col" class="col-actions"><span class="visually-hidden">Actions</span></th>
             </tr>
@@ -50,7 +52,8 @@ $th = static fn(string $label, string $key, string $class = ''): string => parti
                         <span class="cell-sub"><?= e($r['tagline'] ?: '/programs/' . $r['slug']) ?></span>
                     </td>
                     <td class="col-num" data-label="Order"><?= (int) $r['sort_order'] ?></td>
-                    <td data-label="Status"><?= partial('admin/_content/active-toggle', ['c' => $c, 'row' => $r, 'returnQs' => $returnQs]) ?></td>
+                    <td data-label="Stage"><?= partial('partials/admin/status-badge', ['status' => $r['status'] ?? 'planned', 'tone' => $statusTone[$r['status'] ?? 'planned'] ?? 'neutral', 'label' => $statuses[$r['status'] ?? 'planned'] ?? (string) ($r['status'] ?? '')]) ?></td>
+                    <td data-label="On website"><?= partial('admin/_content/active-toggle', ['c' => $c, 'row' => $r, 'returnQs' => $returnQs]) ?></td>
                     <td data-label="Updated"><span class="nowrap"><?= e(format_date($r['updated_at'], 'j M Y')) ?></span></td>
                     <td class="col-actions">
                         <?= partial('admin/_content/row-actions', [

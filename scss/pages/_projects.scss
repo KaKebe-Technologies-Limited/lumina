@@ -1,70 +1,253 @@
-// pages/_projects.scss - B-INNER-A. Shared blocks (.ia-*) live at the top of _about.scss. Imported by main.scss.
+// pages/_projects.scss - PROJECTS = the planned "proposed areas of intervention", grouped under their program pillar.
+// Shared blocks (.ia-*: facts card, photo, cluster) live at the top of _about.scss; everything specific to this page is prefixed .pi-* and
+// scoped under .page-projects. Partials: web/projects/index.php + show.php, partials/projects-{card,notice,cta,hero}.php.
+// Colour tone per pillar (.pi-tone-1/2/3, cycled by the pillar's position): --pi-panel = the group's background, --pi-tint = icon disc and chip.
+// All pairings are navy / ink-soft / orange-text on cream, pale navy or white (5.1:1 or better, docs/DESIGN.md section 3).
 
 .page-projects {
-    .projects-list__rows { display: grid; gap: $space-7; @include respond(lg) { gap: $space-9; } }
+    .pi-tone-0,
+    .pi-tone-1 { --pi-panel: #{$surface}; --pi-tint: #{rgba($gold, 0.24)}; }
+    .pi-tone-2 { --pi-panel: #{$tint-cool}; --pi-tint: #{$tint-cool}; }
+    .pi-tone-3 { --pi-panel: #{$surface}; --pi-tint: #{rgba($orange-accent, 0.18)}; }
 
-    // alternating photo / text rows; the numbered round chip sits on the photo edge
-    .project-row {
-        display: grid;
-        gap: $space-7;
+    // ---------------------------------------------------------------------------------------------------------------
+    // responsible-development notice (calm, not an alert) - list and detail
+    // ---------------------------------------------------------------------------------------------------------------
+    .pi-intro { padding-block: $space-5 0; @include respond(lg) { padding-block: $space-6 0; } }
+    .pi-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-4;
+        padding: $space-5;
+        border-radius: $radius-card;
+        background: $tint-cool;
+        @include respond(md) { gap: $space-5; padding: $space-5 $space-6; }
+
+        &__icon { flex: none; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: $white; color: $navy; }
+        &__body { min-width: 0; > * + * { margin-top: $space-2; } p { color: $ink; line-height: 1.6; } .eyebrow { margin-bottom: $space-2; } }
+        &__title { font-size: fluid(1.2rem, '1.05rem + 0.5vw', 1.55rem); line-height: 1.2; color: $navy; }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // list
+    // ---------------------------------------------------------------------------------------------------------------
+    .pi-list { padding-top: $space-7; @include respond(lg) { padding-top: $space-8; } }
+    .pi-list .section-head { margin-bottom: $space-5; }
+
+    // filter buttons: real links (work without JavaScript), enhanced by assets/js/projects-filter.js
+    .pi-filters { display: grid; justify-items: center; gap: $space-4; margin-bottom: $space-6; }
+    .pi-filters__row { max-width: 100%; }
+    .pi-filters__status { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: $space-2 $space-3; }
+    .pi-filters__label { font-family: $font-heading-caps; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: $ink-soft; }
+    .pi-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: $space-2; margin: 0; padding: 0; list-style: none; }
+    .pi-chip {
+        display: inline-flex;
         align-items: center;
-        scroll-margin-top: calc(#{$header-h-shrunk} + 1rem);
-        @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-7; }
-        @include respond(lg) { gap: $space-9; }
-        &--reverse .project-row__media { @include respond(md) { order: 2; } }
-
-        &__media { position: relative; }
-        &__frame {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            aspect-ratio: 4 / 3;
-            border-radius: $radius-photo;
-            background: linear-gradient(135deg, $navy, $navy-light);
-            box-shadow: $shadow-card;
-            a { display: block; width: 100%; height: 100%; }
-            img { width: 100%; height: 100%; object-fit: cover; transition: transform 600ms $ease; }
+        gap: 0.45rem;
+        min-height: 2.75rem;
+        padding: 0.45rem 0.7rem 0.45rem 1rem;
+        border: 1px solid $border-strong;
+        border-radius: 1.4rem;                 // a label that wraps onto two lines keeps soft corners
+        background: $white;
+        color: $navy;
+        font-family: $font-heading;
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.3;
+        text-align: left;
+        text-decoration: none;
+        transition: background-color $t-fast ease, border-color $t-fast ease, color $t-fast ease;
+        &:hover { border-color: $navy; background: $surface; color: $navy; }
+        &.is-active, &[aria-current='true'] { border-color: $navy; background: $navy; color: $white; }
+        &.is-active:hover, &[aria-current='true']:hover { background: $navy-dark; border-color: $navy-dark; color: $white; }
+        &__count {
+            flex: none;
+            min-width: 1.7rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: $radius-pill;
+            background: $tint-cool;
+            color: $navy;
+            font-size: $fs-xs;
+            font-weight: 700;
+            line-height: 1.5;
+            text-align: center;
         }
-        // (written out in full: inside the nested .page-projects block `&__frame` would repeat the whole parent chain and never match)
-        &:hover .project-row__frame img { transform: scale(1.03); }
-        @include reduced-motion { &:hover .project-row__frame img { transform: none; } }
-        &__bignum { font-family: $font-display; font-size: 5rem; font-weight: 600; line-height: 1; color: $gold; }
+        &.is-active .pi-chip__count, &[aria-current='true'] .pi-chip__count { background: rgba($white, 0.2); color: $white; }
+    }
+
+    // nothing matches the chosen filter
+    .pi-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: $space-3;
+        margin-bottom: $space-6;
+        padding: $space-6 $space-5;
+        border: 2px dashed $border-strong;
+        border-radius: $radius-card;
+        background: $surface;
+        color: $ink-soft;
+        text-align: center;
+        .icon { flex: none; color: $gold-deep; }
+    }
+
+    // one panel per pillar
+    .pi-groups { display: grid; gap: $space-5; @include respond(lg) { gap: $space-6; } }
+    .pi-group {
+        padding: $space-5 $space-4;
+        border-radius: $radius-card;
+        background: var(--pi-panel, #{$surface});
+        scroll-margin-top: calc(#{$header-h-shrunk} + 1rem);
+        @include respond(md) { padding: $space-6; border-radius: $radius-panel; }
+        @include respond(lg) { padding: $space-7; }
+
+        &__head {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: start;
+            gap: $space-3 $space-4;
+            margin-bottom: $space-5;
+            @include respond(md) { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: $space-5; margin-bottom: $space-6; }
+        }
         &__num {
-            position: absolute;
-            right: $space-5;
-            bottom: -1.75rem;
-            z-index: 2;
             display: grid;
             place-items: center;
-            width: 3.75rem;
-            height: 3.75rem;
-            border: 4px solid $white;
+            width: 3.25rem;
+            height: 3.25rem;
             border-radius: 50%;
             background: $navy;
+            color: $gold;                      // gold on navy 5.0:1
             font-family: $font-display;
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             font-weight: 600;
-            color: $gold;
             box-shadow: $shadow;
+            @include respond(md) { width: 3.75rem; height: 3.75rem; font-size: 1.35rem; }
         }
-        &--reverse .project-row__num { @include respond(md) { right: auto; left: $space-5; } }
-
-        &__meta { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-3; margin-bottom: $space-3; .eyebrow { margin-bottom: 0; } }
-        &__title { font-size: fluid(1.6rem, '1.2rem + 1.3vw', 2.3rem); a { color: $navy; text-decoration: none; &:hover { color: $orange-text; } } }
-        &__text { margin-top: $space-3; font-size: $fs-md; line-height: 1.65; color: $ink-soft; }
-        &__where { margin-top: $space-3; display: flex; align-items: center; gap: 0.4rem; font-size: $fs-sm; color: $ink-soft; .icon { color: $orange-text; } }
-        &__cta { margin-top: $space-5; }
+        &__title { font-size: fluid(1.35rem, '1.1rem + 1vw', 2rem); line-height: 1.15; color: $navy; text-wrap: balance; }
+        &__focus { margin-top: 0.35rem; font-size: $fs-sm; line-height: 1.55; color: $ink-soft; strong { font-weight: 600; color: $navy; } }
+        &__link {
+            grid-column: 1 / -1;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            min-height: 2.75rem;
+            font-family: $font-heading;
+            font-size: $fs-sm;
+            font-weight: 600;
+            color: $orange-text;
+            text-decoration: none;
+            &:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+            @include respond(md) { grid-column: auto; }
+        }
     }
-    .project-row__meta .badge { border-radius: $radius-pill; padding-inline: 0.85rem; }
 
-    // detail page
-    .projects-detail__grid {
+    // card grid: equal columns (a short last row keeps the same card width), cards stretch to the tallest one in their row
+    .pi-grid {
         display: grid;
-        gap: $space-6;
-        align-items: start;
-        @include respond(lg) { grid-template-columns: minmax(0, 1fr) 22rem; gap: $space-8; }
+        grid-template-columns: repeat(auto-fill, minmax(#{'min(100%, 17rem)'}, 1fr));
+        gap: $space-4;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        @include respond(lg) { gap: $space-5; }
     }
-    .projects-detail__figure { margin-bottom: $space-6; img { aspect-ratio: 3 / 2; } }
-    .projects-detail .prose { max-width: none; }
+    .pi-grid__item { display: flex; min-width: 0; > .pi-card { flex: 1 1 auto; } }
+
+    // one planned intervention (text only: no photographs exist for them)
+    .pi-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: $space-3;
+        width: 100%;
+        padding: $space-5;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        background: $white;
+        box-shadow: $shadow-sm;
+        transition: border-color $t-base ease, box-shadow $t-base ease, transform $t-base $ease;
+        @media (hover: hover) { &:hover { border-color: rgba($gold, 0.9); box-shadow: $shadow-card; transform: translateY(-3px); } }
+        @include reduced-motion { transition: none; &:hover { transform: none; } }
+
+        &__top { display: flex; align-items: center; justify-content: space-between; gap: $space-3; }
+        &__icon {
+            display: grid;
+            place-items: center;
+            flex: none;
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 50%;
+            background: var(--pi-tint, #{rgba($gold, 0.24)});
+            color: $navy;
+            .icon { width: 1.35rem; height: 1.35rem; }
+        }
+        &__status { flex: none; }
+        &__title { font-family: $font-display; font-size: 1.3rem; font-weight: 600; line-height: 1.25; color: $navy; overflow-wrap: anywhere; }
+        // the title link covers the whole card: one tab stop per card
+        &__link {
+            color: inherit;
+            text-decoration: none;
+            &::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+            &:hover { color: $orange-text; }
+        }
+        &__text { font-size: $fs-sm; line-height: 1.6; color: $ink-soft; }
+        &__where { display: flex; align-items: center; gap: 0.4rem; font-size: $fs-sm; color: $ink-soft; .icon { color: $orange-text; } }
+        &__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-2 $space-3; margin-top: auto; padding-top: $space-3; }
+        &__pillar {
+            display: inline-block;
+            max-width: 100%;
+            padding: 0.2rem 0.75rem;
+            border-radius: 1rem;
+            background: var(--pi-tint, #{rgba($gold, 0.24)});
+            color: $navy;
+            font-family: $font-heading;
+            font-size: $fs-xs;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        &__more { display: inline-flex; align-items: center; gap: 0.3rem; margin-left: auto; &:only-child { margin-left: 0; } font-family: $font-heading; font-size: $fs-sm; font-weight: 600; color: $orange-text; .icon { transition: transform $t-fast ease; } }
+        @media (hover: hover) { &:hover .pi-card__more .icon { transform: translateX(3px); } }
+        @include reduced-motion { &:hover .pi-card__more .icon { transform: none; } }
+    }
+    // keyboard focus: ring around the whole card (the stretched link is the focus target). Browsers without :has() keep the link's own ring.
+    .pi-card:has(.pi-card__link:focus-visible) { outline: 3px solid $orange-dark; outline-offset: 3px; }
+    .pi-card:has(.pi-card__link:focus-visible) .pi-card__link { outline: none; }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // detail page
+    // ---------------------------------------------------------------------------------------------------------------
+    .pi-hero__badge { margin-top: $space-4; .badge { padding: 0.3rem 0.95rem; font-size: $fs-sm; } }
+
+    .pi-detail { padding-top: $space-5; @include respond(lg) { padding-top: $space-6; } }
+    .pi-detail__inner { display: grid; gap: $space-6; max-width: 56rem; margin-inline: auto; }
+    .pi-detail__figure img { aspect-ratio: 3 / 2; }
+    .pi-detail .prose { max-width: none; }
+
+    // "Program" card: the pillar this intervention belongs to
+    .pi-part {
+        display: grid;
+        overflow: hidden;
+        border-radius: $radius-card;
+        background: var(--pi-panel, #{$surface});
+        @include respond(md) { border-radius: $radius-panel; }
+        &--media { @include respond(md) { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } }
+
+        &__media {
+            display: block;
+            min-height: 0;
+            img { display: block; width: 100%; height: 100%; aspect-ratio: 16 / 9; object-fit: cover; @include respond(md) { aspect-ratio: auto; min-height: 100%; } }
+        }
+        &__body { display: flex; flex-direction: column; align-items: flex-start; gap: $space-3; padding: $space-5; @include respond(md) { padding: $space-6; } }
+        &__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: $navy; color: $gold; }
+        &__label { font-family: $font-heading-caps; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: $ink-soft; }
+        &__title { font-size: fluid(1.35rem, '1.1rem + 0.9vw', 1.9rem); line-height: 1.15; color: $navy; a { color: inherit; text-decoration: none; &:hover { color: $orange-text; } } }
+        &__focus { font-size: $fs-sm; line-height: 1.6; color: $ink-soft; strong { font-weight: 600; color: $navy; } }
+        &__cta { margin-top: $space-2; }
+    }
+    .pi-detail__actions { margin-top: $space-2; }
+    .pi-more .section-head { margin-bottom: $space-6; }
+
+    // the shared .cta band: spacing only
+    .pi-cta { padding-top: 0; }
+    .pi-more + .pi-cta { padding-top: $space-7; @include respond(lg) { padding-top: $space-8; } }
 }
