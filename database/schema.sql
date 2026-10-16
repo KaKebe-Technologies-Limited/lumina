@@ -534,3 +534,131 @@ CREATE TABLE IF NOT EXISTS `stories` (
   UNIQUE KEY `uq_stories_slug` (`slug`),
   KEY `ix_stories_list` (`is_active`, `consent_confirmed`, `published_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------ membership (see docs/MEMBERSHIP.md)
+-- ADDITIVE and IDEMPOTENT: three new tables only, nothing existing is altered, so re-importing upgrades a live database without data loss.
+-- Personal data lives here (date of birth, address, optional ID number, minors): never expose it publicly, never write it to logs.
+
+CREATE TABLE IF NOT EXISTS `membership_types` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` VARCHAR(120) NOT NULL,
+  `name` VARCHAR(150) NOT NULL,
+  `description` TEXT NULL,
+  `fee_amount` DECIMAL(12,2) NULL,                 -- NULL = fee to be announced, 0 = free
+  `joining_fee` DECIMAL(12,2) NULL,                -- optional one-off registration fee, separate from the recurring fee
+  `currency` CHAR(3) NOT NULL DEFAULT 'UGX',
+  `period` ENUM('one_time','monthly','quarterly','annual','lifetime') NOT NULL DEFAULT 'annual',
+  `eligibility` TEXT NULL,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `max_members` INT UNSIGNED NULL,                 -- NULL = unlimited
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_membership_types_slug` (`slug`),
+  KEY `ix_membership_types_list` (`is_active`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `members` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `application_ref` VARCHAR(40) NOT NULL,          -- LAF-APP-YYYY-NNNNN
+  `membership_number` VARCHAR(40) NULL,            -- LAF-YYYY-NNNN, assigned on first approval
+  `type_id` INT UNSIGNED NOT NULL,
+  -- fee snapshot taken when the application was submitted: later fee changes never rewrite history
+  `type_name` VARCHAR(150) NOT NULL DEFAULT '',
+  `fee_amount` DECIMAL(12,2) NULL,
+  `joining_fee` DECIMAL(12,2) NULL,
+  `fee_currency` CHAR(3) NOT NULL DEFAULT 'UGX',
+  `fee_period` ENUM('one_time','monthly','quarterly','annual','lifetime') NOT NULL DEFAULT 'annual',
+  `status` ENUM('pending','approved','rejected','suspended','expired','cancelled') NOT NULL DEFAULT 'pending',
+  -- personal
+  `full_name` VARCHAR(150) NOT NULL,
+  `gender` ENUM('female','male','prefer_not_to_say') NOT NULL DEFAULT 'prefer_not_to_say',
+  `date_of_birth` DATE NOT NULL,
+  `nationality` VARCHAR(80) NOT NULL DEFAULT '',
+  `id_number` VARCHAR(60) NULL,                    -- only collected when setting membership_collect_id = 1
+  -- contact
+  `email` VARCHAR(190) NOT NULL,
+  `phone` VARCHAR(40) NOT NULL,
+  `whatsapp` VARCHAR(40) NULL,
+  `country` VARCHAR(80) NOT NULL DEFAULT '',
+  `region` VARCHAR(120) NOT NULL DEFAULT '',       -- district / region
+  `city` VARCHAR(120) NOT NULL DEFAULT '',         -- sub-county / city
+  `address` VARCHAR(255) NULL,                     -- village / address
+  -- livelihood
+  `occupation_status` VARCHAR(40) NOT NULL DEFAULT '',
+  `occupation_other` VARCHAR(190) NULL,
+  `education_level` VARCHAR(40) NOT NULL DEFAULT '',
+  `organisation` VARCHAR(190) NULL,
+  -- participation
+  `interests` TEXT NULL,                           -- JSON list of option keys
+  `skills` TEXT NULL,
+  `availability` VARCHAR(40) NOT NULL DEFAULT '',
+  `heard_about` VARCHAR(40) NOT NULL DEFAULT '',
+  `heard_about_other` VARCHAR(190) NULL,
+  `motivation` TEXT NULL,
+  -- parent / guardian (required when under 18)
+  `guardian_name` VARCHAR(150) NULL,
+  `guardian_phone` VARCHAR(40) NULL,
+  `guardian_relationship` VARCHAR(80) NULL,
+  `consent_guardian_at` DATETIME NULL,
+  -- emergency contact
+  `emergency_name` VARCHAR(150) NOT NULL DEFAULT '',
+  `emergency_phone` VARCHAR(40) NOT NULL DEFAULT '',
+  `emergency_relationship` VARCHAR(80) NOT NULL DEFAULT '',
+  -- payment (text only, no uploads)
+  `payment_method` VARCHAR(60) NOT NULL DEFAULT '',
+  `payment_reference` VARCHAR(120) NULL,
+  -- consent
+  `consent_terms_at` DATETIME NULL,
+  `consent_privacy_at` DATETIME NULL,
+  `declaration_at` DATETIME NULL,
+  `consent_updates` TINYINT(1) NOT NULL DEFAULT 0,
+  `consent_ip` VARCHAR(45) NULL,
+  `user_agent` VARCHAR(255) NULL,
+  -- administration
+  `internal_notes` TEXT NULL,
+  `status_reason` VARCHAR(500) NULL,
+  `status_changed_at` DATETIME NULL,
+  `status_changed_by` INT UNSIGNED NULL,
+  `approved_by` INT UNSIGNED NULL,
+  `approved_at` DATETIME NULL,
+  `start_date` DATE NULL,
+  `expiry_date` DATE NULL,                         -- NULL = no expiry (one_time / lifetime)
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_members_ref` (`application_ref`),
+  UNIQUE KEY `uq_members_number` (`membership_number`),
+  KEY `ix_members_status` (`status`, `created_at`),
+  KEY `ix_members_email` (`email`),
+  KEY `ix_members_type` (`type_id`, `status`),
+  KEY `ix_members_expiry` (`expiry_date`),
+  CONSTRAINT `fk_members_type` FOREIGN KEY (`type_id`) REFERENCES `membership_types` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_members_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `member_payments` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `member_id` INT UNSIGNED NOT NULL,
+  `receipt_number` VARCHAR(40) NULL,               -- LAF-RCT-YYYY-NNNN, issued when a payment is marked received
+  `purpose` ENUM('joining','membership','renewal','other') NOT NULL DEFAULT 'membership',
+  `amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  `currency` CHAR(3) NOT NULL DEFAULT 'UGX',
+  `method` VARCHAR(60) NOT NULL DEFAULT '',
+  `reference` VARCHAR(120) NULL,
+  `status` ENUM('received','pending','waived') NOT NULL DEFAULT 'pending',
+  `paid_at` DATETIME NULL,
+  `term_start` DATE NULL,
+  `term_end` DATE NULL,
+  `recorded_by` INT UNSIGNED NULL,
+  `notes` VARCHAR(500) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_member_payments_receipt` (`receipt_number`),
+  KEY `ix_member_payments_member` (`member_id`, `status`),
+  KEY `ix_member_payments_paid` (`paid_at`),
+  CONSTRAINT `fk_member_payments_member` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_member_payments_user` FOREIGN KEY (`recorded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
