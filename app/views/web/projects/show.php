@@ -111,7 +111,7 @@ $tone = $number > 0 ? (($number - 1) % 3) + 1 : 0;
         ]) ?>
         <ul class="pi-grid" role="list">
             <?php foreach ($others as $other): ?>
-                <li class="pi-grid__item"><?= partial('partials/projects-card', ['project' => $other, 'pillar' => $program, 'showPillar' => false, 'statuses' => $statuses, 'cta' => $cardCta]) ?></li>
+                <li class="pi-grid__item"><?= partial('partials/projects-card', ['project' => $other, 'pillar' => $program, 'showPillar' => false, 'tag' => 'h3', 'statuses' => $statuses, 'cta' => $cardCta]) ?></li>
             <?php endforeach; ?>
         </ul>
     </div>

@@ -138,7 +138,7 @@ $scriptOn = $showFilters;
                         <ul class="pi-grid" role="list">
                             <?php foreach ($p['projects'] as $project): $show = $matches($slug, $project); ?>
                                 <li class="pi-grid__item" data-pi-card data-pillar="<?= e($slug) ?>" data-status="<?= e((string) $project['status']) ?>"<?= $show ? '' : ' hidden' ?>>
-                                    <?= partial('partials/projects-card', ['project' => $project, 'pillar' => $p, 'statuses' => $statuses, 'cta' => $cardCta]) ?>
+                                    <?= partial('partials/projects-card', ['project' => $project, 'pillar' => $p, 'showPillar' => false, 'statuses' => $statuses, 'cta' => $cardCta]) ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>

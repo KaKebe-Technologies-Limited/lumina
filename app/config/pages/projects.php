@@ -8,8 +8,7 @@
  * This file holds the copy AROUND them (heading, filter labels, status labels, disclaimer, call to action, empty states).
  * Heading fields accept [[double brackets]] around the words that get the hand-drawn underline.
  *
- * Sections hero, list, filters, disclaimer, cta, detail = the current page. Section approach = LEGACY key of the previous site (describes
- * delivery), kept so no saved edit or older view breaks and HIDDEN by default.
+ * Sections hero, list, filters, disclaimer, cta, detail = the page. (The "approach" section of the previous site, which described delivery, was removed.)
  */
 $hlHelp = 'Put [[double brackets]] around the words that get the hand-drawn underline.';
 return [
@@ -104,28 +103,6 @@ return [
                 ['key' => 'more_title', 'label' => 'Heading above other projects', 'type' => 'text', 'default' => 'Proposed areas of intervention'],
                 ['key' => 'join_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Partner With Us'],
                 ['key' => 'join_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/involvement'],
-            ],
-        ],
-        // ------------------------------------------------------------------ LEGACY section (kept for compatibility, see the file header)
-        [
-            'key' => 'approach', 'label' => 'Legacy: Our Approach', 'toggle' => true, 'default_visible' => false,
-            'help' => 'Legacy section from the previous website, hidden by default because it describes delivery. Only switch it on when it is true for the planned projects.',
-            'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our [[Approach]]', 'help' => $hlHelp],
-                ['key' => 'intro', 'label' => 'Intro', 'type' => 'text', 'default' => 'Across all programs, Lumina Africa Foundation operates with:'],
-                ['key' => 'items', 'label' => 'Practices', 'type' => 'repeater', 'item_label' => 'text', 'add_label' => 'Add a practice', 'max_rows' => 12,
-                    'fields' => [['key' => 'text', 'label' => 'Practice', 'type' => 'text', 'maxlength' => 200]],
-                    'default' => [
-                        ['text' => 'Structured monitoring and evaluation systems'],
-                        ['text' => 'Clear governance and financial accountability'],
-                        ['text' => 'Community-based implementation'],
-                        ['text' => 'Partnerships with institutions and private sector actors'],
-                    ],
-                ],
-                ['key' => 'closing', 'label' => 'Closing statement', 'type' => 'textarea', 'rows' => 3, 'default' => 'We believe digital skills are not a luxury. They are a pathway to recovery, employment, and long-term resilience in post-conflict Northern Uganda.'],
-                ['key' => 'image', 'label' => 'Photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-03.jpg', 'alt' => 'A trainer points at a screen while young people wearing headphones work at computers'],
-                ['key' => 'image2', 'label' => 'Second photo (behind, optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
             ],
         ],
     ],

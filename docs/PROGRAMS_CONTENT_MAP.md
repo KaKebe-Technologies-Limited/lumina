@@ -35,7 +35,7 @@ Columns used: `program_id slug title summary body status sort_order` (`tagline`,
   `girls-education-young-womens-empowerment`, `ict-skills-computer-literacy`, `robotics-automation`.
 * Note: Digital Literacy (Education) and ICT Skills & Computer Literacy (Technology) are two separate owner entries; keep both.
 * The projects have no photo (cards must work without `image`; `partials/project-card` already does). Do not invent project photos.
-* `ProjectsController::index` paginates at 12 (`PER_PAGE`). To show all 27 grouped by pillar / filterable, the controller (not changed by me) must pass all active projects plus their `program_id`.
+* `ProjectsController::index` lists every active project grouped by pillar (never paginated) and passes `program_id` for the filter.
 
 ### Removed
 The 4 old programs and 4 old projects (slugs `digital-pathways-for-youth`, `digital-employability-internship-linkages`, `inclusive-digital-access-for-out-of-school-youth`,
@@ -56,12 +56,11 @@ The default HTML id written by `section_begin()` is the section key with `_` tur
 | `audience` (toggle, on) | `eyebrow`, `title` "Who we intend to [[serve]]", `intro`, `items` repeater **{text}** x8, `geographic` (textarea, two sentences: primary focus Northern Uganda + locations determined by needs...) |
 | `partnerships` (toggle, on) | `eyebrow`, `title` "Partnerships that can turn plans into [[action]]", `intro` (sentence 1), `list_intro` (sentence introducing the list), `items` repeater **{text}** x9, `closing` + `closing2` (the two closing sentences, print as two paragraphs), buttons `cta1_*` ("Discuss a Partnership" -> `/involvement`), `cta2_*` ("Contact Lumina Africa Foundation" -> `/contact`) |
 | `commitment` (always, no toggle on purpose) | `eyebrow`, `title` "Our commitment to [[responsible development]]", `body` **richtext** (3 paragraphs; the 2nd is the planned-programs disclaimer: print with `content_html()`), `signoff_name` "Lumina Africa Foundation", `signoff_tagline` "Igniting Light. Inspiring Change." |
-| `labels` (always) | `status_label` "Status", `status_planned` "Planned program area", `status_ongoing` "Ongoing", `status_completed` "Completed", `planned_focus` "Planned focus", `interventions_heading` "Proposed areas of intervention", `contribution_heading` "Our intended contribution", `view_pillar` "View pillar", `view_interventions` "View interventions", `interventions_empty` (message for a pillar without projects) |
+| `labels` (always) | `status_label` "Status", `status_planned` "Planned program area", `status_ongoing` "Ongoing", `status_completed` "Completed", `planned_focus` "Planned focus", `interventions_heading` "Proposed areas of intervention", `view_pillar` "View pillar", `view_interventions` "View interventions", `interventions_empty` (message for a pillar without projects) |
 | `detail` (always) | `back_label` "Our planned programs", `related_title` "Proposed areas of intervention", `related_cta` "View project", `more_title` "Our three planned program pillars", `join_label` "Partner With Us", `join_url` `/involvement` |
 | SEO | title "Our Planned Programs"; description = the first intro sentence (registry `seo`, printed by the layout: do not print meta tags) |
 
-Legacy keys kept so nothing breaks (do not render them in the new views): `overview.*` (same fields as before; now carries the pillars wording, `card_cta` "View pillar"),
-`accountability`, `impact`, `how_we_work`, `faq` (all four are **hidden by default**, `default_visible => false`, because they describe delivery of the previous site; `section_begin` hides them automatically; the old view therefore shows none of them).
+The sections of the previous site that described delivery (`overview`, `accountability`, `impact`, `how_we_work`, `faq`) and `labels.contribution_heading` were REMOVED from the registry: nothing rendered them and Admin > Pages would have offered dead controls. The "Our intended contribution" box on a pillar page is the FIRST `<h3>` of the program body (Admin > Programs > Full description); `ProgramsController::splitBody()` turns it into the highlighted box.
 `detail.*` keys that existed before are unchanged in name (values updated).
 
 ## 3. Registry `projects` (`content('projects', '<section>.<field>')`)
@@ -75,7 +74,7 @@ Legacy keys kept so nothing breaks (do not render them in the new views): `overv
 | `detail` (always) | `back_label` "Our planned projects", `program_label` "Program", `status_label` "Status", `location_label`, `dates_label`, `more_title` "Proposed areas of intervention", `join_label` "Partner With Us", `join_url` `/involvement` (hide location/dates rows when empty: the 27 projects have none) |
 | SEO | title "Our Planned Projects"; description "Our planned interventions focus on three interconnected pillars: Health, Education, and Technology & Innovation." |
 
-Legacy: `approach.*` kept, hidden by default (old delivery claims).
+The `approach` section of the previous site (delivery claims) was REMOVED.
 
 ## 4. Other pages changed (registry only)
 * `home.php` > `help`: eyebrow "Our planned programs", title "Building [[Pathways to Opportunity]]", lead = the interventions sentence, `items` = the 3 pillars (icon, title, text = planned-focus sentence, url `/programs/<slug>`).

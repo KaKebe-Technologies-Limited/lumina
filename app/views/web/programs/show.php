@@ -39,7 +39,7 @@ if ($projects && trim((string) content('programs', 'labels.view_interventions'))
     'leads'      => [$tagline],
     'lead_label' => (string) content('programs', 'labels.planned_focus'),
     'actions'    => $heroActions,
-    'image'      => $img !== '' ? ['src' => $img, 'alt' => (string) ($program['image_alt'] ?? ''), 'focus' => '50% 30%'] : null,
+    'image'      => $img !== '' ? ['src' => $img, 'alt' => (string) ($program['image_alt'] ?? ''), 'focus' => str_ends_with((string) ($program['image'] ?? ''), 'photo-03.jpg') ? '50% 12%' : '50% 30%'] : null,
 ]) ?>
 
 <?php /* ------------------------------------------------------------------ BODY + intended contribution + status note */ ?>

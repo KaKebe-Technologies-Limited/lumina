@@ -6283,7 +6283,13 @@ body.nav-open {
 
 .page-programs .programs-hero__label {
   font-weight: 700;
-  color: #D6A151;
+  color: #FFFFFF;
+}
+
+@media (min-width: 992px) {
+  .page-programs .programs-hero__label {
+    color: #D6A151;
+  }
 }
 
 .page-programs .programs-hero__panel {

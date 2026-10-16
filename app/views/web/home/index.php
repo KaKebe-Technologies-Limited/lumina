@@ -185,12 +185,18 @@ section_begin('home', 'vision_mission', ['class' => 'home-mission', 'labelledby'
 <?php
 $cardCta = trim((string) content('home', 'projects.card_cta'));
 $cards = [];
+// status labels for the project cards (editable: Admin > Pages > Projects); program cards read their own labels
+$projectStatusLabels = [
+    'planned'   => (string) content('projects', 'list.status_planned'),
+    'ongoing'   => (string) content('projects', 'list.status_ongoing'),
+    'completed' => (string) content('projects', 'list.status_completed'),
+];
 foreach ($featured as $f) {
     $row = $f['row'];
     if ($f['kind'] === 'program') {
         $cards[] = partial('partials/program-card', ['program' => $row, 'cta' => $cardCta !== '' ? $cardCta : null]);
     } elseif ($f['kind'] === 'project') {
-        $cards[] = partial('partials/project-card', ['project' => $row, 'cta' => $cardCta !== '' ? $cardCta : null]);
+        $cards[] = partial('partials/project-card', ['project' => $row, 'statusLabels' => $projectStatusLabels, 'cta' => $cardCta !== '' ? $cardCta : null]);
     } else {
         ob_start(); ?>
         <article class="card" data-reveal>

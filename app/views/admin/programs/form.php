@@ -30,7 +30,7 @@ $this->start('scripts'); ?>
                             'help' => 'A few sentences used on cards and lists. Plain text.', 'attrs' => ['data-maxlength-counter' => true]]) ?>
                     </div>
                     <?= partial('partials/admin/richtext-field', ['name' => 'body', 'label' => 'Full description', 'value' => $v('body'), 'rows' => 14,
-                        'help' => 'The full text shown on the program page. Use headings and lists to make it easy to read.', 'placeholder' => 'Write the full description here...']) ?>
+                        'help' => 'The full text shown on the program page. Use headings and lists to make it easy to read. The first "Heading 3" and the text under it become the highlighted "intended contribution" box.', 'placeholder' => 'Write the full description here...']) ?>
                 </div>
             </section>
             <?= partial('admin/_content/seo-panel', ['row' => $row, 'titleHint' => 'the program title']) ?>

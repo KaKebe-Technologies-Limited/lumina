@@ -42,8 +42,8 @@ were deliberately left out, which claims cannot be verified, and which real data
 | `settings` | all 30 keys of `settings_schema.php` | footer of every page, `/contact`, `/donate`, home hero | Phones, emails, socials (tracking parameters removed), WhatsApp, GoFundMe link, city/address. Bank, mobile-money, PayPal, map URL, analytics id, YouTube and donate intro are saved as empty strings (nothing real to show). `footer_credit` = "Website managed by Lumina Africa Foundation." (the live footer credit to the previous web agency is not carried over). `og_image` is the logo, not the schema default photo (see section 5). |
 | `pages` | 22 (18 public + 4 virtual site-wide) | live menu `/` | Titles = registry titles. Header/footer flags and order in section 4. |
 | `stats` | 2 (group `home`) | `/` "Vision & Mission" block | 150+ Youth Trained, 5 Active Programs. Only these two exist on the live site. |
-| `programs` | 4 | `/programs` (cards + "Impact Indicators") | One body per program: the indicator list exactly as published. |
-| `projects` | 4 | `/projects` (and the home page "Empowerment Projects" cards) | Each project is linked to the program of the same name (`program_id`). Status `ongoing`, location "Northern Uganda". Because they mirror the programs, search engines are told so: a project with the same slug as its program has the program page as canonical URL and is left out of `sitemap.xml` (give it its own wording and a different slug to make it an independent page). |
+| `programs` | 3 | `docs/content-source/planned-programs.md` (owner copy, verbatim) | The three PLANNED pillars: Health & Community Wellbeing, Education, Skills & Youth Development, Technology, Digital Inclusion & Innovation. Column `status` = `planned` (public label "Planned program area"). `seo_description` is set for the Education and Technology pillars so the meta description is a complete sentence. The four digital programs of the old site were REMOVED (section 3a). |
+| `projects` | 27 | same owner copy | The 27 "proposed areas of intervention" (7 Health, 9 Education, 11 Technology), status `planned`, no photo, no location, each linked to its pillar by `program_id`. The four old projects were REMOVED (section 3a). |
 | `activities` | 1 | `/activities` ("VISIT TO WII QUARRY SITE") | Full live text; the summary is a condensed sentence taken from it. No date and no image (see section 3). |
 | `posts` | 2 | `/empowering-voices-planting-hope-lumina-africa-foundations-weekend-at-wii-got-quarry`, `/blog-post` | Post 1 published (22 Aug 2025, category Community Engagement); post 2 imported as a **draft** (section 3). |
 | `faqs` | 6 (group `donate`) | `/donate` FAQ | Three are inactive until confirmed (section 3). |
@@ -84,19 +84,16 @@ team/partners/documents/events = Admin > Organisation group (Impact stories = Ad
 2. **Broken stat labels on the live site.** The live DOM lists the values `150+`, `5` and then the labels `Active Programs`,
    `Youth Trained` (the labels are in the opposite order). The seed pairs them as intended: **150+ Youth Trained** and
    **5 Active Programs**. Both are numbers the foundation states without any breakdown, period or evidence: confirm them.
-3. **"5 Active Programs" vs four programs.** Only four programs/projects are described anywhere on the live site. The counter
-   says five. Either a fifth program exists and should be added in Admin > Programs, or the number should be changed in Admin > Impact figures.
-4. **Program "Impact Indicators" are targets, not results.** Lines such as "120 vulnerable youth enrolled annually", "Minimum 85%
-   program completion rate" or "30% of participants placed in internships" are goals written in the future/target form. They are
-   published under the live heading "Impact Indicators" unchanged. Do not present them as achievements; consider adding the word
-   "Targets" to the heading when you review them.
+3. **"5 Active Programs" counter.** The Home stat still says 5 Active Programs, but the owner copy now describes THREE PLANNED program pillars and says nothing is confirmed as operational. Change or remove the counter in Admin > Impact figures (listed in section 3a, not changed here).
+4. **(Resolved) Program "Impact Indicators".** The old indicator lists ("120 vulnerable youth enrolled annually" and similar) were part of the four removed programs and no longer exist anywhere in the site.
 5. **Donate FAQ, three answers hidden.** The live answers below are seeded but `is_active = 0` (public Donate page does not show them
    until you switch them on in Admin > FAQs), because they promise things the site does not offer yet or contradict the programs:
    * "How can I donate?" lists mobile money, bank transfer and "PayPal/Stripe". Only the GoFundMe link is real today; no bank,
      mobile-money or PayPal details have been published. Enable it after filling Site settings > Donations.
    * "Can I donate monthly?" promises recurring donations. Nothing in the site or the GoFundMe link confirms this.
    * "What programs do donations support?" says school supplies and community health outreach for children and families. The
-     foundation's programs are digital skills, employability, inclusion and entrepreneurship for youth.
+     foundation's programs are now described as three PLANNED pillars (Health, Education, Technology): the answer must not suggest
+     that funded activities are running. Review it before switching it on.
    The other three (tax deductibility, who to contact, impact of a donation) are active. Note: while the table has active rows for
    group `donate`, the page ignores the six fallback questions in the Donate registry.
 6. **Template boilerplate on the live site that contradicts the digital focus.** The meta descriptions of Home, About, Programs,
@@ -104,8 +101,8 @@ team/partners/documents/events = Admin > Organisation group (Impact stories = Ad
    page says volunteers help "healthcare access, educational empowerment, and digital inclusion"; the Programs FAQ says "programs in
    education, health, technology, and entrepreneurship"; the Careers page says "health, education, digital innovation, leadership".
    The registry copy of Careers, Involvement, the Programs FAQ and Donate keeps these live sentences verbatim (the Careers volunteer
-   role "Program support (health, education, ICT, environment)" is also seeded wording). Review them: they describe a wider scope than
-   the four digital programs.
+   role "Program support (health, education, ICT, environment)" is also seeded wording). Review them: they describe delivery and a
+   scope that the owner's planned-programs copy deliberately does not claim.
 7. **Second blog post imported as a draft.** "Breaking the Stigma: Discussing Mental Health in Northern Uganda" (25 Aug 2025,
    author shown as "Moses Koma", stock photo, no category, slug `blog-post`) is generic article text; its summary claims the
    foundation runs "community dialogues, wellness programs, and advocacy" on mental health, which appears nowhere else. It is seeded
@@ -132,6 +129,34 @@ team/partners/documents/events = Admin > Organisation group (Impact stories = Ad
     site uses its own forms; the old links are only mentioned in help text.
 14. **Extra phone number and opening hours.** `/contact` also lists `+256 741 819 287` and "Mon-Fri, 9am-5pm". Settings has only two
     phone keys, so both live in the Contact page copy (Admin > Pages > Contact), not in Site settings.
+
+---------------------------------------------------------------------------------------------------------------------
+
+## 3a. Planned Programs update (owner copy: `docs/content-source/planned-programs.md`)
+
+**What changed.** The Programs and Projects pages, the program/project cards on Home, the footer program list, the sitemap and the
+JSON-LD now carry the owner's wording, verbatim, as PLANNED work. The page copy is in the registry (`app/config/pages/programs.php`,
+`projects.php`, Home `help` and `projects` sections); the three pillars are `programs` rows and the 27 proposed areas of
+intervention are `projects` rows (all `status = planned`). Nothing on these pages says or implies that an activity is funded,
+operational or delivering results; the "commitment" and "disclaimer" sections say so explicitly. See `docs/PROGRAMS_CONTENT_MAP.md`.
+
+**Status field.** `programs.status` (`planned`, `ongoing`, `completed`; new column, migrated by `database/schema.sql`) is set
+in Admin > Programs ("Program status", default "Planned program area"). `projects.status` already existed (new projects now default
+to "planned"). Public labels are editable in Admin > Pages > Programs / Projects (labels, list).
+
+**Legacy programs and projects REMOVED (owner instruction "remove the old ones").** The four programs and four projects imported from the
+previous live site (slugs `digital-pathways-for-youth`, `digital-employability-internship-linkages`,
+`inclusive-digital-access-for-out-of-school-youth`, `youth-digital-entrepreneurship-micro-income-development`) were deleted from the
+development database (projects first, then programs; no `content_blocks`, gallery, FAQ or post rows referenced them), their INSERTs were
+removed from `seed.sql`, and two slug-scoped `DELETE` statements near the programs seed clean any database seeded earlier. Their
+detail URLs now answer 404. The registry sections of the old site that described delivery (Programs: overview, accountability, impact,
+how we work, FAQ; Projects: approach) were deleted as well, so Admin > Pages no longer offers dead "Legacy" sections.
+`docs/live-snapshot/*.txt` is kept as an archive of the old live site only; it is not used by the website.
+
+**Not touched, owner to review (they make claims that the planned-programs copy does not support).**
+* Home stats "150+ Youth Trained" and "5 Active Programs" (Admin > Impact figures) and the Home stat fallback in `home.php`.
+* Home hero / "Who we are" / mission blocks and the "measurable change" paragraph, About history, `about.php` ("When we equip youth...").
+* Setting `meta_description` and the Donate FAQ rows that mention digital literacy training or health outreach.
 
 ---------------------------------------------------------------------------------------------------------------------
 
@@ -242,7 +267,7 @@ cta.text` are new sentences that paraphrase the live mission; keep or edit them 
 | Date and photos for the Wii Got Quarry **activity**; cover image for its blog post | Admin > Activities, Posts |
 | Decision on the draft "Breaking the Stigma" post | Admin > Posts |
 | One official **vision** and **mission** wording; official title of the founder | Admin > Pages > About / Home |
-| Whether a **fifth program** exists (stat says 5; four are described) and evidence for "150+ Youth Trained" | Admin > Programs / Impact figures |
+| What the **"5 Active Programs"** and **"150+ Youth Trained"** counters on Home should say now that the programs are described as planned (see section 3a), and evidence for them | Admin > Impact figures |
 | **Google Analytics** id and **YouTube** channel, if wanted | Site settings |
 | Legal review of the **privacy notice**, terms and any donation/tax statement | Admin > Pages > Privacy |
 | Official **notification email** if different from the Gmail address | Site settings > Contact details |

@@ -11,11 +11,9 @@
  * Heading fields accept [[double brackets]] around the words that get the hand-drawn underline.
  *
  * Sections hero, pillars, cross_cutting, approach, audience, partnerships, commitment, labels, detail = the planned-programs page.
- * Sections overview, accountability, impact, how_we_work, faq = LEGACY keys of the previous site, kept so that no saved edit or older
- * view breaks; the claim-bearing ones (accountability, impact, how_we_work, faq) are HIDDEN by default (default_visible = false).
+ * (The sections of the previous site that described delivery - overview, accountability, impact, how_we_work, faq - were removed.)
  */
 $hlHelp = 'Put [[double brackets]] around the words that get the hand-drawn underline.';
-$legacy = 'Legacy section from the previous website, hidden by default because it describes delivery. Only switch it on when it is true for the planned programs.';
 return [
     'slug'  => 'programs',
     'title' => 'Programs',
@@ -24,7 +22,7 @@ return [
     'nav'   => ['label' => 'Programs', 'order' => 30, 'header' => true, 'footer' => true],
     'seo'   => [
         'title'       => 'Our Planned Programs',
-        'description' => 'Lumina Africa Foundation is developing a portfolio of community-centred programs designed to expand opportunities for underserved communities, particularly young people in Northern Uganda.',
+        'description' => 'Our planned interventions focus on three interconnected pillars: Health, Education, and Technology & Innovation.',
         'og_image'    => 'assets/img/site/photo-03.jpg',
     ],
     'sections' => [
@@ -180,7 +178,6 @@ return [
                 ['key' => 'status_completed', 'label' => 'Status label: completed', 'type' => 'text', 'default' => 'Completed'],
                 ['key' => 'planned_focus', 'label' => 'Label before the planned focus sentence', 'type' => 'text', 'default' => 'Planned focus'],
                 ['key' => 'interventions_heading', 'label' => 'Heading above the proposed areas of intervention', 'type' => 'text', 'default' => 'Proposed areas of intervention'],
-                ['key' => 'contribution_heading', 'label' => 'Heading of the intended contribution', 'type' => 'text', 'default' => 'Our intended contribution'],
                 ['key' => 'view_pillar', 'label' => 'Link text: open a pillar', 'type' => 'text', 'default' => 'View pillar'],
                 ['key' => 'view_interventions', 'label' => 'Link text: see a pillar\'s proposed areas of intervention', 'type' => 'text', 'default' => 'View interventions'],
                 ['key' => 'interventions_empty', 'label' => 'Message when a pillar has no areas of intervention yet', 'type' => 'text', 'default' => 'No proposed areas of intervention have been published for this pillar yet.'],
@@ -195,93 +192,6 @@ return [
                 ['key' => 'more_title', 'label' => 'Heading above other programs', 'type' => 'text', 'default' => 'Our three planned program pillars'],
                 ['key' => 'join_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Partner With Us'],
                 ['key' => 'join_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/involvement'],
-            ],
-        ],
-        // ------------------------------------------------------------------ LEGACY sections (kept for compatibility, see the file header)
-        [
-            'key' => 'overview', 'label' => 'Legacy: programs overview heading', 'help' => 'Kept for compatibility. The current heading above the pillar cards is "Our three planned program pillars" (section above).',
-            'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our three planned program [[pillars]]', 'help' => $hlHelp],
-                ['key' => 'subtitle', 'label' => 'Sub-heading', 'type' => 'text', 'default' => ''],
-                ['key' => 'card_cta', 'label' => 'Card button text', 'type' => 'text', 'default' => 'View pillar'],
-                ['key' => 'empty_title', 'label' => 'Message when there are no programs yet: heading', 'type' => 'text', 'default' => 'Our planned programs are being published'],
-                ['key' => 'empty_text', 'label' => 'Message when there are no programs yet: text', 'type' => 'textarea', 'default' => 'Please check back soon, or get in touch to learn how you can take part.'],
-                ['key' => 'empty_cta_label', 'label' => 'Message when there are no programs yet: button text', 'type' => 'text', 'default' => 'Contact Lumina Africa Foundation'],
-                ['key' => 'empty_cta_url', 'label' => 'Message when there are no programs yet: button link', 'type' => 'url', 'default' => '/contact'],
-            ],
-        ],
-        [
-            'key' => 'accountability', 'label' => 'Legacy: Accountability Framework', 'toggle' => true, 'default_visible' => false, 'help' => $legacy,
-            'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Accountability [[Framework]]', 'help' => $hlHelp],
-                ['key' => 'intro', 'label' => 'Intro', 'type' => 'text', 'default' => 'Across all programs, Lumina Africa Foundation applies:'],
-                ['key' => 'items', 'label' => 'Practices', 'type' => 'repeater', 'item_label' => 'text', 'add_label' => 'Add a practice', 'max_rows' => 12,
-                    'fields' => [['key' => 'text', 'label' => 'Practice', 'type' => 'text', 'maxlength' => 200]],
-                    'default' => [
-                        ['text' => 'Baseline and endline assessments'],
-                        ['text' => 'Attendance and training hour tracking'],
-                        ['text' => 'Structured mentorship documentation'],
-                        ['text' => 'Post-program income and employment tracking'],
-                        ['text' => 'Quarterly internal performance reviews'],
-                    ],
-                ],
-                ['key' => 'closing', 'label' => 'Closing statement', 'type' => 'text', 'default' => 'We believe impact must be measurable, transparent, and continuously improved.'],
-            ],
-        ],
-        [
-            'key' => 'impact', 'label' => 'Legacy: Our Measurable Impact', 'toggle' => true, 'default_visible' => false, 'help' => $legacy,
-            'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our Measurable [[Impact]]', 'help' => $hlHelp],
-                ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 4, 'default' => 'Lumina Africa Foundation is committed to results-driven implementation. We track progress, measure outcomes, and continuously refine our programs to ensure real economic impact for vulnerable youth in Northern Uganda.'],
-                ['key' => 'show_stats', 'label' => 'Show the figures card under the text', 'type' => 'boolean', 'default' => true, 'help' => 'The numbers come from Admin > Stats; the card disappears while there are none.'],
-                ['key' => 'image', 'label' => 'Photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
-                ['key' => 'image2', 'label' => 'Second photo (behind, optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-05.jpg', 'alt' => 'Young people seated in a training room, one of them typing on a laptop'],
-            ],
-        ],
-        [
-            'key' => 'how_we_work', 'label' => 'Legacy: How We Work', 'toggle' => true, 'default_visible' => false, 'help' => $legacy,
-            'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'How We [[Work]]', 'help' => $hlHelp],
-                ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 5, 'default' => 'Our approach is rooted in community participation, accountability, and collaboration. Every project is designed with the community, not for the community, ensuring solutions are sustainable and owned by the people we serve. By collaborating with partners and local leaders, we maximize our impact and create sustainable systems.'],
-                ['key' => 'items', 'label' => 'Principles', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a principle', 'max_rows' => 8,
-                    'fields' => [
-                        ['key' => 'icon', 'label' => 'Icon', 'type' => 'select', 'options' => icon_options(), 'default' => 'check-circle'],
-                        ['key' => 'title', 'label' => 'Title', 'type' => 'text'],
-                        ['key' => 'text', 'label' => 'Text', 'type' => 'textarea'],
-                    ],
-                    'default' => [
-                        ['icon' => 'users', 'title' => 'Community-Driven', 'text' => 'Projects are co-created with local leaders, youth, and women.'],
-                        ['icon' => 'handshake', 'title' => 'Partnerships', 'text' => 'We collaborate with government, NGOs, schools, and private sector partners.'],
-                        ['icon' => 'shield', 'title' => 'Accountability', 'text' => 'Regular monitoring, reporting, and community feedback ensure transparency and measurable impact.'],
-                    ],
-                ],
-            ],
-        ],
-        [
-            'key' => 'faq', 'label' => 'Legacy: Programs FAQ', 'toggle' => true, 'default_visible' => false,
-            'help' => $legacy . ' (The questions and answers shown next to a photo.)',
-            'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Programs [[FAQ]]', 'help' => $hlHelp],
-                ['key' => 'image', 'label' => 'Photo beside the questions (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-04.jpg', 'alt' => 'Young people seated in the audience of an event'],
-                ['key' => 'items', 'label' => 'Questions', 'type' => 'repeater', 'item_label' => 'question', 'add_label' => 'Add a question', 'max_rows' => 20,
-                    'fields' => [
-                        ['key' => 'question', 'label' => 'Question', 'type' => 'text', 'maxlength' => 300],
-                        ['key' => 'answer', 'label' => 'Answer', 'type' => 'textarea', 'rows' => 4],
-                    ],
-                    'default' => [
-                        ['question' => 'What programs do you offer?', 'answer' => 'We offer programs in education, health, technology, and entrepreneurship aimed at youth empowerment and community development.'],
-                        ['question' => 'How can I get involved?', 'answer' => 'You can get involved by volunteering, participating in our programs, or supporting our initiatives through donations.'],
-                        ['question' => 'Who can participate?', 'answer' => 'Our programs are open to all young people and marginalized community members seeking personal growth and empowerment.'],
-                        ['question' => 'Do you provide mentorship?', 'answer' => 'Yes, we offer mentorship programs specifically designed for youth and women to foster personal and professional growth.'],
-                        ['question' => 'What is your mission?', 'answer' => 'Our mission is to reduce youth unemployment in Northern Uganda by equipping vulnerable young people with market-relevant digital and employable skills, providing psychosocial support, and creating pathways to decent work and sustainable livelihoods.'],
-                        ['question' => 'Where are you located?', 'answer' => 'We are based in northern Uganda, serving local communities and focusing on sustainable development initiatives.'],
-                    ],
-                ],
             ],
         ],
     ],
