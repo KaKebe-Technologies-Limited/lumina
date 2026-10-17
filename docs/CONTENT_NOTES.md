@@ -176,6 +176,8 @@ Activities (+ Gallery under Activities). This deliberately differs from the arch
 | programs | Programs | 30 | yes | yes | - |
 | projects | Projects | 40 | yes | yes | - |
 | involvement | Involvement | 50 | yes | yes | - |
+| membership | Membership | 52 | yes | yes | - |
+| membership-terms | Membership terms (linked from the form only) | 53 | no | no | - |
 | careers | Careers | 55 | yes | yes | involvement |
 | donate | Donate (header button) | 60 | yes | yes | - |
 | blog | Blog | 70 | yes | yes | - |
@@ -270,4 +272,32 @@ cta.text` are new sentences that paraphrase the live mission; keep or edit them 
 | What the **"5 Active Programs"** and **"150+ Youth Trained"** counters on Home should say now that the programs are described as planned (see section 3a), and evidence for them | Admin > Impact figures |
 | **Google Analytics** id and **YouTube** channel, if wanted | Site settings |
 | Legal review of the **privacy notice**, terms and any donation/tax statement | Admin > Pages > Privacy |
+| **Membership** (section 9): the fee of every type, the benefits, eligibility and terms wording, payment instructions, data-retention period, legal review | Admin > Membership types & fees, Pages > Membership / Membership terms, Site settings > Membership |
 | Official **notification email** if different from the Gmail address | Site settings > Contact details |
+
+
+---------------------------------------------------------------------------------------------------------------------
+
+## 9. Membership registration: what is placeholder and what the owner must do
+
+Nothing on the membership pages is invented: no fee, member count, benefit, testimonial or legal claim. Everything below is a **neutral, editable
+default** until the owner confirms it. Technical contract: `docs/MEMBERSHIP.md`.
+
+| Item | State in the starter | Owner action | Where |
+|---|---|---|---|
+| **Fees** | The three membership types ("Individual Member", "Youth & Student Member", "Organisation / Partner Member") are PLACEHOLDERS with no fee. The website, the form and the e-mails say "Fee to be announced". | Rename or delete the placeholders, set the fee (a set amount, free, or still to be announced), an optional joining fee, the billing period and an optional member limit for each type. A fee change affects new applications only. | Admin > Membership types & fees (admin role) |
+| **Benefits** ("Why become a member") | Reuses the owner's own wording about volunteering, mentorship and partnership (from `planned-programs.md`). No other benefit is promised. | Confirm or replace with the foundation's real benefits. | Admin > Pages > Membership |
+| **Eligibility** | A neutral placeholder sentence. | Write the real eligibility rules (age, residence, organisations). | Admin > Pages > Membership, and per type in Membership types & fees |
+| **Membership terms** (`/membership/terms`) | A short placeholder, not a legal document. | Replace with the foundation's terms. **Have counsel review them.** | Admin > Pages > Membership terms |
+| **Payment instructions** | Empty. The page then falls back to the bank / mobile-money details of the Donations tab, and if those are empty too the confirmation says the payment details will be shared after review. | Enter how members pay (mobile-money number and name, bank account, cash at the office). | Site settings > Membership (or Donations) |
+| **Privacy notice**, section "Membership registration" | A DRAFT, flagged for review. The data-retention period is a placeholder. | Fill in the retention period; confirm with counsel whether Uganda's Data Protection and Privacy Act, 2019 requires the foundation to register with the Personal Data Protection Office or give further notices. The site makes no legal claim. | Admin > Pages > Privacy |
+| **National ID / passport number** | Not collected (off, for data minimisation). | Decide whether it is really needed before switching it on. | Site settings > Membership |
+| **Minors** | Applicants under 18 must give a parent or guardian's details and consent. | Confirm this matches the foundation's safeguarding policy. | Admin > Pages > Membership |
+| **Newsletter box** | Ticking it subscribes the address (source `membership`). Newsletter double opt-in is not built (see section 3). | Decide whether that is acceptable. | - |
+| **E-mails** | Sent through the configured mailer (no SMTP driver: file in development, PHP `mail()` in production). The approval, rejection and receipt e-mails are optional per action. | Test delivery on the live host; edit the wording. | Admin > Pages > Membership > E-mails |
+| **Receipts** | Printable page with the foundation's details and registration number (see the flag on the registration number). | Confirm the registration number and the receipt wording. | Site settings > Organisation |
+| **Opening** | Registration ships **closed** (`membership_open` = off): the page shows a "closed" notice and no personal data is collected. | Switch it on only after the fees are set, the terms replaced and the privacy section reviewed. | Site settings > Membership > Accept applications |
+
+Real applications contain personal data (date of birth, address, phone numbers, guardian details). They are visible only to the admin and editor roles, never
+public, never in logs or in the activity log (ids and references only), and the CSV export carries a warning. Deleting a member is admin-only and refused for
+members who have a membership number or payments.

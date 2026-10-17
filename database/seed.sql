@@ -282,3 +282,42 @@ UPDATE team_members SET role_title = 'Founder', team_group = 'board', bio = 'Mos
 
 -- Not seeded on purpose (real data the owner must supply): partners, documents, events, event_registrations, stories, subscribers,
 -- contact_messages, applications, involvement_requests, donations, users. See docs/CONTENT_NOTES.md.
+
+-- ------------------------------------------------------------------ membership (see docs/MEMBERSHIP.md). ADDITIVE and IDEMPOTENT.
+-- Settings: defaults of app/config/settings_schema.php (group "Membership"); refreshed only while pristine, like every other setting.
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('membership_open', '0'),   -- closed until the owner has set the fees, the terms and the privacy text (Site settings > Membership)
+  ('membership_currency', 'UGX'),
+  ('membership_number_prefix', 'LAF'),
+  ('membership_payment_instructions', ''),
+  ('membership_collect_id', '0'),
+  ('membership_contact_email', '')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Pages: the Membership tab (header + footer, right after Involvement) and its terms page (not in the menus).
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
+  ('membership', 'Membership', 'registry', 'default', 1, 1, 1, 'Membership', 52, NULL),
+  ('membership-terms', 'Membership terms', 'registry', 'default', 1, 0, 0, 'Membership terms', 53, NULL)
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
+  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
+  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
+  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
+  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
+  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
+  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
+  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Membership types: three PLACEHOLDERS for the owner to edit or delete. The fee is NULL on purpose (the site then says "Fee to be announced");
+-- no amount is invented. Inserted only while the table is EMPTY, so a re-import never brings back a type the owner deleted or renamed.
+INSERT INTO membership_types (slug, name, description, fee_amount, joining_fee, currency, period, eligibility, sort_order, is_active, max_members)
+SELECT seed.slug, seed.name, seed.description, seed.fee_amount, seed.joining_fee, seed.currency, seed.period, seed.eligibility, seed.sort_order, seed.is_active, seed.max_members FROM (
+  SELECT 'individual-member' AS slug, 'Individual Member' AS name, NULL AS description, NULL AS fee_amount, NULL AS joining_fee, 'UGX' AS currency, 'annual' AS period, NULL AS eligibility, 10 AS sort_order, 1 AS is_active, NULL AS max_members
+  UNION ALL SELECT 'youth-student-member', 'Youth & Student Member', NULL, NULL, NULL, 'UGX', 'annual', NULL, 20, 1, NULL
+  UNION ALL SELECT 'organisation-partner-member', 'Organisation / Partner Member', NULL, NULL, NULL, 'UGX', 'annual', NULL, 30, 1, NULL
+) AS seed
+WHERE NOT EXISTS (SELECT 1 FROM membership_types);

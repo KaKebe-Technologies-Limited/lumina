@@ -24,7 +24,9 @@
     transition: border-color $t-fast ease, box-shadow $t-fast ease;
     &::placeholder { color: lighten($ink-soft, 12%); }
     &:hover { border-color: $navy-light; }
-    &:focus { outline: none; border-color: $navy; box-shadow: 0 0 0 3px rgba($gold, 0.45); }
+    // the gold halo is decoration (about 1.5:1); the real indicator is the border change plus this ring, which also survives forced-colors mode
+    &:focus { outline: 3px solid transparent; outline-offset: 2px; border-color: $navy; box-shadow: 0 0 0 3px rgba($gold, 0.45); }
+    &:focus-visible { @include focus-ring($orange-dark, 2px); }
     &[disabled] { background: $surface-alt; cursor: not-allowed; }
 }
 .textarea { min-height: 9rem; resize: vertical; }
@@ -62,4 +64,8 @@
     border-radius: $radius-lg;
     box-shadow: $shadow;
     @include respond(md) { padding: $space-7; }
+}
+
+@media (forced-colors: active) {
+    .input:focus, .select:focus, .textarea:focus { outline: 3px solid Highlight; }
 }

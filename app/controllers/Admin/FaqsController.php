@@ -21,6 +21,7 @@ final class FaqsController extends AdminController
     private const GROUP_HINTS = [
         'home'    => 'These questions appear in the FAQ on the home page. While this group has no active question, the home page uses the "general" group, and then the "donate" group.',
         'donate'  => 'These questions appear on the Donate page. They also appear on the home page while the "home" and "general" groups have no active question.',
+        'membership' => 'These questions appear on the Membership page. While this group has no active question, the list typed in Pages > Membership is used.',
         'general' => 'These questions appear in the FAQ on the home page while the "home" group has no active question (a single active question here replaces the donate questions on the home page). (Programs, Involvement and Careers keep their questions in Pages.)',
     ];
 
@@ -133,12 +134,12 @@ final class FaqsController extends AdminController
     private function groups(): array
     {
         $groups = array_keys($this->counts());
-        foreach (['donate', 'home'] as $always) {
+        foreach (['donate', 'home', 'membership'] as $always) {
             if (!in_array($always, $groups, true)) {
                 $groups[] = $always;
             }
         }
-        $rank = static fn(string $g): int => ['donate' => 0, 'home' => 1][$g] ?? 9;
+        $rank = static fn(string $g): int => ['donate' => 0, 'home' => 1, 'membership' => 2][$g] ?? 9;
         usort($groups, static fn(string $a, string $b): int => [$rank($a), $a] <=> [$rank($b), $b]);
         return $groups;
     }

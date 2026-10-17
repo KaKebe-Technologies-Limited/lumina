@@ -12,7 +12,7 @@ return [
     'slug'  => 'privacy',
     'title' => 'Privacy Policy',
     'route' => '/privacy',
-    'help'  => 'DRAFT FOR REVIEW: please have this privacy notice checked by the foundation (and a legal adviser) before launch. Each block below is one numbered section of the notice. You can use {site_name}, {email_link}, {phone_link} and {address}: they are filled in from Settings.',
+    'help'  => 'DRAFT FOR REVIEW: please have this privacy notice checked by the foundation (and a legal adviser) before launch. Each block below is one numbered section of the notice. You can use {site_name}, {email_link}, {phone_link} and {address}: they are filled in from Settings. The last section, "Membership registration", is a DRAFT kept in its own block below: confirm it, and the data-retention period it mentions, with the foundation and a legal adviser.',
     'nav'   => ['label' => 'Privacy Policy', 'order' => 200, 'header' => false, 'footer' => true, 'parent' => null],
     'seo'   => [
         'title'       => 'Privacy Policy',
@@ -55,6 +55,7 @@ return [
                                 . '<li><strong>Getting involved:</strong> your name, email address, phone number, the way you would like to help, your organisation (if any) and your message.</li>'
                                 . '<li><strong>Donation pledges:</strong> your name, email address, phone number, the amount you intend to give, your message and whether you wish to remain anonymous.</li>'
                                 . '<li><strong>Event registrations:</strong> your name, email address, phone number and organisation.</li>'
+                                . '<li><strong>Membership registration:</strong> see the section &ldquo;Membership registration&rdquo; below.</li>'
                                 . '</ul><p>When you submit a form we also record your IP address and browser type. We use this only to keep the website secure and to prevent spam and abuse.</p>',
                         ],
                         [
@@ -105,6 +106,18 @@ return [
                             'body'  => '<p>{site_name}<br>{address}<br>Email: {email_link}<br>Phone: {phone_link}</p>',
                         ],
                     ]],
+            ],
+        ],
+        [
+            'key' => 'membership', 'label' => 'Membership registration (section added after the notice)', 'toggle' => true,
+            'help' => 'DRAFT: this section is shown as the last numbered section of the notice, below the sections above, and stays here even if you rewrite the list above. Confirm it, and the data-retention period it mentions, with the foundation and a legal adviser. Switch it off only if membership registration is not used.',
+            'fields' => [
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Membership registration', 'maxlength' => 140],
+                ['key' => 'body', 'label' => 'Text', 'type' => 'richtext', 'default' => '<p><strong>Draft for the foundation and its legal adviser to confirm.</strong></p>'
+                    . '<p>If you apply to become a member, we collect: your full name, gender, date of birth, nationality, email address, phone and WhatsApp numbers, country, district or region, sub-county or city, and village or address; your occupation or status, level of education and organisation or school; the areas you are interested in, your skills and availability, how you heard about us and why you want to join; the name, phone number and relationship of an emergency contact; your preferred payment method and any payment reference you give us; and your consent choices. If you are under 18 we also collect the name, phone number and relationship of your parent or guardian. We ask for a national ID or passport number only if the foundation has switched that question on.</p>'
+                    . '<p>We use this information to review your application, to contact you, to manage your membership, to record membership fees and issue receipts, and, only if you ticked the box, to send you news and updates. Only authorised staff who are signed in can see membership records; they are never published on this website.</p>'
+                    . '<p>We keep membership records for as long as you are a member and afterwards only for as long as the foundation needs them for the purposes above or the law requires. [The foundation will confirm the exact retention period here.]</p>'
+                    . '<p>To see, correct or delete your membership information, or to withdraw your consent, contact us at {email_link}.</p>'],
             ],
         ],
     ],

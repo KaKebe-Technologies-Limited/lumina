@@ -544,6 +544,154 @@ CREATE TABLE IF NOT EXISTS `stories` (
   KEY `ix_stories_list` (`is_active`, `consent_confirmed`, `published_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------------ membership (see docs/MEMBERSHIP.md)
+-- ADDITIVE and IDEMPOTENT: three new tables only, nothing existing is altered, so re-importing upgrades a live database without data loss.
+-- Personal data lives here (date of birth, address, optional ID number, minors): never expose it publicly, never write it to logs.
+
+CREATE TABLE IF NOT EXISTS `membership_types` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` VARCHAR(120) NOT NULL,
+  `name` VARCHAR(150) NOT NULL,
+  `description` TEXT NULL,
+  `fee_amount` DECIMAL(12,2) NULL,                 -- NULL = fee to be announced, 0 = free
+  `joining_fee` DECIMAL(12,2) NULL,                -- optional one-off registration fee, separate from the recurring fee
+  `currency` CHAR(3) NOT NULL DEFAULT 'UGX',
+  `period` ENUM('one_time','monthly','quarterly','annual','lifetime') NOT NULL DEFAULT 'annual',
+  `eligibility` TEXT NULL,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `max_members` INT UNSIGNED NULL,                 -- NULL = unlimited
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_membership_types_slug` (`slug`),
+  KEY `ix_membership_types_list` (`is_active`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `members` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `application_ref` VARCHAR(40) NOT NULL,          -- LAF-APP-YYYY-NNNNN
+  `membership_number` VARCHAR(40) NULL,            -- LAF-YYYY-NNNN, assigned on first approval
+  `type_id` INT UNSIGNED NOT NULL,
+  -- fee snapshot taken when the application was submitted: later fee changes never rewrite history
+  `type_name` VARCHAR(150) NOT NULL DEFAULT '',
+  `fee_amount` DECIMAL(12,2) NULL,
+  `joining_fee` DECIMAL(12,2) NULL,
+  `fee_currency` CHAR(3) NOT NULL DEFAULT 'UGX',
+  `fee_period` ENUM('one_time','monthly','quarterly','annual','lifetime') NOT NULL DEFAULT 'annual',
+  `status` ENUM('pending','approved','rejected','suspended','expired','cancelled') NOT NULL DEFAULT 'pending',
+  -- personal
+  `full_name` VARCHAR(150) NOT NULL,
+  `gender` ENUM('female','male','prefer_not_to_say') NOT NULL DEFAULT 'prefer_not_to_say',
+  `date_of_birth` DATE NOT NULL,
+  `nationality` VARCHAR(80) NOT NULL DEFAULT '',
+  `id_number` VARCHAR(60) NULL,                    -- only collected when setting membership_collect_id = 1
+  -- contact
+  `email` VARCHAR(190) NOT NULL,
+  `phone` VARCHAR(40) NOT NULL,
+  `whatsapp` VARCHAR(40) NULL,
+  `country` VARCHAR(80) NOT NULL DEFAULT '',
+  `region` VARCHAR(120) NOT NULL DEFAULT '',       -- district / region
+  `city` VARCHAR(120) NOT NULL DEFAULT '',         -- sub-county / city
+  `address` VARCHAR(255) NULL,                     -- village / address
+  -- livelihood
+  `occupation_status` VARCHAR(40) NOT NULL DEFAULT '',
+  `occupation_other` VARCHAR(190) NULL,
+  `education_level` VARCHAR(40) NOT NULL DEFAULT '',
+  `organisation` VARCHAR(190) NULL,
+  -- participation
+  `interests` TEXT NULL,                           -- JSON list of option keys
+  `skills` TEXT NULL,
+  `availability` VARCHAR(40) NOT NULL DEFAULT '',
+  `heard_about` VARCHAR(40) NOT NULL DEFAULT '',
+  `heard_about_other` VARCHAR(190) NULL,
+  `motivation` TEXT NULL,
+  -- parent / guardian (required when under 18)
+  `guardian_name` VARCHAR(150) NULL,
+  `guardian_phone` VARCHAR(40) NULL,
+  `guardian_relationship` VARCHAR(80) NULL,
+  `consent_guardian_at` DATETIME NULL,
+  -- emergency contact
+  `emergency_name` VARCHAR(150) NOT NULL DEFAULT '',
+  `emergency_phone` VARCHAR(40) NOT NULL DEFAULT '',
+  `emergency_relationship` VARCHAR(80) NOT NULL DEFAULT '',
+  -- payment (text only, no uploads)
+  `payment_method` VARCHAR(60) NOT NULL DEFAULT '',
+  `payment_reference` VARCHAR(120) NULL,
+  -- consent
+  `consent_terms_at` DATETIME NULL,
+  `consent_privacy_at` DATETIME NULL,
+  `declaration_at` DATETIME NULL,
+  `consent_updates` TINYINT(1) NOT NULL DEFAULT 0,
+  `consent_ip` VARCHAR(45) NULL,
+  `user_agent` VARCHAR(255) NULL,
+  `consent_terms_ver` VARCHAR(16) NULL,            -- short fingerprint of the terms text the applicant accepted (the text itself is editable)
+  `consent_privacy_ver` VARCHAR(16) NULL,          -- same for the privacy notice
+  -- administration
+  `internal_notes` TEXT NULL,
+  `status_reason` VARCHAR(500) NULL,
+  `status_changed_at` DATETIME NULL,
+  `status_changed_by` INT UNSIGNED NULL,
+  `approved_by` INT UNSIGNED NULL,
+  `approved_at` DATETIME NULL,
+  `start_date` DATE NULL,
+  `expiry_date` DATE NULL,                         -- NULL = no expiry (one_time / lifetime)
+  `anonymised_at` DATETIME NULL,                   -- set when the personal data was erased on request (the number, fee snapshot and receipts stay)
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_members_ref` (`application_ref`),
+  UNIQUE KEY `uq_members_number` (`membership_number`),
+  KEY `ix_members_status` (`status`, `created_at`),
+  KEY `ix_members_email` (`email`),
+  KEY `ix_members_type` (`type_id`, `status`),
+  KEY `ix_members_expiry` (`expiry_date`),
+  CONSTRAINT `fk_members_type` FOREIGN KEY (`type_id`) REFERENCES `membership_types` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_members_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Migration (idempotent): databases that created `members` before these columns existed get them here.
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'consent_terms_ver');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `consent_terms_ver` VARCHAR(16) NULL AFTER `user_agent`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'consent_privacy_ver');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `consent_privacy_ver` VARCHAR(16) NULL AFTER `consent_terms_ver`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'anonymised_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `anonymised_at` DATETIME NULL AFTER `expiry_date`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
+CREATE TABLE IF NOT EXISTS `member_payments` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `member_id` INT UNSIGNED NOT NULL,
+  `receipt_number` VARCHAR(40) NULL,               -- LAF-RCT-YYYY-NNNN, issued when a payment is marked received
+  `purpose` ENUM('joining','membership','renewal','other') NOT NULL DEFAULT 'membership',
+  `amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  `currency` CHAR(3) NOT NULL DEFAULT 'UGX',
+  `method` VARCHAR(60) NOT NULL DEFAULT '',
+  `reference` VARCHAR(120) NULL,
+  `status` ENUM('received','pending','waived') NOT NULL DEFAULT 'pending',
+  `paid_at` DATETIME NULL,
+  `term_start` DATE NULL,
+  `term_end` DATE NULL,
+  `recorded_by` INT UNSIGNED NULL,
+  `notes` VARCHAR(500) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_member_payments_receipt` (`receipt_number`),
+  KEY `ix_member_payments_member` (`member_id`, `status`),
+  KEY `ix_member_payments_paid` (`paid_at`),
+  CONSTRAINT `fk_member_payments_member` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_member_payments_user` FOREIGN KEY (`recorded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- ======================================================================
 -- PART: seed.sql
@@ -833,4 +981,43 @@ UPDATE team_members SET role_title = 'Founder', team_group = 'board', bio = 'Mos
 
 -- Not seeded on purpose (real data the owner must supply): partners, documents, events, event_registrations, stories, subscribers,
 -- contact_messages, applications, involvement_requests, donations, users. See docs/CONTENT_NOTES.md.
+
+-- ------------------------------------------------------------------ membership (see docs/MEMBERSHIP.md). ADDITIVE and IDEMPOTENT.
+-- Settings: defaults of app/config/settings_schema.php (group "Membership"); refreshed only while pristine, like every other setting.
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('membership_open', '0'),   -- closed until the owner has set the fees, the terms and the privacy text (Site settings > Membership)
+  ('membership_currency', 'UGX'),
+  ('membership_number_prefix', 'LAF'),
+  ('membership_payment_instructions', ''),
+  ('membership_collect_id', '0'),
+  ('membership_contact_email', '')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Pages: the Membership tab (header + footer, right after Involvement) and its terms page (not in the menus).
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
+  ('membership', 'Membership', 'registry', 'default', 1, 1, 1, 'Membership', 52, NULL),
+  ('membership-terms', 'Membership terms', 'registry', 'default', 1, 0, 0, 'Membership terms', 53, NULL)
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
+  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
+  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
+  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
+  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
+  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
+  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
+  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Membership types: three PLACEHOLDERS for the owner to edit or delete. The fee is NULL on purpose (the site then says "Fee to be announced");
+-- no amount is invented. Inserted only while the table is EMPTY, so a re-import never brings back a type the owner deleted or renamed.
+INSERT INTO membership_types (slug, name, description, fee_amount, joining_fee, currency, period, eligibility, sort_order, is_active, max_members)
+SELECT seed.slug, seed.name, seed.description, seed.fee_amount, seed.joining_fee, seed.currency, seed.period, seed.eligibility, seed.sort_order, seed.is_active, seed.max_members FROM (
+  SELECT 'individual-member' AS slug, 'Individual Member' AS name, NULL AS description, NULL AS fee_amount, NULL AS joining_fee, 'UGX' AS currency, 'annual' AS period, NULL AS eligibility, 10 AS sort_order, 1 AS is_active, NULL AS max_members
+  UNION ALL SELECT 'youth-student-member', 'Youth & Student Member', NULL, NULL, NULL, 'UGX', 'annual', NULL, 20, 1, NULL
+  UNION ALL SELECT 'organisation-partner-member', 'Organisation / Partner Member', NULL, NULL, NULL, 'UGX', 'annual', NULL, 30, 1, NULL
+) AS seed
+WHERE NOT EXISTS (SELECT 1 FROM membership_types);
 

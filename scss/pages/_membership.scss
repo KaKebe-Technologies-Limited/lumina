@@ -1,0 +1,463 @@
+// pages/_membership.scss - WEB agent. The Membership tab (/membership), the registration form (/membership/register), the confirmation page
+// and the terms page (body class page-membership-terms). Imported by main.scss. Every rule is scoped under a page class.
+// Tokens, mixins and the shared components (forms, cards, feature-card, cta, accordion) are used as they are; see docs/DESIGN.md.
+// Brand-new reusable pieces of this page (all prefixed .mb-): benefit grid, tick list, fee cards, numbered steps, payment card, the form
+// layout (numbered groups, option chips and cards, fee box), receipt card, next-steps list.
+
+$mb-field-border: #8791A0;            // 3.2:1 on white (WCAG 1.4.11 for form-field boundaries), same value as the other forms
+
+.page-membership,
+.page-membership-terms {
+    .btn { min-height: 2.75rem; }
+    [hidden] { display: none !important; }
+}
+
+.page-membership {
+    // ------------------------------------------------------------------------------------------------------------------
+    // /membership
+    // ------------------------------------------------------------------------------------------------------------------
+    .mb-anchor { display: block; height: 0; scroll-margin-top: calc(#{$header-h-shrunk} + #{$space-5}); }
+
+    // closed notice
+    .mb-closed {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-4;
+        padding: $space-5;
+        border: 1px solid rgba($warning, 0.35);
+        border-left: 6px solid $gold-deep;
+        border-radius: $radius-card;
+        background: $warning-bg;
+        color: $ink;
+        &__icon { flex: none; display: inline-grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: $white; color: $warning; }
+        &__body { min-width: 0; > * + * { margin-top: $space-3; } p { color: $ink; } }
+        &__title { font-size: fluid(1.25rem, '1.1rem + 0.5vw', 1.6rem); color: $navy; }
+    }
+    .mb-closed-wrap { padding-bottom: 0; }
+    .mb-closed--inline { max-width: 46rem; margin: 0 auto $space-6; }
+
+    // benefits: a few cards, centred (a fixed 3-column grid would leave holes for 4 or 5 cards)
+    .mb-cards {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: $space-5;
+        > * { flex: 1 1 16.5rem; max-width: 23rem; min-width: 0; }
+    }
+    .mb-benefit { padding: $space-6 $space-5; .feature-card__title { font-size: 1.35rem; } }
+    .mb-why .section-head { margin-bottom: $space-6; }
+
+    // who can join: heading left, tick list right
+    .mb-eligibility__split { align-items: center; }
+    .mb-checklist {
+        display: grid;
+        gap: $space-4;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        li { display: flex; align-items: flex-start; gap: $space-3; padding: $space-4 $space-5; border: 1px solid $line; border-radius: $radius-card; background: $white; line-height: 1.6; }
+        &__tick {
+            flex: none;
+            display: inline-grid;
+            place-items: center;
+            width: 1.75rem;
+            height: 1.75rem;
+            margin-top: 0.05rem;
+            border-radius: 50%;
+            background: $navy;
+            color: $gold;
+            .icon { width: 0.9rem; height: 0.9rem; stroke-width: 3; }
+        }
+    }
+
+    // membership types with their CURRENT fee (rows of membership_types)
+    .mb-types-section .section-head { margin-bottom: $space-6; }
+    .mb-types {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: $space-5;
+        > * { flex: 1 1 18rem; max-width: 24rem; min-width: 0; }
+    }
+    .mb-type {
+        display: flex;
+        flex-direction: column;
+        gap: $space-4;
+        padding: $space-6 $space-5;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        background: $white;
+        transition: border-color $t-fast ease, box-shadow $t-base ease;
+        &:hover { border-color: rgba($gold, 0.9); box-shadow: $shadow-card; }
+        &__name { font-size: 1.4rem; line-height: 1.2; color: $navy; overflow-wrap: anywhere; @include respond(md) { min-height: 2.4em; } }   // two lines tall, so the fee rows of cards side by side line up
+        &__fee { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.5rem; margin: 0; padding-bottom: $space-4; border-bottom: 1px dashed $border-strong; }
+        &__cur { font-family: $font-heading; font-size: $fs-sm; font-weight: 600; letter-spacing: 0.08em; color: $orange-text; }
+        &__num { font-family: $font-display; font-size: fluid(2rem, '1.6rem + 1.2vw', 2.6rem); font-weight: 600; line-height: 1; color: $navy; font-variant-numeric: lining-nums; }
+        &__per { font-size: $fs-sm; color: $ink-soft; }
+        &__state { font-family: $font-display; font-size: 1.35rem; font-weight: 600; line-height: 1.25; color: $navy; }
+        &__joining { align-self: flex-start; margin: 0; padding: 0.3rem 0.85rem; border-radius: $radius-pill; background: $surface; font-family: $font-heading; font-size: $fs-xs; font-weight: 600; color: $gold-text; }
+        &__text { font-size: $fs-sm; line-height: 1.65; color: $ink-soft; > * + * { margin-top: $space-3; } }
+        &__elig {
+            padding: $space-3 $space-4;
+            border-radius: $radius;
+            background: $tint-cool;
+            font-size: $fs-sm;
+            line-height: 1.55;
+            color: $ink;
+            > * + * { margin-top: $space-2; }
+        }
+        &__elig-label { display: block; margin-bottom: $space-1; font-family: $font-heading-caps; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: $navy; }
+        &__cta { margin-top: auto; padding-top: $space-2; }
+        &__full { margin: 0; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; color: $ink-soft; }
+    }
+
+    // how it works: four numbered steps on the deep navy band
+    .mb-how .section-head { margin-bottom: $space-7; }
+    .mb-steps {
+        display: grid;
+        gap: $space-6;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-7 $space-6; }
+        @include respond(lg) { grid-template-columns: repeat(#{'var(--mb-n, 4)'}, minmax(0, 1fr)); gap: $space-6; }
+    }
+    .mb-step {
+        position: relative;
+        padding-left: 4.5rem;
+        @include respond(lg) { padding-left: 0; padding-top: 4.75rem; }
+        &__num {
+            position: absolute;
+            left: 0;
+            top: 0;
+            display: inline-grid;
+            place-items: center;
+            width: 3.4rem;
+            height: 3.4rem;
+            border-radius: 50%;
+            background: $gold;
+            color: $navy-dark;
+            font-family: $font-display;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        // connector to the next step: vertical on phones, horizontal on desktop
+        &:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 1.65rem;
+            top: 3.9rem;
+            bottom: -2rem;
+            width: 2px;
+            background: rgba($white, 0.22);
+            @include respond(md) { display: none; }
+            @include respond(lg) { display: block; left: 4.2rem; right: -1.5rem; top: 1.65rem; bottom: auto; width: auto; height: 2px; }
+        }
+        &__title { font-size: 1.3rem; line-height: 1.25; color: $white; }
+        &__text { margin-top: $space-2; font-size: $fs-sm; line-height: 1.65; color: rgba($white, 0.88); }
+    }
+
+    // payment details card (also on the confirmation page)
+    .mb-pay {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-4;
+        padding: $space-5;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        background: $tint-cool;
+        box-shadow: $shadow-card;
+        @include respond(md) { padding: $space-6; }
+        &__icon { flex: none; display: inline-grid; place-items: center; width: 3.2rem; height: 3.2rem; border-radius: 50%; background: $navy; color: $gold; }
+        &__body { min-width: 0; line-height: 1.7; overflow-wrap: anywhere; > * + * { margin-top: $space-3; } }
+        &__title { font-size: 1.35rem; color: $navy; }
+        &--card { background: $white; }
+    }
+    .mb-payment .split { align-items: center; }
+
+    .mb-faq .faq-split__media { display: none; }
+
+    // ------------------------------------------------------------------------------------------------------------------
+    // /membership/register
+    // ------------------------------------------------------------------------------------------------------------------
+    .mb-register { padding-top: $space-6; @include respond(lg) { padding-top: $space-7; } }
+    .mb-layout {
+        display: grid;
+        gap: $space-6;
+        @include respond(lg) { grid-template-columns: 15.5rem minmax(0, 1fr); gap: $space-7; align-items: start; }
+        @include respond(xl) { grid-template-columns: 17rem minmax(0, 1fr); }
+    }
+
+    // numbered list of the groups (large screens only; the groups are also reachable without it)
+    .mb-aside {
+        display: none;
+        @include respond(lg) { display: block; position: sticky; top: calc(#{$header-h-shrunk} + #{$space-5}); }
+        &__list { counter-reset: mba; display: grid; gap: $space-1; margin: 0; padding: 0; list-style: none; }
+        &__item {
+            counter-increment: mba;
+            a {
+                display: flex;
+                align-items: center;
+                gap: $space-3;
+                padding: 0.55rem 0.75rem;
+                border-radius: $radius;
+                font-family: $font-heading;
+                font-size: $fs-sm;
+                font-weight: 500;
+                line-height: 1.3;
+                color: $navy;
+                text-decoration: none;
+                &::before { content: counter(mba); flex: none; display: inline-grid; place-items: center; width: 1.8rem; height: 1.8rem; border-radius: 50%; background: $white; border: 1px solid $border-strong; font-size: $fs-xs; font-weight: 700; }
+                &:hover { background: $white; color: $orange-text; }
+                &:focus-visible { outline: 3px solid $navy; outline-offset: 2px; }
+            }
+        }
+        &__links { margin-top: $space-5; padding-left: 0.75rem; font-size: $fs-xs; color: $ink-soft; a { color: $orange-text; } }
+    }
+    .js & .mb-aside__item--cond:not(.is-active) { display: none; }
+
+    // the form card: pill fields, pale small-caps labels (same family as the other public forms)
+    .mb-form {
+        counter-reset: mbg;
+        border-color: $line;
+        border-radius: $radius-panel;
+        box-shadow: $shadow-card;
+        padding: $space-5 $space-4;
+        @include respond(md) { padding: $space-7 $space-6; }
+        &__note { margin-bottom: $space-6; }
+        &__actions { margin-top: $space-7; }
+        .field { gap: $space-2; }
+        .field__label { font-family: $font-heading; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: $navy; }
+        .field__help { font-size: $fs-xs; color: $ink-soft; }
+        .field__meta { display: flex; align-items: flex-start; justify-content: space-between; gap: $space-3; }
+        .input, .select, .textarea {
+            border: 1px solid $mb-field-border;
+            background-color: $white;
+            font-size: $fs-base;
+            transition: border-color $t-fast ease, box-shadow $t-fast ease;
+            &:hover { border-color: $navy; }
+            &:focus { border-color: $navy; box-shadow: 0 0 0 4px rgba($gold, 0.5); }
+        }
+        .input, .select { min-height: 3.25rem; padding: 0.8rem 1.4rem; border-radius: $radius-pill; }
+        .select { padding-right: 3rem; background-position: right 1.2rem center; }
+        .textarea { min-height: 8rem; padding: 1.1rem 1.4rem; border-radius: $radius-card; }
+        .field--error {
+            .input, .select, .textarea { border-color: $danger; box-shadow: 0 0 0 1px $danger; }
+        }
+        .field__error { display: flex; align-items: flex-start; gap: $space-2; font-weight: 600; &::before { content: '!'; flex: none; display: inline-grid; place-items: center; width: 1.15rem; height: 1.15rem; margin-top: 0.1rem; border-radius: 50%; background: $danger; color: $white; font-size: 0.75rem; line-height: 1; } }
+        .check { align-items: flex-start; font-size: $fs-sm; line-height: 1.55; color: $ink; input { width: 1.35rem; height: 1.35rem; margin-top: 0.1rem; } a { color: $orange-text; font-weight: 600; } }
+        .form-actions { gap: $space-4; }
+    }
+
+    // groups: a fieldset with a numbered legend. The numbers count the groups that are actually shown (the guardian block can be hidden).
+    .mb-group {
+        counter-increment: mbg;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        scroll-margin-top: calc(#{$header-h-shrunk} + #{$space-5});
+        &__legend {
+            float: left;                                  // lets the legend lay out like a normal block (a bare legend ignores flex)
+            display: flex;
+            align-items: center;
+            gap: $space-3;
+            width: 100%;
+            margin: 0 0 $space-5;
+            padding: 0;
+            font-family: $font-display;
+            font-size: fluid(1.3rem, '1.1rem + 0.8vw', 1.75rem);
+            font-weight: 600;
+            line-height: 1.2;
+            color: $navy;
+            &::before { content: counter(mbg); flex: none; display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: $navy; color: $gold; font-family: $font-heading; font-size: $fs-sm; font-weight: 700; }
+            + * { clear: both; }
+        }
+    }
+    .mb-group + .mb-group { margin-top: $space-7; padding-top: $space-6; border-top: 1px solid $line; }
+    // conditional blocks: hidden only when JavaScript is running (it opens them); without JS they stay visible
+    .js & .mb-group--cond:not(.is-active) { display: none; }
+    .js & .mb-cond:not(.is-active) { display: none; }
+
+    // note inside a group (guardian, payment)
+    .mb-note {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-3;
+        margin: 0 0 $space-5;
+        padding: $space-3 $space-4;
+        border-radius: $radius;
+        background: $tint-cool;
+        font-size: $fs-sm;
+        line-height: 1.55;
+        color: $ink;
+        .icon { flex: none; margin-top: 0.15rem; color: $navy; }
+    }
+
+    // fee reminder of the chosen type
+    .mb-feebox {
+        padding: $space-4 $space-5;
+        border-left: 4px solid $gold;
+        border-radius: $radius;
+        background: $tint-cool;
+        > * { margin: 0; }
+        > * + * { margin-top: $space-2; }
+    }
+    .mb-feebox__fee { font-family: $font-display; font-size: 1.35rem; font-weight: 600; line-height: 1.25; color: $navy; }
+    .mb-feebox__joining { font-family: $font-heading; font-size: $fs-sm; font-weight: 600; color: $gold-text; }
+    .mb-feebox__elig { font-size: $fs-sm; line-height: 1.55; color: $ink; strong { font-family: $font-heading; font-weight: 600; color: $navy; } }
+    .mb-feeline { margin: 0; padding: 0.55rem 1rem; border-radius: $radius-pill; background: $tint-cool; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; color: $navy; display: inline-block; }
+    .mb-age { align-self: flex-start; margin: 0; padding: 0.25rem 0.85rem; border-radius: $radius-pill; background: $tint-cool; font-family: $font-heading; font-size: $fs-xs; font-weight: 600; color: $navy; }
+    .mb-count { flex: none; margin-left: auto; font-size: $fs-xs; font-variant-numeric: tabular-nums; color: $ink-soft; &.is-near { color: $danger; font-weight: 600; } }
+
+    // radio buttons and check boxes as pills / bordered rows (the real input covers the label, so the whole pill is the touch target)
+    .mb-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; > legend { display: block; width: 100%; margin: 0 0 $space-2; padding: 0; } }
+    .mb-opts { display: flex; flex-wrap: wrap; gap: $space-2; }
+    .mb-opt {
+        position: relative;
+        display: inline-flex;
+        input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+        span {
+            display: inline-flex;
+            align-items: center;
+            gap: $space-2;
+            min-height: 2.75rem;
+            padding: 0.5rem 1.2rem;
+            border: 1px solid $mb-field-border;
+            border-radius: $radius-pill;
+            background: $white;
+            font-family: $font-heading;
+            font-size: $fs-sm;
+            font-weight: 600;
+            line-height: 1.3;
+            color: $navy;
+            transition: background-color $t-fast ease, border-color $t-fast ease, color $t-fast ease;
+        }
+        &:hover span { border-color: $navy; background: $tint-cool; }
+        input:checked + span { border-color: $navy; background: $navy; color: $white; }
+        input:focus-visible + span { outline: 3px solid $orange-dark; outline-offset: 2px; }
+    }
+    .mb-opts--cards {
+        display: grid;
+        gap: $space-3;
+        @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .mb-opt { display: flex; }
+        .mb-opt span {
+            width: 100%;
+            align-items: flex-start;
+            padding: 0.8rem 1rem;
+            border-radius: $radius;
+            font-family: $font-body;
+            font-weight: 500;
+            line-height: 1.45;
+            &::before { content: ''; flex: none; width: 1.3rem; height: 1.3rem; margin-top: 0.05rem; border: 2px solid $mb-field-border; border-radius: 6px; background: $white center / 0.85rem no-repeat; transition: background-color $t-fast ease, border-color $t-fast ease; }
+        }
+        .mb-opt input:checked + span {
+            background: $tint-cool;
+            border-color: $navy;
+            color: $navy;
+            font-weight: 600;
+            &::before { border-color: $navy; background-color: $navy; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D6A151' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); }
+        }
+    }
+    .field--error .mb-opt span { border-color: $danger; }
+
+    // consent group: each tick box on its own soft row
+    .mb-consents { gap: $space-3; }
+    .mb-consent { padding: $space-3 $space-4; border-radius: $radius; background: $surface; &.field--error { background: $danger-bg; } }
+
+    // payment instructions inside the form
+    .mb-details {
+        border: 1px solid $line;
+        border-radius: $radius;
+        background: $white;
+        summary { padding: $space-3 $space-4; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; color: $navy; cursor: pointer; &:focus-visible { outline: 3px solid $navy; outline-offset: 2px; } }
+        &__body { padding: 0 $space-4 $space-4; font-size: $fs-sm; line-height: 1.65; overflow-wrap: anywhere; > * + * { margin-top: $space-2; } }
+    }
+
+    // error summary (server side and membership.js): focusable, announced as an alert
+    .mb-summary {
+        margin-bottom: $space-5;
+        padding: $space-4 $space-5;
+        border: 1px solid rgba($danger, 0.45);
+        border-left: 6px solid $danger;
+        border-radius: $radius-card;
+        background: $danger-bg;
+        color: $ink;
+        &:focus { outline: 3px solid $navy; outline-offset: 3px; }
+        &__title { display: flex; align-items: center; gap: $space-2; font-family: $font-heading; font-size: 1.05rem; font-weight: 600; line-height: 1.3; letter-spacing: 0; color: $danger; }
+        ul { display: grid; gap: $space-1; margin: $space-3 0 0; padding-left: 1.2rem; list-style: disc; }
+        li::marker { color: $danger; }
+        a { color: $danger; font-weight: 600; text-decoration: underline; &:hover { color: $navy-dark; } }
+    }
+
+    // ------------------------------------------------------------------------------------------------------------------
+    // /membership/confirmation/{ref}
+    // ------------------------------------------------------------------------------------------------------------------
+    .mb-confirm { padding-top: $space-6; @include respond(lg) { padding-top: $space-7; } }
+    .mb-confirm__grid {
+        display: grid;
+        gap: $space-6;
+        align-items: start;
+        @include respond(lg) { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: $space-7; }
+    }
+    .mb-confirm__main { display: grid; gap: $space-5; }
+    .mb-confirm__actions { margin: 0; }
+
+    // reference card on deep navy
+    .mb-receipt {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        padding: $space-6 $space-5;
+        border-radius: $radius-panel;
+        color: $white;
+        background:
+            radial-gradient(24rem 14rem at 100% 0%, rgba($navy-light, 0.8), transparent 62%),
+            radial-gradient(18rem 10rem at 0% 100%, rgba($gold, 0.1), transparent 60%),
+            $navy;
+        @include respond(md) { padding: $space-7 $space-6; }
+        @include respond(lg) { position: sticky; top: calc(#{$header-h-shrunk} + #{$space-5}); }
+        &__icon { display: inline-grid; place-items: center; width: 3.4rem; height: 3.4rem; margin-bottom: $space-5; border-radius: 50%; background: rgba($gold, 0.18); color: $gold; }
+        &__list { display: grid; gap: $space-5; margin: 0; > div { min-width: 0; } }
+        dt { font-family: $font-heading-caps; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba($white, 0.82); }
+        dd { margin: $space-1 0 0; font-size: $fs-md; font-weight: 600; line-height: 1.35; color: $white; overflow-wrap: anywhere; }
+        &__ref { font-family: $font-display; font-size: fluid(1.6rem, '1.2rem + 1.4vw', 2.3rem) !important; font-weight: 600; letter-spacing: 0.02em; color: $gold !important; font-variant-numeric: lining-nums; }
+        &__sub { display: block; margin-top: $space-1; font-size: $fs-sm; font-weight: 500; color: rgba($white, 0.88); }
+        &__note { margin: $space-6 0 0; padding-top: $space-4; border-top: 1px solid rgba($white, 0.2); font-size: $fs-sm; line-height: 1.6; color: rgba($white, 0.9); }
+    }
+
+    .mb-next {
+        padding: $space-5;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        background: $white;
+        @include respond(md) { padding: $space-6; }
+        &__title { margin-bottom: $space-4; font-size: 1.35rem; color: $navy; }
+        &__list { display: grid; gap: $space-4; margin: 0; padding: 0; list-style: none; li { display: flex; align-items: flex-start; gap: $space-3; line-height: 1.6; } }
+        &__num { flex: none; display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: $navy; color: $gold; font-family: $font-heading; font-size: $fs-xs; font-weight: 700; }
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------
+// /membership/terms (body class page-membership-terms)
+// ----------------------------------------------------------------------------------------------------------------------
+.page-membership-terms {
+    .mb-terms__updated {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0 0 $space-5;
+        padding: 0.4rem 1rem;
+        border-radius: $radius-pill;
+        background: $tint-cool;
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        font-weight: 600;
+        color: $navy;
+        .icon { color: $orange-text; }
+    }
+    .mb-terms__body { max-width: 70ch; }
+    .mb-terms__actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-4 $space-5; margin-top: $space-7; padding-top: $space-5; border-top: 1px solid $line; }
+}

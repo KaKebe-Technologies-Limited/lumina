@@ -7,7 +7,7 @@ PHP 8.2 - MySQL/MariaDB - SCSS - vanilla JS. No Composer, no Node.
   menu entry), and the owner can create new pages. Nothing is hard-coded: with an empty database the site still renders the
   built-in wording; the admin only stores what the owner changes.
 * **All organisation pages are part of the site and the menus**: About, Our Team, Partners, Reports & Downloads, Programs, Projects,
-  Involvement, Careers, Activities, Events, Gallery, Blog, News (and `/press`), Impact Stories, Contact, Donate, Privacy.
+  Involvement, **Membership** (online registration for people and organisations who want to join), Careers, Activities, Events, Gallery, Blog, News (and `/press`), Impact Stories, Contact, Donate, Privacy.
   Pages whose content is not added yet show a friendly empty state instead of disappearing. The owner can hide any page from the
   menus under **Admin > Menus**, or unpublish it under **Admin > Pages**.
 
@@ -45,6 +45,7 @@ Sign in at `/admin`. The sidebar has everything:
 | Content | Programs, Projects, Posts (blog, news, press), Activities, Gallery, Jobs |
 | Organisation | Team, Partners, Documents (reports), Events (with registrations), Impact stories |
 | Inbox | Messages, Subscribers, Involvement requests, Job applications, Donations |
+| Membership | **Members** (applications, approval, membership numbers, payments and printable receipts, renewals, CSV export), **Membership types & fees** (admin role only: this is where each fee is set) |
 | Administration (admin role only) | Site settings, Users, Activity log |
 
 * **Edit a page's text**: Admin > Pages > *Edit*. Each section is a card; change a field and Save. "Reset to default" restores the built-in wording.
@@ -52,6 +53,7 @@ Sign in at `/admin`. The sidebar has everything:
   a shortcut to the screen that holds each page's items (for example Team page -> Manage team members).
 * **Add the people and files an organisation page shows**: Team, Partners, Documents, Events and Impact stories each have their own screen.
   Impact stories are published only after you tick that the person's consent is confirmed.
+* **Membership**: people apply at `/membership/register`. Staff review them under Admin > Members (approve, reject with a reason, record a payment, print a receipt, renew). The **fee of each membership type is set in Admin > Membership types & fees** and only affects new applications (each member keeps the fee agreed when they applied). Until a fee is set the website says "Fee to be announced". The page can be switched off with **Site settings > Membership > Accept applications**. Registration ships **closed**: switch it on after setting the fees, replacing the placeholder terms and reviewing the privacy section. Details: `docs/MEMBERSHIP.md`.
 * Editors can edit content and handle the inbox; only admins manage settings, menus structure, users, deletions of inbox data and the activity log.
 
 ## Deploy to production (Linux / shared hosting)
@@ -85,6 +87,7 @@ Sign in at `/admin`. The sidebar has everything:
 6. After deploying, check that these return 403/404 and never file contents: `/.env`, `/app/config/app.php`, `/storage/app.key`,
    `/database/schema.sql`, `/bin/setup.php`, `/docs/ARCHITECTURE.md`, `/public/`, `/backup.zip` (any file that is not under `assets/` or `uploads/`),
    `/install` (404 once an admin exists). Run `php bin/selftest.php` locally before a release (it refuses to run outside `APP_ENV=local`).
+   **Upgrading a live database**: re-importing `database/lumina-live-import.sql` (rebuilt with `php bin/build-import-sql.php`) is safe, and **must be done first (or together with the code upload)**: new code against the old schema answers 500 on `/membership` and Admin > Members. It only adds missing tables (`membership_types`, `members`, `member_payments`), the three guarded columns of `members`, settings and page rows, never overwrites anything the owner edited, and re-creates the three placeholder membership types only while that table is empty.
 7. Set the real contact details, social links, donation details and notification e-mail under **Admin > Site settings**. The registration
    number differs between two pages of the live site; confirm the right one there (`reg_number`).
 8. Maintenance mode: `APP_MAINTENANCE=1` in `.env` shows a maintenance page to visitors while `/admin` keeps working.
@@ -104,6 +107,7 @@ docs/       ARCHITECTURE.md, DESIGN.md, CONTENT_NOTES.md, live-snapshot/
 
 * `docs/DESIGN.md` - the public design system: tokens, contrast table, component markup, JS hooks, per-section recipes. Read it before touching `scss/` or the public views.
 * `docs/ARCHITECTURE.md` - developer contract: structure, APIs, CMS page registry, URL map, security rules.
+* `docs/MEMBERSHIP.md` - the membership feature: data model, fee configuration, status workflow, service API, routes, privacy rules and the owner to-do list.
 * `docs/CONTENT_NOTES.md` - where the starter wording comes from and what the owner still has to confirm or supply.
 * `docs/live-snapshot/` - text of the live site pages used as the content source.
 * To add a page that is editable in the admin: add `app/config/pages/<slug>.php` (see the architecture file), a controller, view and route, then run `php bin/setup.php`.

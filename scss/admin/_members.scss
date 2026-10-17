@@ -1,0 +1,298 @@
+// admin/_members.scss - ADMIN agent (membership: members list, member screen, payments, receipt, membership types and fees).
+// Imported by admin.scss. Scoped under .admin-members (and body.admin-member-receipt); reuses the shared admin components
+// (.card, .table, .filters, .tabs, .badge, .alert, .form-grid, .field, .btn). Mobile first.
+
+.admin-members {
+    // ---- small shared pieces
+    .members-ref { font-family: $font-mono; font-size: 0.86em; letter-spacing: 0.01em; overflow-wrap: anywhere; }
+    .members-count {
+        display: inline-block;
+        min-width: 1.5rem;
+        margin-left: 0.2rem;
+        padding: 0 0.45rem;
+        border-radius: $radius-pill;
+        background: $surface-alt;
+        color: $ink-soft;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.5rem;
+        text-align: center;
+    }
+    .tabs__item.is-active .members-count { background: $navy; color: $white; }
+    .members-tabs {
+        gap: 0 $space-1;
+        .tabs__item { white-space: nowrap; }
+        // phones: one swipeable row instead of four wrapped lines
+        @include respond-down(md) { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; -webkit-overflow-scrolling: touch; .tabs__item { flex: none; } }
+    }
+    .members-tags { display: flex; flex-wrap: wrap; gap: $space-1; margin-top: 0.15rem; }
+    .members-due { color: $orange-dark; font-weight: 600; }
+    // a sentence with an inline icon (not a flex row: bold words and links inside the text must stay in the flow of the sentence)
+    .members-note {
+        display: block;
+        margin: $space-3 0;
+        font-size: $fs-sm;
+        color: $ink-soft;
+        overflow-wrap: anywhere;
+        .icon { vertical-align: -0.2em; margin-right: $space-2; }
+        &--warn { padding: $space-3 $space-4; background: $warning-bg; border-radius: $radius; color: $ink; .icon { color: $warning; } }
+    }
+    .members-list { margin: 0; padding-left: 1.2rem; display: grid; gap: $space-2; list-style: disc; font-size: $fs-sm; li { padding-left: 0.2rem; } li::marker { color: $gold-deep; } }
+    .members-fact .cell-sub { display: block; font-size: $fs-xs; color: $ink-soft; }
+    .inline-form { display: inline; margin: 0; }
+    [data-for][hidden] { display: none; }
+
+    // ---- at a glance tiles
+    .members-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-3; margin-bottom: $space-5; @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: $space-4; } }
+    .members-kpi {
+        display: flex;
+        align-items: center;
+        gap: $space-3;
+        min-width: 0;
+        padding: $space-3 $space-4;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        color: $ink;
+        text-decoration: none;
+        &:hover { border-color: $gold; color: $ink; }
+        &__icon { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: 12px; background: rgba($gold, 0.22); color: $navy; }
+        &__value { display: block; font-family: $font-heading; font-size: 1.45rem; font-weight: 700; line-height: 1.1; color: $navy; }
+        &__value--text { font-size: 1.05rem; overflow-wrap: anywhere; }
+        &__label { display: block; margin-top: 2px; font-size: $fs-xs; font-weight: 600; color: $ink-soft; }
+        &--alert { border-color: rgba($orange-accent, 0.6); background: rgba($orange-accent, 0.07); .members-kpi__icon { background: $orange-dark; color: $white; } }
+    }
+
+    // ---- bulk bar + list
+    .members-bulk {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-2;
+        margin-bottom: $space-3;
+        .select { width: auto; min-width: 13rem; max-width: 100%; }
+        &__reason { flex: 1 1 14rem; min-width: 0; }
+        &__notify { font-size: $fs-sm; align-items: center; }
+        &__count { font-size: $fs-sm; font-weight: 600; color: $ink-soft; }
+        [hidden] { display: none; }
+    }
+    .members-table {
+        input[type='checkbox'] { width: 1.1rem; height: 1.1rem; accent-color: $navy; cursor: pointer; }
+        tbody tr.is-selected td { background: rgba($gold, 0.16); }
+        .members-row--pending td:first-child { box-shadow: inset 3px 0 0 $orange-accent; }
+        .members-row--off td { color: $ink-soft; }
+        .cell-sub, .cell-title { overflow-wrap: anywhere; }
+        td[data-label='Applicant'] { min-width: 13rem; }
+    }
+    .table-wrap { position: relative; }
+    .members-fee { font-family: $font-heading; color: $navy; &--unset { color: $orange-dark; } }
+    .members-toggle {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        .badge { text-transform: none; white-space: nowrap; }
+        &:hover .badge { box-shadow: 0 0 0 2px rgba($gold, 0.5); }
+        &:focus-visible { @include focus-ring; border-radius: $radius-pill; }
+    }
+    // icon-only row buttons on wide screens (the text stays for screen readers and for the stacked phone cards); the types table keeps its labels
+    @include respond(xl) { .members-table:not(.members-types) .members-btn-text { @include visually-hidden; } }
+
+    @include respond-down(md) {
+        .filters .field { flex: 1 1 100%; }
+        .members-bulk .select { flex: 1 1 12rem; }
+    }
+    // The list is a table only where it really fits (sidebar + 6 columns need about 1200px); below that every row is a compact card.
+    @include respond-down(xl) {
+        .members-table:not(.members-types).table--stack {
+            min-width: 0;
+            thead { @include visually-hidden; }
+            // each row is a card: the applicant on top, the other facts side by side, the buttons last
+            tbody tr { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: $space-1 $space-3; padding: $space-3 $space-4; border-bottom: 1px solid $border; }
+            td[data-label='Applicant'], td.col-actions { grid-column: 1 / -1; }
+            td[data-label='Applicant'] { min-width: 0; padding-right: 2rem; &::before { display: none; } }
+            tbody tr:last-child { border-bottom: 0; }
+            tbody tr.members-row--pending { background: rgba($orange-accent, 0.07); box-shadow: inset 3px 0 0 $orange-accent; }
+            tbody tr.members-row--pending td:first-child { box-shadow: none; }       // the card has its own stripe: no second one beside the checkbox
+            tbody tr.is-selected { background: rgba($gold, 0.16); }
+            tbody tr td, tbody tr.is-selected td { display: block; padding: $space-1 0; border: 0; background: transparent; text-align: left; box-shadow: none; }
+            td::before { content: attr(data-label); display: block; margin-bottom: 1px; font-weight: 700; font-size: $fs-xs; text-transform: uppercase; letter-spacing: 0.06em; color: $ink-soft; text-align: left; }
+            td[data-label='']::before, td.col-narrow::before { display: none; }
+            td.col-narrow { position: absolute; top: $space-3; right: $space-4; width: auto; padding: 0; }
+            td.col-actions { width: auto; padding-top: $space-2; text-align: left; }
+            .table__actions { flex-wrap: wrap; justify-content: flex-start; }
+            .table__actions form { display: inline-flex; }
+        }
+    }
+
+    // ---- the member screen
+    .members-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-3; margin-bottom: $space-5; @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: $space-4; } }
+    .members-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        min-width: 0;
+        padding: $space-3 $space-4;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        color: $ink;
+        &__label { font-size: $fs-xs; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: $ink-soft; }
+        &__value { font-family: $font-heading; font-size: 1.15rem; font-weight: 600; line-height: 1.3; color: $navy; overflow-wrap: anywhere; &--small { font-size: 0.98rem; } &--muted { color: $ink-soft; font-weight: 500; font-size: 1rem; } }
+        &__sub { font-size: $fs-xs; color: $ink-soft; }
+        &__value.members-ref { font-size: 1rem; white-space: nowrap; letter-spacing: 0; }
+        &--link { text-decoration: none; &:hover { border-color: $gold; color: $ink; } }
+    }
+    .members-layout { display: grid; gap: $space-5; @include respond(lg) { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; } }
+    .members-main, .members-aside { min-width: 0; }
+    .members-main > .card + .card, .members-aside > .card + .card { margin-top: $space-5; }
+    .members-aside { @include respond(lg) { position: sticky; top: calc(#{$admin-topbar-h} + #{$space-4}); } }
+    .members-group { margin: $space-5 0 $space-2; padding-bottom: $space-1; border-bottom: 1px solid $border; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: $ink-soft; &:first-child { margin-top: 0; } }
+    .members-facts { display: grid; gap: $space-3 $space-5; margin: 0; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .members-fact {
+        min-width: 0;
+        dt { font-size: $fs-xs; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: $ink-soft; }
+        dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+        &--wide { @include respond(md) { grid-column: 1 / -1; } }
+    }
+    .members-prose p + p { margin-top: $space-2; }
+    .members-activity {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: $space-3;
+        li { display: grid; gap: 2px; padding-left: $space-4; border-left: 3px solid $border; }
+        &__what { overflow-wrap: anywhere; }
+        &__when { font-size: $fs-xs; color: $ink-soft; }
+    }
+    .members-contact { display: flex; flex-wrap: wrap; gap: $space-2; }
+    .members-consent dd { overflow-wrap: anywhere; }
+    .members-danger { border-color: rgba($danger, 0.35); .card__header { background: $danger-bg; border-bottom-color: rgba($danger, 0.2); } .card__title { color: $danger; } }
+
+    // ---- review and status
+    .members-reason { padding: $space-3 $space-4; background: $surface; border-left: 3px solid $gold; border-radius: $radius-sm; overflow-wrap: anywhere; }
+    .members-choice { margin: 0; padding: 0; border: 0; min-width: 0; }
+    .members-choice__list { display: grid; gap: $space-2; margin-top: $space-2; @include respond(md) { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); } }
+    .members-choice__item {
+        position: relative;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: $space-3;
+        row-gap: 2px;
+        align-items: start;
+        padding: $space-3 $space-4;
+        background: $white;
+        border: 1.5px solid $border-strong;
+        border-radius: $radius;
+        cursor: pointer;
+        transition: border-color $t-fast $ease, background $t-fast $ease;
+        input { grid-row: 1 / span 2; width: 1.15rem; height: 1.15rem; margin-top: 0.15rem; accent-color: $navy; }
+        &:hover { border-color: $navy; }
+        &:has(input:checked) { border-color: $navy; background: rgba($gold, 0.14); box-shadow: 0 0 0 1px $navy; }
+        &:has(input:focus-visible) { @include focus-ring; }
+        &--rejected:has(input:checked), &--cancelled:has(input:checked), &--suspended:has(input:checked) { border-color: $danger; box-shadow: 0 0 0 1px $danger; background: $danger-bg; }
+    }
+    .members-choice__label { font-family: $font-heading; font-size: 0.92rem; font-weight: 600; color: $navy; }
+    .members-choice__hint { grid-column: 2; font-size: $fs-xs; color: $ink-soft; }
+    .members-choice--error .members-choice__item { border-color: $danger; }
+    .members-status__fields { display: grid; gap: $space-4; margin-top: $space-4; &:empty { display: none; } }
+    .members-status__fields > [hidden] { display: none; }
+    .members-expiry-preview { margin: $space-2 0 0; font-size: $fs-sm; color: $ink-soft; &:empty { display: none; } }
+    .members-notify { align-items: center; }
+    .members-status .form-actions { position: static; margin-inline: 0; padding: 0; background: transparent; border: 0; backdrop-filter: none; }
+
+    // ---- fees and payments
+    .members-ledger {
+        display: grid;
+        gap: 0;
+        margin: 0 0 $space-4;
+        border: 1px solid $border;
+        border-radius: $radius;
+        overflow: hidden;
+        > div { display: flex; justify-content: space-between; gap: $space-4; padding: $space-2 $space-4; border-bottom: 1px solid $border; &:last-child { border-bottom: 0; } }
+        dt { color: $ink-soft; }
+        dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; color: $navy; }
+        &__total { background: $surface; }
+        &__balance { background: rgba($success, 0.08); &.is-owing { background: $warning-bg; dd { color: $warning; } } }
+    }
+    .members-paylist { display: grid; gap: $space-3; }
+    .members-pay {
+        padding: $space-3 $space-4;
+        background: $white;
+        border: 1px solid $border;
+        border-left-width: 4px;
+        border-radius: $radius;
+        &--received { border-left-color: $success; }
+        &--pending { border-left-color: $warning; }
+        &--waived { border-left-color: $info; }
+        &__row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: $space-3; }
+        &__main { flex: 1 1 14rem; min-width: 0; }
+        &__top { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; }
+        &__amount { font-family: $font-heading; font-size: 1.1rem; color: $navy; }
+        &__meta { margin: 2px 0 0; font-size: $fs-sm; color: $ink-soft; overflow-wrap: anywhere; }
+        &__notes { font-style: italic; }
+        &__actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: $space-2; form { margin: 0; } }
+        &__edit {
+            margin-top: $space-3;
+            padding-top: $space-2;
+            border-top: 1px dashed $border;
+            summary { cursor: pointer; font-size: $fs-sm; font-weight: 600; color: $orange-dark; &:hover { color: $navy; } }
+            form { margin-top: $space-3; }
+            .form-actions { position: static; margin-inline: 0; padding: 0; background: transparent; border: 0; backdrop-filter: none; }
+        }
+    }
+    .members-add {
+        margin-top: $space-4;
+        > summary { display: inline-flex; align-items: center; gap: $space-2; cursor: pointer; list-style: none; &::-webkit-details-marker { display: none; } }
+        > form { margin-top: $space-4; padding: $space-4; background: $surface; border: 1px solid $border; border-radius: $radius; }
+        .form-actions { position: static; margin-inline: 0; padding: 0; background: transparent; border: 0; backdrop-filter: none; }
+    }
+    .members-payform { align-items: start; }
+
+    // ---- edit details
+    .members-edit .card__body { padding-bottom: $space-3; }
+    .members-interests { margin: 0 0 $space-4; padding: 0; border: 0; min-width: 0; }
+    .members-interests__list { display: grid; gap: $space-2 $space-5; margin-top: $space-2; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .members-feegrid { @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .members-feehelper { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; margin: $space-3 0 0; }
+    .members-feegrid[data-fee-amount-box] { margin-top: $space-4; .field.is-off { opacity: 0.6; } }
+    .members-currency { text-transform: uppercase; max-width: 8rem; }
+
+    // ---- membership types and fees
+    .members-typelayout { display: grid; gap: $space-5; @include respond(lg) { grid-template-columns: minmax(0, 1fr) 20rem; align-items: start; } }
+    .members-typeaside { display: grid; gap: $space-5; min-width: 0; .card + .card { margin-top: 0; } @include respond(lg) { position: sticky; top: calc(#{$admin-topbar-h} + #{$space-4}); } }
+    .members-feemode { margin: $space-4 0; .members-choice__list { @include respond(md) { grid-template-columns: repeat(3, minmax(0, 1fr)); } } }
+    .members-preview {
+        margin-top: $space-4;
+        padding: $space-4;
+        background: $surface;
+        border: 1px dashed $border-strong;
+        border-radius: $radius-lg;
+        &__label { margin: 0 0 $space-2; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: $ink-soft; }
+        &__card { padding: $space-4 $space-5; background: $white; border: 1px solid $border; border-radius: $radius-lg; box-shadow: $shadow-sm; > * + * { margin-top: $space-2; } }
+        &__name { font-size: 1.15rem; overflow-wrap: anywhere; }
+        &__fee { margin: 0; font-family: $font-heading; font-size: 1.5rem; font-weight: 700; line-height: 1.2; color: $navy; overflow-wrap: anywhere; &.is-tba { font-size: 1.1rem; color: $orange-dark; } }
+        &__joining, &__elig, &__term { margin: 0; font-size: $fs-sm; color: $ink-soft; overflow-wrap: anywhere; &[hidden] { display: none; } }
+        &__term { padding-top: $space-2; border-top: 1px solid $border; }
+    }
+    .card--danger { border-color: rgba($danger, 0.35); .card__header { background: $danger-bg; border-bottom-color: rgba($danger, 0.2); } .card__title { color: $danger; } }
+}
+
+// ---- printable membership receipt (the look of the page is body.admin-receipt in _inbox.scss; only the account table is added here)
+body.admin-member-receipt {
+    .receipt__account {
+        width: 100%;
+        margin-top: $space-4;
+        border-collapse: collapse;
+        font-size: $fs-sm;
+        caption { padding-bottom: $space-1; text-align: left; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: $ink-soft; }
+        th, td { padding: 0.35rem 0; border-bottom: 1px solid $border; text-align: left; font-weight: 400; }
+        td { text-align: right; font-variant-numeric: tabular-nums; }
+        .is-total th, .is-total td { font-weight: 700; color: $navy; border-bottom: 2px solid $navy; }
+    }
+}
+
+@media print {
+    body.admin-member-receipt .receipt__account th, body.admin-member-receipt .receipt__account td { border-color: #bbb; }
+}

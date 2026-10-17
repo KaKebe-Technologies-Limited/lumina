@@ -65,6 +65,30 @@
         if (form instanceof HTMLFormElement && form.dataset.confirm && !window.confirm(form.dataset.confirm)) e.preventDefault();
     }, true);
 
+    // ------------------------------------------------------------------ double-submit guard (a second click on a POST form must not post it again; opt-out: data-no-guard)
+    document.addEventListener('submit', (e) => {
+        const form = e.target;
+        if (!(form instanceof HTMLFormElement) || e.defaultPrevented || form.hasAttribute('data-no-guard') || (form.method || '').toLowerCase() !== 'post' || form.target === '_blank') return;
+        if (form.dataset.submitting === '1') { e.preventDefault(); return; }
+        form.dataset.submitting = '1';
+        const release = () => {
+            delete form.dataset.submitting;
+            $$('button[type="submit"][aria-busy], input[type="submit"][aria-busy]', form).forEach((b) => { b.disabled = false; b.removeAttribute('aria-busy'); });
+        };
+        // disable AFTER the browser has collected the form data; a response that stays on the page (a CSV download) frees the form again
+        window.setTimeout(() => {
+            $$('button[type="submit"], input[type="submit"]', form).forEach((btn) => { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); });
+            window.setTimeout(release, 5000);
+        }, 0);
+    });
+    window.addEventListener('pageshow', (e) => {
+        if (!e.persisted) return;
+        $$('form[data-submitting]').forEach((f) => {
+            delete f.dataset.submitting;
+            $$('button[type="submit"][aria-busy], input[type="submit"][aria-busy]', f).forEach((b) => { b.disabled = false; b.removeAttribute('aria-busy'); });
+        });
+    });
+
     // ------------------------------------------------------------------ AJAX image upload (shared by image fields, repeaters and the rich-text editor)
     async function uploadImage(file) {
         const fd = new FormData();

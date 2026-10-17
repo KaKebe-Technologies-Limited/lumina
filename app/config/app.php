@@ -86,6 +86,9 @@ return [
         'inbox.manage'    => ['admin', 'editor'],   // messages, subscribers, involvement, applications, donations, event registrations
         'inbox.delete'    => ['admin'],
         'export.csv'      => ['admin', 'editor'],
+        'members.manage'  => ['admin', 'editor'],   // membership applications: view, approve/reject, payments, receipts, notes (never public, never anonymous)
+        'members.delete'  => ['admin'],             // delete a member record that has no payments
+        'members.types'   => ['admin'],             // membership types = the FEE CONFIGURATION (create, change fees, deactivate)
     ],
 
     /** Slugs a custom page may NOT use (they are real routes or folders). */

@@ -163,7 +163,7 @@
             gap: 0 0.1rem;
             padding: 0;
         }
-        @include respond('2xl') { gap: 0 0.35rem; }
+        @include respond('2xl') { gap: 0 0.1rem; }                 // Membership made the menu one item longer: keep one row at 1400px+
     }
     &__item { position: relative; }
 
@@ -185,7 +185,7 @@
             border-radius: $radius-pill;
             &:hover { background: transparent; color: $orange-text; }
         }
-        @include respond('2xl') { padding: $space-2 0.8rem; font-size: 0.95rem; }
+        @include respond('2xl') { padding: $space-2 0.55rem; font-size: 0.95rem; }
     }
     // the active page: coloured text (orange 5.8:1 on white) + a short accent bar on desktop
     &__item.is-active > &__link { color: $orange-text; background: rgba($gold, 0.14); }

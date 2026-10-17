@@ -5,7 +5,7 @@ namespace App\Core;
 
 /**
  * Formula-injection-safe CSV writer. Cells starting with = + - @ TAB CR are prefixed with an apostrophe
- * (except strictly phone-shaped values such as "+256700123456", which get a leading space).
+ * (except plain numbers such as "-17111.00", which stay numbers, and strictly phone-shaped values such as "+256700123456", which get a leading space).
  *
  *   return CsvExport::response('subscribers-' . date('Y-m-d') . '.csv', ['Email', 'Status'], $rows);   // download
  *   CsvExport::cell('=HYPERLINK(...)')  // "'=HYPERLINK(...)"
@@ -24,6 +24,10 @@ final class CsvExport
             return $value->format('Y-m-d H:i:s');
         }
         $s = (string) $value;
+        // a plain number (also a negative one such as a credit balance) cannot carry a formula: keep it a number
+        if (preg_match('/^-?[0-9]+(\.[0-9]+)?$/', $s) === 1) {
+            return $s;
+        }
         // A strictly phone-shaped value ("+256 700 123456") is plain text, not a formula, and an apostrophe in front of every
         // international number would show up literally in Excel / Sheets: it gets a leading space instead.
         if (preg_match('/^\+[0-9][0-9 ().\-]{5,24}$/', $s) === 1) {

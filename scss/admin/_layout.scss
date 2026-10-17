@@ -147,8 +147,9 @@
     justify-content: space-between;
     gap: $space-4;
     margin-bottom: $space-5;
-    &__title { margin: 0; }
-    &__subtitle { margin-top: $space-1; color: $ink-soft; max-width: 46rem; }
+    > :first-child { min-width: 0; }
+    &__title { margin: 0; overflow-wrap: anywhere; }       // a long unbroken name or reference must not widen the page
+    &__subtitle { margin-top: $space-1; color: $ink-soft; max-width: 46rem; overflow-wrap: anywhere; }
     &__actions { display: flex; flex-wrap: wrap; gap: $space-2; }
 }
 

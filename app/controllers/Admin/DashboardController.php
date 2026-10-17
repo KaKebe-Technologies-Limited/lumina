@@ -32,6 +32,10 @@ final class DashboardController extends AdminController
             $tiles[] = ['icon' => 'briefcase', 'value' => number_format($counts['applications']), 'label' => 'Applications to review', 'url' => 'admin/applications', 'alert' => $counts['applications'] > 0];
             $tiles[] = ['icon' => 'heart', 'value' => $this->moneyTile($counts['money']), 'label' => 'Donations received', 'sub' => $this->pledgedLine($counts['money']), 'url' => 'admin/donations', 'small' => strlen($this->moneyTile($counts['money'])) > 8];
         }
+        // Membership (docs/MEMBERSHIP.md): pending applications; null when the user may not manage members
+        if ($tile = \App\Services\Membership\MembershipService::dashboardTile()) {
+            $tiles[] = $tile;
+        }
         if ($content) {
             $p = $counts['posts'];
             $tiles[] = ['icon' => 'newspaper', 'value' => number_format($counts['posts_total']), 'label' => 'Published posts', 'sub' => $p['blog'] . ' blog, ' . $p['news'] . ' news, ' . $p['press'] . ' press', 'url' => 'admin/posts'];

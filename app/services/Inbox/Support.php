@@ -56,6 +56,8 @@ final class Support
         if ($body !== '') {
             $q[] = 'body=' . rawurlencode($body);
         }
+        // RFC 6068: ? & = % # and quotes in the address part must be percent-encoded, otherwise an address such as a?bcc=x@y.z adds recipients
+        $email = strtr($email, ['%' => '%25', '?' => '%3F', '&' => '%26', '=' => '%3D', '#' => '%23', '"' => '%22', ' ' => '%20', '<' => '%3C', '>' => '%3E']);
         return 'mailto:' . $email . ($q ? '?' . implode('&', $q) : '');
     }
 

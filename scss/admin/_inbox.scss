@@ -210,11 +210,19 @@ body.admin-receipt {
 }
 
 @media print {
-    @page { margin: 16mm; }
+    @page { margin: 14mm; }
     body.admin-receipt {
         padding: 0;
         background: #fff;
         .no-print { display: none !important; }
         .receipt { max-width: none; padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+        // tighter spacing so a receipt with a full account table still fits one A4 or Letter page, and the signature never ends up alone
+        .receipt__head { margin-bottom: $space-4; padding-bottom: $space-3; }
+        .receipt__title { margin-bottom: $space-3; }
+        .receipt__grid dt, .receipt__grid dd { padding-block: 0.2rem; }
+        .receipt__amount { margin-top: $space-4; padding: $space-3 $space-4; strong { font-size: 1.5rem; } }
+        .receipt__thanks { margin-top: $space-4; break-after: avoid; page-break-after: avoid; }
+        .receipt__account, .receipt__amount { break-inside: avoid; page-break-inside: avoid; }
+        .receipt__sign { margin-top: $space-6; break-inside: avoid; page-break-inside: avoid; break-before: avoid; page-break-before: avoid; }
     }
 }

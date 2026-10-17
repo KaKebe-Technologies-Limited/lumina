@@ -9,18 +9,23 @@ use App\Core\Response;
 use App\Core\SitePages;
 
 /**
- * GET /privacy - the privacy notice. Every section is an editable repeater row (Pages > Privacy Policy). The registry default is a DRAFT
+ * GET /privacy - the privacy notice. Every section is an editable repeater row (Pages > Privacy Policy); the membership section is a separate block appended after them. The registry default is a DRAFT
  * written for the data this website really collects; the foundation must review it before launch (see the page help in the admin).
  */
 final class PrivacyController extends Controller
 {
     public function index(Request $request): Response
     {
+        $items = array_values(array_filter(
+            content_list('privacy', 'notice.items'),
+            static fn(array $i): bool => trim((string) ($i['title'] ?? '')) !== '' || trim((string) ($i['body'] ?? '')) !== ''
+        ));
+        // the membership section is its own block (not a row of the list above), so an edited list can never lose it
+        if (section_on('privacy', 'membership')) {
+            $items[] = ['title' => (string) content('privacy', 'membership.title'), 'body' => (string) content('privacy', 'membership.body')];
+        }
         return $this->renderPage('privacy', 'web/legal/privacy', [
-            'items' => array_values(array_filter(
-                content_list('privacy', 'notice.items'),
-                static fn(array $i): bool => trim((string) ($i['title'] ?? '')) !== '' || trim((string) ($i['body'] ?? '')) !== ''
-            )),
+            'items' => $items,
         ], [
             'bodyClass'   => 'is-legal',
             'breadcrumbs' => [[(string) (SitePages::get('privacy')['nav_label'] ?? 'Privacy Policy'), null]],

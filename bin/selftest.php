@@ -90,7 +90,8 @@ echo '  info ' . (extension_loaded('gd') ? 'GD loaded: photos are resized and re
 echo "Slug / CSV / Mail\n";
 check('Slug::make', Slug::make('Digital Pathways & Youth!') === 'digital-pathways-youth', Slug::make('Digital Pathways & Youth!'));
 check('Slug reserved', Slug::isReserved('admin') && !Slug::isReserved('our-story'));
-check('CSV formula injection', CsvExport::cell('=1+1') === "'=1+1" && CsvExport::cell('-2') === "'-2" && CsvExport::cell('@x') === "'@x" && CsvExport::cell('plain') === 'plain');
+check('CSV formula injection', CsvExport::cell('=1+1') === "'=1+1" && CsvExport::cell('-2+3') === "'-2+3" && CsvExport::cell('-cmd') === "'-cmd" && CsvExport::cell('@x') === "'@x" && CsvExport::cell('plain') === 'plain');
+check('CSV plain numbers stay numbers (a negative balance is not a formula)', CsvExport::cell('-17111.00') === '-17111.00' && CsvExport::cell('-2') === '-2' && CsvExport::cell('1234.50') === '1234.50' && CsvExport::cell('-1e5') === "'-1e5");
 check('CSV phone numbers keep no apostrophe', CsvExport::cell('+256700999888') === ' +256700999888' && CsvExport::cell('+cmd|calc') === "'+cmd|calc");
 $before = count(glob(STORAGE_PATH . '/mail/*.eml') ?: []);
 $sent = Mailer::send('to@example.org', "Hello\r\nBcc: evil@example.org", 'Body', ['reply_to' => "a@b.org\r\nBcc: x@y.z"]);
@@ -153,6 +154,8 @@ SitePages::flush();
 Nav::flush();
 $meta = page_meta('home');
 check('page_meta fields', $meta['title'] !== '' && str_starts_with($meta['canonical'], 'http') && $meta['robots'] === 'index,follow');
+
+require __DIR__ . '/selftest-membership.php';     // membership service checks (creates and removes its own test data)
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);
