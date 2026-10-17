@@ -29,14 +29,14 @@ final class ImageCleanup
     /** Columns that hold exactly one stored image path. @var list<array{0:string,1:string}> */
     private const IMAGE_COLUMNS = [
         ['programs', 'image'], ['projects', 'image'], ['posts', 'cover_image'], ['activities', 'image'], ['gallery_images', 'image'],
-        ['events', 'image'], ['stories', 'image'], ['team_members', 'photo'], ['partners', 'logo'], ['pages', 'hero_image'], ['pages', 'og_image'],
+        ['events', 'image'], ['stories', 'image'], ['team_members', 'photo'], ['partners', 'logo'], ['pages', 'hero_image'], ['pages', 'og_image'], ['newsletters', 'cover_image'],
     ];
 
     /** Text columns that may embed an image path (rich bodies, JSON repeaters, settings). @var list<array{0:string,1:string}> */
     private const TEXT_COLUMNS = [
         ['programs', 'body'], ['projects', 'body'], ['posts', 'body'], ['activities', 'body'], ['jobs', 'description'], ['jobs', 'requirements'],
         ['pages', 'body'], ['events', 'body'], ['stories', 'body'], ['content_blocks', 'value'], ['settings', 'setting_value'], ['faqs', 'answer'],
-        ['team_members', 'bio'], ['partners', 'description'],
+        ['team_members', 'bio'], ['partners', 'description'], ['newsletters', 'content'], ['newsletter_revisions', 'content'],
     ];
 
     /**

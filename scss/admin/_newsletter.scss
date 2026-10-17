@@ -1,0 +1,596 @@
+// admin/_newsletter.scss - EDITOR agent. Issues list, the two-pane editor (editing left, live preview right), block cards, dialogs, toasts,
+// the History drawer and the status line. Imported by admin.scss. Every rule is scoped under .nl-admin (the views put that class on their root).
+// The e-mail panel has its own partial: admin/_newsletter-mail.scss (MAILING agent).
+//
+// Markup: views/admin/newsletters/{index,create,edit,_templates,_image,_link,_rich}.php. Behaviour: assets/js/admin-newsletter.js.
+// Contrast: every text/background pairing below uses the tokens of docs/DESIGN.md section 3 (AA).
+
+$nl-sticky: $admin-topbar-h;              // the admin top bar is sticky; the editor bar sticks right under it
+
+html:has(.nl-editor) { scroll-padding-top: var(--nl-scroll-pad, #{$nl-sticky + 16px}); }       // a focused field never hides under the sticky bars
+.admin-content:has(.nl-editor) { max-width: none; }          // the editor wants the full width (the script adds admin-content--wide too)
+
+.nl-admin {
+    --nl-gap: #{$space-4};
+    --nl-bar-h: 72px;
+
+    // single-column grids must not grow to the widest child (a rich-text toolbar, a long address): minmax(0, 1fr)
+    .nl-pane--edit, .nl-card__body, .nl-bc__body, .nl-blocks, .nl-blocks-section, .nl-optional, .nl-image, .nl-image__side, .nl-image__meta, .nl-link,
+    .nl-dialog__box, .nl-dialog__body, .nl-drawer__box, .nl-drawer__body, .nl-history, .nl-history__detail, .nl-diff, .nl-notices { grid-template-columns: minmax(0, 1fr); }
+
+    // ------------------------------------------------------------------------------------------------ small shared bits
+    .nl-linkbtn {
+        display: inline;
+        padding: 0;
+        border: 0;
+        background: none;
+        font: inherit;
+        font-weight: 600;
+        color: $orange-text;
+        text-align: left;
+        text-decoration: underline;
+        text-underline-offset: 0.18em;
+        cursor: pointer;
+        &:hover { color: $navy; }
+    }
+    // contrast (AA): the link inside a coloured alert and the hint text of the inputs
+    .alert a:not([class]) { color: $orange-text; }
+    .input::placeholder, textarea::placeholder { color: #6B7785; }
+    .nl-btn-danger { color: $danger; &:hover { background: $danger-bg; color: $danger; } }
+    .btn--danger { background: $danger; color: $white; border-color: $danger; &:hover { background: darken($danger, 8%); color: $white; } }
+    .btn--cta { background: $cta; color: $white; &:hover { background: $cta-hover; color: $white; } }
+    .btn[disabled], .nl-tool[disabled] { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+    .nl-inline-icon { display: inline-flex; vertical-align: middle; color: $ink-soft; }
+    .nl-note { padding: $space-3 $space-4; border-radius: $radius; background: $info-bg; color: darken($info, 6%); font-size: $fs-sm; }
+
+    // ------------------------------------------------------------------------------------------------ issues list
+    .nl-list-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3; margin-bottom: $space-4; }
+    .nl-thumb {
+        flex: none;
+        width: 64px;
+        height: 44px;
+        border-radius: $radius-sm;
+        background: $surface-alt;
+        object-fit: cover;
+        &--empty { display: inline-flex; align-items: center; justify-content: center; color: $ink-soft; border: 1px dashed $border-strong; background: $surface; }
+    }
+    .nl-issue-cell { display: flex; align-items: center; gap: $space-3; min-width: 0; }
+    .nl-issue-cell__text { min-width: 0; }
+    .nl-issue-cell__title { display: block; font-weight: 600; color: $navy; text-decoration: none; overflow-wrap: anywhere; &:hover { color: $orange-dark; } }
+    .nl-live-dot { display: inline-flex; align-items: center; gap: 0.35rem; font-size: $fs-xs; font-weight: 600; color: $success; }
+    .nl-live-dot::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: currentColor; }
+    .nl-row-actions { display: flex; flex-wrap: wrap; gap: $space-1; justify-content: flex-end; form { display: inline; } .btn { white-space: nowrap; } }
+    .badge { white-space: nowrap; }
+    .table .col-actions { width: 1%; white-space: normal; }
+    .nl-issue-cell__date { display: none; }
+    // 768-1279 px: the sidebar and seven columns do not fit. Keep Issue / No. / Status / E-mail / Actions: the date moves under the title, the
+    // last-change column and the thumbnail go, and the five row actions sit in two columns, so nothing needs a hidden sideways scroll
+    @media (min-width: #{bp(md)}) and (max-width: #{bp(nav) - 0.02px}) {
+        .table .col-date, .table .col-changed { display: none; }
+        .nl-issue-cell__date { display: block; }
+        .nl-thumb { display: none; }
+        .nl-row-actions { display: grid; grid-template-columns: repeat(2, auto); justify-content: end; justify-items: stretch; }
+    }
+    @include respond(md) { .table td[data-label="Date"], .table td[data-label="Last change"], .table td[data-label="No."] { white-space: nowrap; } }
+    @include respond-down(md) {
+        .table--stack .nl-issue-cell { justify-content: flex-end; text-align: right; }
+        .table--stack .nl-row-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); justify-content: stretch; justify-items: stretch; gap: $space-1 $space-2; width: 100%; }
+        .table--stack .nl-row-actions .btn { justify-content: center; padding-inline: 0.5rem; }
+    }
+
+    // ------------------------------------------------------------------------------------------------ "Write an issue" form
+    .nl-create { max-width: 46rem; }
+    .nl-create__next { display: flex; gap: $space-2; align-items: flex-start; margin: 0; padding: $space-3 $space-4; border-radius: $radius; background: $tint-cool; color: $ink-soft; font-size: $fs-sm; .icon { flex: none; margin-top: 2px; } }
+
+    // ------------------------------------------------------------------------------------------------ the bar above the editor
+    .nl-bar {
+        // the bar wraps onto 2-3 rows below the nav breakpoint: sticky there it would take a fifth of the screen, so it only sticks on wide screens
+        position: static;
+        @include respond(nav) { position: sticky; top: $nl-sticky; }
+        z-index: 90;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: $space-2 $space-4;
+        margin-bottom: $space-4;
+        padding: $space-3 $space-4;
+        background: rgba($white, 0.97);
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+        &__main { display: flex; flex-wrap: wrap; align-items: center; gap: $space-1 $space-4; flex: 1 1 24rem; min-width: 0; }
+        &__back { display: inline-flex; align-items: center; gap: 0.35rem; flex: none; font-size: $fs-xs; font-weight: 600; color: $ink-soft; text-decoration: none; &:hover { color: $navy; } }
+        &__id { display: flex; align-items: center; gap: $space-2; min-width: 0; max-width: 100%; }
+        &__title { margin: 0; min-width: 0; font-size: 1.05rem; line-height: 1.3; @include truncate; max-width: 26rem; }
+        &__actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; }
+    }
+    .nl-save {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        font-size: $fs-xs;
+        font-weight: 600;
+        color: $ink-soft;
+        &__dot { flex: none; width: 0.6rem; height: 0.6rem; border-radius: 50%; background: $success; }
+        &[data-state="dirty"] { color: $warning; .nl-save__dot { background: $gold-deep; } }
+        &[data-state="saving"] { color: $info; .nl-save__dot { background: $info; animation: nl-pulse 1s ease-in-out infinite; } }
+        &[data-state="error"] { color: $danger; .nl-save__dot { background: $danger; } }
+    }
+    @keyframes nl-pulse { 50% { opacity: 0.25; } }
+
+    .nl-notices { display: grid; gap: $space-3; &:empty { display: none; } > [hidden] { display: none; } margin-bottom: $space-3; }
+    .nl-banner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-3;
+        padding: $space-3 $space-4;
+        border: 1px solid $border;
+        border-left-width: 5px;
+        border-radius: $radius;
+        background: $white;
+        font-size: $fs-sm;
+        > span { flex: 1 1 18rem; }
+        &--live { border-color: rgba($success, 0.35); border-left-color: $success; background: $success-bg; color: darken($success, 12%); }
+        &--info { border-color: rgba($info, 0.35); border-left-color: $info; background: $info-bg; color: darken($info, 8%); }
+        &--warn { border-color: rgba($warning, 0.35); border-left-color: $gold-deep; background: $warning-bg; color: $warning; }
+        &--muted { border-left-color: $border-strong; background: $surface; color: $ink-soft; }
+    }
+    .nl-errors { flex-direction: column; gap: $space-2; scroll-margin-top: calc(#{$nl-sticky} + var(--nl-bar-h) + 1rem); strong { display: block; } &__list { display: grid; gap: $space-1; padding-left: 1.1rem; list-style: disc; } .nl-linkbtn { color: inherit; } }
+
+    // ------------------------------------------------------------------------------------------------ two panes
+    .nl-view-toggle {
+        display: flex;
+        gap: $space-1;
+        margin-bottom: $space-4;
+        padding: 4px;
+        border: 1px solid $border;
+        border-radius: $radius-pill;
+        background: $white;
+        button {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0.55rem 1rem;
+            border: 0;
+            border-radius: $radius-pill;
+            background: transparent;
+            color: $ink-soft;
+            font-weight: 600;
+            font-size: $fs-sm;
+            &[aria-pressed="true"] { background: $navy; color: $white; }
+        }
+        @include respond(xl) { display: none; }
+    }
+    .nl-split {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: $space-5;
+        &[data-view="edit"] .nl-pane--preview { display: none; }
+        &[data-view="preview"] .nl-pane--edit { display: none; }
+        @include respond(xl) {
+            grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+            align-items: start;
+            .nl-pane--preview, .nl-pane--edit { display: block !important; }
+        }
+    }
+    .nl-pane--edit { min-width: 0; display: grid; gap: $space-4; align-content: start; }
+    .nl-pane--preview {
+        min-width: 0;
+        @include respond(xl) { min-height: 26rem; height: calc(100vh - #{$nl-sticky} - #{$space-6} - #{$space-4}); }
+        @include respond(nav) {
+            position: sticky;
+            top: calc(#{$nl-sticky} + var(--nl-bar-h) + #{$space-4} + #{$space-4});
+            height: calc(100vh - #{$nl-sticky} - var(--nl-bar-h) - #{$space-6} - #{$space-4});
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------ cards
+    .nl-card {
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+        scroll-margin-top: calc(#{$nl-sticky} + var(--nl-bar-h) + 1rem);
+        &.is-flash { animation: nl-flash 1.6s ease; }
+        &__head { margin: 0; }
+        &__h { margin: 0; font-size: inherit; }
+        &__toggle {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas: 'title chev' 'sub chev';
+            align-items: center;
+            width: 100%;
+            padding: $space-4 $space-5;
+            border: 0;
+            border-radius: $radius-lg;
+            background: transparent;
+            text-align: left;
+            cursor: pointer;
+            &:hover { background: rgba($gold, 0.07); }
+            &[aria-expanded="true"] { border-radius: $radius-lg $radius-lg 0 0; }
+        }
+        &__title { grid-area: title; font-family: $font-heading; font-weight: 600; font-size: 1.05rem; color: $navy; }
+        &__sub { grid-area: sub; font-size: $fs-xs; color: $ink-soft; }
+        &__chev { grid-area: chev; transition: transform $t-fast ease; color: $ink-soft; }
+        &__toggle[aria-expanded="true"] .nl-card__chev { transform: rotate(180deg); }
+        &__head--plain { padding: $space-4 $space-5 0; }
+        &__body { display: grid; gap: $space-4; padding: 0 $space-5 $space-5; &[hidden] { display: none; } }
+        &__head--plain + .nl-card__body { padding-top: $space-3; }
+    }
+    @keyframes nl-flash { 0%, 60% { box-shadow: 0 0 0 3px rgba($orange-accent, 0.6); } 100% { box-shadow: $shadow-sm; } }
+    @include reduced-motion { .nl-card.is-flash, .nl-bc.is-flash { animation: none; box-shadow: 0 0 0 3px rgba($orange-accent, 0.6); } }
+
+    .nl-grid-2 { display: grid; gap: $space-4; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .nl-field-narrow { max-width: 22rem; }
+    .nl-optional {
+        display: grid;
+        gap: $space-3;
+        padding: $space-4;
+        border: 1px dashed $border-strong;
+        border-radius: $radius;
+        background: $surface;
+        &__title { margin: 0; font-size: 0.92rem; span { font-weight: 400; color: $ink-soft; } }
+    }
+    .char-count { margin-top: -0.2rem; }
+    .nl-admin .field__error { margin: 0; }
+    .nl-rich .editor__area { min-height: 9rem; max-height: 28rem; }
+
+    // ---- publishing checklist
+    .nl-check {
+        padding: $space-4 $space-5;
+        border-left: 5px solid $success;
+        &[data-state="blocked"] { border-left-color: $gold-deep; background: $warning-bg; }
+        &[data-state="tips"] { border-left-color: $info; }
+        &[hidden] { display: none; }
+        &__title { margin: 0; font-size: 1rem; }
+        &__list { display: grid; gap: $space-2; margin-top: $space-3; &[hidden] { display: none; } }
+        &__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: $space-2; font-size: $fs-sm; }
+        &__mark { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 1.3rem; height: 1.3rem; border-radius: 50%; font-size: 0.75rem; font-weight: 800; background: $gold-deep; color: $navy-dark; }
+        &__item--tip .nl-check__mark { background: $info; color: $white; }
+        &__text { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
+    }
+
+    // ------------------------------------------------------------------------------------------------ the block list
+    .nl-blocks-section { display: grid; gap: $space-4; }
+    .nl-blocks-section__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: $space-3; }
+    .nl-section-title { margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: $space-2; }
+    .nl-count { display: inline-flex; align-items: center; justify-content: center; min-width: 1.6rem; padding: 0 0.45rem; border-radius: $radius-pill; background: $navy; color: $white; font-size: 0.78rem; line-height: 1.6rem; }
+    .nl-section-help { margin: $space-1 0 0; max-width: 40rem; font-size: $fs-sm; color: $ink-soft; }
+    .nl-blocks { display: grid; gap: $space-3; &:empty { display: none; } position: relative; &.is-drop-end::after { content: ''; display: block; height: 4px; border-radius: 4px; background: $orange-accent; } }
+    .nl-empty { display: grid; justify-items: center; gap: $space-2; padding: $space-6 $space-5; border: 1px dashed $border-strong; border-radius: $radius-lg; background: $white; color: $ink-soft; text-align: center; &[hidden] { display: none; } p { margin: 0; max-width: 34rem; } }
+
+    .nl-bc {
+        position: relative;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+        scroll-margin-top: calc(#{$nl-sticky} + var(--nl-bar-h) + 1rem);
+        &:focus { outline: none; }
+        &:focus-within { border-color: $border-strong; box-shadow: $shadow; }
+        &.is-dragging { opacity: 0.45; }
+        &.is-flash { animation: nl-flash 1.6s ease; }
+        &.is-drop-before::before { content: ''; position: absolute; inset: -9px 0 auto; height: 4px; border-radius: 4px; background: $orange-accent; }
+        &__head { display: flex; align-items: center; gap: $space-1; padding: $space-2 $space-3; }
+        &__toggle {
+            display: flex;
+            align-items: center;
+            gap: $space-3;
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: $space-2;
+            border: 0;
+            border-radius: $radius;
+            background: transparent;
+            text-align: left;
+            cursor: pointer;
+            &:hover { background: rgba($gold, 0.07); }
+        }
+        &__badge {
+            flex: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.2rem 0.65rem 0.2rem 0.5rem;
+            border-radius: $radius-pill;
+            background: $tint-cool;
+            color: $navy;
+            font-family: $font-heading;
+            font-size: 0.74rem;
+            font-weight: 600;
+            &--image { background: $warning-bg; color: $gold-text; }
+            &--quote { background: #FBEBDD; color: $orange-text; }
+            &--button { background: #E3F0F2; color: $teal-dark; }
+            &--divider { background: $surface-alt; color: $ink-soft; }
+        }
+        &__summary { flex: 1; min-width: 0; font-weight: 600; color: $ink; @include truncate; &.is-empty { color: $ink-soft; font-weight: 400; font-style: italic; } }
+        &__chev { flex: none; color: $ink-soft; transition: transform $t-fast ease; }
+        &.is-open .nl-bc__chev { transform: rotate(180deg); }
+        &__tools { display: inline-flex; flex: none; gap: 2px; }
+        // phones: the name needs the room, so the four tool buttons drop to their own row under it
+        @include respond-down(sm) {
+            &__head { flex-wrap: wrap; }
+            &__toggle { flex: 1 1 100%; }
+            &__tools { margin-left: auto; }
+        }
+        &__body { display: grid; gap: $space-4; padding: $space-2 $space-5 $space-5; border-top: 1px solid $line; &[hidden] { display: none; } }
+        &__about { margin: $space-3 0 0; font-size: $fs-xs; color: $ink-soft; }
+    }
+    .nl-grip { flex: none; display: inline-flex; padding: 0.4rem 0.2rem; color: $ink-soft; cursor: grab; touch-action: none; &:active { cursor: grabbing; } @include respond-down(md) { display: none; } }
+    .nl-tool {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.2rem;
+        height: 2.2rem;
+        border: 0;
+        border-radius: $radius-sm;
+        background: transparent;
+        color: $ink-soft;
+        cursor: pointer;
+        &:hover { background: $surface-alt; color: $navy; }
+        &--danger:hover { background: $danger-bg; color: $danger; }
+    }
+
+    .nl-add {
+        padding: $space-4 $space-5 $space-5;
+        border: 1px dashed $border-strong;
+        border-radius: $radius-lg;
+        background: rgba($white, 0.6);
+        &__title { margin: 0 0 $space-3; font-size: 1rem; }
+        &__grid { display: grid; gap: $space-3; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); }
+        &__btn {
+            display: grid;
+            justify-items: start;
+            align-content: start;
+            gap: 0.2rem;
+            padding: $space-3 $space-4;
+            border: 1px solid $border-strong;
+            border-radius: $radius;
+            background: $white;
+            color: $navy;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color $t-fast ease, box-shadow $t-fast ease, transform $t-fast ease;
+            .icon { color: $orange-text; margin-bottom: 0.25rem; }
+            strong { font-family: $font-heading; font-size: 0.92rem; }
+            span { font-size: $fs-xs; color: $ink-soft; line-height: 1.35; }
+            &:hover { border-color: $navy; box-shadow: $shadow; transform: translateY(-1px); }
+            &[disabled] { opacity: 0.5; pointer-events: none; }
+        }
+        &__limit { margin: $space-3 0 0; font-size: $fs-sm; color: $warning; }
+    }
+
+    // ------------------------------------------------------------------------------------------------ pictures
+    .nl-image {
+        position: relative;
+        display: grid;
+        gap: $space-3;
+        &.is-drop { outline: 3px dashed $orange-dark; outline-offset: 4px; border-radius: $radius; background: rgba($gold, 0.1); }
+        &.is-busy { cursor: progress; }
+        &__row { display: grid; gap: $space-3; @include respond(sm) { grid-template-columns: 10rem minmax(0, 1fr); align-items: start; } }
+        &__preview {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 4 / 3;
+            overflow: hidden;
+            border: 1px solid $border;
+            border-radius: $radius;
+            background: $white;
+            color: $ink-soft;
+            img { width: 100%; height: 100%; object-fit: cover; }
+            &.is-empty { background: $surface-alt; }
+            &:not(.is-empty) .nl-image__placeholder { display: none; }
+        }
+        &__side { display: grid; gap: $space-2; min-width: 0; align-content: start; }
+        &__buttons { display: flex; flex-wrap: wrap; gap: $space-2; align-items: center; position: relative; }
+        &__pick { cursor: pointer; }
+        &__file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0, 0, 0, 0); }
+        &__buttons:focus-within .nl-image__pick { @include focus-ring; }
+        &__meta { display: grid; gap: $space-3; &[hidden] { display: none; } }
+    }
+    .nl-progress {
+        display: flex;
+        align-items: center;
+        gap: $space-3;
+        &[hidden] { display: none; }
+        progress { flex: 1; max-width: 14rem; height: 0.55rem; appearance: none; border: 0; border-radius: $radius-pill; background: $surface-alt; overflow: hidden; }
+        progress::-webkit-progress-bar { background: $surface-alt; }
+        progress::-webkit-progress-value { background: $navy; border-radius: $radius-pill; transition: width 0.2s ease; }
+        progress::-moz-progress-bar { background: $navy; border-radius: $radius-pill; }
+        span { font-size: $fs-xs; color: $ink-soft; }
+    }
+    .nl-link { display: grid; gap: $space-2; }
+    .nl-link__grid { display: grid; gap: $space-3; @include respond(md) { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } }
+
+    // ---- web address + search snippet
+    .nl-slug { display: flex; align-items: center; gap: $space-2; flex-wrap: wrap; &__base { font-size: $fs-xs; color: $ink-soft; overflow-wrap: anywhere; } .input { flex: 1 1 12rem; min-width: 0; } .input[readonly] { background: $surface-alt; color: $ink-soft; } }
+    .nl-serp {
+        padding: $space-4;
+        border: 1px solid $border;
+        border-radius: $radius;
+        background: $white;
+        font-family: Arial, Helvetica, sans-serif;
+        &__label { margin: 0 0 $space-2; font-family: $font-body; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: $ink-soft; }
+        &__title { margin: 0; font-size: 1.15rem; line-height: 1.3; color: #1a0dab; overflow-wrap: anywhere; }
+        &__url { margin: 2px 0; font-size: 0.82rem; color: #0b6b2c; overflow-wrap: anywhere; }
+        &__desc { margin: 0; font-size: 0.88rem; line-height: 1.5; color: #4d5156; overflow-wrap: anywhere; }
+    }
+    .nl-actions { padding-top: 0; }
+    .nl-actions__row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: $space-3;
+        padding: $space-3 0;
+        border-top: 1px solid $line;
+        &:first-child { border-top: 0; }
+        &[hidden] { display: none; }
+        p { margin: 0.1rem 0 0; font-size: $fs-sm; color: $ink-soft; max-width: 34rem; }
+        &--danger strong { color: $danger; }
+    }
+
+    // ------------------------------------------------------------------------------------------------ live preview
+    .nl-preview {
+        display: flex;
+        flex-direction: column;
+        gap: $space-2;
+        height: 100%;
+        min-height: 30rem;
+        padding: $space-3;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        background: #E9E5DC;
+        &__bar { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-3; }
+        &__label { font-family: $font-heading; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: $navy; }
+        &__state {
+            flex: 1;
+            min-width: 8rem;
+            font-size: $fs-xs;
+            color: $ink-soft;
+            &[data-tone="busy"] { color: $info; }
+            &[data-tone="warn"] { color: $warning; }
+            &[data-tone="error"] { color: $danger; font-weight: 700; }
+        }
+        &__stage { position: relative; flex: 1 1 auto; min-height: 20rem; display: flex; justify-content: center; align-items: flex-start; overflow: hidden; &.is-wide { overflow-x: auto; justify-content: flex-start; } @include respond-down(xl) { min-height: calc(100vh - 21rem); } }
+        &__hint { display: flex; gap: $space-2; align-items: flex-start; margin: 0; font-size: $fs-xs; color: $ink-soft; .icon { flex: none; margin-top: 2px; } }
+    }
+    .nl-seg {
+        display: inline-flex;
+        padding: 3px;
+        border-radius: $radius-pill;
+        background: rgba($white, 0.75);
+        border: 1px solid $border-strong;
+        button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.3rem 0.8rem;
+            border: 0;
+            border-radius: $radius-pill;
+            background: transparent;
+            color: $ink-soft;
+            font-size: $fs-xs;
+            font-weight: 600;
+            &[aria-pressed="true"] { background: $navy; color: $white; }
+        }
+    }
+    .nl-device {
+        position: relative;
+        flex: none;
+        background: $white;
+        border-radius: 10px;
+        box-shadow: $shadow;
+        overflow: hidden;
+        &[data-device-type="mobile"] { border-radius: 26px; box-shadow: 0 0 0 7px $navy-dark, $shadow-lg; margin-top: 7px; }
+    }
+    .nl-frame {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: var(--nl-w, 1040px);
+        height: var(--nl-h, 600px);
+        border: 0;
+        background: $white;
+        transform-origin: 0 0;
+        transform: scale(var(--nl-scale, 1));
+        &:not(.is-current) { visibility: hidden; }
+    }
+
+    // ------------------------------------------------------------------------------------------------ dialogs and the History drawer
+    .nl-dialog {
+        width: #{'min(36rem, calc(100vw - 2rem))'};
+        max-height: calc(100vh - 2rem);
+        margin: auto;
+        padding: 0;
+        border: 0;
+        border-radius: $radius-lg;
+        background: $white;
+        color: $ink;
+        box-shadow: $shadow-lg;
+        overflow: auto;
+        &::backdrop { background: rgba($navy-dark, 0.55); }
+        &__box { display: grid; gap: $space-4; padding: $space-5; }
+        &__title { margin: 0; font-size: 1.25rem; }
+        &__body { display: grid; gap: $space-3; color: $ink; p { margin: 0; } }
+        &__lead { font-weight: 600; }
+        &__list, &__choices { display: grid; gap: $space-2; padding-left: 1.2rem; list-style: disc; font-size: $fs-sm; }
+        &__summary { min-height: 1.4em; margin: 0; font-weight: 600; color: $navy; }
+        &__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: $space-2; padding-top: $space-2; border-top: 1px solid $line; }
+    }
+    .nl-drawer {
+        width: #{'min(27rem, 100vw)'};
+        height: 100vh;
+        max-height: none;
+        margin: 0 0 0 auto;
+        border-radius: $radius-lg 0 0 $radius-lg;
+        &__box { display: grid; gap: $space-3; align-content: start; padding: $space-5; }
+        &__head { display: flex; align-items: center; justify-content: space-between; gap: $space-3; }
+        &__intro { margin: 0; font-size: $fs-sm; color: $ink-soft; }
+        &__body { display: grid; gap: $space-3; }
+    }
+    .nl-history { display: grid; gap: $space-2; margin: 0; padding: 0; list-style: none; }
+    .nl-history__item { border: 1px solid $border; border-radius: $radius; background: $white; overflow: hidden; }
+    .nl-history__btn {
+        display: grid;
+        gap: 2px;
+        width: 100%;
+        padding: $space-3 $space-4;
+        border: 0;
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+        &:hover { background: rgba($gold, 0.08); }
+        &[aria-expanded="true"] { background: $tint-cool; }
+    }
+    .nl-history__when { font-weight: 700; color: $navy; }
+    .nl-history__meta { font-size: $fs-xs; color: $ink-soft; }
+    .nl-history__detail { display: grid; gap: $space-3; padding: $space-3 $space-4 $space-4; border-top: 1px solid $line; &[hidden] { display: none; } p { margin: 0; } }
+    .nl-history__lead { font-weight: 600; font-size: $fs-sm; }
+    .nl-history__same { font-size: $fs-sm; color: $ink-soft; }
+    .nl-diff { display: grid; gap: $space-2; margin: 0; padding: 0; list-style: none; font-size: $fs-sm; }
+    .nl-diff__item { padding: $space-2 $space-3; border-radius: $radius-sm; background: $surface; border-left: 4px solid $border-strong; overflow-wrap: anywhere; }
+    .nl-diff__item--added { border-left-color: $success; background: $success-bg; }
+    .nl-diff__item--removed { border-left-color: $danger; background: $danger-bg; }
+    .nl-diff__item--changed { border-left-color: $gold-deep; }
+    .nl-diff__text { display: grid; gap: 2px; margin-top: 2px; font-size: $fs-xs; color: $ink-soft; }
+
+    // ------------------------------------------------------------------------------------------------ toasts
+    .nl-toasts { position: fixed; z-index: $z-toast; inset: auto $space-4 $space-4 $space-4; display: grid; justify-items: start; gap: $space-2; pointer-events: none; @include respond(lg) { left: calc(#{$admin-sidebar-w} + #{$space-5}); } }
+    .nl-toast {
+        display: flex;
+        align-items: center;
+        gap: $space-3;
+        max-width: #{'min(34rem, 100%)'};
+        padding: 0.7rem 0.9rem 0.7rem 1rem;
+        border-radius: $radius;
+        background: $navy-dark;
+        color: $white;
+        font-size: $fs-sm;
+        box-shadow: $shadow-lg;
+        pointer-events: auto;
+        &--success { background: $success; }
+        &--error { background: $danger; }
+        &--warning { background: $warning; }
+        &__text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+        &__action { flex: none; padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+        &--info .nl-toast__action { color: $gold; }
+        &__close { flex: none; padding: 0 0.3rem; border: 0; background: none; color: inherit; font-size: 1.3rem; line-height: 1; opacity: 0.8; cursor: pointer; &:hover { opacity: 1; } }
+    }
+
+    // ------------------------------------------------------------------------------------------------ narrow screens
+    @include respond-down(md) {
+        .nl-bar__actions .btn { flex: 1 1 auto; justify-content: center; }
+        .nl-card__body, .nl-bc__body { padding-left: $space-4; padding-right: $space-4; }
+        .nl-toasts { inset-inline: $space-3; }
+    }
+    @include respond(md) { .nl-bar__actions .btn[data-act="delete"] { margin-left: $space-2; } }
+}

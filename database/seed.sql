@@ -321,3 +321,48 @@ SELECT seed.slug, seed.name, seed.description, seed.fee_amount, seed.joining_fee
   UNION ALL SELECT 'organisation-partner-member', 'Organisation / Partner Member', NULL, NULL, NULL, 'UGX', 'annual', NULL, 30, 1, NULL
 ) AS seed
 WHERE NOT EXISTS (SELECT 1 FROM membership_types);
+
+-- ------------------------------------------------------------------ newsletter (see docs/NEWSLETTER.md). ADDITIVE and IDEMPOTENT.
+-- Settings: defaults of app/config/settings_schema.php (group "Newsletter"); refreshed only while pristine, like every other setting.
+-- The SMTP login is NOT a setting: it lives in .env (MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD ...).
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('newsletter_from_name', ''),
+  ('newsletter_from_email', ''),
+  ('newsletter_reply_to', ''),
+  ('newsletter_footer_text', ''),
+  ('newsletter_batch_size', '30'),
+  ('newsletter_default_subject_prefix', '')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Page: /newsletter (footer menu, not in the header). All its copy comes from the page registry (app/config/pages/newsletter.php).
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
+  ('newsletter', 'Newsletter', 'registry', 'default', 1, 0, 1, 'Newsletter', 75, NULL)
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
+  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
+  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
+  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
+  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
+  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
+  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
+  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- ONE sample issue, a DRAFT (never public until the owner publishes it), built ONLY from wording that already exists on this site / in the
+-- owner's copy: the planned-programs introduction (docs/content-source/planned-programs.md), the "Visit to Wii Got Quarry Site" activity, the
+-- founder quote of the About page and the gallery photo captions. The owner edits it or deletes it. Inserted only while the table is EMPTY,
+-- so a re-import never brings back a sample the owner deleted and never adds a second issue next to the owner's own.
+INSERT INTO newsletters (slug, issue_number, title, summary, issue_date, cover_image, cover_alt, content, status, version)
+SELECT seed.slug, seed.issue_number, seed.title, seed.summary, seed.issue_date, seed.cover_image, seed.cover_alt, seed.content, seed.status, seed.version FROM (
+  SELECT 'sample-issue-edit-or-delete-me' AS slug, NULL AS issue_number, 'Sample issue — edit or delete me' AS title, 'Lumina Africa Foundation is developing a portfolio of community-centred programs designed to expand opportunities for underserved communities, particularly young people in Northern Uganda.' AS summary, CURDATE() AS issue_date,
+         'assets/img/site/photo-04.jpg' AS cover_image, 'Young people seated in red theatre-style seats at an event, some smiling and looking off to one side' AS cover_alt,
+         '{"version":1,"featured":{"heading":"Building Pathways to Opportunity. Preparing Communities for Change.","body_html":"<p>Lumina Africa Foundation is developing a portfolio of community-centred programs designed to expand opportunities for underserved communities, particularly young people in Northern Uganda.</p><p>Our planned interventions focus on three interconnected pillars: Health, Education, and Technology &amp; Innovation. Through these areas, we aspire to promote access to reliable information, strengthen practical skills, encourage innovation and help communities build the knowledge and capacity needed for sustainable development.</p>","image":{"path":"assets/img/site/photo-05.jpg","alt":"Young people seated in a bright room with laptops; one in the foreground types on a laptop","caption":"Young people with laptops in a classroom"},"link":{"label":"Explore Our Planned Programs","url":"/programs"}},"blocks":[{"id":"bsample01","type":"article","heading":"Visit to Wii Got Quarry Site","body_html":"<p>Our Director joined the Delegation of the Northern Region Youth Parliament for a dynamic outreach event at the Wii Got Quarry Site in Gulu City, together with youth leaders from the EU Youth Sounding Board and representatives of the 8th Northern Regional Youth Parliament.</p><p>We engaged the quarry youth in stimulating discussions about environmental sustainability and community development while providing them with essential safety gear to keep them safe and sound during all activities.</p>","image":{"path":"","alt":"","caption":""},"link":{"label":"Read the full blog post","url":"/blog/empowering-voices-planting-hope-lumina-africa-foundations-weekend-at-wii-got-quarry"}},{"id":"bsample02","type":"image","image":{"path":"assets/img/site/photo-03.jpg","alt":"A man in a blue polo shirt points at a computer screen while young people wearing headphones work at computers around him","caption":"Young people working at computers"}},{"id":"bsample03","type":"quote","body_html":"<p>Northern Uganda lost years to conflict, but we will not lose our future to digital exclusion. Every young person, regardless of certificates or background, deserves the skills to participate in today’s economy.</p>","cite":"Moses Komakech, Founder"},{"id":"bsample04","type":"divider"},{"id":"bsample05","type":"button","button":{"label":"Partner With Us","url":"/involvement","style":"primary"}}]}' AS content, 'draft' AS status, 1 AS version
+) AS seed
+WHERE NOT EXISTS (SELECT 1 FROM newsletters);
+
+INSERT INTO newsletter_revisions (newsletter_id, version, title, content, source)
+SELECT n.id, n.version, n.title, n.content, 'save' FROM newsletters n
+WHERE n.slug = 'sample-issue-edit-or-delete-me' AND NOT EXISTS (SELECT 1 FROM newsletter_revisions r WHERE r.newsletter_id = n.id);

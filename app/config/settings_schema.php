@@ -82,6 +82,19 @@ return [
                     'help' => 'Shown to applicants and used as the reply-to address of membership e-mails. While empty, the primary e-mail from the Contact tab is used.'],
             ],
         ],
+        'newsletter' => [
+            'label' => 'Newsletter',
+            'icon'  => 'newspaper',
+            'help'  => 'How newsletter e-mails are sent. Write and publish the issues in Admin > Newsletter. The SMTP login (host, user, password) is NOT here: it lives in the .env file on the server (MAIL_DRIVER=smtp, MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_ENCRYPTION) so it is never stored in the database.',
+            'fields' => [
+                'newsletter_from_name'     => ['label' => 'Sender name', 'type' => 'text', 'default' => '', 'rules' => 'nullable|max:120', 'help' => 'The name subscribers see. While empty, the organisation name is used.'],
+                'newsletter_from_email'    => ['label' => 'Sender e-mail address', 'type' => 'email', 'default' => '', 'rules' => 'nullable|email', 'help' => 'Must be an address your mail server may send from (usually the one of the SMTP account). While empty, MAIL_FROM from the .env file is used.'],
+                'newsletter_reply_to'      => ['label' => 'Reply-to address', 'type' => 'email', 'default' => '', 'rules' => 'nullable|email', 'help' => 'Where replies go. While empty, the primary e-mail from the Contact tab is used.'],
+                'newsletter_footer_text'   => ['label' => 'Extra footer text', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:600', 'help' => 'Optional line at the bottom of every newsletter e-mail, above the organisation address and the unsubscribe link.'],
+                'newsletter_batch_size'    => ['label' => 'E-mails per batch', 'type' => 'number', 'default' => '30', 'rules' => 'required|integer|between:1,200', 'help' => 'How many subscribers are e-mailed per step when you send an issue from the admin screen. Lower it if your host limits how fast you can send (many shared hosts allow only a few hundred e-mails per hour).'],
+                'newsletter_default_subject_prefix' => ['label' => 'Subject prefix', 'type' => 'text', 'default' => '', 'rules' => 'nullable|max:60', 'help' => 'Put in front of the issue title in the e-mail subject, for example "Lumina Newsletter:". Leave empty for no prefix.'],
+            ],
+        ],
         'branding' => [
             'label' => 'Branding & SEO',
             'icon'  => 'image',

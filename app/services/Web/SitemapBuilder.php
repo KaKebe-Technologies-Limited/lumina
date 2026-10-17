@@ -6,6 +6,7 @@ namespace App\Services\Web;
 use App\Core\Database;
 use App\Core\Log;
 use App\Core\SitePages;
+use App\Services\Newsletter\NewsletterService;
 
 /**
  * Builds /sitemap.xml from the database so it is always current:
@@ -76,6 +77,32 @@ final class SitemapBuilder
             if ($loc !== '' && isset($entries[$loc]) && self::date($stamp) > $entries[$loc]['lastmod']) {
                 $entries[$loc]['lastmod'] = self::date($stamp);
             }
+        }
+
+        // ---- newsletter (WEB agent; docs/NEWSLETTER.md section 6) ------------------------------------------------------
+        // /newsletter and /newsletter/archive are listed only while at least one issue is public (without one both pages answer noindex),
+        // plus one entry per PUBLIC issue (NewsletterService::visibleSql: published, or scheduled and due). Drafts and archived issues never appear.
+        try {
+            $nlPage = SitePages::get('newsletter');
+            unset($entries[abs_url('newsletter')]);           // the generic page loop above added it unconditionally
+            if ($nlPage !== null && $nlPage['is_published'] && SitePages::requirementMet($nlPage['requires'])) {
+                NewsletterService::resolveScheduled();
+                [$nlSql, $nlParams] = NewsletterService::visibleSql('n');
+                $issues = Database::all("SELECT n.slug, n.updated_at FROM newsletters n WHERE {$nlSql} ORDER BY " . NewsletterService::PUBLIC_ORDER, $nlParams);
+                if ($issues !== []) {
+                    $newest = '';
+                    foreach ($issues as $row) {
+                        $newest = max($newest, (string) ($row['updated_at'] ?? ''));
+                    }
+                    $add('/newsletter', $newest, '0.8');
+                    $add('/newsletter/archive', $newest, '0.6');
+                    foreach ($issues as $row) {
+                        $add('/newsletter/' . $row['slug'], (string) ($row['updated_at'] ?? ''), '0.6');
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Sitemap: newsletter skipped - ' . $e->getMessage());
         }
 
         $out = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";

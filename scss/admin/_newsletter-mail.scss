@@ -1,0 +1,286 @@
+// admin/_newsletter-mail.scss - MAILING agent. The e-mail panel of an issue: settings, test send, confirm dialogs, batch progress, per-address
+// results table, e-mail preview. Imported by admin.scss. Every rule is scoped under .nl-mail (the panel view puts that class on its root).
+// <dialog> elements stay inside .nl-mail in the DOM, so the scope also covers them (the ::backdrop is styled with the dialog itself).
+
+.nl-mail {
+    display: grid;
+    gap: $space-5;
+    max-width: 62rem;
+
+    // The grid gap spaces the cards; the generic ".card + .card" margin of the admin theme would double it.
+    > .card + .card { margin-top: 0; }
+    > .alert { margin-bottom: 0; }
+    // contrast (AA): the link inside a coloured alert and the hint text of the inputs
+    .alert a:not([class]) { color: $orange-text; }
+    .input::placeholder, textarea::placeholder { color: #6B7785; }
+    > .page-header { margin-bottom: 0; }
+
+    code { font-family: $font-mono; font-size: 0.9em; }
+
+    // ---- form pieces
+    .nl-fieldset {
+        display: grid;
+        gap: $space-4;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        &:disabled { opacity: 0.6; }
+    }
+    .nl-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-3;
+        .btn[hidden] { display: none; }
+    }
+    .nl-inline-msg { font-size: $fs-sm; color: $ink-soft; }
+    .field__error[hidden] { display: none; }
+    .nl-code {
+        display: block;
+        padding: $space-3 $space-4;
+        background: $surface;
+        border: 1px solid $border;
+        border-radius: $radius-sm;
+        overflow-wrap: anywhere;
+        user-select: all;
+    }
+    .nl-cron {
+        margin-top: $space-4;
+        font-size: $fs-sm;
+        summary { cursor: pointer; font-weight: 600; color: $navy; padding: $space-1 0; }
+        summary:focus-visible { @include focus-ring; border-radius: $radius-sm; }
+        p { margin: $space-2 0 0; }
+    }
+
+    // ---- progress
+    .nl-campaign__headline { margin: 0 0 $space-3; font-size: 1.1rem; font-weight: 700; color: $navy; }
+    .nl-progress {
+        height: 0.9rem;
+        border-radius: $radius-pill;
+        background: $surface-alt;
+        box-shadow: inset 0 0 0 1px $border;
+        overflow: hidden;
+        &__bar {
+            display: block;
+            width: 0;
+            height: 100%;
+            border-radius: $radius-pill;
+            background: $navy;
+            transition: width 0.4s $ease;
+            &.is-done { background: $success; }
+            &.has-failed:not(.is-done) { background: linear-gradient(90deg, $navy 0, $navy 85%, $orange 100%); }
+        }
+    }
+    .nl-counts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: $space-3;
+        margin: $space-4 0 0;
+        @include respond(md) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        &__item {
+            padding: $space-3 $space-4;
+            background: $surface;
+            border: 1px solid $border;
+            border-radius: $radius;
+            dt { font-size: $fs-xs; font-weight: 600; color: $ink-soft; }
+            dd { margin: 0; font-family: $font-heading; font-size: 1.5rem; font-weight: 700; line-height: 1.2; color: $navy; font-variant-numeric: tabular-nums; }
+            &--sent dd { color: $success; }
+            &--failed dd { color: $danger; }
+        }
+    }
+    .nl-campaign__note {
+        margin: $space-4 0 0;
+        padding: $space-3 $space-4;
+        background: $info-bg;
+        border-radius: $radius;
+        font-size: $fs-sm;
+        &.is-error { background: $danger-bg; color: darken($danger, 6%); }
+        &.is-warn { background: $warning-bg; color: $warning; }
+        &[hidden] { display: none; }
+    }
+    .nl-campaign__times { margin: $space-3 0 $space-4; }
+
+    // ---- checklist
+    .nl-check {
+        display: grid;
+        gap: $space-2;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        li { display: flex; align-items: flex-start; gap: $space-3; font-size: $fs-sm; }
+        &__icon {
+            display: inline-flex;
+            flex: none;
+            align-items: center;
+            justify-content: center;
+            width: 1.4rem;
+            height: 1.4rem;
+            margin-top: 0.05rem;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .is-ok .nl-check__icon { background: $success-bg; color: $success; box-shadow: inset 0 0 0 1px rgba($success, 0.35); }
+        .is-todo .nl-check__icon { background: $warning-bg; color: $warning; box-shadow: inset 0 0 0 1px rgba($warning, 0.35); }
+        .is-todo { color: $ink; font-weight: 600; }
+    }
+    .nl-send__why {
+        margin: $space-3 0 0;
+        padding: $space-3 $space-4;
+        background: $warning-bg;
+        border-radius: $radius;
+        font-size: $fs-sm;
+        color: $warning;
+        &[hidden] { display: none; }
+    }
+
+    // ---- test results
+    .nl-test-results {
+        display: grid;
+        gap: $space-2;
+        margin: $space-3 0 0;
+        padding: 0;
+        list-style: none;
+        &:empty { display: none; }
+        li {
+            padding: $space-2 $space-3;
+            border-radius: $radius-sm;
+            font-size: $fs-sm;
+            overflow-wrap: anywhere;
+            &.is-ok { background: $success-bg; color: darken($success, 8%); }
+            &.is-fail { background: $danger-bg; color: darken($danger, 6%); }
+        }
+    }
+
+    // ---- results table
+    .nl-results__filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: $space-3;
+        margin-bottom: $space-4;
+        .pills__item {
+            display: inline-flex;
+            align-items: center;
+            gap: $space-2;
+            padding: 0.35rem 0.85rem;
+            cursor: pointer;
+            &:focus-visible { @include focus-ring; }
+        }
+        .pills__item.is-active .nl-pill-count { background: rgba($white, 0.22); color: $white; }
+    }
+    .nl-pill-count {
+        min-width: 1.4rem;
+        padding: 0 0.4rem;
+        border-radius: $radius-pill;
+        background: $surface-alt;
+        color: $ink-soft;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.4rem;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+    .nl-results__search { margin: 0; min-width: 14rem; flex: 1 1 14rem; max-width: 22rem; }
+    .nl-results__table {
+        .nl-addr { overflow-wrap: anywhere; }
+        .nl-detail { color: $ink-soft; font-size: $fs-sm; overflow-wrap: anywhere; }
+        .nl-time { white-space: nowrap; color: $ink-soft; font-size: $fs-sm; }
+    }
+    .nl-results__empty { margin: $space-4 0 0; color: $ink-soft; text-align: center; }
+    .nl-results__empty[hidden], .nl-pager[hidden] { display: none; }
+    .nl-pager {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: $space-4;
+        margin-top: $space-4;
+        font-size: $fs-sm;
+        color: $ink-soft;
+    }
+
+    // ---- dialogs
+    .nl-dialog {
+        width: calc(100vw - 2rem);
+        max-width: 34rem;
+        max-height: calc(100vh - 2rem);
+        padding: 0;
+        border: 0;
+        border-radius: $radius-lg;
+        background: $white;
+        color: $ink;
+        box-shadow: $shadow-lg;
+        overflow: auto;
+        &::backdrop { background: rgba($navy-dark, 0.6); }
+        &--wide { max-width: 62rem; }
+        &__form { margin: 0; padding: $space-5; display: grid; gap: $space-4; }
+        &__title { margin: 0; font-size: 1.25rem; color: $navy; }
+        &__body { display: grid; gap: $space-3; font-size: $fs-sm; p { margin: 0; } }
+        &__facts {
+            display: grid;
+            gap: $space-2;
+            margin: 0;
+            padding: $space-3 $space-4;
+            background: $surface;
+            border-radius: $radius;
+            div { display: grid; gap: 0.1rem; @include respond(md) { grid-template-columns: 5rem minmax(0, 1fr); gap: $space-3; } }
+            dt { font-weight: 700; color: $ink-soft; }
+            dd { margin: 0; overflow-wrap: anywhere; }
+        }
+        &__warn {
+            margin: 0;
+            padding: $space-3 $space-4;
+            background: $warning-bg;
+            color: $warning;
+            border-radius: $radius;
+            font-size: $fs-sm;
+            &[hidden] { display: none; }
+        }
+        &__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: $space-3; }
+    }
+    .nl-preview {
+        &__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3; .nl-dialog__title { flex: 1 1 auto; } }
+        &__tools { display: flex; gap: $space-2; .pills__item { display: inline-flex; align-items: center; gap: $space-2; padding: 0.35rem 0.85rem; cursor: pointer; } }
+        &__meta {
+            display: grid;
+            gap: $space-2;
+            margin: 0;
+            font-size: $fs-sm;
+            div { display: grid; gap: 0.1rem; @include respond(md) { grid-template-columns: 7rem minmax(0, 1fr); gap: $space-3; } }
+            dt { font-weight: 700; color: $ink-soft; }
+            dd { margin: 0; overflow-wrap: anywhere; }
+        }
+        &__stage {
+            display: flex;
+            justify-content: center;
+            padding: $space-3;
+            background: $surface-alt;
+            border-radius: $radius;
+            overflow: auto;
+            &.is-mobile .nl-preview__frame { max-width: 390px; }
+        }
+        &__frame {
+            display: block;
+            width: 100%;
+            max-width: 680px;
+            height: #{'min(62vh, 760px)'};
+            min-height: 22rem;
+            border: 0;
+            border-radius: $radius-sm;
+            background: $white;
+        }
+    }
+
+    @include respond-down(md) {
+        // stacked rows: the small caps label keeps its width, a long address wraps instead
+        .nl-results__table td { align-items: baseline; }
+        .nl-results__table td::before { flex: none; }
+        .nl-results__filters { align-items: stretch; }
+        .nl-results__search { max-width: none; }
+        .nl-actions .btn { flex: 1 1 auto; justify-content: center; }
+        .nl-dialog__actions .btn { flex: 1 1 auto; justify-content: center; }
+    }
+}

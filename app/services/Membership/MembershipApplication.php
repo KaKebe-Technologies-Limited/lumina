@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Core\Validator;
 use App\Models\Member;
 use App\Models\MembershipType;
+use App\Models\NewsletterDelivery;
 use App\Models\Subscriber;
 
 /**
@@ -508,6 +509,10 @@ final class MembershipApplication
             ], 'id = ?', [$memberId]);
             Database::execute('UPDATE member_payments SET notes = NULL WHERE member_id = ?', [$memberId]);
             // the newsletter row this form created holds the same address
+            $subIds = array_column(Database::all("SELECT id FROM subscribers WHERE source = 'membership' AND email = ?", [(string) $m['email']]), 'id');
+            if ($subIds !== []) {
+                NewsletterDelivery::erase($subIds, [(string) $m['email']]);        // also out of the e-mail campaign records
+            }
             Database::execute("DELETE FROM subscribers WHERE source = 'membership' AND email = ?", [(string) $m['email']]);
             return ['ok' => true, 'message' => 'The personal data of ' . $m['application_ref'] . ' was erased. The number, fee and receipts were kept.', 'ref' => $m['application_ref']];
         });

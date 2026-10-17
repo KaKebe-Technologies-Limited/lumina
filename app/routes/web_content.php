@@ -46,7 +46,7 @@ $router->post('/subscribe', [SubscribeController::class, 'store'])
     ->name('subscribe.store')->middleware(['honeypot', 'throttle:5,600']);
 $router->get('/unsubscribe/{token}', [SubscribeController::class, 'showUnsubscribe'])->name('unsubscribe.show');
 $router->post('/unsubscribe/{token}', [SubscribeController::class, 'confirmUnsubscribe'])
-    ->name('unsubscribe.confirm')->middleware(['throttle:20,600']);
+    ->name('unsubscribe.confirm')->middleware(['csrf.exempt', 'throttle:20,600']);      // exempt: also receives the RFC 8058 one-click POST from mail clients; the controller checks CSRF itself for the form
 
 // ---- Privacy policy ----------------------------------------------------------------------------------------------------------
 $router->get('/privacy', [PrivacyController::class, 'index'])->name('privacy.index');

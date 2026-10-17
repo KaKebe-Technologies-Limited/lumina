@@ -156,6 +156,7 @@ $meta = page_meta('home');
 check('page_meta fields', $meta['title'] !== '' && str_starts_with($meta['canonical'], 'http') && $meta['robots'] === 'index,follow');
 
 require __DIR__ . '/selftest-membership.php';     // membership service checks (creates and removes its own test data)
+require __DIR__ . '/selftest-newsletter.php';     // newsletter schema / service / renderer / SMTP driver checks (starts and stops the mock SMTP server, removes its own test data)
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);

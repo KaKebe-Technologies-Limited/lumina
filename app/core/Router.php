@@ -175,8 +175,10 @@ final class Router
         $request->setParams(array_map('strval', $params));
 
         $middleware = $matched->middleware;
-        if ($request->isUnsafe() && !in_array('csrf', $middleware, true)) {
-            array_unshift($middleware, 'csrf');          // global CSRF protection
+        // global CSRF protection. 'csrf.exempt' is the ONE opt-out, for endpoints a mail client calls without a page (RFC 8058 one-click
+        // unsubscribe): such a handler MUST verify the request itself (see SubscribeController::confirmUnsubscribe).
+        if ($request->isUnsafe() && !in_array('csrf', $middleware, true) && !in_array('csrf.exempt', $middleware, true)) {
+            array_unshift($middleware, 'csrf');
         }
 
         $core = function (Request $request) use ($matched, $params): Response {

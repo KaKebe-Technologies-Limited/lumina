@@ -52,6 +52,16 @@ return [
         'driver'    => $mailDriver,
         'from'      => Env::get('MAIL_FROM', 'no-reply@luminaafricafoundation.com'),
         'from_name' => Env::get('MAIL_FROM_NAME', 'Lumina Africa Foundation'),
+        // MAIL_DRIVER=smtp only (App\Core\Smtp). The SMTP login lives ONLY in .env: never in the database, never in logs.
+        'smtp'      => [
+            'host'       => trim((string) Env::get('MAIL_HOST', '')),
+            'port'       => Env::int('MAIL_PORT', 587),
+            'username'   => (string) Env::get('MAIL_USERNAME', ''),
+            'password'   => (string) Env::get('MAIL_PASSWORD', ''),
+            'encryption' => strtolower(trim((string) Env::get('MAIL_ENCRYPTION', ''))) ?: (Env::int('MAIL_PORT', 587) === 465 ? 'ssl' : 'tls'),   // ssl | tls | none
+            'timeout'    => Env::int('MAIL_TIMEOUT', 20),
+            'cafile'     => (string) Env::get('MAIL_CAFILE', ''),         // optional CA bundle; certificate checks stay ON
+        ],
     ],
     'auth' => [
         'max_failures'    => 5,     // per IP+email within the window
@@ -89,12 +99,15 @@ return [
         'members.manage'  => ['admin', 'editor'],   // membership applications: view, approve/reject, payments, receipts, notes (never public, never anonymous)
         'members.delete'  => ['admin'],             // delete a member record that has no payments
         'members.types'   => ['admin'],             // membership types = the FEE CONFIGURATION (create, change fees, deactivate)
+        'newsletter.manage' => ['admin', 'editor'], // newsletter issues: create, edit, duplicate, preview, publish, schedule, unpublish, archive, delete drafts (docs/NEWSLETTER.md)
+        'newsletter.delete_published' => ['admin'], // delete an issue that is (or was) public
+        'newsletter.send' => ['admin'],             // EVERYTHING about e-mailing an issue: settings, test sends, campaign, retries
     ],
 
     /** Slugs a custom page may NOT use (they are real routes or folders). */
     'reserved_slugs' => [
         'admin', 'assets', 'uploads', 'api', 'login', 'logout', 'index', 'storage', 'app', 'bin', 'database', 'docs', 'scss', 'tools',
         'vendor', 'sitemap', 'sitemap-xml', 'robots', 'robots-txt', 'subscribe', 'unsubscribe', 'search', 'download', 'downloads',
-        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install',
+        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter',
     ],
 ];

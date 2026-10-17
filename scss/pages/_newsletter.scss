@@ -1,0 +1,375 @@
+// pages/_newsletter.scss - WEB agent. The newsletter pages (/newsletter, /newsletter/archive, /newsletter/{slug}) AND the admin live preview, which
+// loads this same stylesheet (body classes page-newsletter, page-newsletter--preview). Imported by main.scss. Every rule is scoped under
+// .page-newsletter. The issue markup comes from app/views/web/newsletter/_issue.php, _featured.php and blocks/*.php (class names nl-*).
+// Reuses: page-hero (masthead), .prose (reading-prose mixin of pages/_blog), .eyebrow, .btn, .link-arrow, .card / .post-card, .subscribe-box,
+// .share, .pagination, .empty-state (re-declared below because pages/_blog scopes it to its own body classes).
+// Design: editorial and quiet - a navy masthead in the page-hero language with the cover photo overlapping the white sheet, a cream featured
+// panel, serif headings (Fraunces via $font-display), sans body, generous whitespace, soft rounded images, one orange call to action.
+// Inside nested blocks the block name is written out in full (a `&--x` after a nested selector repeats the whole parent chain).
+
+.page-newsletter {
+    // how far the cover photo climbs into the masthead (the white sheet is --radius-sheet tall)
+    --nl-overlap: calc(var(--radius-sheet) + 2.25rem);
+
+    // ---- the admin preview document: no site chrome, the issue fills the frame ------------------------------------------
+    &--preview .nl-page { max-width: none; padding-inline: 0; }
+
+    .nl-preview-banner {
+        margin: 0;
+        padding: $space-3 $space-4;
+        background: $navy-dark;
+        color: $white;
+        font-family: $font-heading;
+        font-size: $fs-sm;
+        font-weight: 600;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: $z-header - 1;          // below the site header
+    }
+    // on the full page (site header present) it sticks right under the shrunk header
+    &.has-sticky-header .nl-preview-banner { top: $header-h-shrunk; }
+
+    // ---- masthead (page-hero language) --------------------------------------------------------------------------------------
+    .nl-issue { display: block; }
+
+    .nl-hero {
+        .nl-hero__inner { max-width: $container; }
+        &--cover { padding-bottom: calc(var(--nl-overlap) + #{$space-5}); @include respond(lg) { padding-bottom: calc(var(--nl-overlap) + #{$space-7}); } }
+    }
+    .nl-issue__meta { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3 $space-4; margin: 0 0 $space-3; }
+    .nl-issue__label { margin: 0; }
+    // the shared gold badge is a 28 % tint: on the dark masthead it would drop under 4.5:1, so it turns solid gold there
+    .nl-issue__badge { transform: translateY(-0.28rem); background: $gold; color: $navy-dark; }
+    // the h1 carries only .nl-issue__title (bin/selftest-newsletter.php pins that markup), so it repeats the page-hero title look here
+    .nl-issue__title {
+        max-width: 26ch;
+        color: $white;
+        line-height: 1.1;
+        font-size: fluid(2.25rem, '1.4rem + 3.4vw', 4.1rem);
+        overflow-wrap: anywhere;
+        text-wrap: balance;
+    }
+    .nl-issue__summary { max-width: 42rem; }
+
+    .nl-issue__main { @include container($container); }
+
+    .nl-issue__cover {
+        position: relative;
+        z-index: 3;
+        margin: calc(-1 * var(--nl-overlap)) 0 $space-7;
+        img {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            object-position: 50% 28%;            // never crop the faces off a group photo
+            border-radius: $radius-photo;
+            background: $tint-cool;
+            box-shadow: $shadow-lg;
+        }
+        @include respond(md) { margin-bottom: $space-8; img { aspect-ratio: 16 / 9; border-radius: $radius-panel; } }
+    }
+
+    .is-broken { display: none !important; }          // set by assets/js/newsletter.js for a picture whose file is missing
+
+    // ---- figures --------------------------------------------------------------------------------------------------------------
+    .nl-figure {
+        margin: 0;
+        img { display: block; width: 100%; height: auto; border-radius: $radius-photo; background: $tint-cool; box-shadow: $shadow-card; }
+        figcaption { margin-top: $space-3; font-size: $fs-sm; line-height: 1.5; color: $ink-soft; }
+    }
+
+    // ---- featured article: the big one (cream panel, photo beside the text from lg) -------------------------------------------------------
+    .nl-featured {
+        display: grid;
+        gap: $space-5;
+        margin: 0 0 $space-7;
+        padding: $space-5;
+        border-radius: $radius-card;
+        background: $surface;
+        @include respond(md) { gap: $space-6; margin-bottom: $space-8; padding: $space-7; border-radius: $radius-panel; }
+        @include respond(lg) { padding: $space-8; }
+    }
+    .nl-featured--has-image {
+        @include respond(lg) { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: $space-8; align-items: center; }
+    }
+    .nl-featured:not(.nl-featured--has-image) .nl-featured__body { width: 100%; max-width: 48rem; margin-inline: auto; }          // width: 100% - an auto margin alone would shrink a grid item
+    .nl-figure--featured img { aspect-ratio: 4 / 3; object-fit: cover; object-position: 50% 28%; }
+    .nl-featured__label { margin-bottom: $space-3; }
+    .nl-featured__title {
+        margin: 0 0 $space-4;
+        font-family: $font-display;
+        font-size: fluid(1.7rem, '1.25rem + 1.7vw', 2.7rem);
+        line-height: 1.15;
+        color: $navy;
+        overflow-wrap: anywhere;
+        text-wrap: balance;
+    }
+    .nl-featured__link { margin: $space-5 0 0; }
+
+    // ---- blocks ---------------------------------------------------------------------------------------------------------------
+    .nl-issue__blocks { display: block; }
+    .nl-issue__main > :last-child { margin-bottom: 0; }          // the section after the issue brings its own space
+    .nl-issue__blocks > :last-child { margin-bottom: 0; }
+    .nl-block { margin: 0 0 $space-7; @include respond(md) { margin-bottom: $space-8; } }
+    .nl-block__title {
+        margin: 0 0 $space-3;
+        font-family: $font-display;
+        font-size: fluid(1.45rem, '1.15rem + 1.1vw', 2.05rem);
+        line-height: 1.2;
+        color: $navy;
+        overflow-wrap: anywhere;
+    }
+    .nl-block__link { margin: $space-4 0 0; }
+    .nl-prose { @include reading-prose; min-width: 0; }
+    .nl-featured__body, .nl-block__body { min-width: 0; }          // grid items must not grow to a wide table inside the text: the table scrolls instead
+    .nl-block--article .nl-prose { font-size: $fs-base; line-height: 1.75; }
+    // headings an editor types INSIDE an article stay smaller than the article's own title (.nl-block__title), so the outline reads right
+    .nl-prose h2 { font-size: fluid(1.2rem, '1.1rem + 0.3vw', 1.4rem); }
+    .nl-prose h3 { font-size: fluid(1.1rem, '1.05rem + 0.2vw', 1.2rem); }
+
+    // an article without a picture sits in a reading column; with a picture it is a two-column row (sides alternate)
+    .nl-block--article:not(.nl-block--has-image) { max-width: 46rem; margin-inline: auto; }
+    .nl-block--has-image {
+        display: grid;
+        gap: $space-5;
+        .nl-figure img { max-height: 32rem; object-fit: cover; object-position: 50% 28%; }
+        @include respond(md) { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: $space-7; align-items: center; }
+    }
+    .nl-block--has-image:nth-of-type(even) .nl-figure { @include respond(md) { order: 2; } }
+
+    .nl-block--image { max-width: 60rem; margin-inline: auto; }
+
+    // pull quote
+    .nl-block--quote {
+        max-width: 52rem;
+        margin-inline: auto;
+        padding: $space-6 $space-5;
+        border-radius: $radius-card;
+        background: $tint-cool;
+        text-align: center;
+        @include respond(md) { padding: $space-8 $space-7; border-radius: $radius-panel; }
+    }
+    .nl-quote__mark {
+        display: inline-grid;
+        place-items: center;
+        width: 3.25rem;
+        height: 3.25rem;
+        margin-bottom: $space-4;
+        border-radius: 50%;
+        background: $navy;
+        color: $gold;
+    }
+    .nl-quote {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        font-family: $font-display;
+        font-size: fluid(1.3rem, '1.05rem + 1.1vw', 2rem);
+        font-weight: 500;
+        line-height: 1.4;
+        font-style: normal;
+        color: $navy;
+        text-wrap: balance;
+        p { margin: 0 0 $space-3; }
+        p:last-child { margin-bottom: 0; }
+    }
+    .nl-quote__cite {
+        margin-top: $space-4;
+        font-family: $font-heading-caps;
+        font-size: $fs-xs;
+        font-weight: 600;
+        font-style: normal;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: $ink-soft;
+        &::before { content: ''; display: block; width: 2.25rem; height: 3px; margin: 0 auto $space-3; border-radius: 3px; background: $gold; }
+    }
+
+    // button and divider
+    .nl-block--button { text-align: center; }
+    .nl-block--button + .nl-block--button { margin-top: calc(-1 * #{$space-5}); }
+    .nl-block--divider { width: 4.5rem; height: 3px; margin-inline: auto; border: 0; border-radius: 3px; background: $gold; }
+
+    // preview hooks: the editor's "click a block to edit it" outlines
+    .nl-issue--preview [data-nl-block] {
+        cursor: pointer;
+        outline: 2px solid transparent;
+        outline-offset: 6px;
+        border-radius: $radius;
+        transition: outline-color $t-fast $ease;
+        &:hover { outline-color: rgba($orange-text, 0.45); }
+        &:focus-visible, &.is-active { outline-color: $orange-text; }
+    }
+    .nl-issue--preview .nl-hero[data-nl-block] {
+        border-radius: 0;
+        outline-offset: -6px;
+        &:hover { outline-color: rgba($gold, 0.6); }
+        &:focus-visible, &.is-active { outline-color: $gold; }
+    }
+    .nl-issue--preview .nl-block--divider[data-nl-block] { outline-offset: 12px; }
+
+    // ---- after the issue: previous / next, archive link, share ---------------------------------------------------------------------
+    .nl-after.section { padding-block: $space-7 $space-8; @include respond(md) { padding-top: $space-8; } }
+    .nl-after__inner { max-width: 56rem; margin-inline: auto; }
+    .nl-pager {
+        display: grid;
+        gap: $space-4;
+        margin: 0 0 $space-6;
+        @include respond(md) { grid-template-columns: 1fr 1fr; }
+    }
+    .nl-pager__link {
+        display: flex;
+        align-items: center;
+        gap: $space-4;
+        padding: $space-4 $space-5;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        background: $white;
+        box-shadow: $shadow-sm;
+        text-decoration: none;
+        color: $navy;
+        transition: border-color $t-fast $ease, box-shadow $t-fast $ease;
+        &:hover { border-color: $navy; box-shadow: $shadow-card; }
+        &:hover .nl-pager__title { color: $orange-text; }
+    }
+    .nl-pager__link--next { text-align: right; @include respond(md) { grid-column: 2; } }
+    .nl-pager__link--next .nl-pager__label { justify-content: flex-end; }
+    .nl-pager__thumb { flex: 0 0 4.5rem; width: 4.5rem; height: 4.5rem; object-fit: cover; border-radius: $radius; }
+    .nl-pager__text { flex: 1; min-width: 0; }
+    .nl-pager__label {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-family: $font-heading-caps;
+        font-size: $fs-xs;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: $orange-text;
+    }
+    .nl-pager__title { display: block; margin-top: $space-1; font-family: $font-display; font-size: $fs-lg; line-height: 1.3; color: $navy; @include line-clamp(2); transition: color $t-fast $ease; }
+    .nl-links { display: flex; flex-wrap: wrap; gap: 0 $space-6; margin: 0; }
+    .nl-links .link-arrow { min-height: 2.75rem; }
+
+    .nl-subscribe { padding-top: 0; }
+    .nl-subscribe__note { max-width: 40rem; margin: $space-3 auto 0; text-align: center; }
+
+    // printed copies end with the address of the issue; hidden on screen
+    .nl-print-source { display: none; }
+
+    // ---- archive grid (card language of the blog listing) ----------------------------------------------------------------------------
+    .nl-archive .post-card--feature + .post-grid { margin-top: $space-7; }
+    .nl-card__meta { align-items: center; }
+    .nl-card .link-arrow { min-height: 2.75rem; }
+    .nl-card .card__title a { color: inherit; text-decoration: none; &:hover { color: $orange-text; } }
+    // no cover: navy tile with the issue number (same tile as the blog's photo placeholder)
+    .nl-card__media--ph { display: grid; place-items: center; }
+    .nl-card__num {
+        display: inline-grid;
+        place-items: center;
+        min-width: 5.5rem;
+        height: 5.5rem;
+        padding: 0 1.1rem;
+        border: 1.5px solid rgba($gold, 0.55);
+        border-radius: $radius-pill;
+        background: rgba($white, 0.06);
+        font-family: $font-display;
+        font-size: 2.25rem;
+        font-weight: 700;
+        line-height: 1;
+        color: $gold;
+    }
+
+    // ---- empty state: warm card with a round navy icon (pages/_blog scopes its own copy to other body classes) ---------------------------
+    .empty-state {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        padding: $space-8 $space-5;
+        border: 1px solid $line;
+        border-radius: $radius-panel;
+        background: $white;
+        box-shadow: $shadow-card;
+        color: $ink-soft;
+        text-align: center;
+        &::before, &::after { content: ''; position: absolute; z-index: -1; border-radius: 50%; pointer-events: none; }
+        &::before { top: -4.5rem; right: -3.5rem; width: 14rem; height: 14rem; background: rgba($gold, 0.2); }
+        &::after { bottom: -6rem; left: -4rem; width: 15rem; height: 15rem; background: $tint-cool; }
+        @include respond(md) { padding: $space-9 $space-7; }
+    }
+    .empty-state__icon {
+        display: inline-grid;
+        place-items: center;
+        width: 5.25rem;
+        height: 5.25rem;
+        margin-bottom: $space-4;
+        border-radius: 50%;
+        background: $navy;
+        color: $gold;
+        box-shadow: 0 0 0 8px rgba($gold, 0.22);
+    }
+    .empty-state__title { font-family: $font-display; font-size: fluid(1.6rem, '1.3rem + 1.2vw', 2.2rem); color: $navy; }
+    .empty-state__text { max-width: 36rem; margin: $space-3 auto 0; font-size: $fs-base; line-height: 1.65; }
+}
+
+// ---- print: an issue on paper (no chrome, black on white, link addresses spelled out, blocks kept whole) ----------------------------------------
+@media print {
+    @page { margin: 16mm 14mm; }
+
+    .page-newsletter {
+        background: #fff;
+        color: #000;
+
+        .topbar, .site-header, .footer-pre, .site-footer, .back-to-top, .skip-link, .breadcrumbs, .nl-after, .nl-subscribe, .share, .nl-preview-banner, .nl-issue__badge { display: none !important; }
+        [data-reveal] { opacity: 1 !important; transform: none !important; }
+
+        .nl-hero, .nl-hero--cover {
+            padding: 0 0 6mm;
+            overflow: visible;
+            background: none !important;
+            color: #000;
+            &::before, &::after { display: none !important; }
+        }
+        .nl-hero .eyebrow { color: #000; }
+        .nl-issue__title { max-width: none; font-size: 26pt; color: #000; }
+        .nl-issue__summary { color: #333; font-size: 12pt; }
+        .nl-issue__main { max-width: none; padding-inline: 0; }
+
+        .nl-issue__cover { margin: 0 0 8mm; img { max-height: 90mm; aspect-ratio: auto; box-shadow: none; border-radius: 0; } }
+        .nl-figure img, .nl-pager__thumb { box-shadow: none; border-radius: 0; max-height: 90mm; width: auto; max-width: 100%; margin-inline: auto; }
+        .nl-featured { display: block; padding: 0 0 6mm; margin: 0 0 8mm; background: none; border-bottom: 1px solid #999; border-radius: 0; }
+        .nl-featured .nl-figure { margin-bottom: 5mm; }
+        .nl-featured__title, .nl-block__title { color: #000; }
+        .nl-block, .nl-block--has-image { display: block; margin: 0 0 8mm; break-inside: avoid; }
+        .nl-block--has-image .nl-figure { margin-bottom: 4mm; }
+        .nl-block--article:not(.nl-block--has-image), .nl-block--quote, .nl-block--image { max-width: none; }
+        .nl-block--quote { padding: 4mm 0 4mm 6mm; border-left: 3px solid #666; border-radius: 0; background: none; text-align: left; }
+        .nl-quote__mark { display: none; }
+        .nl-quote, .nl-quote__cite { color: #000; }
+        .nl-quote__cite::before { margin-left: 0; }
+        .nl-prose, .nl-prose a { color: #000; }
+        .nl-prose blockquote { padding: 2mm 0 2mm 5mm; border-left: 3px solid #666; border-radius: 0; background: none; color: #000; &::before { display: none; } }
+        .nl-prose img { box-shadow: none; border-radius: 0; }
+        .nl-prose a { text-decoration: underline; }
+        figure, blockquote, h2, h3 { break-inside: avoid; }
+        h2, h3 { break-after: avoid; }
+
+        .btn { border: 1px solid #000; background: none !important; box-shadow: none; color: #000 !important; }
+        .btn .icon, .link-arrow .icon { display: none; }
+        .nl-prose a[href^='http']::after, .nl-block__link a[href^='http']::after, .nl-featured__link a[href^='http']::after, .nl-block--button a[href^='http']::after,
+        .nl-prose a[data-print-url]::after, .nl-block__link a[data-print-url]::after, .nl-featured__link a[data-print-url]::after, .nl-block--button a[data-print-url]::after {
+            content: ' (' attr(href) ')';
+            font-size: 0.85em;
+            font-weight: 400;
+            word-break: break-all;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        // site-relative links: newsletter.js puts the full address in data-print-url just before printing
+        .nl-prose a[data-print-url]::after, .nl-block__link a[data-print-url]::after, .nl-featured__link a[data-print-url]::after, .nl-block--button a[data-print-url]::after { content: ' (' attr(data-print-url) ')'; }
+        .nl-print-source { display: block; margin: 8mm 0 0; padding-top: 3mm; border-top: 1px solid #999; font-size: 10pt; word-break: break-all; }
+    }
+}

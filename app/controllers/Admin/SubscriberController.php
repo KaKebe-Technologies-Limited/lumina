@@ -10,6 +10,7 @@ use App\Core\Flash;
 use App\Core\Mailer;
 use App\Core\Request;
 use App\Core\Response;
+use App\Models\NewsletterDelivery;
 use App\Models\Subscriber;
 use App\Services\Inbox\Support;
 use App\Services\Inbox\Where;
@@ -153,8 +154,11 @@ final class SubscriberController extends InboxController
     {
         $this->authorize('inbox.manage', 'inbox.delete');
         $s = Subscriber::findOrFail($id);
-        Subscriber::delete($id);
-        $this->audit('subscriber.delete', 'subscriber', $id, 'Deleted subscriber ' . $s['email']);
+        Database::transaction(static function () use ($id, $s): void {
+            NewsletterDelivery::erase([$id], [(string) $s['email']]);       // the address must not stay in any e-mail campaign record
+            Subscriber::delete($id);
+        });
+        $this->audit('subscriber.delete', 'subscriber', $id, 'Deleted a subscriber (the address is not kept in the activity log)');
         Flash::success($s['email'] . ' was deleted.');
         return $this->back('admin/subscribers');
     }
@@ -173,7 +177,11 @@ final class SubscriberController extends InboxController
 
         if ($action === 'delete') {
             $this->authorize('inbox.delete');
-            $n = Database::execute("DELETE FROM subscribers WHERE id IN ({$marks})", $ids);
+            $emails = array_column(Database::all("SELECT email FROM subscribers WHERE id IN ({$marks})", $ids), 'email');
+            $n = Database::transaction(static function () use ($ids, $emails, $marks): int {
+                NewsletterDelivery::erase($ids, $emails);
+                return Database::execute("DELETE FROM subscribers WHERE id IN ({$marks})", $ids);
+            });
             $this->audit('subscriber.bulk_delete', 'subscriber', null, 'Deleted ' . $this->items($n, 'subscriber'), ['ids' => $ids]);
             Flash::success($this->items($n, 'subscriber') . ' deleted.');
         } elseif ($action === 'unsubscribe') {

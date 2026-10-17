@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers\Web;
 
 use App\Core\Controller;
+use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Flash;
 use App\Core\Honeypot;
@@ -20,7 +21,8 @@ use App\Models\Subscriber;
  *                                   An opt-out is never reversed by this form; resubscribing needs the token link or staff.
  *   GET  /subscribe                 sends visitors to the home page (the sign-up boxes post here).
  *   GET  /unsubscribe/{token}       asks for confirmation (so mail scanners that open links cannot unsubscribe people).
- *   POST /unsubscribe/{token}       action=unsubscribe | resubscribe
+ *   POST /unsubscribe/{token}       action=unsubscribe | resubscribe (page form, CSRF checked here) OR the RFC 8058 one-click POST "List-Unsubscribe=One-Click"
+ *                                   sent by mail clients for the List-Unsubscribe-Post header of newsletter e-mails (no CSRF token possible; the token in the URL is the credential)
  * Messages come from the "site_newsletter" registry page. Tokens are 40 hex characters (subscribers.token).
  */
 final class SubscribeController extends Controller
@@ -74,6 +76,21 @@ final class SubscribeController extends Controller
 
     public function confirmUnsubscribe(Request $request, string $token): Response
     {
+        // RFC 8058 one-click unsubscribe: a mail client POSTs "List-Unsubscribe=One-Click" to the URL of the List-Unsubscribe header, without a page
+        // and therefore without a CSRF token (the route is csrf.exempt). The unguessable 40-character token is the credential; the effect is
+        // immediate and idempotent, and the reply is a plain 200 with no redirect and no cookie.
+        if ($request->post('List-Unsubscribe') === 'One-Click') {
+            $sub = $this->subscriberByToken($token);
+            if ($sub['status'] !== 'unsubscribed') {
+                Database::update('subscribers', ['status' => 'unsubscribed', 'unsubscribed_at' => date('Y-m-d H:i:s')], 'id = ?', [(int) $sub['id']]);
+            }
+            return Response::text("OK
+", 200)->header('Cache-Control', 'no-store');
+        }
+        // the page form: the route does not verify CSRF for us any more, so do it here
+        if (!Csrf::verify($request)) {
+            throw new HttpException(419, 'Page expired');
+        }
         $sub = $this->subscriberByToken($token);
         $action = $request->string('action', 'unsubscribe');
 

@@ -77,6 +77,9 @@ final class Middleware
             return $next($request);
         });
 
+        // marker only (see Router::dispatch): the route handles its own request verification
+        self::register('csrf.exempt', static fn(Request $request, callable $next) => $next($request));
+
         self::register('auth', static function (Request $request, callable $next) {
             if (!Auth::check()) {
                 if ($request->expectsJson()) {

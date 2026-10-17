@@ -82,7 +82,45 @@ final class Request
 
     public static function capture(): self
     {
-        return self::$current = new self($_SERVER, $_GET, $_POST, $_FILES, $_COOKIE);
+        return self::$current = new self($_SERVER, $_GET, self::bodyInput($_SERVER, $_POST), $_FILES, $_COOKIE);
+    }
+
+    /**
+     * JSON API support (additive): a POST/PUT/PATCH/DELETE with "Content-Type: application/json" is decoded into the post bag, so controllers
+     * read it with post()/input()/string()/int() like a form (nested arrays and typed values stay intact). PUT/PATCH/DELETE with a
+     * urlencoded body (PHP fills $_POST only for POST) are parsed too. A body over 4 MB or invalid JSON leaves the bag untouched.
+     * Nothing changes for ordinary forms.
+     *
+     * @param array<string,mixed> $server
+     * @param array<string,mixed> $post
+     * @return array<string,mixed>
+     */
+    public static function bodyInput(array $server, array $post): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if (in_array($method, ['GET', 'HEAD', 'OPTIONS'], true)) {
+            return $post;
+        }
+        $type = strtolower((string) ($server['CONTENT_TYPE'] ?? $server['HTTP_CONTENT_TYPE'] ?? ''));
+        $json = str_starts_with($type, 'application/json');
+        $form = $method !== 'POST' && $post === [] && str_starts_with($type, 'application/x-www-form-urlencoded');
+        if (!$json && !$form) {
+            return $post;
+        }
+        $limit = 4 * 1024 * 1024;
+        if ((int) ($server['CONTENT_LENGTH'] ?? 0) > $limit) {
+            return $post;
+        }
+        $raw = (string) @file_get_contents('php://input', false, null, 0, $limit + 1);
+        if ($raw === '' || strlen($raw) > $limit) {
+            return $post;
+        }
+        if ($json) {
+            $data = json_decode(mb_check_encoding($raw, 'UTF-8') ? $raw : mb_scrub($raw, 'UTF-8'), true, 64);
+            return is_array($data) ? $data : $post;
+        }
+        parse_str($raw, $parsed);
+        return $parsed;
     }
 
     /** The request captured by App::run(); null on the CLI. */

@@ -682,3 +682,100 @@ CREATE TABLE IF NOT EXISTS `member_payments` (
   CONSTRAINT `fk_member_payments_member` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_member_payments_user` FOREIGN KEY (`recorded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================================================================================================================
+-- NEWSLETTER (see docs/NEWSLETTER.md). ADDITIVE and IDEMPOTENT: three new tables, no change to existing ones.
+-- `content` is LONGTEXT holding the structured JSON of the issue (MariaDB 10.4 stores JSON as LONGTEXT too; JSON_VALID keeps it honest on
+-- MariaDB and MySQL 8). Dates are stored in the application time zone (Africa/Kampala); the "is it live" test compares against a
+-- timestamp bound by PHP, never against the database server's NOW().
+-- ======================================================================================================================
+CREATE TABLE IF NOT EXISTS `newsletters` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` VARCHAR(160) NOT NULL,
+  `issue_number` INT UNSIGNED NULL,                 -- shown as "Issue No. N"; the editor suggests max+1; unique (ux_newsletters_number), the service gives a friendly error
+  `title` VARCHAR(190) NOT NULL,
+  `summary` VARCHAR(600) NULL,
+  `issue_date` DATE NOT NULL,
+  `cover_image` VARCHAR(255) NULL,                  -- uploads/ path (or bundled assets/ path); NULL = none
+  `cover_alt` VARCHAR(190) NULL,
+  `content` LONGTEXT NOT NULL,                      -- JSON, version 1 (docs/NEWSLETTER.md section 2)
+  `seo_title` VARCHAR(190) NULL,
+  `seo_description` VARCHAR(300) NULL,
+  `status` ENUM('draft','scheduled','published','archived') NOT NULL DEFAULT 'draft',
+  `publish_at` DATETIME NULL,                       -- scheduled issues go live when publish_at <= now (resolved lazily, no cron needed)
+  `published_at` DATETIME NULL,                     -- when it actually went live
+  `version` INT UNSIGNED NOT NULL DEFAULT 1,        -- optimistic locking: +1 on every content save
+  `email_enabled` TINYINT(1) NOT NULL DEFAULT 0,
+  `email_subject` VARCHAR(190) NULL,
+  `email_preheader` VARCHAR(190) NULL,
+  `email_status` ENUM('none','queued','sending','paused','sent','cancelled') NOT NULL DEFAULT 'none',
+  `email_total` INT UNSIGNED NOT NULL DEFAULT 0,
+  `email_sent` INT UNSIGNED NOT NULL DEFAULT 0,
+  `email_failed` INT UNSIGNED NOT NULL DEFAULT 0,
+  `email_started_at` DATETIME NULL,
+  `email_completed_at` DATETIME NULL,
+  `created_by` INT UNSIGNED NULL,
+  `updated_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_newsletters_slug` (`slug`),
+  KEY `ix_newsletters_status` (`status`, `publish_at`),
+  KEY `ix_newsletters_issue_date` (`issue_date`),
+  UNIQUE KEY `ux_newsletters_number` (`issue_number`),            -- NULLs allowed (several issues without a number); two issues can never share one
+  KEY `ix_newsletters_email_status` (`email_status`),
+  CONSTRAINT `chk_newsletters_content` CHECK (JSON_VALID(`content`)),
+  CONSTRAINT `fk_newsletters_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_newsletters_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Upgrade of a database that ran the first build of this feature (plain index on issue_number): earlier duplicates lose their number
+-- (it is optional), the plain index is replaced by a UNIQUE one. A no-op on a fresh install and when run again.
+SET @lumina_has_ux = (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND index_name = 'ux_newsletters_number');
+SET @lumina_ddl = IF(@lumina_has_ux = 0, 'UPDATE `newsletters` n JOIN (SELECT issue_number, MIN(id) AS keep_id FROM `newsletters` WHERE issue_number IS NOT NULL GROUP BY issue_number HAVING COUNT(*) > 1) d ON d.issue_number = n.issue_number AND n.id <> d.keep_id SET n.issue_number = NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_ddl = IF(@lumina_has_ux = 0, 'ALTER TABLE `newsletters` ADD UNIQUE KEY `ux_newsletters_number` (`issue_number`)', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_ix = (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND index_name = 'ix_newsletters_number');
+SET @lumina_ddl = IF(@lumina_has_ix > 0, 'ALTER TABLE `newsletters` DROP INDEX `ix_newsletters_number`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
+CREATE TABLE IF NOT EXISTS `newsletter_revisions` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `newsletter_id` INT UNSIGNED NOT NULL,
+  `version` INT UNSIGNED NOT NULL,                  -- the newsletters.version this snapshot was taken at
+  `title` VARCHAR(190) NOT NULL,
+  `content` LONGTEXT NOT NULL,                      -- JSON snapshot (content only; the issue details are not restored)
+  `source` VARCHAR(20) NOT NULL DEFAULT 'save',     -- save | autosave | publish | restore
+  `saved_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_newsletter_revisions_issue` (`newsletter_id`, `id`),
+  CONSTRAINT `chk_newsletter_revisions_content` CHECK (JSON_VALID(`content`)),
+  CONSTRAINT `fk_newsletter_revisions_issue` FOREIGN KEY (`newsletter_id`) REFERENCES `newsletters` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_newsletter_revisions_user` FOREIGN KEY (`saved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `newsletter_deliveries` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `newsletter_id` INT UNSIGNED NOT NULL,
+  `subscriber_id` INT UNSIGNED NULL,
+  `email` VARCHAR(190) NOT NULL,                    -- address of the campaign record (admin only; never logged)
+  `status` ENUM('queued','sent','failed','skipped') NOT NULL DEFAULT 'queued',
+  `attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `last_error` VARCHAR(255) NULL,                   -- short reason, never contains credentials or addresses
+  `sent_at` DATETIME NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_newsletter_deliveries_issue_email` (`newsletter_id`, `email`),   -- one row per address and issue: an issue is never sent twice to the same address
+  KEY `ix_newsletter_deliveries_status` (`newsletter_id`, `status`, `id`),
+  CONSTRAINT `fk_newsletter_deliveries_issue` FOREIGN KEY (`newsletter_id`) REFERENCES `newsletters` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_newsletter_deliveries_subscriber` FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
