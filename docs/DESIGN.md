@@ -166,7 +166,7 @@ Rules: never put `$gold` text on white; never use `$orange` / `$gold-deep` for s
 
 | Piece | File | Editable in Admin > Pages > "Site-wide content" (registry `global`) |
 |---|---|---|
-| Top bar | `partials/topbar.php` | section **Top bar** (on/off, show address / e-mail / phone, quick link = WhatsApp / Donate page / none + its text). Data: Settings > Contact. Mobile shows phone + quick link only. |
+| Top bar | `partials/topbar.php` | section **Top bar** (on/off, show address / e-mail / phone, quick link = WhatsApp / Donate page / none + its text). Data: Settings > Contact. Mobile shows phone + quick link only (the clock takes its own row above them when they do not fit side by side). Also holds the live **clock** (section **Date & time clock**: `clock.enabled / mode / timezone / hour12 / show_seconds / show_date / label / aria_label`; `App\Core\SiteClock` renders the first paint, `[data-clock]` in `main.js` ticks it; see "Top-bar clock" below). |
 | Header | `partials/site-header.php` | menu = Admin > Menus (`Nav::header()`), Donate pill = the page flagged `button` (`Nav::buttons()`); ARIA labels in **Common labels** |
 | Mobile drawer | in the header partial | focus trap, Esc, backdrop, close button, background `inert`, returns focus to the hamburger |
 | Footer | `partials/site-footer.php` | **Footer** section: description, partners heading, quick-links / programs headings, "show programs" switch, WhatsApp text, newsletter texts, copyright. Quick links = `Nav::footer()`; programs = active `programs`; contact + socials + reg. number = Settings; partners = `partners` table (strip hidden when empty). |
@@ -408,6 +408,13 @@ The reference order (top to bottom). Items 1, 2 and 12 are global chrome (done).
 
 ### 1. Top bar - DONE (`partials/topbar`)
 Address left; e-mail, phone and a WhatsApp/Donate quick link right. Editable in Site-wide content > Top bar. Nothing to build.
+
+#### Top-bar clock (`.clock`, `scss/layout/_topbar.scss`)
+Live date + time in the left group, e.g. `Uganda time: Fri, 16 Oct 2026 · 14:35:09 EAT`. Registry page `global`, section **Date & time clock** (organisation time zone or the visitor's device time, 12/24 hour, seconds, date, label). Rules:
+* PHP prints the first paint (`<time datetime>`, `data-epoch` = the server's Unix time), `main.js` (`[data-clock]`) updates it in place once per second (per minute when seconds are hidden), aligned to the boundary, paused while the tab is hidden, one timer per page. CSP-safe, no requests. Zone and DST maths use `Intl.DateTimeFormat` with `timeZone` (zone rules come from the visitor's browser, so a very unusual zone can differ from PHP's by an hour until the script runs). Organisation time follows the server's instant (`data-epoch`, skew measured once at load, ignored when the page came from the back/forward cache), so a wrong device clock does not change it; Visitor mode uses the device clock. Zone names come from `en-US` (EST/EDT/BST), PHP's abbreviation is kept while the UTC offset is unchanged.
+* `role="timer" aria-live="off"`, named by `clock.aria_label`; the icon is decorative. Navy-dark on gold = 7.0:1.
+* No layout shift: the clock uses the device UI font stack with tabular digits (DM Sans digits are proportional) and the time has a fixed min-width; the date, year, time and zone are each unbreakable. The contact items keep their normal breakpoints (phone + quick link on phones, e-mail from 576px, address from 992px); when the left group (address + clock) and the right group do not fit on one row, the right group drops to a second row instead of overlapping, and at 200% text size the clock wraps between its pieces. A long label is ellipsised (`max-width: 11em`, label is max 20 characters). Phones drop the label and the year. Nothing is cut off at 320px with 200% text. The clock is hidden for print.
+* It lives inside the top bar, so switching the top bar off hides the clock too.
 
 ### 2. Header - DONE (`partials/site-header`)
 White, sticky, logo left, centred menu (dropdowns), dark "Donate" pill right, drawer on mobile. Nothing to build.

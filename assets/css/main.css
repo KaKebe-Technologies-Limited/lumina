@@ -1025,11 +1025,18 @@ body.has-sticky-header .site-main {
   gap: 0.5rem 1.5rem;
   min-height: 38px;
   padding-block: 0.35rem;
+  flex-wrap: wrap;
 }
 
 @media (min-width: 768px) {
   .topbar__inner {
     padding-inline: 2rem;
+  }
+}
+
+@media (min-width: 576px) {
+  .topbar__group + .topbar__group {
+    margin-inline-start: auto;
   }
 }
 
@@ -1094,6 +1101,88 @@ body.has-sticky-header .site-main {
 @media (max-width: 575.98px) {
   .topbar__inner {
     justify-content: center;
+  }
+}
+
+.clock {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem 0.45rem;
+  flex: 0 1 auto;
+  min-width: 0;
+  font-weight: 500;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.clock .icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: none;
+}
+
+.clock__label {
+  font-weight: 700;
+  max-width: 11em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clock__label::after {
+  content: ':';
+}
+
+.clock__time {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0 0.3em;
+  min-width: 0;
+}
+
+.clock__date, .clock__year, .clock__hms, .clock__tz {
+  white-space: nowrap;
+}
+
+.clock__sep {
+  margin-inline: 0.25em;
+}
+
+.clock__hms {
+  display: inline-block;
+  min-width: 2.5em;
+}
+
+.clock--sec .clock__hms {
+  min-width: 3.85em;
+}
+
+.clock--12h .clock__hms {
+  min-width: 4.4em;
+}
+
+.clock--12h.clock--sec .clock__hms {
+  min-width: 5.75em;
+}
+
+.clock__label, .clock__year {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .clock__label, .clock__year {
+    display: inline;
+  }
+}
+
+@media print {
+  .clock {
+    display: none;
   }
 }
 

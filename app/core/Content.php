@@ -299,6 +299,9 @@ final class Content
             case 'image':
                 return self::cleanImagePath($s);
             default:   // text
+                if (($field['filter'] ?? '') === 'timezone') {   // IANA time zone (the top-bar clock): anything not in DateTimeZone::listIdentifiers() becomes the default
+                    return SiteClock::resolveTimezone($s);
+                }
                 $max = (int) ($field['maxlength'] ?? 500);
                 return trim(mb_substr(preg_replace('/\s+/u', ' ', strip_tags($s)) ?? '', 0, $max));
         }

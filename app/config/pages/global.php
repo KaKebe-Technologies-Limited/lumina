@@ -46,6 +46,20 @@ return [
             ],
         ],
         [
+            'key' => 'clock', 'label' => 'Date & time clock (in the top bar)',
+            'help' => 'A live clock in the top bar that shows today\'s date and the time and keeps counting by itself. It is part of the top bar, so it disappears if the top bar above is switched off.',
+            'fields' => [
+                ['key' => 'enabled', 'label' => 'Show the clock', 'type' => 'boolean', 'default' => true, 'help' => 'Off = no clock in the top bar.'],
+                ['key' => 'mode', 'label' => 'Which time to show', 'type' => 'select', 'options' => ['org' => 'Organisation time (same for every visitor)', 'visitor' => 'Visitor\'s own device time'], 'default' => 'org', 'help' => 'Organisation time uses the time zone below. "Visitor\'s own device time" shows each visitor their own local time and ignores the time zone below (until the page has loaded it shows the organisation time).'],
+                ['key' => 'timezone', 'label' => 'Organisation time zone', 'type' => 'text', 'filter' => 'timezone', 'maxlength' => 64, 'default' => 'Africa/Kampala', 'placeholder' => 'Africa/Kampala', 'help' => 'An official time zone name in the form Region/City, for example Africa/Kampala, Africa/Nairobi, Europe/London or America/New_York. Daylight saving changes are applied automatically. A name that is not recognised is replaced by Africa/Kampala when you save. If you change the time zone, also change the label below (it says "Uganda time" by default). Well-known zones are safest.'],
+                ['key' => 'hour12', 'label' => 'Use the 12-hour clock (2:35 PM)', 'type' => 'boolean', 'default' => false, 'help' => 'Off = 24-hour clock (14:35).'],
+                ['key' => 'show_seconds', 'label' => 'Show seconds', 'type' => 'boolean', 'default' => true, 'help' => 'Off = the clock shows hours and minutes only and updates once a minute.'],
+                ['key' => 'show_date', 'label' => 'Show the date', 'type' => 'boolean', 'default' => true, 'help' => 'The weekday, day, month and year. On small phones the year is left out to save space.'],
+                ['key' => 'label', 'label' => 'Small label before the time', 'type' => 'text', 'default' => 'Uganda time', 'maxlength' => 20, 'help' => 'A short name for the time zone, for example Uganda time. Change it together with the time zone. Shown only for Organisation time, and hidden on small phones. Leave empty to hide it.'],
+                ['key' => 'aria_label', 'label' => 'Screen-reader name of the clock', 'type' => 'text', 'default' => 'Current date and time', 'maxlength' => 60, 'help' => 'Only read aloud by screen readers. The clock never announces each second.'],
+            ],
+        ],
+        [
             'key' => 'donate_panel', 'label' => 'Donation panel (amount + buttons)', 'toggle' => true, 'default_visible' => true,
             'help' => 'The deep-navy "make a gift" panel used on the home page and elsewhere. It does NOT take payments: the amount is passed to the Donate page, where the visitor records a pledge, and the second button goes to the online donation link from Settings.',
             'fields' => [

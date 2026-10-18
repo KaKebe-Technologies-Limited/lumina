@@ -13,7 +13,9 @@
         gap: $space-2 $space-5;
         min-height: $topbar-h;
         padding-block: 0.35rem;
+        flex-wrap: wrap;                                // when the left and right groups do not fit side by side the right one drops to a second row (never overlaps)
     }
+    @include respond(sm) { &__group + &__group { margin-inline-start: auto; } }
     &__group { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem $space-5; min-width: 0; }
     &__item { display: inline-flex; align-items: center; gap: 0.45rem; min-width: 0; color: inherit; text-decoration: none; font-weight: 500; .icon { width: 0.95rem; height: 0.95rem; flex: none; } }
     a.topbar__item:hover { color: $navy-dark; text-decoration: underline; }
@@ -27,3 +29,41 @@
     &__inner { justify-content: space-between; }
     @include respond-down(sm) { &__inner { justify-content: center; } }
 }
+
+// ---- Live clock (partials/topbar.php, ticker in assets/js/main.js). Sits in the left group next to the address.
+// No layout shift: the text is server-rendered in the same format the script writes, digits are tabular and the time field has a fixed
+// width. Each piece (date, year, time, zone) is unbreakable, but the clock as a whole may wrap between pieces and shrink, so enlarged text
+// (200% zoom) and long label / address / quick-link texts wrap to another line instead of being cut off or painted over a neighbour.
+// Navy-dark on gold = 7.0:1 like the rest of the strip.
+.clock {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem 0.45rem;
+    flex: 0 1 auto;
+    min-width: 0;
+    font-weight: 500;
+    // DM Sans (Google Fonts) has proportional digits only, so the clock uses the device's UI font, whose digits are all the same width
+    // (tabular): the seconds ticking never nudges the text around it.
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+    .icon { width: 0.95rem; height: 0.95rem; flex: none; }
+
+    &__label { font-weight: 700; max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; &::after { content: ':'; } }
+    &__time { display: inline-flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 0 0.3em; min-width: 0; }
+    &__date, &__year, &__hms, &__tz { white-space: nowrap; }
+    &__sep { margin-inline: 0.25em; }
+    &__hms { display: inline-block; min-width: 2.5em; }                  // "14:35"  (digits are tabular, so only AM/PM could change the width)
+    &--sec &__hms { min-width: 3.85em; }                               // "14:35:09"
+    &--12h &__hms { min-width: 4.4em; }                                // "02:35 PM"
+    &--12h.clock--sec &__hms { min-width: 5.75em; }                    // "02:35:09 PM"
+
+    // phones and small tablets: no label and no year (keeps the clock short next to the phone number and quick link)
+    &__label, &__year { display: none; }
+    @include respond(md) { &__label, &__year { display: inline; } }
+}
+
+// A page printed from the browser must not carry a frozen "now" in its header
+@media print { .clock { display: none; } }

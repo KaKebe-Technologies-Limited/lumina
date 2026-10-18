@@ -174,7 +174,7 @@ final class PageRegistry
             'help'    => (string) ($f['help'] ?? ''),
             'default' => $f['default'] ?? self::emptyFor($type),
         ];
-        foreach (['maxlength', 'rows', 'min', 'max', 'step', 'placeholder', 'alt', 'item_label', 'add_label', 'max_rows', 'min_rows', 'required'] as $opt) {
+        foreach (['maxlength', 'rows', 'min', 'max', 'step', 'placeholder', 'alt', 'item_label', 'add_label', 'max_rows', 'min_rows', 'required', 'filter'] as $opt) {
             if (array_key_exists($opt, $f)) {
                 $out[$opt] = $f[$opt];
             }

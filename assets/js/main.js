@@ -12,6 +12,8 @@
  *   form[data-donate-panel] ([data-donate-input], [data-donate-chip][data-amount])   amount chips of the donation panel
  *   form (all)                                double-submit guard (opt-out: data-no-guard). Button text while sending: data-loading-text
  *   a[data-lightbox="group"]                  image lightbox with prev/next/Esc
+ *   [data-clock] (+ data-tz, data-mode org|visitor, data-hour12, data-seconds, data-date, data-abbr, data-offset, data-epoch)   top-bar clock; PHP prints the first
+ *                                             paint, one timer per page keeps it running on the second (minute when seconds are hidden), pauses while hidden
  *   [data-back-to-top]                        scroll-to-top button, appears after 600px
  *   select[data-autosubmit]                   submits its form on change (filters)
  *   [data-dismiss]                            closes the nearest .alert
@@ -437,6 +439,98 @@
         onScroll();
         window.addEventListener('scroll', onScroll, { passive: true });
         topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }));
+    }
+
+    // ------------------------------------------------------------------ top-bar clock (partials/topbar.php, App\Core\SiteClock)
+    // One timer for the whole page, aligned to the second (or minute) boundary, stopped while the tab is hidden and resynced on return.
+    // Intl.DateTimeFormat with the timeZone option does the zone / DST maths, so any IANA zone is right; PHP's text is only the first paint.
+    // Organisation time keeps time with the SERVER's instant (data-epoch), not with the visitor's device clock; visitor mode uses the device clock.
+    const clockEl = $('[data-clock]');
+    if (clockEl && window.Intl && Intl.DateTimeFormat) {
+        const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];   // same short names as PHP's "D" / "M"
+        const pad = (n) => (n < 10 ? '0' : '') + n;
+        const visitor = clockEl.dataset.mode === 'visitor';
+        const hour12 = clockEl.dataset.hour12 === '1';
+        const withSeconds = clockEl.dataset.seconds === '1';
+        const withDate = clockEl.dataset.date === '1';
+        const nodes = {
+            time: $('[data-clock-time]', clockEl), date: $('[data-clock-date]', clockEl), year: $('[data-clock-year]', clockEl),
+            hms: $('[data-clock-hms]', clockEl), tz: $('[data-clock-tz]', clockEl),
+        };
+        let fmt = null;
+        try {
+            fmt = new Intl.DateTimeFormat('en-US', {      // en-US only for its zone names (EST / EDT / BST...); en-GB gives "GMT-4"; the parts are formatted by hand below
+                ...(visitor ? {} : { timeZone: clockEl.dataset.tz }),
+                year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric',
+                hourCycle: 'h23', timeZoneName: 'short',
+            });
+        } catch (err) { fmt = null; }          // unknown zone in this browser: keep the server-rendered text
+        let nameGB = null;                     // second chance for zone names: en-GB says "BST" where en-US says "GMT+1"
+        try { nameGB = new Intl.DateTimeFormat('en-GB', { ...(visitor ? {} : { timeZone: clockEl.dataset.tz }), timeZoneName: 'short' }); } catch (err) { nameGB = null; }
+        const zoneName = (name, at) => {
+            if (nameGB && /^(GMT|UTC)[+-]/.test(name)) {
+                const alt = (nameGB.formatToParts(at).find((x) => x.type === 'timeZoneName') || {}).value || '';
+                if (alt && !/^(GMT|UTC)[+-]/.test(alt)) return alt.replace(/^(GMT|UTC)\+0$/, '$1');
+            }
+            return name;
+        };
+
+        if (fmt && nodes.time && nodes.hms) {
+            const serverAbbr = clockEl.dataset.abbr || '';
+            const serverOffset = Number(clockEl.dataset.offset);
+            let timer = 0;
+            let last = '';
+            // Organisation time: skew = (server's clock) - (device clock), measured once. Only trusted when this page came over the network
+            // just now (not from the back/forward or HTTP cache, where data-epoch is old). performance.now() - responseStart is the time
+            // since the server sent the page.
+            let skew = 0;
+            if (!visitor) {
+                const epoch = Number(clockEl.dataset.epoch);
+                const nav = window.performance && performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null;
+                if (epoch > 0 && nav && nav.type !== 'back_forward' && nav.transferSize > 0 && nav.responseStart > 0) {
+                    skew = epoch * 1000 + Math.max(0, performance.now() - nav.responseStart) - Date.now();
+                }
+            }
+
+            const render = () => {
+                const now = Date.now() + skew;
+                const sec = Math.floor(now / 1000) * 1000;
+                const p = {};
+                for (const part of fmt.formatToParts(sec)) p[part.type] = part.value;
+                const y = +p.year, mo = +p.month, d = +p.day, h = +p.hour, mi = +p.minute, s = +p.second;
+                const offsetMin = Math.round((Date.UTC(y, mo - 1, d, h, mi, s) - sec) / 60000);   // minutes east of UTC in the shown zone
+                // The browser names most African / Asian zones "GMT+3"; keep PHP's "EAT" while the offset still matches (organisation time only).
+                const intlName = zoneName((p.timeZoneName || '').replace(/^(GMT|UTC)\+0$/, '$1'), sec);
+                const abbr = !visitor && serverAbbr && offsetMin === serverOffset ? serverAbbr : intlName;
+                const hh = hour12 ? pad(h % 12 || 12) : pad(h);
+                const hms = hh + ':' + pad(mi) + (withSeconds ? ':' + pad(s) : '') + (hour12 ? (h < 12 ? ' AM' : ' PM') : '');
+                const dateText = DAYS[new Date(Date.UTC(y, mo - 1, d)).getUTCDay()] + ', ' + d + ' ' + MONTHS[mo - 1];
+                const key = dateText + y + hms + abbr + offsetMin;
+                if (key === last) return;      // nothing changed (minute-aligned ticks, or a resync inside the same second): no DOM write
+                last = key;
+                if (withDate && nodes.date) { nodes.date.textContent = dateText; if (nodes.year) nodes.year.textContent = ' ' + y; }
+                nodes.hms.textContent = hms;
+                if (nodes.tz) nodes.tz.textContent = abbr;
+                const sign = offsetMin < 0 ? '-' : '+';
+                const abs = Math.abs(offsetMin);
+                nodes.time.setAttribute('dateTime', y + '-' + pad(mo) + '-' + pad(d) + 'T' + pad(h) + ':' + pad(mi) + ':' + pad(s) + sign + pad(Math.floor(abs / 60)) + ':' + pad(abs % 60));
+            };
+
+            const step = withSeconds ? 1000 : 60000;
+            const schedule = () => {
+                window.clearTimeout(timer);
+                // +15ms so the callback never lands a hair before the boundary (it would repeat the previous second)
+                timer = window.setTimeout(() => { render(); schedule(); }, step - (Date.now() % step) + 15);
+            };
+            const start = () => { render(); schedule(); };
+            const stop = () => { window.clearTimeout(timer); timer = 0; };
+
+            document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else start(); });
+            window.addEventListener('pageshow', (e) => { if (e.persisted && !document.hidden) start(); });   // back/forward cache restore
+            window.addEventListener('pagehide', stop);
+            if (!document.hidden) start();
+        }
     }
 
     // ------------------------------------------------------------------ misc
