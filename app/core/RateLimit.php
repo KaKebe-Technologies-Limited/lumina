@@ -16,9 +16,13 @@ namespace App\Core;
  */
 final class RateLimit
 {
+    /**
+     * The stored key: a KEYED hash (HMAC with the application key), so the visitor address inside a throttle key cannot be recovered by
+     * trying every address (a plain sha1 of a short, guessable string can). 160 bits fit the CHAR(40) column.
+     */
     private static function k(string $key): string
     {
-        return sha1($key);
+        return substr(hash_hmac('sha256', $key, Config::appKey()), 0, 40);
     }
 
     /** Count a hit and return true while the caller is still within $max hits per $decay seconds. */
@@ -35,7 +39,7 @@ final class RateLimit
     {
         $k = self::k($key);
         $now = time();
-        if (random_int(1, 100) === 1) {
+        if (random_int(1, 20) === 1) {
             Database::execute('DELETE FROM rate_limits WHERE expires_at < ?', [$now]);
         }
         // ONE atomic statement (no read-then-write race): a new or expired window restarts at 1, otherwise the counter is incremented.

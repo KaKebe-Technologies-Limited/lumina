@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\SitePages;
 use App\Models\ContactMessage;
+use App\Services\Calendar\CalendarService;
 use App\Services\Web\FormMessages;
 
 /**
@@ -21,8 +22,11 @@ final class ContactController extends Controller
 {
     public function index(Request $request): Response
     {
+        $cal = $request->query('cal', '');                  // an array (?cal[]=) is ignored, never cast
         return $this->renderPage('contact', 'web/contact/index', [
             'mapUrl' => $this->embeddableMapUrl((string) setting('map_embed_url', '')),
+            // compact calendar under the form (null when switched off or while the calendar tables are missing); ?cal=YYYY-MM changes its month without JavaScript
+            'calendar' => CalendarService::embedData(is_string($cal) ? trim($cal) : ''),
         ], [
             'bodyClass'   => 'is-contact',
             'breadcrumbs' => [[(string) (SitePages::get('contact')['nav_label'] ?? 'Contact'), null]],

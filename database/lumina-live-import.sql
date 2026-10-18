@@ -789,6 +789,97 @@ CREATE TABLE IF NOT EXISTS `newsletter_deliveries` (
   CONSTRAINT `fk_newsletter_deliveries_subscriber` FOREIGN KEY (`subscriber_id`) REFERENCES `subscribers` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ======================================================================================================================
+-- CALENDAR & PROGRAMME SCHEDULER (see docs/CALENDAR.md). ADDITIVE and IDEMPOTENT: three new tables, no change to existing ones.
+-- Dates are plain DATEs / TIMEs in the application time zone (Africa/Kampala, no daylight saving); nothing here depends on the database
+-- server's time zone. Recurring entries are stored ONCE (rule in `recurrence` + `recurrence_data`); the date engine
+-- (App\Services\Calendar\*) expands them, so there are no generated rows to keep in step. `calendar_overrides` changes ONE occurrence
+-- (move, cancel, confirm) without touching the series. Visitor events are NOT copied: the engine reads the existing `events` table.
+-- ======================================================================================================================
+CREATE TABLE IF NOT EXISTS `calendar_types` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` VARCHAR(60) NOT NULL,
+  `name` VARCHAR(80) NOT NULL,
+  `color` CHAR(7) NOT NULL DEFAULT '#5a6470',          -- #rrggbb; the accessible text / tint colours are derived (ColorContrast::pair)
+  `icon` VARCHAR(40) NOT NULL DEFAULT 'calendar',      -- name from App\Core\Icons (colour is never the only cue)
+  `sort_order` INT NOT NULL DEFAULT 100,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `show_on_public` TINYINT(1) NOT NULL DEFAULT 1,      -- 0 = a type for the team only (never in the public calendar, feeds or filters)
+  `is_system` TINYINT(1) NOT NULL DEFAULT 0,           -- seeded types the engine knows by slug (event, uganda-holiday): rename / recolour yes, delete no
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_calendar_types_slug` (`slug`),
+  KEY `ix_calendar_types_order` (`is_active`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `calendar_entries` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `type_id` INT UNSIGNED NOT NULL,
+  `title` VARCHAR(190) NOT NULL,
+  `slug` VARCHAR(190) NOT NULL,
+  `description` TEXT NULL,                              -- small sanitised HTML (Sanitizer::html on save, rich() on output)
+  `location` VARCHAR(255) NULL,
+  `all_day` TINYINT(1) NOT NULL DEFAULT 1,
+  `start_date` DATE NOT NULL,                           -- first day; only a lower bound for the nth_weekday / easter / islamic rules
+  `end_date` DATE NULL,                                 -- last day of a multi-day entry (NULL = one day)
+  `start_time` TIME NULL,                               -- Africa/Kampala; NULL when all_day
+  `end_time` TIME NULL,
+  `recurrence` ENUM('none','daily','weekly','monthly','yearly','nth_weekday','easter','islamic') NOT NULL DEFAULT 'none',
+  `recurrence_data` TEXT NULL,                          -- JSON object, validated by RecurrenceRules::normalise (docs/CALENDAR.md section 3)
+  `repeat_until` DATE NULL,                             -- last day an occurrence may start
+  `program_id` INT UNSIGNED NULL,
+  `project_id` INT UNSIGNED NULL,
+  `event_id` INT UNSIGNED NULL,                         -- optional link to an existing event (the event page is linked from the entry)
+  `link_url` VARCHAR(500) NULL,                         -- http(s) only
+  `link_label` VARCHAR(120) NULL,
+  `color` CHAR(7) NULL,                                 -- optional per-entry colour override (NULL = the type colour)
+  `source_label` VARCHAR(190) NULL,                     -- e.g. "Public Holidays Act (Uganda)", "United Nations"
+  `source_url` VARCHAR(500) NULL,
+  `is_system` TINYINT(1) NOT NULL DEFAULT 0,            -- seeded holidays / international days: editable and hideable, never hard-deleted
+  `is_public` TINYINT(1) NOT NULL DEFAULT 1,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `needs_confirmation` TINYINT(1) NOT NULL DEFAULT 0,   -- "date to be confirmed" until an override with confirmed = 1 exists for the occurrence
+  `created_by` INT UNSIGNED NULL,
+  `updated_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_calendar_entries_slug` (`slug`),
+  KEY `ix_calendar_entries_public` (`is_active`, `is_public`, `start_date`),
+  KEY `ix_calendar_entries_type` (`type_id`),
+  KEY `ix_calendar_entries_program` (`program_id`),
+  KEY `ix_calendar_entries_project` (`project_id`),
+  KEY `ix_calendar_entries_event` (`event_id`),
+  CONSTRAINT `chk_calendar_entries_data` CHECK (`recurrence_data` IS NULL OR JSON_VALID(`recurrence_data`)),
+  CONSTRAINT `fk_calendar_entries_type` FOREIGN KEY (`type_id`) REFERENCES `calendar_types` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_calendar_entries_program` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_calendar_entries_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_calendar_entries_event` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_calendar_entries_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_calendar_entries_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `calendar_overrides` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `entry_id` INT UNSIGNED NOT NULL,
+  `occurrence_date` DATE NOT NULL,                      -- the day the RULE produces (not the moved day): identifies the occurrence
+  `new_date` DATE NULL,                                 -- moved to this day (same length); NULL = same day
+  `new_start_time` TIME NULL,                           -- moved to this time (with new_end_time, may be NULL = no end time)
+  `new_end_time` TIME NULL,
+  `cancelled` TINYINT(1) NOT NULL DEFAULT 0,
+  `confirmed` TINYINT(1) NOT NULL DEFAULT 0,            -- an admin confirmed the date (clears "date to be confirmed" for this occurrence)
+  `note` VARCHAR(300) NULL,                             -- shown to visitors (e.g. "Announced by the Uganda Muslim Supreme Council")
+  `updated_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_calendar_overrides_occurrence` (`entry_id`, `occurrence_date`),
+  KEY `ix_calendar_overrides_new_date` (`new_date`),
+  CONSTRAINT `fk_calendar_overrides_entry` FOREIGN KEY (`entry_id`) REFERENCES `calendar_entries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_calendar_overrides_user` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- ======================================================================
 -- PART: seed.sql
@@ -1162,4 +1253,144 @@ WHERE NOT EXISTS (SELECT 1 FROM newsletters);
 INSERT INTO newsletter_revisions (newsletter_id, version, title, content, source)
 SELECT n.id, n.version, n.title, n.content, 'save' FROM newsletters n
 WHERE n.slug = 'sample-issue-edit-or-delete-me' AND NOT EXISTS (SELECT 1 FROM newsletter_revisions r WHERE r.newsletter_id = n.id);
+
+-- ------------------------------------------------------------------ calendar (see docs/CALENDAR.md). ADDITIVE and IDEMPOTENT.
+-- Same rules as the rest of this file: a row is refreshed from here ONLY while it is pristine (updated_at = created_at); a row an admin
+-- edited, hid or confirmed is never overwritten. Per-occurrence changes (moving / confirming an Eid date) live in calendar_overrides,
+-- which this file never touches, and they do not mark the entry as edited.
+-- NO Lumina programme session is seeded: the owner adds those in Admin > Calendar.
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('calendar_week_start', 'monday'),
+  ('calendar_show_on_contact', '1'),
+  ('calendar_default_types', '')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Page: /calendar, a child of Contact in the menus (header dropdown + footer). All copy comes from app/config/pages/calendar.php.
+-- parent_slug is looked up so the statement also works on a database whose `contact` row is not there yet (then it is NULL).
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug)
+SELECT 'calendar', 'Calendar', 'registry', 'default', 1, 1, 1, 'Calendar', 91, (SELECT p.slug FROM pages p WHERE p.slug = 'contact')
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(title), pages.title),
+  type = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(type), pages.type),
+  template = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(template), pages.template),
+  is_published = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(is_published), pages.is_published),
+  show_in_nav = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(show_in_nav), pages.show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(show_in_footer), pages.show_in_footer),
+  nav_label = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(nav_label), pages.nav_label),
+  nav_order = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(nav_order), pages.nav_order),
+  parent_slug = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(parent_slug), pages.parent_slug),
+  updated_at = IF((@reseed = 1 OR pages.updated_at = pages.created_at), pages.created_at, pages.updated_at);
+
+-- Entry types (names and colours are editable in Admin > Calendar > Types; the colour pairs are checked for AA contrast by bin/selftest-calendar.php).
+INSERT INTO calendar_types (slug, name, color, icon, sort_order, is_active, show_on_public, is_system) VALUES
+  ('programme',         'Programme session',          '#2f6f7a', 'graduation-cap', 10, 1, 1, 0),
+  ('event',             'Event',                      '#b4540f', 'calendar',       20, 1, 1, 1),
+  ('uganda-holiday',    'Uganda public holiday',      '#b42318', 'star',           30, 1, 1, 1),
+  ('international-day', 'International / UN day',     '#1f5fa8', 'globe',          40, 1, 1, 0),
+  ('meeting',           'Meeting / outreach',         '#6b4e9b', 'users',          50, 1, 1, 0),
+  ('deadline',          'Deadline',                   '#8a5a06', 'clock',          60, 1, 1, 0),
+  ('other',             'Other',                      '#5a6470', 'tag',            70, 1, 1, 0)
+ON DUPLICATE KEY UPDATE
+  name = IF((@reseed = 1 OR updated_at = created_at), VALUES(name), name),
+  color = IF((@reseed = 1 OR updated_at = created_at), VALUES(color), color),
+  icon = IF((@reseed = 1 OR updated_at = created_at), VALUES(icon), icon),
+  sort_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(sort_order), sort_order),
+  is_system = VALUES(is_system),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- System entries: 14 Uganda public holidays (Public Holidays Act) + 46 curated international / UN days. Yearly / nth-weekday / Easter /
+-- Islamic RULES, anchored at 2020 (earlier years are not shown). Eid al-Fitr and Eid al-Adha are flagged "date to be confirmed" (tabular
+-- prediction; the real day follows moon sighting and the official announcement) until an admin confirms each year (calendar_overrides).
+-- Sources of every day: docs/CALENDAR.md. Generated from the same rule validator the application uses (RecurrenceRules::normalise).
+INSERT INTO calendar_entries (type_id, title, slug, description, all_day, start_date, recurrence, recurrence_data, source_label, source_url, is_system, is_public, is_active, needs_confirmation)
+SELECT x.type_id, x.title, x.slug, x.description, 1, x.start_date, x.recurrence, x.recurrence_data, x.source_label, x.source_url, 1, 1, 1, x.needs_confirmation FROM (
+SELECT t.id AS type_id, s.title, s.slug, s.description, s.start_date, s.recurrence, s.recurrence_data, s.source_label, s.source_url, s.needs_confirmation FROM (
+  SELECT 'uganda-holiday' AS tslug, 'New Year''s Day' AS title, 'new-years-day' AS slug, '<p>The first day of the calendar year.</p>' AS description, '2020-01-01' AS start_date, 'yearly' AS recurrence, '{"interval":1}' AS recurrence_data, 'Public Holidays Act (Uganda)' AS source_label, 'https://ulii.org/akn/ug/act/1965/23' AS source_url, 0 AS needs_confirmation
+  UNION ALL SELECT 'uganda-holiday', 'NRM Liberation Day', 'nrm-liberation-day', '<p>Public holiday marking 26 January 1986, when the National Resistance Movement took power.</p>', '2020-01-26', 'yearly', '{"interval":1}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 0
+  UNION ALL SELECT 'uganda-holiday', 'Archbishop Janani Luwum Day', 'archbishop-janani-luwum-day', '<p>Public holiday in memory of Archbishop Janani Luwum, who died on 16 February 1977.</p>', '2020-02-16', 'yearly', '{"interval":1}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 0
+  UNION ALL SELECT 'uganda-holiday', 'International Women''s Day', 'international-womens-day', '<p>Public holiday on the day the United Nations observes International Women''s Day.</p>', '2020-03-08', 'yearly', '{"interval":1}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 0
+  UNION ALL SELECT 'uganda-holiday', 'Good Friday', 'good-friday', '<p>Christian observance on the Friday before Easter Sunday. The date changes every year.</p>', '2020-01-01', 'easter', '{"easter_offset":-2}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 0
+  UNION ALL SELECT 'uganda-holiday', 'Easter Monday', 'easter-monday', '<p>The Monday after Easter Sunday. The date changes every year.</p>', '2020-01-01', 'easter', '{"easter_offset":1}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 0
+  UNION ALL SELECT 'uganda-holiday', 'Labour Day', 'labour-day', '<p>Public holiday on International Workers'' Day.</p>', '2020-05-01', 'yearly', '{"interval":1}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 0
+  UNION ALL SELECT 'uganda-holiday', 'Uganda Martyrs'' Day', 'uganda-martyrs-day', '<p>Public holiday remembering the Uganda Martyrs, Christians put to death between 1885 and 1887.</p>', '2020-06-03', 'yearly', '{"interval":1}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 0
+  UNION ALL SELECT 'uganda-holiday', 'National Heroes'' Day', 'national-heroes-day', '<p>Public holiday to honour national heroes.</p>', '2020-06-09', 'yearly', '{"interval":1}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 0
+  UNION ALL SELECT 'uganda-holiday', 'Eid al-Fitr', 'eid-al-fitr', '<p>Marks the end of Ramadan (1 Shawwal). The exact day follows the sighting of the new moon and the official announcement, so the date shown is a prediction until an administrator confirms it.</p>', '2020-01-01', 'islamic', '{"islamic":"eid_al_fitr"}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 1
+  UNION ALL SELECT 'uganda-holiday', 'Eid al-Adha', 'eid-al-adha', '<p>The Feast of Sacrifice (10 Dhu al-Hijjah). The exact day follows the sighting of the new moon and the official announcement, so the date shown is a prediction until an administrator confirms it.</p>', '2020-01-01', 'islamic', '{"islamic":"eid_al_adha"}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 1
+  UNION ALL SELECT 'uganda-holiday', 'Independence Day', 'independence-day', '<p>Marks Uganda''s independence from the United Kingdom on 9 October 1962.</p>', '2020-10-09', 'yearly', '{"interval":1}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 0
+  UNION ALL SELECT 'uganda-holiday', 'Christmas Day', 'christmas-day', '<p>Christian celebration of the birth of Jesus Christ.</p>', '2020-12-25', 'yearly', '{"interval":1}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 0
+  UNION ALL SELECT 'uganda-holiday', 'Boxing Day', 'boxing-day', '<p>The day after Christmas Day.</p>', '2020-12-26', 'yearly', '{"interval":1}', 'Public Holidays Act (Uganda)', 'https://ulii.org/akn/ug/act/1965/23', 0
+  UNION ALL SELECT 'international-day', 'International Day of Education', 'international-day-of-education', '<p>Highlights the role of education in peace and sustainable development.</p>', '2020-01-24', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/education-day', 0
+  UNION ALL SELECT 'international-day', 'World Cancer Day', 'world-cancer-day', '<p>Global awareness day on cancer prevention, detection and treatment, led by the Union for International Cancer Control.</p>', '2020-02-04', 'yearly', '{"interval":1}', 'Union for International Cancer Control', NULL, 0
+  UNION ALL SELECT 'international-day', 'International Day of Zero Tolerance for Female Genital Mutilation', 'international-day-of-zero-tolerance-for-fgm', '<p>Raises awareness of the harm of female genital mutilation and calls for it to end.</p>', '2020-02-06', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/female-genital-mutilation-day', 0
+  UNION ALL SELECT 'international-day', 'Safer Internet Day', 'safer-internet-day', '<p>An awareness day for the safe and positive use of digital technology, held on a Tuesday in the second week of February. The organisers announce each year''s date, so check it before planning around it.</p>', '2020-01-01', 'nth_weekday', '{"interval":1,"month":2,"weekday":2,"nth":1,"from_day":5}', 'Insafe / Safer Internet Day', 'https://www.saferinternetday.org/', 1
+  UNION ALL SELECT 'international-day', 'International Day of Women and Girls in Science', 'international-day-of-women-and-girls-in-science', '<p>Promotes full and equal access to science for women and girls.</p>', '2020-02-11', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/women-and-girls-in-science-day/', 0
+  UNION ALL SELECT 'international-day', 'World Day of Social Justice', 'world-day-of-social-justice', '<p>Supports efforts to tackle poverty, exclusion and unemployment.</p>', '2020-02-20', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/social-justice-day', 0
+  UNION ALL SELECT 'international-day', 'International Mother Language Day', 'international-mother-language-day', '<p>Promotes linguistic and cultural diversity and multilingual education.</p>', '2020-02-21', 'yearly', '{"interval":1}', 'UNESCO / United Nations', 'https://www.un.org/en/observances/mother-language-day', 0
+  UNION ALL SELECT 'international-day', 'World Water Day', 'world-water-day', '<p>Focuses attention on the importance of fresh water and access to safe water for all.</p>', '2020-03-22', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/water-day', 0
+  UNION ALL SELECT 'international-day', 'World Tuberculosis Day', 'world-tuberculosis-day', '<p>Raises public awareness of tuberculosis and efforts to end it.</p>', '2020-03-24', 'yearly', '{"interval":1}', 'World Health Organization', NULL, 0
+  UNION ALL SELECT 'international-day', 'World Health Day', 'world-health-day', '<p>The World Health Organization anniversary, used each year for a global health awareness theme.</p>', '2020-04-07', 'yearly', '{"interval":1}', 'World Health Organization', 'https://www.who.int/campaigns/world-health-day', 0
+  UNION ALL SELECT 'international-day', 'International Girls in ICT Day', 'international-girls-in-ict-day', '<p>Encourages girls and young women to consider careers in information and communication technology. Held on the fourth Thursday of April.</p>', '2020-01-01', 'nth_weekday', '{"interval":1,"month":4,"weekday":4,"nth":4}', 'International Telecommunication Union', 'https://www.itu.int/women-and-girls/girls-in-ict/', 0
+  UNION ALL SELECT 'international-day', 'International Mother Earth Day', 'international-mother-earth-day', '<p>Recognises the Earth as home and the need to protect it for present and future generations.</p>', '2020-04-22', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/earth-day', 0
+  UNION ALL SELECT 'international-day', 'World Malaria Day', 'world-malaria-day', '<p>Recognises global efforts to control malaria.</p>', '2020-04-25', 'yearly', '{"interval":1}', 'World Health Organization', 'https://www.who.int/campaigns/world-malaria-day', 0
+  UNION ALL SELECT 'international-day', 'World Hand Hygiene Day', 'world-hand-hygiene-day', '<p>Promotes clean hands to prevent infections, especially in health care.</p>', '2020-05-05', 'yearly', '{"interval":1}', 'World Health Organization', NULL, 0
+  UNION ALL SELECT 'international-day', 'World Red Cross and Red Crescent Day', 'world-red-cross-and-red-crescent-day', '<p>Celebrates the principles of the Red Cross and Red Crescent Movement and its volunteers, on the birthday of its founder Henry Dunant.</p>', '2020-05-08', 'yearly', '{"interval":1}', 'IFRC', 'https://www.ifrc.org/world-red-cross-and-red-crescent-day', 0
+  UNION ALL SELECT 'international-day', 'International Day of Families', 'international-day-of-families', '<p>Raises awareness of issues that affect families.</p>', '2020-05-15', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/international-day-of-families', 0
+  UNION ALL SELECT 'international-day', 'World Telecommunication and Information Society Day', 'world-telecommunication-and-information-society-day', '<p>Promotes the benefits of information and communication technologies and bridging the digital divide.</p>', '2020-05-17', 'yearly', '{"interval":1}', 'International Telecommunication Union / United Nations', 'https://www.un.org/en/observances/telecommunication-day', 0
+  UNION ALL SELECT 'international-day', 'Africa Day', 'africa-day', '<p>Marks the founding of the Organisation of African Unity on 25 May 1963, the forerunner of the African Union.</p>', '2020-05-25', 'yearly', '{"interval":1}', 'African Union', 'https://au.int/en/newsevents/20180525/africa-day-25-may', 0
+  UNION ALL SELECT 'international-day', 'World No Tobacco Day', 'world-no-tobacco-day', '<p>Raises awareness of the health risks of tobacco use.</p>', '2020-05-31', 'yearly', '{"interval":1}', 'World Health Organization', 'https://www.who.int/campaigns/world-no-tobacco-day', 0
+  UNION ALL SELECT 'international-day', 'World Environment Day', 'world-environment-day', '<p>The main United Nations day for encouraging action to protect the environment.</p>', '2020-06-05', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/environment-day', 0
+  UNION ALL SELECT 'international-day', 'World Day Against Child Labour', 'world-day-against-child-labour', '<p>Raises awareness of child labour and what is needed to end it.</p>', '2020-06-12', 'yearly', '{"interval":1}', 'International Labour Organization / United Nations', 'https://www.un.org/en/observances/world-day-against-child-labour', 0
+  UNION ALL SELECT 'international-day', 'World Blood Donor Day', 'world-blood-donor-day', '<p>Thanks voluntary blood donors and encourages more people to give blood.</p>', '2020-06-14', 'yearly', '{"interval":1}', 'World Health Organization', 'https://www.who.int/campaigns/world-blood-donor-day', 0
+  UNION ALL SELECT 'international-day', 'Day of the African Child', 'day-of-the-african-child', '<p>Draws attention to the rights and needs of children in Africa; it recalls the 16 June 1976 Soweto student protests.</p>', '2020-06-16', 'yearly', '{"interval":1}', 'African Union', NULL, 0
+  UNION ALL SELECT 'international-day', 'World Refugee Day', 'world-refugee-day', '<p>Honours the strength and courage of people forced to flee their homes.</p>', '2020-06-20', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/refugee-day', 0
+  UNION ALL SELECT 'international-day', 'World Youth Skills Day', 'world-youth-skills-day', '<p>Celebrates the importance of equipping young people with skills for work and entrepreneurship.</p>', '2020-07-15', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/world-youth-skills-day', 0
+  UNION ALL SELECT 'international-day', 'Nelson Mandela International Day', 'nelson-mandela-international-day', '<p>A call to take action for the community and to serve others, in honour of Nelson Mandela.</p>', '2020-07-18', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/events/mandeladay/', 0
+  UNION ALL SELECT 'international-day', 'International Youth Day', 'international-youth-day', '<p>Draws attention to issues affecting young people and celebrates their role.</p>', '2020-08-12', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/youth-day', 0
+  UNION ALL SELECT 'international-day', 'World Humanitarian Day', 'world-humanitarian-day', '<p>Honours aid workers and those who lost their lives in humanitarian service.</p>', '2020-08-19', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/humanitarian-day', 0
+  UNION ALL SELECT 'international-day', 'International Day of Charity', 'international-day-of-charity', '<p>Recognises the role of charity and volunteers in helping people in need.</p>', '2020-09-05', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/charity-day', 0
+  UNION ALL SELECT 'international-day', 'International Literacy Day', 'international-literacy-day', '<p>Highlights the importance of literacy for individuals, communities and societies.</p>', '2020-09-08', 'yearly', '{"interval":1}', 'UNESCO', 'https://www.unesco.org/en/days/literacy', 0
+  UNION ALL SELECT 'international-day', 'International Day of Peace', 'international-day-of-peace', '<p>A day devoted to strengthening the ideals of peace.</p>', '2020-09-21', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/international-day-peace', 0
+  UNION ALL SELECT 'international-day', 'World Teachers'' Day', 'world-teachers-day', '<p>Celebrates teachers and the importance of the teaching profession.</p>', '2020-10-05', 'yearly', '{"interval":1}', 'UNESCO', 'https://www.unesco.org/en/days/teachers', 0
+  UNION ALL SELECT 'international-day', 'World Mental Health Day', 'world-mental-health-day', '<p>Raises awareness of mental health issues and support for mental health care.</p>', '2020-10-10', 'yearly', '{"interval":1}', 'World Health Organization', NULL, 0
+  UNION ALL SELECT 'international-day', 'International Day of the Girl Child', 'international-day-of-the-girl-child', '<p>Recognises girls'' rights and the challenges they face.</p>', '2020-10-11', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/girl-child-day', 0
+  UNION ALL SELECT 'international-day', 'Global Handwashing Day', 'global-handwashing-day', '<p>Promotes handwashing with soap as an easy, effective way to protect health.</p>', '2020-10-15', 'yearly', '{"interval":1}', 'Global Handwashing Partnership', NULL, 0
+  UNION ALL SELECT 'international-day', 'World Food Day', 'world-food-day', '<p>Marks the founding of the Food and Agriculture Organization and promotes action against hunger.</p>', '2020-10-16', 'yearly', '{"interval":1}', 'Food and Agriculture Organization', NULL, 0
+  UNION ALL SELECT 'international-day', 'International Day for the Eradication of Poverty', 'international-day-for-the-eradication-of-poverty', '<p>Promotes awareness of the need to end poverty in all countries.</p>', '2020-10-17', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/day-for-eradicating-poverty', 0
+  UNION ALL SELECT 'international-day', 'United Nations Day', 'united-nations-day', '<p>Marks the anniversary of the entry into force of the United Nations Charter in 1945.</p>', '2020-10-24', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/un-day', 0
+  UNION ALL SELECT 'international-day', 'International Day for Tolerance', 'international-day-for-tolerance', '<p>Promotes mutual understanding between cultures and peoples.</p>', '2020-11-16', 'yearly', '{"interval":1}', 'UNESCO', 'https://www.unesco.org/en/days/tolerance', 0
+  UNION ALL SELECT 'international-day', 'Universal Children''s Day', 'universal-childrens-day', '<p>Promotes children''s welfare and rights; the United Nations also calls it World Children''s Day.</p>', '2020-11-20', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/world-childrens-day', 0
+  UNION ALL SELECT 'international-day', 'International Day for the Elimination of Violence against Women', 'international-day-for-the-elimination-of-violence-against-women', '<p>Raises awareness that violence against women and girls must end; it opens the 16 Days of Activism.</p>', '2020-11-25', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/ending-violence-against-women-day', 0
+  UNION ALL SELECT 'international-day', 'World AIDS Day', 'world-aids-day', '<p>Supports people living with HIV and remembers those who have died of AIDS-related illness.</p>', '2020-12-01', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/world-aids-day', 0
+  UNION ALL SELECT 'international-day', 'International Day of Persons with Disabilities', 'international-day-of-persons-with-disabilities', '<p>Promotes the rights and well-being of persons with disabilities and their inclusion.</p>', '2020-12-03', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/day-of-persons-with-disabilities', 0
+  UNION ALL SELECT 'international-day', 'International Volunteer Day', 'international-volunteer-day', '<p>Celebrates volunteers and their contribution to economic and social development.</p>', '2020-12-05', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/volunteer-day', 0
+  UNION ALL SELECT 'international-day', 'Human Rights Day', 'human-rights-day', '<p>Marks the adoption of the Universal Declaration of Human Rights in 1948.</p>', '2020-12-10', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/human-rights-day', 0
+  UNION ALL SELECT 'international-day', 'International Migrants Day', 'international-migrants-day', '<p>Recognises the contributions of migrants and promotes their rights.</p>', '2020-12-18', 'yearly', '{"interval":1}', 'United Nations', 'https://www.un.org/en/observances/migrants-day', 0
+) AS s JOIN calendar_types t ON t.slug = s.tslug
+) AS x
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR calendar_entries.updated_at = calendar_entries.created_at), VALUES(title), calendar_entries.title),
+  description = IF((@reseed = 1 OR calendar_entries.updated_at = calendar_entries.created_at), VALUES(description), calendar_entries.description),
+  start_date = IF((@reseed = 1 OR calendar_entries.updated_at = calendar_entries.created_at), VALUES(start_date), calendar_entries.start_date),
+  recurrence = IF((@reseed = 1 OR calendar_entries.updated_at = calendar_entries.created_at), VALUES(recurrence), calendar_entries.recurrence),
+  recurrence_data = IF((@reseed = 1 OR calendar_entries.updated_at = calendar_entries.created_at), VALUES(recurrence_data), calendar_entries.recurrence_data),
+  source_label = IF((@reseed = 1 OR calendar_entries.updated_at = calendar_entries.created_at), VALUES(source_label), calendar_entries.source_label),
+  source_url = IF((@reseed = 1 OR calendar_entries.updated_at = calendar_entries.created_at), VALUES(source_url), calendar_entries.source_url),
+  needs_confirmation = IF((@reseed = 1 OR calendar_entries.updated_at = calendar_entries.created_at), VALUES(needs_confirmation), calendar_entries.needs_confirmation),
+  type_id = IF((@reseed = 1 OR calendar_entries.updated_at = calendar_entries.created_at), VALUES(type_id), calendar_entries.type_id),
+  updated_at = IF((@reseed = 1 OR calendar_entries.updated_at = calendar_entries.created_at), calendar_entries.created_at, calendar_entries.updated_at);
+
+-- Eid days that are already known and verified (the engine's tabular day differs by one for three of them): confirmed overrides, so the page
+-- shows the real day with the source in the note instead of "Date to be confirmed". INSERT IGNORE: an override an admin saved for the same
+-- occurrence (UNIQUE entry_id + occurrence_date) always wins. Later years stay predicted until an admin confirms them (Admin > Calendar > Holidays).
+INSERT IGNORE INTO calendar_overrides (entry_id, occurrence_date, new_date, confirmed, note)
+SELECT e.id, s.occurrence_date, s.new_date, 1, s.note FROM (
+  SELECT 'eid-al-fitr' AS slug, '2024-04-10' AS occurrence_date, NULL AS new_date, 'Eid al-Fitr, Wednesday 10 April 2024, as observed in Uganda (officeholidays.com).' AS note
+  UNION ALL SELECT 'eid-al-adha', '2024-06-17', '2024-06-16', 'Announced by the Uganda Muslim Supreme Council: Idd ul Adhuha on Sunday 16 June 2024 (Daily Monitor).'
+  UNION ALL SELECT 'eid-al-fitr', '2025-03-31', '2025-03-30', 'Announced by the Uganda Muslim Supreme Council: Idd ul Fitr on Sunday 30 March 2025 (Daily Monitor).'
+  UNION ALL SELECT 'eid-al-adha', '2025-06-07', '2025-06-06', 'Declared a public holiday by the Ministry of Public Service: Friday 6 June 2025 (Nile Post).'
+  UNION ALL SELECT 'eid-al-fitr', '2026-03-20', NULL, 'Announced by the Uganda Muslim Supreme Council: Idd ul Fitr on Friday 20 March 2026 (Daily Monitor).'
+  UNION ALL SELECT 'eid-al-adha', '2026-05-27', NULL, 'Eid al-Adha prayers at the National Mosque on Wednesday 27 May 2026 (Uganda Muslim Supreme Council).'
+) AS s JOIN calendar_entries e ON e.slug = s.slug AND e.is_system = 1;
 

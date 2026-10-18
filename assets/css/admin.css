@@ -1876,6 +1876,10 @@ body.admin-nav-open .admin-backdrop {
   border-width: 1px;
 }
 
+.admin .select {
+  padding-right: 2.5rem;
+}
+
 .admin .textarea {
   min-height: 7rem;
 }
@@ -9497,5 +9501,1695 @@ html:has(.nl-editor) {
   .nl-mail .nl-dialog__actions .btn {
     flex: 1 1 auto;
     justify-content: center;
+  }
+}
+
+.admin-calendar [hidden] {
+  display: none !important;
+}
+
+.admin-calendar .inline-form {
+  display: inline;
+  margin: 0;
+}
+
+.admin-calendar .nowrap {
+  white-space: nowrap;
+}
+
+.admin-calendar .badge {
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.admin-calendar .table-wrap {
+  position: relative;
+}
+
+@media (max-width: 767.98px) {
+  .admin-calendar .table--stack td.nowrap {
+    white-space: normal;
+  }
+  .admin-calendar .table--stack td {
+    flex-wrap: wrap;
+  }
+}
+
+.admin-calendar code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #F1F1F1;
+  padding: 0.05rem 0.35rem;
+  border-radius: 6px;
+}
+
+.admin-calendar .cal-subhead {
+  margin: 1.5rem 0 0.75rem;
+  font-size: 1rem;
+}
+
+.admin-calendar .cal-hint {
+  font-size: 0.9375rem;
+}
+
+.admin-calendar .cal-hintbar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #E6F1F8;
+  border-radius: 12px;
+  color: #1D1E20;
+  font-size: 0.9375rem;
+}
+
+.admin-calendar .cal-hintbar .icon {
+  flex: none;
+  margin-top: 0.15rem;
+  color: #1F5F8B;
+}
+
+.admin-calendar .cal-summary {
+  margin: 0 0 0.75rem;
+  font-size: 0.9375rem;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-note-inline {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin: 0.75rem 0;
+  font-size: 0.9375rem;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-note-inline .icon {
+  flex: none;
+  margin-top: 0.15rem;
+}
+
+.admin-calendar .cal-note {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  font-size: 0.9375rem;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-note p {
+  margin: 0;
+}
+
+.admin-calendar .cal-note .icon {
+  flex: none;
+  margin-top: 0.2rem;
+}
+
+.admin-calendar .cal-narrow {
+  max-width: 7.5rem;
+}
+
+.admin-calendar .cal-btn-text {
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) and (max-width: 1399.98px) {
+  .admin-calendar .cal-list .cal-btn-text, .admin-calendar .cal-holiday-table .cal-btn-text, .admin-calendar #cal-days .cal-btn-text {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+.admin-calendar .cal-typechip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem 0.15rem 0.5rem;
+  border-left: 3px solid var(--cal-solid, #5A6470);
+  border-radius: 6px;
+  background: var(--cal-tint, #F1F1F1);
+  color: var(--cal-text, #1D1E20);
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.admin-calendar .cal-typechip--lg {
+  font-size: 1rem;
+  padding: 0.3rem 0.8rem 0.3rem 0.65rem;
+}
+
+.admin-calendar .cal-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #E3DDD2;
+}
+
+.admin-calendar .cal-tabs__item, .admin-calendar .cal-tabs__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  color: #5A6470;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-decoration: none;
+}
+
+.admin-calendar .cal-tabs__item:hover, .admin-calendar .cal-tabs__link:hover {
+  color: #2C3950;
+}
+
+.admin-calendar .cal-tabs__item.is-active {
+  color: #2C3950;
+  border-bottom-color: #E07341;
+}
+
+.admin-calendar .cal-tabs__link {
+  font-weight: 500;
+}
+
+.admin-calendar .cal-tabs__spacer {
+  flex: 1 1 0;
+}
+
+.admin-calendar .cal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-calendar .cal-toolbar__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.admin-calendar .cal-toolbar__title {
+  flex: 1 1 12rem;
+  margin: 0;
+  font-size: 1.45rem;
+  line-height: 1.2;
+  color: #2C3950;
+}
+
+.admin-calendar .cal-toolbar__jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.admin-calendar .cal-toolbar__jump .field {
+  min-width: 0;
+}
+
+.admin-calendar .cal-toolbar__jump .select {
+  min-width: 9rem;
+}
+
+.admin-calendar .cal-month-wrap {
+  margin-bottom: 1rem;
+}
+
+.admin-calendar .cal-month {
+  display: none;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #FFFFFF;
+  border: 1px solid #E3DDD2;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.admin-calendar .cal-month th {
+  padding: 0.5rem;
+  background: #F7F3EC;
+  border-bottom: 1px solid #E3DDD2;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5A6470;
+  text-align: left;
+}
+
+.admin-calendar .cal-month td {
+  vertical-align: top;
+}
+
+.admin-calendar .cal-agenda {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .admin-calendar .cal-month {
+    display: table;
+  }
+  .admin-calendar .cal-agenda {
+    display: none;
+  }
+}
+
+.admin-calendar .cal-cell {
+  height: 7.6rem;
+  padding: 0.3rem 0.35rem 0.4rem;
+  border-right: 1px solid #E3DDD2;
+  border-bottom: 1px solid #E3DDD2;
+  background: #FFFFFF;
+  position: relative;
+}
+
+.admin-calendar .cal-cell:last-child {
+  border-right: 0;
+}
+
+.admin-calendar .cal-cell.is-weekend {
+  background: #faf8f3;
+}
+
+.admin-calendar .cal-cell.is-out {
+  background: #F1F1F1;
+}
+
+.admin-calendar .cal-cell.is-out .cal-cell__num {
+  color: #5A6470;
+  font-weight: 500;
+}
+
+.admin-calendar .cal-cell.is-today {
+  box-shadow: inset 0 0 0 2px #E07341;
+}
+
+.admin-calendar .cal-cell.is-today .cal-cell__num {
+  background: #2C3950;
+  color: #FFFFFF;
+}
+
+.admin-calendar .cal-cell.is-selected {
+  background: rgba(214, 161, 81, 0.18);
+}
+
+.admin-calendar .cal-cell__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.2rem;
+}
+
+.admin-calendar .cal-cell__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.7rem;
+  height: 1.7rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  color: #2C3950;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-calendar .cal-cell__num:hover {
+  background: rgba(214, 161, 81, 0.3);
+}
+
+.admin-calendar .cal-cell__add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  color: #5A6470;
+  opacity: 0.8;
+}
+
+.admin-calendar .cal-cell__add:hover, .admin-calendar .cal-cell__add:focus-visible {
+  opacity: 1;
+  background: #2C3950;
+  color: #FFFFFF;
+}
+
+.admin-calendar .cal-cell__items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+
+.admin-calendar .cal-cell__items > li {
+  min-width: 0;
+}
+
+.admin-calendar .cal-cell__more {
+  display: block;
+  padding: 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #A64B0C;
+  text-decoration: none;
+}
+
+.admin-calendar .cal-cell__more:hover {
+  text-decoration: underline;
+}
+
+@media (hover: hover) {
+  html.js .admin-calendar .cal-cell {
+    cursor: pointer;
+  }
+}
+
+.admin-calendar .cal-pill {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 1px 0.3rem;
+  border-left: 3px solid var(--cal-solid, #5A6470);
+  border-radius: 4px;
+  background: var(--cal-tint, #F1F1F1);
+  color: var(--cal-text, #1D1E20);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.admin-calendar .cal-pill .icon {
+  flex: none;
+  width: 0.85em;
+  height: 0.85em;
+}
+
+.admin-calendar .cal-pill:hover {
+  box-shadow: 0 0 0 1px var(--cal-solid, #5A6470);
+}
+
+.admin-calendar .cal-pill__text {
+  flex: 1 1 calc(100% - 1.3rem);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-calendar .cal-pill__time {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-calendar .cal-pill__flag {
+  flex: 0 1 auto;
+  max-width: calc(100% - 1.15rem);
+  margin-left: 1.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1px solid currentColor;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.admin-calendar .cal-pill.is-cancelled .cal-pill__text {
+  text-decoration: line-through;
+}
+
+.admin-calendar .cal-pill.is-private {
+  border: 1px dashed var(--cal-solid, #5A6470);
+  border-left-width: 3px;
+}
+
+.admin-calendar .cal-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-calendar .cal-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem 0.75rem;
+  align-items: start;
+  padding: 0.75rem;
+  background: #FFFFFF;
+  border: 1px solid #E3DDD2;
+  border-left: 4px solid var(--cal-solid, #5A6470);
+  border-radius: 12px;
+}
+
+.admin-calendar .cal-item > .btn {
+  justify-self: start;
+}
+
+@media (min-width: 768px) {
+  .admin-calendar .cal-item {
+    grid-template-columns: 11rem minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  .admin-calendar .cal-item > .btn {
+    grid-column: auto;
+    justify-self: end;
+  }
+}
+
+.admin-calendar .cal-item > * {
+  min-width: 0;
+}
+
+.admin-calendar .cal-item__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background: var(--cal-tint, #F1F1F1);
+  color: var(--cal-text, #1D1E20);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  justify-self: start;
+}
+
+.admin-calendar .cal-item__main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-calendar .cal-item__title {
+  font-weight: 700;
+  color: #2C3950;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.admin-calendar .cal-item__title:hover {
+  color: #B4540F;
+  text-decoration: underline;
+}
+
+.admin-calendar .cal-item__meta, .admin-calendar .cal-item__note {
+  font-size: 0.8125rem;
+  color: #5A6470;
+  overflow-wrap: anywhere;
+}
+
+.admin-calendar .cal-item__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.admin-calendar .cal-item__badges:empty {
+  display: none;
+}
+
+.admin-calendar .cal-item.is-cancelled .cal-item__title {
+  text-decoration: line-through;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-agenda__empty {
+  padding: 1.5rem;
+  background: #FFFFFF;
+  border: 1px dashed #CFC7B8;
+  border-radius: 20px;
+  text-align: center;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-agenda__day {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #F7F3EC;
+  border-radius: 20px;
+}
+
+.admin-calendar .cal-agenda__day.is-today {
+  box-shadow: inset 0 0 0 2px #E07341;
+}
+
+.admin-calendar .cal-agenda__date {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: #2C3950;
+}
+
+.admin-calendar .cal-agenda__add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #A64B0C;
+  text-decoration: none;
+}
+
+.admin-calendar .cal-agenda__add:hover {
+  text-decoration: underline;
+}
+
+.admin-calendar .cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-calendar .cal-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem 0.15rem 0.5rem;
+  border-left: 3px solid var(--cal-solid);
+  border-radius: 6px;
+  background: var(--cal-tint);
+  color: var(--cal-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+.admin-calendar .cal-legend__item.is-off {
+  opacity: 0.6;
+}
+
+.admin-calendar .cal-legend__note {
+  flex: 1 1 22rem;
+  font-size: 0.8125rem;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-day-panel {
+  scroll-margin-top: calc(64px + 1rem);
+}
+
+.admin-calendar .cal-day-panel__empty p {
+  margin: 0;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-quick {
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: #FFFFFF;
+  color: #1D1E20;
+  width: 42rem;
+  max-width: calc(100% - 1.5rem);
+  max-height: calc(100vh - 1.5rem);
+  overflow: auto;
+  box-shadow: 0 18px 44px rgba(23, 32, 54, 0.16), 0 6px 14px rgba(23, 32, 54, 0.08);
+}
+
+.admin-calendar .cal-quick::backdrop {
+  background: rgba(23, 32, 54, 0.55);
+}
+
+.admin-calendar .cal-quick__form {
+  display: block;
+}
+
+.admin-calendar .cal-quick__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 1rem 1.5rem 0;
+}
+
+.admin-calendar .cal-quick__title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #2C3950;
+}
+
+.admin-calendar .cal-quick__sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.9375rem;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-quick__body {
+  padding: 1rem 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-calendar .cal-quick__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.75rem 1.5rem 1rem;
+  border-top: 1px solid #E3DDD2;
+  background: #F7F3EC;
+}
+
+.admin-calendar .cal-quick__full {
+  margin-left: auto;
+  font-size: 0.8125rem;
+}
+
+.admin-calendar .cal-quick .alert {
+  margin: 0.75rem 1.5rem 0;
+}
+
+@media (max-width: 767.98px) {
+  .admin-calendar .cal-quick {
+    margin: auto 0 0;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+  }
+  .admin-calendar .cal-quick__full {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}
+
+html:not(.js) .admin-calendar .cal-quick {
+  display: block;
+  position: static;
+  width: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0 0 1.5rem;
+  border: 1px solid #E3DDD2;
+  box-shadow: 0 1px 2px rgba(23, 32, 54, 0.08), 0 1px 3px rgba(23, 32, 54, 0.06);
+}
+
+html:not(.js) .admin-calendar .cal-quick .cal-quick__close {
+  display: none;
+}
+
+html:not(.js) .admin-calendar .cal-rule[hidden], html:not(.js) .admin-calendar [data-cal-nth-box][hidden], html:not(.js) .admin-calendar [data-cal-tbc-note][hidden], html:not(.js) .admin-calendar [data-cal-easter-custom][hidden], html:not(.js) .admin-calendar [data-cal-quick-until][hidden] {
+  display: block !important;
+}
+
+html:not(.js) .admin-calendar .cal-rule--grid[hidden] {
+  display: grid !important;
+}
+
+html:not(.js) .admin-calendar .cal-times[hidden] {
+  display: grid !important;
+}
+
+html:not(.js) .admin-calendar [data-cal-tbc][hidden] {
+  display: flex !important;
+}
+
+.admin-calendar .cal-more {
+  border: 1px solid #E3DDD2;
+  border-radius: 12px;
+  background: #F7F3EC;
+}
+
+.admin-calendar .cal-more > summary {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: #2C3950;
+}
+
+.admin-calendar .cal-more__body {
+  display: grid;
+  gap: 1rem;
+  padding: 0 1rem 1rem;
+}
+
+.admin-calendar .cal-quick__public small {
+  color: #5A6470;
+}
+
+.admin-calendar .cal-times {
+  margin-top: 0.75rem;
+}
+
+.admin-calendar .cal-filter-check {
+  display: flex;
+  align-items: flex-end;
+  min-width: 0;
+  padding-bottom: 0.45rem;
+}
+
+.admin-calendar .cal-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-calendar .cal-bulk .select {
+  width: auto;
+  min-width: 14rem;
+  max-width: 100%;
+}
+
+.admin-calendar .cal-bulk__count {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-bulk__hint {
+  font-size: 0.8125rem;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-list input[type='checkbox'], .admin-calendar .cal-holiday-table input[type='checkbox'], .admin-calendar #cal-days input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #2C3950;
+  cursor: pointer;
+}
+
+.admin-calendar .cal-list tbody tr.is-off td, .admin-calendar .cal-holiday-table tbody tr.is-off td, .admin-calendar #cal-days tbody tr.is-off td {
+  color: #5A6470;
+}
+
+.admin-calendar .cal-list tbody tr.is-selected td, .admin-calendar .cal-holiday-table tbody tr.is-selected td, .admin-calendar #cal-days tbody tr.is-selected td {
+  background: rgba(214, 161, 81, 0.16);
+}
+
+.admin-calendar .cal-list .cell-sub, .admin-calendar .cal-list .cell-title, .admin-calendar .cal-holiday-table .cell-sub, .admin-calendar .cal-holiday-table .cell-title, .admin-calendar #cal-days .cell-sub, .admin-calendar #cal-days .cell-title {
+  overflow-wrap: anywhere;
+}
+
+.admin-calendar .cal-list tbody td .badge + .badge, .admin-calendar .cal-holiday-table tbody td .badge + .badge, .admin-calendar #cal-days tbody td .badge + .badge {
+  margin-left: 0.15rem;
+}
+
+.admin-calendar .cal-list .table__actions, .admin-calendar .cal-holiday-table .table__actions {
+  flex-wrap: wrap;
+}
+
+@media (min-width: 768px) {
+  .admin-calendar .cal-list .table__actions, .admin-calendar .cal-holiday-table .table__actions {
+    flex-wrap: nowrap;
+  }
+}
+
+.admin-calendar .cal-confirm--due {
+  border-color: rgba(180, 84, 15, 0.6);
+}
+
+.admin-calendar .cal-confirm--due .card__header {
+  background: #f8ded2;
+  border-bottom-color: rgba(180, 84, 15, 0.25);
+}
+
+.admin-calendar .cal-confirm--due .card__title {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  color: #8e420c;
+}
+
+.admin-calendar .cal-confirm__list {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-calendar .cal-confirm__item {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #FFFFFF;
+  border: 1px solid #E3DDD2;
+  border-left: 4px solid #E07341;
+  border-radius: 12px;
+}
+
+@media (min-width: 768px) {
+  .admin-calendar .cal-confirm__item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+}
+
+.admin-calendar .cal-confirm__name {
+  display: block;
+  font-size: 1.05rem;
+  color: #2C3950;
+}
+
+.admin-calendar .cal-confirm__pred {
+  display: block;
+  color: #5A6470;
+  font-size: 0.9375rem;
+}
+
+.admin-calendar .cal-confirm__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.admin-calendar .cal-confirm__form .field {
+  margin: 0;
+  min-width: 11rem;
+}
+
+.admin-calendar .cal-holiday-table tbody tr.is-due td:first-child {
+  box-shadow: inset 4px 0 0 #E07341;
+}
+
+@media (min-width: 768px) {
+  .admin-calendar .cal-holiday-table .cal-holiday-actions {
+    min-width: 14rem;
+  }
+}
+
+.admin-calendar .cal-change summary {
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #A64B0C;
+}
+
+.admin-calendar .cal-change summary:hover {
+  color: #2C3950;
+}
+
+.admin-calendar .cal-change__form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #F7F3EC;
+  border: 1px solid #E3DDD2;
+  border-radius: 12px;
+  max-width: 22rem;
+}
+
+.admin-calendar .cal-days-search {
+  min-width: 14rem;
+  flex: 0 1 18rem;
+}
+
+.admin-calendar .cal-days-search .input {
+  min-width: 0;
+}
+
+.admin-calendar .cal-toggle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.admin-calendar .cal-toggle .badge {
+  white-space: nowrap;
+}
+
+.admin-calendar .cal-toggle:hover .badge {
+  box-shadow: 0 0 0 2px rgba(214, 161, 81, 0.5);
+}
+
+.admin-calendar .cal-toggle:focus-visible {
+  outline: 3px solid #B4540F;
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+.admin-calendar .cal-editor {
+  display: grid;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 992px) {
+  .admin-calendar .cal-editor {
+    grid-template-columns: minmax(0, 1fr) 21rem;
+    align-items: start;
+  }
+}
+
+.admin-calendar .cal-editor__errors, .admin-calendar .cal-editor__actions {
+  grid-column: 1 / -1;
+}
+
+.admin-calendar .cal-editor__errors {
+  margin: 0;
+}
+
+.admin-calendar .cal-editor__errors ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 2px;
+}
+
+.admin-calendar .cal-editor__main {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.admin-calendar .cal-editor__main .card + .card {
+  margin-top: 0;
+}
+
+.admin-calendar .cal-editor__aside {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.admin-calendar .cal-editor__aside .card + .card {
+  margin-top: 0;
+}
+
+@media (min-width: 992px) {
+  .admin-calendar .cal-editor__aside {
+    position: sticky;
+    top: calc(64px + 1rem);
+  }
+}
+
+.admin-calendar .cal-editor__actions {
+  margin-top: 0;
+}
+
+.admin-calendar .cal-editor .card__body {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-calendar .cal-editor .card__body > * + * {
+  margin-top: 0;
+}
+
+.admin-calendar .cal-editor small {
+  color: #5A6470;
+  font-weight: 400;
+}
+
+.admin-calendar .cal-rules {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-calendar .cal-rule {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.admin-calendar .cal-rule--grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .admin-calendar .cal-rule--grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.admin-calendar .cal-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-calendar .cal-days__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.admin-calendar .cal-day-check {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border: 1.5px solid #CFC7B8;
+  border-radius: 999px;
+  background: #FFFFFF;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-calendar .cal-day-check input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #2C3950;
+}
+
+.admin-calendar .cal-day-check:has(input:checked) {
+  border-color: #2C3950;
+  background: rgba(214, 161, 81, 0.2);
+}
+
+.admin-calendar .cal-day-check:has(input:focus-visible) {
+  outline: 3px solid #B4540F;
+  outline-offset: 3px;
+}
+
+.admin-calendar .cal-colour {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-calendar .cal-colour__pick {
+  flex: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 2px;
+  border: 1px solid #CFC7B8;
+  border-radius: 12px;
+  background: #FFFFFF;
+  cursor: pointer;
+}
+
+.admin-calendar .cal-colour .input {
+  flex: 1 1 8rem;
+  min-width: 0;
+  max-width: 11rem;
+}
+
+.admin-calendar .cal-facts {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.admin-calendar .cal-facts div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-calendar .cal-facts dt {
+  font-weight: 700;
+  color: #5A6470;
+  min-width: 7rem;
+}
+
+.admin-calendar .cal-facts dd {
+  margin: 0;
+}
+
+.admin-calendar .cal-locked {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0.75rem;
+  background: #E6F1F8;
+  border-radius: 12px;
+  font-size: 0.9375rem;
+}
+
+.admin-calendar .cal-locked .icon {
+  flex: none;
+  margin-top: 0.15rem;
+}
+
+.admin-calendar .cal-links > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.admin-calendar .cal-links > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-calendar .cal-links > summary .card__title::after {
+  content: ' \25BE';
+  color: #5A6470;
+}
+
+.admin-calendar .cal-links[open] > summary .card__title::after {
+  content: ' \25B4';
+}
+
+.admin-calendar .cal-links summary:focus-visible {
+  outline: 3px solid #B4540F;
+  outline-offset: 3px;
+}
+
+.admin-calendar .cal-preview__rule {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  color: #2C3950;
+}
+
+.admin-calendar .cal-preview__list {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.admin-calendar .cal-preview__list li::marker {
+  color: #C47E0D;
+  font-weight: 700;
+}
+
+.admin-calendar .cal-preview__msg {
+  margin: 0;
+  color: #8A5A06;
+  font-size: 0.9375rem;
+}
+
+.admin-calendar .cal-preview__help {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-preview .card__body {
+  gap: 0;
+}
+
+.admin-calendar .cal-dates {
+  scroll-margin-top: calc(64px + 1rem);
+  margin-bottom: 1.5rem;
+}
+
+.admin-calendar .cal-occs {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-calendar .cal-occ {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #FFFFFF;
+  border: 1px solid #E3DDD2;
+  border-left: 4px solid #D6A151;
+  border-radius: 12px;
+}
+
+.admin-calendar .cal-occ.is-cancelled {
+  border-left-color: #B42318;
+}
+
+.admin-calendar .cal-occ.is-cancelled .cal-occ__when strong {
+  text-decoration: line-through;
+}
+
+.admin-calendar .cal-occ__when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+}
+
+.admin-calendar .cal-occ__time {
+  color: #5A6470;
+  font-size: 0.9375rem;
+}
+
+.admin-calendar .cal-occ__badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.admin-calendar .cal-occ__sub {
+  flex-basis: 100%;
+  font-size: 0.8125rem;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-occ__more > summary {
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #A64B0C;
+}
+
+.admin-calendar .cal-occ__more > summary:hover {
+  color: #2C3950;
+}
+
+.admin-calendar .cal-occ__form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background: #F7F3EC;
+  border: 1px solid #E3DDD2;
+  border-radius: 12px;
+}
+
+.admin-calendar .cal-occ__fields {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .admin-calendar .cal-occ__fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.admin-calendar .cal-choices {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-calendar .cal-more-actions__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.admin-calendar .cal-more-actions__row form {
+  margin: 0;
+}
+
+.admin-calendar .cal-more-actions__note {
+  margin: 0;
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.admin-calendar .cal-types__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 1200px) {
+  .admin-calendar .cal-types__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.admin-calendar .cal-types__list .card + .card {
+  margin-top: 0;
+}
+
+.admin-calendar .cal-type.is-off {
+  opacity: 0.8;
+}
+
+.admin-calendar .cal-type__title {
+  margin: 0;
+}
+
+.admin-calendar .cal-type__meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.9375rem;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-type__form {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-calendar .cal-type__grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .admin-calendar .cal-type__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.admin-calendar .cal-type__switches {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-calendar .cal-type__why {
+  font-size: 0.8125rem;
+}
+
+.admin-calendar .cal-type .card__body > * + * {
+  margin-top: 0;
+}
+
+.admin-calendar .cal-contrast {
+  padding: 0.75rem 1rem;
+  background: #F7F3EC;
+  border: 1px dashed #CFC7B8;
+  border-radius: 12px;
+}
+
+.admin-calendar .cal-contrast__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-contrast__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-calendar .cal-contrast__list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  font-size: 0.9375rem;
+}
+
+.admin-calendar .cal-contrast__what {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-calendar .cal-contrast__msg {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: #5A6470;
+}
+
+.admin-calendar .cal-contrast__msg.is-warn {
+  color: #8A5A06;
+  font-weight: 600;
+}
+
+.admin-calendar .cal-sample {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 1.8rem;
+  border-radius: 6px;
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.admin-calendar .cal-sample--solid {
+  background: var(--cal-solid);
+  color: var(--cal-on);
+}
+
+.admin-calendar .cal-sample--tint {
+  background: var(--cal-tint);
+  color: var(--cal-text);
+  border-left: 3px solid var(--cal-solid);
+}
+
+.admin-calendar .cal-sample--marker {
+  background: #FFFFFF;
+  border: 1px solid #E3DDD2;
+  position: relative;
+}
+
+.admin-calendar .cal-sample--marker::after {
+  content: '';
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: var(--cal-solid);
+}
+
+.admin-calendar .cal-type--new {
+  border-style: dashed;
+}
+
+.admin-calendar .cal-import__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+}
+
+@media (min-width: 1200px) {
+  .admin-calendar .cal-import__grid {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    align-items: start;
+  }
+}
+
+.admin-calendar .cal-import__grid .card + .card {
+  margin-top: 0;
+}
+
+.admin-calendar .cal-steps {
+  margin: 0 0 1rem;
+  padding-left: 1.3rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-calendar .cal-steps li {
+  padding-left: 0.3rem;
+}
+
+.admin-calendar .cal-steps li > div, .admin-calendar .cal-steps li > form {
+  margin-top: 0.5rem;
+}
+
+.admin-calendar .cal-steps li::marker {
+  font-weight: 700;
+  color: #2C3950;
+}
+
+.admin-calendar .cal-upload {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 30rem;
+  padding: 1rem;
+  background: #F7F3EC;
+  border: 1px solid #E3DDD2;
+  border-radius: 12px;
+}
+
+.admin-calendar .cal-report {
+  scroll-margin-top: calc(64px + 1rem);
+  margin-bottom: 1.5rem;
+}
+
+.admin-calendar .cal-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .admin-calendar .cal-tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.admin-calendar .cal-tile {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem;
+  background: #FFFFFF;
+  border: 1px solid #E3DDD2;
+  border-radius: 20px;
+}
+
+.admin-calendar .cal-tile strong {
+  font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 1.6rem;
+  line-height: 1.1;
+  color: #2C3950;
+}
+
+.admin-calendar .cal-tile span {
+  font-size: 0.8125rem;
+  color: #5A6470;
+  font-weight: 600;
+}
+
+.admin-calendar .cal-tile--ok {
+  border-color: rgba(30, 123, 69, 0.5);
+  background: #E7F5EC;
+}
+
+.admin-calendar .cal-tile--bad {
+  border-color: rgba(180, 35, 24, 0.5);
+  background: #FDECEA;
+}
+
+.admin-calendar .cal-tile--bad strong {
+  color: #B42318;
+}
+
+.admin-calendar .cal-report__commit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.admin-calendar .cal-report__msgs {
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.8125rem;
+  color: #1D1E20;
+  display: grid;
+  gap: 2px;
+}
+
+.admin-calendar .cal-report__table .cal-row--error td:first-child {
+  box-shadow: inset 4px 0 0 #B42318;
+}
+
+.admin-calendar .cal-report__table .cal-row--ok td:first-child {
+  box-shadow: inset 4px 0 0 #1E7B45;
+}
+
+.admin-calendar .cal-report__table .cal-row--duplicate td:first-child {
+  box-shadow: inset 4px 0 0 #CFC7B8;
+}
+
+.admin-calendar .cal-report__table td {
+  overflow-wrap: anywhere;
+}
+
+.admin-calendar .cal-settings__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+}
+
+@media (min-width: 992px) {
+  .admin-calendar .cal-settings__grid {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    align-items: start;
+  }
+}
+
+.admin-calendar .cal-settings__grid .card + .card {
+  margin-top: 0;
+}
+
+.admin-calendar .cal-fieldset {
+  margin: 1rem 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.admin-calendar .cal-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.admin-calendar .cal-typecheck {
+  align-items: center;
+}
+
+.admin-calendar .cal-links-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-calendar .cal-links-list li > span {
+  display: block;
+  font-size: 0.8125rem;
+}
+
+.admin-calendar .cal-more-actions {
+  margin-bottom: 1.5rem;
+}
+
+@media print {
+  .admin-calendar .cal-quick, .admin-calendar .cal-cell__add, .admin-calendar .cal-tabs, .admin-calendar .filters {
+    display: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .admin .cal-cell.is-today {
+    box-shadow: none;
+    outline: 2px solid CanvasText;
+    outline-offset: -2px;
+  }
+  .admin .cal-cell.is-today .cal-cell__num {
+    border: 2px solid CanvasText;
+  }
+  .admin .cal-cell.is-selected {
+    outline: 2px dashed Highlight;
+    outline-offset: -2px;
+  }
+  .admin .cal-agenda__day.is-today {
+    box-shadow: none;
+    outline: 2px solid CanvasText;
   }
 }

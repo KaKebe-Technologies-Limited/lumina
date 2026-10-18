@@ -82,6 +82,21 @@ return [
             ],
         ],
         [
+            'key' => 'calendar', 'label' => 'Calendar and program dates', 'toggle' => true, 'default_visible' => true,
+            'help' => 'A small month calendar with the next dates (Uganda public holidays, international days, our programs and events), under the contact form. The dates are managed under Calendar in the admin menu; the full calendar page is /calendar. Switch this section off to hide it from the Contact page.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => 'Dates to remember'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Calendar & [[program dates]]', 'help' => $hlHelp],
+                ['key' => 'intro', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 2, 'default' => 'Uganda public holidays, important international days and the dates of our own programs and events.'],
+                ['key' => 'upcoming_title', 'label' => 'Heading of the list of next dates', 'type' => 'text', 'default' => 'Coming up'],
+                ['key' => 'upcoming_count', 'label' => 'How many next dates to list', 'type' => 'number', 'default' => 6, 'min' => 1, 'max' => 12],
+                ['key' => 'empty_text', 'label' => 'Text when there are no next dates', 'type' => 'text', 'default' => 'No dates are scheduled yet.'],
+                ['key' => 'legend_title', 'label' => 'Heading of the colour key', 'type' => 'text', 'default' => 'Key'],
+                ['key' => 'cta_label', 'label' => 'Button: full calendar', 'type' => 'text', 'default' => 'View full calendar'],
+                ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/calendar'],
+            ],
+        ],
+        [
             'key' => 'closing', 'label' => 'Closing line', 'toggle' => true,
             'fields' => [
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'At Lumina Africa Foundation, we believe in the power of collaboration. Reach out today — together, we can light the path to opportunity.'],

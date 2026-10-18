@@ -6,6 +6,7 @@
  */
 $this->start('scripts'); ?>
 <script src="<?= e(asset('js/pages/contact.js')) ?>" defer></script>
+<?php if (!empty($calendar)): ?><script src="<?= e(asset('js/calendar.js')) ?>" defer></script><?php endif; ?>
 <?php $this->end();
 
 $detailsOn = section_on('contact', 'details');
@@ -149,6 +150,11 @@ $fieldMeta = [
         </div>
     </div>
 </section>
+
+<?php /* ------------------------------------------------------------------ CALENDAR (compact month + coming up; docs/CALENDAR.md) */ ?>
+<?php if (!empty($calendar)): ?>
+    <?= partial('partials/calendar-embed', ['calendar' => $calendar]) ?>
+<?php endif; ?>
 
 <?php /* ------------------------------------------------------------------ CLOSING LINE */ ?>
 <?php section_begin('contact', 'closing', ['class' => 'contact-closing']); ?>

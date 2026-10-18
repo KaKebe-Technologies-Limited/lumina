@@ -6,6 +6,7 @@ namespace App\Services\Web;
 use App\Core\Database;
 use App\Core\Log;
 use App\Core\SitePages;
+use App\Services\Calendar\CalendarService;
 use App\Services\Newsletter\NewsletterService;
 
 /**
@@ -103,6 +104,30 @@ final class SitemapBuilder
             }
         } catch (\Throwable $e) {
             Log::warning('Sitemap: newsletter skipped - ' . $e->getMessage());
+        }
+
+        // ---- calendar (WEB agent; docs/CALENDAR.md section 10) --------------------------------------------------------------
+        // /calendar is listed by the page loop above; one entry per PUBLIC, active entry of a visible type (Uganda public holidays, international days,
+        // programme sessions ...), never a private one, a hidden one or an entry of a type that is hidden from visitors. Events keep their /events pages.
+        try {
+            $calPage = SitePages::get('calendar');
+            if ($calPage !== null && $calPage['is_published'] && SitePages::requirementMet($calPage['requires']) && CalendarService::available()) {
+                $newest = '';
+                $rows = Database::all(
+                    'SELECT e.slug, e.updated_at FROM calendar_entries e JOIN calendar_types t ON t.id = e.type_id'
+                    . ' WHERE e.is_active = 1 AND e.is_public = 1 AND t.is_active = 1 AND t.show_on_public = 1 ORDER BY e.id ASC LIMIT 500'
+                );
+                foreach ($rows as $row) {
+                    $add('/calendar/' . $row['slug'], (string) ($row['updated_at'] ?? ''), '0.5');
+                    $newest = max($newest, (string) ($row['updated_at'] ?? ''));
+                }
+                $loc = abs_url('calendar');
+                if ($newest !== '' && isset($entries[$loc]) && self::date($newest) > $entries[$loc]['lastmod']) {
+                    $entries[$loc]['lastmod'] = self::date($newest);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Sitemap: calendar skipped - ' . $e->getMessage());
         }
 
         $out = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";

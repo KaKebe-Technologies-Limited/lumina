@@ -4,6 +4,7 @@
     .field__label { font-size: 0.86rem; color: $navy; }
     .field__help { font-size: 0.78rem; overflow-wrap: anywhere; }      // long web addresses in the help text must wrap, not widen the page
     .input, .textarea, .select { padding: 0.6rem 0.8rem; border-radius: $radius; font-size: 0.95rem; border-width: 1px; }
+    .select { padding-right: 2.5rem; }                   // the shorthand above would put long option text under the chevron
     .textarea { min-height: 7rem; }
     .textarea--tall { min-height: 16rem; }
     .input--code { font-family: $font-mono; font-size: 0.88rem; }

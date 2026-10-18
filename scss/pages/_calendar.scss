@@ -1,0 +1,623 @@
+// pages/_calendar.scss - WEB agent. The public calendar (/calendar, /calendar/{slug}) AND the compact block on the Contact page.
+// Imported by main.scss. Every rule is scoped under the unique .cal-* prefix (the block is used on two pages). Contract: docs/CALENDAR.md.
+//
+// SHAPE LANGUAGE (colour is never the only cue; every type also has an icon and a text label):
+//   public holiday ............ FILLED (solid type colour, white or near-black text), star icon, "Public holiday" badge
+//   programme session / event . OUTLINED (2px type-colour border on white)
+//   international / other days  TINTED with a thick left bar
+//   date not confirmed yet .... DASHED outline (holiday: diagonal stripes) + the words "Date to be confirmed"
+// The per-type colours arrive as custom properties from ColorContrast::pair(): --cal-solid, --cal-tint, --cal-text (>= 4.5:1 on the tint AND on
+// white, so it is also the colour of borders and icons), --cal-on (text on the solid colour).
+
+// the author rules below (.btn, .cal-chip ...) set `display`, which would beat the UA rule of [hidden]: keep hidden things hidden
+.cal-page, .cal-detail, .contact-calendar, .cal-dialog { [hidden] { display: none !important; } }
+
+// ---- view tabs + toolbar ----------------------------------------------------------------------------------------------------
+.cal-toolbar {
+    [data-cal-print] { display: none; @include respond(md) { display: inline-flex; } }
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    margin-bottom: $space-5;
+}
+
+.cal-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2;
+    [data-cal-tab] .icon { display: none; @include respond(sm) { display: inline-block; } }
+
+    &__item {
+        display: inline-flex;
+        align-items: center;
+        gap: $space-2;
+        min-height: 2.75rem;
+        padding: 0 $space-3;
+        border: 1px solid $border-strong;
+        border-radius: $radius-pill;
+        background: $white;
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        @include respond(sm) { padding: 0 $space-4; font-size: $fs-sm; }
+        font-weight: 600;
+        color: $navy;
+        text-decoration: none;
+
+        &:hover { border-color: $navy; }
+        &.is-active { background: $navy; border-color: $navy; color: $white; }
+    }
+}
+
+// ---- the shell: month controls, filters, grid / list in one rounded card ------------------------------------------------------------
+.cal-shell {
+    overflow: hidden;
+    border: 1px solid $line;
+    border-radius: $radius-card;
+    background: $white;
+    box-shadow: $shadow-card;
+}
+
+.cal-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-3 $space-4;
+    padding: $space-4 $space-4 $space-3;
+    background: $surface;
+
+    @include respond(md) { padding: $space-5 $space-5 $space-3; }
+
+    &__nav { display: flex; gap: $space-2; }
+
+    // phones: the month name on its own line, the controls under it
+    &__title {
+        order: -1;
+        flex: 1 1 100%;
+        min-width: 0;
+        margin: 0;
+        @include respond(md) { order: 0; flex: 1 1 8rem; }
+        font-size: fluid(1.45rem, '1.1rem + 1.2vw', 2.1rem);
+        line-height: 1.15;
+        &:focus { outline: none; }
+        &:focus-visible { @include focus-ring($offset: 4px); border-radius: $radius-sm; }
+    }
+
+    &__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border: 1px solid $border-strong;
+        border-radius: 50%;
+        color: $navy;
+        background: $white;
+        transition: background $t-fast ease, border-color $t-fast ease;
+
+        &:hover { border-color: $navy; background: $tint-cool; }
+    }
+
+    // Contact block: title left, arrows right, no cream band
+    &--embed { padding: 0 0 $space-3; background: none; flex-wrap: nowrap; .cal-bar__title { order: 0; flex: 1 1 auto; font-size: $fs-lg; } }
+}
+
+.cal-jump {
+    display: flex;
+    flex: 1 1 100%;
+    min-width: 0;
+    gap: $space-2;
+    align-items: center;
+
+    @include respond(md) { flex: 0 0 auto; margin-left: auto; }
+    .select, .input { min-height: 2.5rem; width: auto; min-width: 0; border-radius: $radius-pill; }
+    .select { flex: 1 1 8rem; padding-left: $space-3; padding-right: 2.25rem; background-position: right 0.75rem center; }
+    .input { flex: 0 0 4.5rem; padding-inline: $space-2; text-align: center; -moz-appearance: textfield; appearance: textfield; &::-webkit-inner-spin-button, &::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } }
+    .btn { flex: none; }
+}
+
+.cal-filters {
+    padding: $space-2 $space-4 $space-4;
+    border-bottom: 1px solid $line;
+    background: $surface;
+    @include respond(md) { padding: $space-2 $space-5 $space-4; }
+
+    &__foot { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-4; margin: $space-3 0 0; font-size: $fs-xs; color: $ink-soft; }
+    &__all { font-weight: 600; color: $orange-text; }
+}
+// the real submit button is only needed without JavaScript (assets/js/calendar.js applies a change at once and adds .cal-ready)
+.cal-ready .cal-filters__apply { display: none; }
+
+// ---- key + filter chips ------------------------------------------------------------------------------------------------------------
+.cal-legend {
+    &__title { margin: 0 0 $space-2; font-family: $font-heading; font-weight: 600; font-size: $fs-sm; color: $ink-soft; }
+    &__list { display: flex; flex-wrap: wrap; gap: $space-2; margin: 0; padding: 0; list-style: none; }
+    &__item { position: relative; }
+}
+
+.cal-chip {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+
+    // the real checkbox stays focusable and clickable: it covers the chip (opacity 0)
+    input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+
+    &__box {
+        display: inline-flex;
+        align-items: center;
+        gap: $space-2;
+        min-height: 2.25rem;
+        padding: 0.1rem 0.7rem;
+        border: 2px solid var(--cal-text);
+        border-radius: $radius-pill;
+        background: var(--cal-tint);
+        color: var(--cal-text);
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+    &__tick { display: none; width: 0.9rem; height: 0.9rem; margin-left: 2px; @include respond(sm) { display: inline-block; } }
+}
+.cal-chip--static { cursor: default; }
+.cal-chip--static .cal-chip__box { min-height: 2rem; }
+
+// ticked = the shape of the type; unticked = dashed, plain, without the tick (the checkbox state is also spoken)
+.cal-legend__item--own .cal-chip__box { background: $white; }
+.cal-legend__item--holiday .cal-chip__box { background: var(--cal-solid); border-color: var(--cal-solid); color: var(--cal-on); }
+.cal-chip input:not(:checked) + .cal-chip__box {
+    border-style: dashed;
+    border-color: $border-strong;
+    background: $white;
+    color: $ink-soft;
+    .cal-chip__icon { opacity: 0.55; }
+    .cal-chip__tick { display: none; }
+}
+.cal-chip input:focus-visible + .cal-chip__box { @include focus-ring($offset: 2px); }
+.cal-chip input:hover + .cal-chip__box { box-shadow: $shadow-sm; }
+
+// ---- pills (month cells) -------------------------------------------------------------------------------------------------------------
+.cal-pill {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0 $space-1;
+    max-width: 100%;
+    padding: 2px $space-2;
+    border-radius: $radius-sm;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-decoration: none;
+    overflow-wrap: break-word;                  // only a word wider than the cell breaks ('anywhere' cut "Independence" in half)
+    hyphens: auto;
+    transition: filter $t-fast ease;
+
+    &:hover { filter: brightness(0.95); .cal-pill__text { text-decoration: underline; } }
+    &:focus-visible { @include focus-ring($offset: 1px); }
+    &__icon { flex: none; width: 0.85rem; height: 0.85rem; margin-top: 0.2em; }
+    &__text { flex: 1 1 0; min-width: 0; @include line-clamp(2); }
+    &__time { font-weight: 500; font-variant-numeric: tabular-nums; }
+    &__flag { flex: 1 0 100%; margin-top: 1px; font-size: 0.7rem; font-weight: 500; line-height: 1.25; }
+
+    // observance days: tinted, thick bar on the left
+    &--obs { background: var(--cal-tint); color: var(--cal-text); border-left: 4px solid var(--cal-solid); }
+    // programme sessions and events: outlined
+    &--own { background: $white; color: var(--cal-text); border: 2px solid var(--cal-text); padding: 0 $space-2; }
+    // public holidays: filled
+    &--holiday { background: var(--cal-solid); color: var(--cal-on); border: 2px solid var(--cal-solid); padding: 0 $space-2; .cal-pill__text { -webkit-line-clamp: 3; } }
+    // not confirmed yet
+    &--tbc.cal-pill--obs, &--tbc.cal-pill--own { border-style: dashed; }
+    &--tbc.cal-pill--obs { border-left-style: dotted; }
+    // a filled pill stays filled (text contrast untouched); its edge turns into a dashed line in the text colour
+    &--tbc.cal-pill--holiday { border-style: dashed; border-color: var(--cal-on); }
+    &--cancelled { opacity: 0.8; .cal-pill__text { text-decoration: line-through; } }
+}
+// the detail page and dialogs print a type pill that is not a link
+span.cal-pill { display: inline-flex; flex-wrap: nowrap; align-items: center; padding: 0.15rem $space-3; font-family: $font-heading; font-size: $fs-xs; &:hover { filter: none; } .cal-pill__icon { margin-top: 0; } .cal-pill__text { -webkit-line-clamp: unset; display: block; } }
+
+// ---- month grid --------------------------------------------------------------------------------------------------------------------
+.cal-month__agenda { display: block; }
+.cal-month__grid { display: none; }
+// the grid needs about 130px per day for readable holiday names: from 1024px up. Below that (tablets in portrait, 150% zoom) the agenda lists
+// the month, every name in full.
+@include respond(lg) {
+    .cal-month__grid { display: block; }
+    .cal-month__agenda { display: none; }
+}
+.cal-month, .cal-listview, .cal-embed__main { transition: opacity $t-fast ease; &.is-loading { opacity: 0.55; } }
+
+.cal-empty {
+    margin: $space-4;
+    color: $ink-soft;
+    &--grid { display: grid; gap: $space-1; margin: 0; padding: $space-4 $space-5; border-bottom: 1px solid $line; background: $white; strong { color: $navy; } }
+}
+
+.cal-grid {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    background: $white;
+
+    &__dow {
+        padding: $space-2 $space-2;
+        border: 1px solid $line;
+        border-top: 0;
+        background: $surface;
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        font-weight: 600;
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: $ink-soft;
+        abbr { text-decoration: none; }
+        &:first-child { border-left: 0; }
+        &:last-child { border-right: 0; }
+    }
+
+    td {
+        height: 7.5rem;
+        padding: $space-1;
+        border: 1px solid $line;
+        vertical-align: top;
+        &:first-child { border-left: 0; }
+        &:last-child { border-right: 0; }
+    }
+    tr:last-child td { border-bottom: 0; }
+}
+
+.cal-day {
+    position: relative;
+
+    &__num {
+        display: inline-grid;
+        place-items: center;
+        min-width: 1.75rem;
+        height: 1.75rem;
+        padding: 0 $space-1;
+        border-radius: $radius-pill;
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        font-weight: 600;
+        color: $ink;
+    }
+    &__list { display: grid; gap: 3px; margin: 2px 0 0; padding: 0; list-style: none; }
+    &--out { background: $surface-alt; .cal-day__num { color: $ink-soft; } }
+    &--weekend:not(.cal-day--out) { background: rgba($surface, 0.65); }
+    &--holiday:not(.cal-day--out) { background: #FBF1EF; }
+    &.has-items { cursor: pointer; }
+    &.has-items:hover { background: $tint-cool; }
+}
+.cal-day.is-today { background: rgba($gold, 0.16); box-shadow: inset 0 3px 0 $gold; }
+.cal-day.is-today .cal-day__num { background: $navy; color: $white; }
+.cal-day:focus { outline: none; }
+.cal-day:focus-visible { outline: 3px solid $orange-dark; outline-offset: -3px; }
+
+.cal-more {
+    display: inline-block;
+    padding: 1px $space-2;
+    border-radius: $radius-sm;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $navy;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    &:hover { background: $tint-cool; }
+}
+
+.cal-hint { margin: 0; padding: $space-3 $space-4 $space-4; font-size: $fs-xs; color: $ink-soft; &__keys { display: none; @include respond(md) { display: inline; } } }
+
+// compact grid (Contact page): the number and one icon marker per entry; the text is in the day panel, the list beside it and for screen readers
+.cal-grid--compact {
+    td { height: 3.75rem; padding: 3px; @include respond(md) { height: 4.75rem; padding: $space-1; } }
+    .cal-day__num { min-width: 1.5rem; height: 1.5rem; font-size: 0.75rem; @include respond(md) { min-width: 1.75rem; height: 1.75rem; font-size: $fs-xs; } }
+    .cal-day__list { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 1px; }
+    .cal-day__list li { display: block; }
+    .cal-grid__dow { padding: $space-1; font-size: 0.7rem; letter-spacing: 0.02em; @include respond(md) { padding: $space-2; font-size: $fs-xs; } }
+    .cal-pill {
+        display: grid;
+        place-items: center;
+        width: 1.1rem;
+        height: 1.1rem;
+        padding: 0;
+        border-radius: 4px;
+        @include respond(md) { width: 1.5rem; height: 1.5rem; border-radius: $radius-sm; }
+    }
+    .cal-pill--obs { border-left-width: 3px; }
+    .cal-pill--own, .cal-pill--holiday { border-width: 1.5px; }
+    .cal-pill__text, .cal-pill__flag { @include visually-hidden; }
+    .cal-pill__icon { width: 0.65rem; height: 0.65rem; margin: 0; @include respond(md) { width: 0.85rem; height: 0.85rem; } }
+    .cal-more { padding: 0 2px; font-size: 0.7rem; text-decoration: none; }
+}
+
+// ---- agenda (mobile month, list view) ------------------------------------------------------------------------------------------------
+.cal-agenda {
+    margin: 0;
+    padding: $space-2 $space-2;
+    list-style: none;
+    @include respond(sm) { padding: $space-2 $space-4; }
+    @include respond(md) { padding: $space-3 $space-5; }
+
+    &__day {
+        display: grid;
+        grid-template-columns: 3rem minmax(0, 1fr);
+        gap: $space-2;
+        @include respond(sm) { grid-template-columns: 3.5rem minmax(0, 1fr); gap: $space-3; }
+        padding: $space-3 0;
+        border-top: 1px solid $line;
+        scroll-margin-top: calc(#{$header-h-shrunk} + 1rem);
+        &:first-child { border-top: 0; }
+        @include respond(md) { grid-template-columns: 4.5rem minmax(0, 1fr); gap: $space-5; padding: $space-4 0; }
+    }
+    &__date { margin: 0; }
+    &__badge {
+        display: grid;
+        justify-items: center;
+        width: 3rem;
+        padding: $space-2 0;
+        border-radius: $radius-lg;
+        @include respond(sm) { width: 3.5rem; }
+        background: $tint-cool;
+        color: $navy;
+        line-height: 1.1;
+        @include respond(md) { width: 4.5rem; }
+    }
+    &__dow, &__mon { font-family: $font-heading; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+    &__num { font-family: $font-display; font-size: 1.6rem; font-weight: 600; line-height: 1.15; }
+    &__list { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-2; margin: 0; padding: 0; list-style: none; align-content: start; }
+}
+.cal-agenda__day.is-today .cal-agenda__badge { background: $navy; color: $white; }
+
+// ---- a readable row: list view, mobile month, coming-up lists -------------------------------------------------------------------------
+.cal-item {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: $space-2;
+    padding: $space-2 $space-3 $space-3 $space-2;
+    border: 1px solid $line;
+    border-radius: $radius-lg;
+    background: $white;
+    transition: border-color $t-fast ease, box-shadow $t-fast ease;
+    @include respond(sm) { gap: $space-3; padding: $space-3; }
+
+    &:hover { border-color: var(--cal-text); box-shadow: $shadow-sm; }
+    &:focus-within { box-shadow: 0 0 0 3px $orange-dark; border-color: transparent; }
+
+    // the leading chip carries the shape of the type
+    &__chip, &__date {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: $radius;
+        background: var(--cal-tint);
+        color: var(--cal-text);
+    }
+    &__date { width: 3.25rem; height: auto; min-height: 3.25rem; padding: $space-1 0; line-height: 1.1; align-content: center; justify-items: center; }
+    &__day { font-family: $font-display; font-size: 1.35rem; font-weight: 600; }
+    &__mon { font-family: $font-heading; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+    &__body { flex: 1 1 auto; min-width: 0; }
+    &__title { margin: 0; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; line-height: 1.35; overflow-wrap: break-word; }
+    // the whole row is the click target (stretched title link)
+    &__link { color: $navy; text-decoration: none; &::after { content: ''; position: absolute; inset: 0; border-radius: inherit; } &:hover { text-decoration: underline; } &:focus-visible { outline: none; } }
+    &__meta { display: flex; flex-wrap: wrap; gap: 0 $space-3; margin: 2px 0 0; font-size: $fs-xs; color: $ink-soft; }
+    &__type { display: inline-flex; align-items: center; gap: $space-1; font-weight: 600; color: var(--cal-text); .icon { width: 0.9rem; height: 0.9rem; } }
+    &__flags { display: flex; flex-wrap: wrap; gap: $space-1 $space-2; margin: $space-2 0 0; }
+    &__summary { margin: $space-2 0 0; font-size: $fs-xs; color: $ink-soft; @include line-clamp(2); }
+    &--holiday &__chip, &--holiday &__date { background: var(--cal-solid); color: var(--cal-on); }
+    &--own &__chip, &--own &__date { background: $white; border: 2px solid var(--cal-text); }
+    &--tbc &__chip, &--tbc &__date { border: 2px dashed var(--cal-text); }
+    &--holiday.cal-item--tbc &__chip, &--holiday.cal-item--tbc &__date { border-color: var(--cal-on); }
+}
+
+.cal-upcoming {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: $space-2;
+    margin: 0 0 $space-5;
+    padding: 0;
+    list-style: none;
+}
+.cal-upcoming__item { display: flex; min-width: 0; > .cal-item { flex: 1 1 auto; min-width: 0; } }
+.cal-upcoming--page { padding: 0; margin-bottom: 0; @include respond(lg) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-3 $space-4; } }
+.cal-upcoming-view { padding: $space-5 $space-4 $space-4; @include respond(md) { padding: $space-6 $space-5 $space-5; } &__title { margin: 0 0 $space-4; font-size: $fs-xl; } }
+
+// ---- notes + subscribe -----------------------------------------------------------------------------------------------------------------
+.cal-notes {
+    display: grid;
+    gap: $space-4;
+    margin-top: $space-6;
+    @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-5; margin-top: $space-7; }
+
+    &__card { padding: $space-5; border: 1px solid $line; border-radius: $radius-card; background: $white; }
+    &__card--info { background: $surface; }
+    &__title { margin: 0 0 $space-2; font-size: $fs-md; }
+    &__card--info &__disclaimer + &__title { margin-top: $space-4; }
+    &__text { margin: 0; font-size: $fs-sm; color: $ink-soft; }
+    &__disclaimer { display: flex; gap: $space-3; align-items: flex-start; margin: 0; padding: $space-3 $space-4; border-left: 4px solid $gold; border-radius: 0 $radius $radius 0; background: $white; font-size: $fs-sm; color: $ink; .icon { flex: none; margin-top: 0.2em; color: $gold-text; } }
+}
+.cal-subscribe {
+    &__actions { display: flex; flex-wrap: wrap; gap: $space-2; margin: $space-4 0 0; }
+    &__url { margin: $space-3 0 0; code { display: block; padding: $space-2 $space-3; border-radius: $radius-sm; background: $tint-cool; color: $navy; font-size: $fs-xs; overflow-wrap: anywhere; } }
+}
+
+// ---- the Contact page block ---------------------------------------------------------------------------------------------------------------
+.cal-embed {
+    display: grid;
+    gap: $space-5;
+    @include respond(lg) { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: $space-6; align-items: start; }
+
+    &__main { min-width: 0; padding: $space-4; border: 1px solid $line; border-radius: $radius-card; background: $white; box-shadow: $shadow-card; @include respond(md) { padding: $space-5; } }
+    &__side { min-width: 0; padding: $space-5; border-radius: $radius-card; background: $tint-cool; }
+    &__heading { margin: 0 0 $space-3; font-size: $fs-lg; }
+    &__note { margin: $space-4 0 0; font-size: $fs-xs; color: $ink-soft; }
+    &__cta { margin: $space-5 0 0; }
+    .cal-hint { padding: $space-3 0 0; }
+    .cal-grid { border: 1px solid $line; border-radius: $radius; overflow: hidden; }
+    .cal-legend { margin-top: $space-4; }
+    .cal-chip--static .cal-chip__box { background: $white; }
+    .cal-legend__item--holiday .cal-chip__box { background: var(--cal-solid); }
+    .cal-item { background: $white; }
+}
+.cal-embed .cal-upcoming { margin-bottom: 0; }
+
+// ---- entry detail page ----------------------------------------------------------------------------------------------------------------
+.cal-detail {
+    &__back { margin-bottom: $space-6; }
+    &__layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: $space-6;
+        @include respond(lg) { grid-template-columns: minmax(0, 1fr) 22rem; gap: $space-8; align-items: start; }
+    }
+    // the facts card is first in the DOM (phones read the date first); from lg the grid puts it in the right-hand column without any `order`
+    &__main { min-width: 0; @include respond(lg) { grid-column: 1; grid-row: 1; } }
+    &__aside { @include respond(lg) { grid-column: 2; grid-row: 1; position: sticky; top: calc(#{$header-h} + 1.5rem); } }
+    &__heading { margin: $space-6 0 $space-3; font-size: $fs-xl; &:first-child { margin-top: 0; } }
+    &__note { display: flex; gap: $space-3; align-items: flex-start; margin: 0 0 $space-5; padding: $space-3 $space-4; border-left: 4px solid $info; border-radius: 0 $radius $radius 0; background: $info-bg; color: $ink; .icon { flex: none; margin-top: 0.2em; color: $info; } }
+    &__related { display: flex; flex-wrap: wrap; gap: $space-3; margin: $space-6 0 0; }
+    &__next { display: grid; gap: $space-2; margin: 0; padding: 0; list-style: none; li { padding: $space-2 $space-4; border: 1px solid $line; border-radius: $radius; &[aria-current='date'] { border-color: $navy; background: $tint-cool; } } }
+    &__tbc { margin-left: $space-2; padding: 0 $space-2; border: 1px dashed $ink-soft; border-radius: $radius-sm; font-size: $fs-xs; color: $ink-soft; }
+    &__disclaimer { margin-top: $space-6; }
+}
+
+// deep navy facts card (same look as the Event page)
+.cal-facts {
+    display: flex;
+    flex-direction: column;
+    gap: $space-5;
+    padding: $space-6 $space-5;
+    border-radius: $radius-panel;
+    color: rgba($white, 0.9);
+    background: radial-gradient(22rem 12rem at 100% 0%, rgba($navy-light, 0.85), transparent 62%), $navy;
+    box-shadow: $shadow-card;
+
+    :focus-visible { outline-color: $gold; }
+    a { color: $gold; }
+    a.btn { color: inherit; }
+    &__badges { display: flex; flex-wrap: wrap; gap: $space-2; align-items: center; margin: 0; }
+    &__badge { display: inline-flex; align-items: center; padding: 0.15rem $space-3; border-radius: $radius-pill; background: $gold; color: $navy-dark; font-family: $font-heading; font-size: $fs-xs; font-weight: 600; &--tbc { border: 2px dashed $navy-dark; background: $white; } }
+    &__cancelled { display: flex; gap: $space-2; align-items: center; margin: 0; padding: $space-3; border-radius: $radius; background: rgba($white, 0.12); color: $white; font-weight: 600; }
+    &__list { display: grid; gap: $space-5; margin: 0; }
+    &__item { display: flex; align-items: flex-start; gap: $space-4; }
+    &__icon { display: grid; place-items: center; flex: none; width: 3rem; height: 3rem; border-radius: 50%; background: rgba($gold, 0.2); color: $gold; }
+    &__item dt { font-family: $font-heading; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba($white, 0.82); }
+    &__item dd { margin: $space-1 0 0; font-family: $font-display; font-size: 1.15rem; font-weight: 600; line-height: 1.35; color: $white; }
+    &__sub { display: block; margin-top: 2px; font-family: $font-body; font-size: $fs-sm; font-weight: 400; color: rgba($white, 0.86); }
+    &__actions { display: grid; gap: $space-3; }
+    &__copied { margin: 0; min-height: 1.2em; font-size: $fs-xs; color: $gold; }
+}
+
+// ---- dialog: the day panel and one entry (assets/js/calendar.js builds it; a native <dialog>, so focus is trapped, Esc closes, the page behind is inert) ----
+html.cal-lock { overflow: hidden; }
+.cal-dialog {
+    width: unquote('min(38rem, calc(100vw - 1.5rem))');
+    max-width: none;
+    max-height: unquote('min(46rem, calc(100vh - 1.5rem))');
+    max-height: unquote('min(46rem, calc(100dvh - 1.5rem))');
+    padding: 0;
+    border: 0;
+    border-radius: $radius-card;
+    background: $white;
+    color: $ink;
+    box-shadow: $shadow-lg;
+    overflow: hidden;
+
+    &::backdrop { background: rgba($navy-dark, 0.72); }
+    &[open] { display: flex; flex-direction: column; animation: cal-dialog-in $t-base ease; }
+
+    &__head { display: flex; align-items: flex-start; gap: $space-3; padding: $space-4 $space-4 $space-3 $space-5; border-bottom: 1px solid $line; background: $surface; }
+    &__title { flex: 1 1 auto; min-width: 0; margin: 0; padding-top: $space-1; font-size: $fs-lg; line-height: 1.25; overflow-wrap: anywhere; &:focus { outline: none; } }
+    &__close, &__back {
+        display: inline-flex; flex: none; align-items: center; justify-content: center; gap: $space-1;
+        min-width: 2.75rem; height: 2.75rem; padding: 0 $space-2;
+        border: 1px solid $border-strong; border-radius: $radius-pill; background: $white; color: $navy;
+        font-family: $font-heading; font-size: $fs-xs; font-weight: 600; cursor: pointer;
+        &:hover { border-color: $navy; background: $tint-cool; }
+    }
+    &__back { padding: 0 $space-3; max-width: 12rem; span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
+    &__body { flex: 1 1 auto; min-height: 0; padding: $space-4 $space-5 $space-5; overflow-y: auto; overscroll-behavior: contain; }
+    &__empty { margin: 0; color: $ink-soft; }
+    &__list { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-2; margin: 0; padding: 0; list-style: none; }
+    &__badges { display: flex; flex-wrap: wrap; gap: $space-2; align-items: center; margin: 0 0 $space-4; }
+    &__facts { display: grid; gap: $space-3; margin: 0 0 $space-4; dt { font-family: $font-heading; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: $ink-soft; } dd { margin: 0; font-weight: 500; } }
+    &__sub { display: block; font-size: $fs-xs; font-weight: 400; color: $ink-soft; }
+    &__text { margin: 0 0 $space-4; }
+    &__note { margin: 0 0 $space-4; padding: $space-3 $space-4; border-left: 4px solid $info; border-radius: 0 $radius $radius 0; background: $info-bg; font-size: $fs-sm; }
+    &__alert { margin: 0 0 $space-4; padding: $space-3 $space-4; border-radius: $radius; background: $warning-bg; color: $warning; font-weight: 600; }
+    &__actions { display: flex; flex-wrap: wrap; gap: $space-2; margin: $space-4 0 0; }
+    &__status { min-height: 1.2em; margin: $space-2 0 0; font-size: $fs-xs; color: $ink-soft; }
+    .prose { font-size: $fs-sm; }
+
+    // phones: a bottom sheet
+    @include respond-down(sm) {
+        width: 100vw;
+        margin: auto 0 0;
+        max-height: 92vh;
+        max-height: 92dvh;
+        border-radius: $radius-card $radius-card 0 0;
+        &[open] { animation-name: cal-sheet-in; }
+    }
+}
+@keyframes cal-dialog-in { from { opacity: 0; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes cal-sheet-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+
+// ---- print: the month as a clean table on paper, no controls ------------------------------------------------------------------------------
+@media print {
+    @page { margin: 12mm; size: landscape; }
+
+    .page-calendar {
+        background: #fff;
+        color: #000;
+
+        .topbar, .site-header, .footer-pre, .site-footer, .back-to-top, .skip-link, .breadcrumbs, .page-hero, .newsletter-row { display: none !important; }
+        [data-reveal] { opacity: 1 !important; transform: none !important; }
+        .cal-toolbar, .cal-bar__nav, .cal-bar__today, .cal-jump, .cal-filters__foot, .cal-subscribe, .cal-more, .cal-hint__keys, .cal-dialog, [data-cal-print], [data-cal-copy], [data-cal-share] { display: none !important; }
+        .cal-shell { border: 0; box-shadow: none; overflow: visible; }
+        .cal-bar, .cal-filters { padding-inline: 0; background: none; border: 0; }
+        .cal-bar__title { font-size: 20pt; }
+        .cal-month__grid { display: block !important; }
+        .cal-month__agenda { display: none !important; }
+        .cal-grid { border: 1px solid #000; }
+        .cal-grid td { height: auto; min-height: 22mm; border-color: #666; break-inside: avoid; }
+        .cal-grid__dow { border-color: #666; background: #eee; color: #000; }
+        .cal-day--out { background: #f2f2f2; }
+        .cal-day.is-today { background: #fff; box-shadow: none; }
+        .cal-day.is-today .cal-day__num { background: none; color: #000; border: 2px solid #000; }
+        .cal-pill { background: #fff !important; color: #000 !important; border: 1px solid #000 !important; border-left-width: 3px !important; }
+        .cal-pill--holiday { font-weight: 700; background-image: none !important; border-width: 2px !important; }
+        .cal-pill--tbc { border-style: dashed !important; }
+        .cal-pill__text { -webkit-line-clamp: unset; display: block; }
+        .cal-pill { font-size: 8pt; }
+        .cal-grid td { font-size: 9pt; }
+        .cal-legend__list { gap: 4px; }
+        .cal-chip__box { border-color: #000 !important; background: #fff !important; color: #000 !important; }
+        .cal-chip input:not(:checked) + .cal-chip__box { display: none; }
+        .cal-chip__tick { display: none; }
+        .cal-listview .cal-agenda, .cal-upcoming-view { padding: 0; }
+        .cal-agenda__day, .cal-item { break-inside: avoid; }
+        .cal-item { border-color: #666; box-shadow: none !important; }
+        .cal-item__link::after { display: none; }
+        .cal-notes { display: block; margin-top: 6mm; }
+        .cal-notes__card { border: 0; padding: 0; background: none; }
+        .cal-notes__card--info + .cal-notes__card { display: none; }
+        .cal-embed { display: block; }
+        .cal-embed__main, .cal-embed__side { padding: 0; border: 0; background: none; box-shadow: none; }
+    }
+}
+
+// ---- Windows high contrast / forced colours: backgrounds and shadows are replaced by the system palette, so every state that relied on them
+// (today, the selected tab, the filled holiday pill, the dialog edge) also gets a border ---------------------------------------------
+@media (forced-colors: active) {
+    .cal-day.is-today { box-shadow: none; outline: 2px solid CanvasText; outline-offset: -2px; border-top: 4px solid Highlight; }
+    .cal-day.is-today .cal-day__num { border: 2px solid CanvasText; }
+    .cal-agenda__day.is-today .cal-agenda__badge { border: 3px solid CanvasText; }
+    .cal-tabs__item.is-active { border: 3px solid Highlight; font-weight: 700; }
+    .cal-pill--holiday { border-width: 3px; }
+    .cal-dialog { border: 2px solid CanvasText; }
+}

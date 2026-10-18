@@ -56,7 +56,7 @@ return [
                                 . '<li><strong>Donation pledges:</strong> your name, email address, phone number, the amount you intend to give, your message and whether you wish to remain anonymous.</li>'
                                 . '<li><strong>Event registrations:</strong> your name, email address, phone number and organisation.</li>'
                                 . '<li><strong>Membership registration:</strong> see the section &ldquo;Membership registration&rdquo; below.</li>'
-                                . '</ul><p>When you submit a form we also record your IP address and browser type. We use this only to keep the website secure and to prevent spam and abuse.</p>',
+                                . '</ul><p>When you submit a form we also record your IP address and browser type. We use this only to keep the website secure and to prevent spam and abuse. To limit abuse of busy pages (forms, the calendar feed and calendar downloads) the site also keeps a scrambled, keyed hash of your IP address for a short time; it cannot be turned back into the address.</p>',
                         ],
                         [
                             'title' => 'How we use your information',

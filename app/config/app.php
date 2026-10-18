@@ -102,12 +102,15 @@ return [
         'newsletter.manage' => ['admin', 'editor'], // newsletter issues: create, edit, duplicate, preview, publish, schedule, unpublish, archive, delete drafts (docs/NEWSLETTER.md)
         'newsletter.delete_published' => ['admin'], // delete an issue that is (or was) public
         'newsletter.send' => ['admin'],             // EVERYTHING about e-mailing an issue: settings, test sends, campaign, retries
+        'calendar.manage'   => ['admin', 'editor'], // calendar entries, quick add, per-occurrence changes, confirming holiday dates, types, CSV import / export (docs/CALENDAR.md)
+        'calendar.advanced' => ['admin'],           // the advanced repeat rules (nth weekday, Easter offset, Islamic holidays)
+        'calendar.delete'   => ['admin'],           // BULK delete of calendar entries
     ],
 
     /** Slugs a custom page may NOT use (they are real routes or folders). */
     'reserved_slugs' => [
         'admin', 'assets', 'uploads', 'api', 'login', 'logout', 'index', 'storage', 'app', 'bin', 'database', 'docs', 'scss', 'tools',
         'vendor', 'sitemap', 'sitemap-xml', 'robots', 'robots-txt', 'subscribe', 'unsubscribe', 'search', 'download', 'downloads',
-        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter',
+        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter', 'calendar',
     ],
 ];

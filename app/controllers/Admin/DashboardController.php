@@ -36,6 +36,10 @@ final class DashboardController extends AdminController
         if ($tile = \App\Services\Membership\MembershipService::dashboardTile()) {
             $tiles[] = $tile;
         }
+        // Calendar (docs/CALENDAR.md): Eid dates and other flagged dates that still need an administrator's confirmation within 60 days
+        if ($tile = \App\Services\Calendar\CalendarService::dashboardTile()) {
+            $tiles[] = $tile;
+        }
         if ($content) {
             $p = $counts['posts'];
             $tiles[] = ['icon' => 'newspaper', 'value' => number_format($counts['posts_total']), 'label' => 'Published posts', 'sub' => $p['blog'] . ' blog, ' . $p['news'] . ' news, ' . $p['press'] . ' press', 'url' => 'admin/posts'];

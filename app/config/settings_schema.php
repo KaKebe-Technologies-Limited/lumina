@@ -95,6 +95,19 @@ return [
                 'newsletter_default_subject_prefix' => ['label' => 'Subject prefix', 'type' => 'text', 'default' => '', 'rules' => 'nullable|max:60', 'help' => 'Put in front of the issue title in the e-mail subject, for example "Lumina Newsletter:". Leave empty for no prefix.'],
             ],
         ],
+        'calendar' => [
+            'label' => 'Calendar',
+            'icon'  => 'calendar',
+            'help'  => 'How the public calendar behaves. Add and change the dates in Admin > Calendar. The wording (headings, disclaimer, labels) is edited in Admin > Pages > Calendar and Pages > Contact.',
+            'fields' => [
+                'calendar_week_start'      => ['label' => 'Week starts on', 'type' => 'select', 'default' => 'monday', 'rules' => 'required|in:monday,sunday,saturday',
+                    'options' => ['monday' => 'Monday', 'sunday' => 'Sunday', 'saturday' => 'Saturday'], 'help' => 'The first column of the month grid.'],
+                'calendar_show_on_contact' => ['label' => 'Show the calendar on the Contact page', 'type' => 'boolean', 'default' => '1',
+                    'help' => 'The small calendar under the contact form. (It can also be switched off in Admin > Pages > Contact > "Calendar and program dates".)'],
+                'calendar_default_types'   => ['label' => 'Types shown first', 'type' => 'text', 'default' => '', 'rules' => 'nullable|max:300', 'placeholder' => 'for example: uganda-holiday, programme',
+                    'help' => 'Type names (their short codes, separated by commas) that are ticked when a visitor opens the calendar. Leave empty to show every type. Admin > Calendar > Types shows the code of each type.'],
+            ],
+        ],
         'branding' => [
             'label' => 'Branding & SEO',
             'icon'  => 'image',

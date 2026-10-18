@@ -1,0 +1,533 @@
+// admin/_calendar.scss - ADMIN agent. The Calendar admin screens: manager (month grid, list, quick-add dialog), holidays & days, the entry editor,
+// types & colours, CSV import / export, settings. Imported by admin.scss. Everything is scoped under .admin-calendar and prefixed cal-.
+// Contract: docs/CALENDAR.md. The accessible colour pair of a type reaches an element through the custom properties --cal-solid / --cal-tint / --cal-text
+// (set inline from App\Services\Calendar\ColorContrast::pair). Colour is never the only cue: every type also has an icon and a text label.
+
+.admin-calendar {
+    // the `hidden` attribute must win over any display set by a class below
+    [hidden] { display: none !important; }
+    .inline-form { display: inline; margin: 0; }
+    .nowrap { white-space: nowrap; }
+    .badge { text-transform: none; white-space: nowrap; }
+    .table-wrap { position: relative; }
+    @include respond-down('md') { .table--stack td.nowrap { white-space: normal; } .table--stack td { flex-wrap: wrap; } }
+    code { font-family: $font-mono; font-size: 0.86em; background: $surface-alt; padding: 0.05rem 0.35rem; border-radius: $radius-sm; }
+
+    // ---- shared small pieces
+    .cal-subhead { margin: $space-5 0 $space-3; font-size: 1rem; }
+    .cal-hint { font-size: $fs-sm; }
+    .cal-hintbar {
+        display: flex;
+        gap: $space-2;
+        align-items: flex-start;
+        margin-bottom: $space-4;
+        padding: $space-3 $space-4;
+        background: $info-bg;
+        border-radius: $radius;
+        color: $ink;
+        font-size: $fs-sm;
+        .icon { flex: none; margin-top: 0.15rem; color: $info; }
+    }
+    .cal-summary { margin: 0 0 $space-3; font-size: $fs-sm; color: $ink-soft; }
+    .cal-note-inline {
+        display: flex;
+        gap: $space-2;
+        align-items: flex-start;
+        margin: $space-3 0;
+        font-size: $fs-sm;
+        color: $ink-soft;
+        .icon { flex: none; margin-top: 0.15rem; }
+    }
+    .cal-note { display: flex; gap: $space-3; align-items: flex-start; font-size: $fs-sm; color: $ink-soft; p { margin: 0; } .icon { flex: none; margin-top: 0.2rem; } }
+    .cal-narrow { max-width: 7.5rem; }
+    .cal-btn-text { white-space: nowrap; }
+    // wide screens: row buttons keep only the icon (the text stays for screen readers); phones show the text in the stacked cards, very wide screens too
+    @include respond('md') {
+        @include respond-down('2xl') {
+            .cal-list .cal-btn-text, .cal-holiday-table .cal-btn-text, #cal-days .cal-btn-text { @include visually-hidden; }
+        }
+    }
+
+    // a type shown as a chip: shape + name on its own light colour, a solid edge in the type colour
+    .cal-typechip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.15rem 0.6rem 0.15rem 0.5rem;
+        border-left: 3px solid var(--cal-solid, #{$ink-soft});
+        border-radius: $radius-sm;
+        background: var(--cal-tint, #{$surface-alt});
+        color: var(--cal-text, #{$ink});
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        font-weight: 600;
+        line-height: 1.5;
+        white-space: nowrap;
+        &--lg { font-size: 1rem; padding: 0.3rem 0.8rem 0.3rem 0.65rem; }
+    }
+
+    // ---- tabs
+    .cal-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-1 $space-2;
+        margin-bottom: $space-4;
+        border-bottom: 1px solid $border;
+        &__item, &__link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.65rem $space-3;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -1px;
+            color: $ink-soft;
+            font-weight: 600;
+            font-size: $fs-sm;
+            text-decoration: none;
+            &:hover { color: $navy; }
+        }
+        &__item.is-active { color: $navy; border-bottom-color: $orange-accent; }
+        &__link { font-weight: 500; }
+        &__spacer { flex: 1 1 0; }
+    }
+
+    // ---- month toolbar
+    .cal-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: $space-3 $space-4;
+        margin-bottom: $space-3;
+        &__nav { display: flex; flex-wrap: wrap; gap: $space-2; align-items: center; }
+        &__title { flex: 1 1 12rem; margin: 0; font-size: 1.45rem; line-height: 1.2; color: $navy; }
+        &__jump { display: flex; flex-wrap: wrap; align-items: flex-end; gap: $space-2; .field { min-width: 0; } .select { min-width: 9rem; } }
+    }
+
+    // ---- the month grid (desktop and tablet)
+    .cal-month-wrap { margin-bottom: $space-4; }
+    .cal-month {
+        display: none;
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        overflow: hidden;
+        th {
+            padding: $space-2;
+            background: $surface;
+            border-bottom: 1px solid $border;
+            font-family: $font-heading;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: $ink-soft;
+            text-align: left;
+        }
+        td { vertical-align: top; }
+    }
+    .cal-agenda { display: block; }
+    @include respond(md) {
+        .cal-month { display: table; }
+        .cal-agenda { display: none; }
+    }
+    .cal-cell {
+        height: 7.6rem;
+        padding: 0.3rem 0.35rem 0.4rem;
+        border-right: 1px solid $border;
+        border-bottom: 1px solid $border;
+        background: $white;
+        position: relative;
+        &:last-child { border-right: 0; }
+        &.is-weekend { background: lighten($surface, 2%); }
+        &.is-out { background: $surface-alt; .cal-cell__num { color: $ink-soft; font-weight: 500; } }
+        &.is-today { box-shadow: inset 0 0 0 2px $orange-accent; }
+        &.is-today .cal-cell__num { background: $navy; color: $white; }
+        &.is-selected { background: rgba($gold, 0.18); }
+        &__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem; }
+        &__num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 1.7rem;
+            height: 1.7rem;
+            padding: 0 0.3rem;
+            border-radius: $radius-pill;
+            color: $navy;
+            font-family: $font-heading;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-decoration: none;
+            &:hover { background: rgba($gold, 0.3); }
+        }
+        &__add {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.7rem;
+            height: 1.7rem;
+            border-radius: $radius-pill;
+            color: $ink-soft;
+            opacity: 0.8;
+            &:hover, &:focus-visible { opacity: 1; background: $navy; color: $white; }
+        }
+        &__items { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; > li { min-width: 0; } }
+        &__more { display: block; padding: 0 0.25rem; font-size: 0.75rem; font-weight: 600; color: $orange-text; text-decoration: none; &:hover { text-decoration: underline; } }
+    }
+    @media (hover: hover) {
+        html.js & .cal-cell { cursor: pointer; }
+    }
+
+    // a coloured pill: shape + title, the type colour as a solid edge, text and wash from the accessible pair
+    .cal-pill {
+        display: flex;
+        flex-wrap: wrap;                        // a flag ("Team only", "To confirm") drops under the title instead of squeezing it away
+        align-items: center;
+        gap: 0.25rem;
+        min-width: 0;
+        padding: 1px 0.3rem;
+        border-left: 3px solid var(--cal-solid, #{$ink-soft});
+        border-radius: 4px;
+        background: var(--cal-tint, #{$surface-alt});
+        color: var(--cal-text, #{$ink});
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1.35;
+        text-decoration: none;
+        .icon { flex: none; width: 0.85em; height: 0.85em; }
+        &:hover { box-shadow: 0 0 0 1px var(--cal-solid, #{$ink-soft}); }
+        &__text { flex: 1 1 calc(100% - 1.3rem); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        &__time { font-weight: 500; font-variant-numeric: tabular-nums; }
+        &__flag { flex: 0 1 auto; max-width: calc(100% - 1.15rem); margin-left: 1.15rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 0.3rem; border-radius: $radius-pill; background: $white; border: 1px solid currentColor; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+        &.is-cancelled .cal-pill__text { text-decoration: line-through; }
+        &.is-private { border: 1px dashed var(--cal-solid, #{$ink-soft}); border-left-width: 3px; }
+    }
+
+    // ---- items (day panel, phone agenda)
+    .cal-items { margin: 0; padding: 0; list-style: none; display: grid; gap: $space-2; }
+    .cal-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: $space-2 $space-3;
+        align-items: start;
+        padding: $space-3;
+        background: $white;
+        border: 1px solid $border;
+        border-left: 4px solid var(--cal-solid, #{$ink-soft});
+        border-radius: $radius;
+        > .btn { justify-self: start; }
+        @include respond(md) { grid-template-columns: 11rem minmax(0, 1fr) auto; align-items: center; > .btn { grid-column: auto; justify-self: end; } }
+        > * { min-width: 0; }
+        &__type { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.5rem; border-radius: $radius-sm; background: var(--cal-tint, #{$surface-alt}); color: var(--cal-text, #{$ink}); font-size: $fs-xs; font-weight: 700; font-family: $font-heading; justify-self: start; }
+        &__main { display: grid; gap: 2px; min-width: 0; }
+        &__title { font-weight: 700; color: $navy; text-decoration: none; overflow-wrap: anywhere; &:hover { color: $orange-dark; text-decoration: underline; } }
+        &__meta, &__note { font-size: $fs-xs; color: $ink-soft; overflow-wrap: anywhere; }
+        &__badges { display: flex; flex-wrap: wrap; gap: $space-1; &:empty { display: none; } }
+        &.is-cancelled .cal-item__title { text-decoration: line-through; color: $ink-soft; }
+    }
+    .cal-agenda__empty { padding: $space-5; background: $white; border: 1px dashed $border-strong; border-radius: $radius-lg; text-align: center; color: $ink-soft; }
+    .cal-agenda__day { margin-bottom: $space-4; padding: $space-3; background: $surface; border-radius: $radius-lg; &.is-today { box-shadow: inset 0 0 0 2px $orange-accent; } }
+    .cal-agenda__date { margin: 0 0 $space-2; font-size: 1rem; color: $navy; }
+    .cal-agenda__add { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: $space-2; font-size: $fs-sm; font-weight: 600; color: $orange-text; text-decoration: none; &:hover { text-decoration: underline; } }
+
+    // ---- legend
+    .cal-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $space-2 $space-3;
+        align-items: center;
+        margin: 0 0 $space-5;
+        padding: 0;
+        list-style: none;
+        &__item { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.6rem 0.15rem 0.5rem; border-left: 3px solid var(--cal-solid); border-radius: $radius-sm; background: var(--cal-tint); color: var(--cal-text); font-size: $fs-xs; font-weight: 600; font-family: $font-heading; &.is-off { opacity: 0.6; } }
+        &__note { flex: 1 1 22rem; font-size: $fs-xs; color: $ink-soft; }
+    }
+
+    // ---- selected day
+    .cal-day-panel { scroll-margin-top: calc(#{$admin-topbar-h} + 1rem); &__empty p { margin: 0; color: $ink-soft; } }
+
+    // ---- quick-add dialog (with JavaScript); without it the same form is an ordinary card on the page
+    .cal-quick {
+        padding: 0;
+        border: 0;
+        border-radius: $radius-lg;
+        background: $white;
+        color: $ink;
+        width: 42rem;
+        max-width: calc(100% - 1.5rem);
+        max-height: calc(100vh - 1.5rem);
+        overflow: auto;
+        box-shadow: $shadow-lg;
+        &::backdrop { background: rgba($navy-dark, 0.55); }
+        &__form { display: block; }
+        &__head { display: flex; justify-content: space-between; gap: $space-3; align-items: flex-start; padding: $space-4 $space-5 0; }
+        &__title { margin: 0; font-size: 1.25rem; color: $navy; }
+        &__sub { margin: 0.2rem 0 0; font-size: $fs-sm; color: $ink-soft; }
+        &__body { padding: $space-4 $space-5; display: grid; gap: $space-4; }
+        &__foot { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-3; padding: $space-3 $space-5 $space-4; border-top: 1px solid $border; background: $surface; }
+        &__full { margin-left: auto; font-size: $fs-xs; }
+        .alert { margin: $space-3 $space-5 0; }
+        @include respond-down(md) {
+            margin: auto 0 0;
+            width: 100%;
+            max-width: 100%;
+            border-radius: $radius-lg $radius-lg 0 0;
+            &__full { margin-left: 0; flex-basis: 100%; }
+        }
+    }
+    html:not(.js) & .cal-quick {
+        display: block;
+        position: static;
+        width: auto;
+        max-width: none;
+        max-height: none;
+        margin: 0 0 $space-5;
+        border: 1px solid $border;
+        box-shadow: $shadow-sm;
+        .cal-quick__close { display: none; }
+    }
+    // without JavaScript nothing can be shown or hidden when the choice changes, so every option stays visible (the server only reads the ones that belong to the chosen repeat)
+    html:not(.js) & {
+        .cal-rule[hidden], [data-cal-nth-box][hidden], [data-cal-tbc-note][hidden], [data-cal-easter-custom][hidden], [data-cal-quick-until][hidden] { display: block !important; }
+        .cal-rule--grid[hidden] { display: grid !important; }
+        .cal-times[hidden] { display: grid !important; }
+        [data-cal-tbc][hidden] { display: flex !important; }
+    }
+    .cal-more {
+        border: 1px solid $border;
+        border-radius: $radius;
+        background: $surface;
+        > summary { padding: $space-3 $space-4; cursor: pointer; font-weight: 600; font-size: $fs-sm; color: $navy; }
+        &__body { display: grid; gap: $space-4; padding: 0 $space-4 $space-4; }
+    }
+    .cal-quick__public small { color: $ink-soft; }
+    .cal-times { margin-top: $space-3; }
+
+    // ---- list view
+    .cal-filter-check { display: flex; align-items: flex-end; min-width: 0; padding-bottom: 0.45rem; }
+    .cal-bulk {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-2 $space-3;
+        margin-bottom: $space-3;
+        .select { width: auto; min-width: 14rem; max-width: 100%; }
+        &__count { font-size: $fs-sm; font-weight: 600; color: $ink-soft; }
+        &__hint { font-size: $fs-xs; color: $ink-soft; }
+    }
+    .cal-list, .cal-holiday-table, #cal-days {
+        input[type='checkbox'] { width: 1.1rem; height: 1.1rem; accent-color: $navy; cursor: pointer; }
+        tbody tr.is-off td { color: $ink-soft; }
+        tbody tr.is-selected td { background: rgba($gold, 0.16); }
+        .cell-sub, .cell-title { overflow-wrap: anywhere; }
+        tbody td .badge + .badge { margin-left: 0.15rem; }
+    }
+    .cal-list .table__actions, .cal-holiday-table .table__actions { flex-wrap: wrap; @include respond('md') { flex-wrap: nowrap; } }
+
+    // ---- holidays tab
+    .cal-confirm {
+        &--due { border-color: rgba($orange-dark, 0.6); .card__header { background: lighten($orange-accent, 33%); border-bottom-color: rgba($orange-dark, 0.25); } .card__title { display: inline-flex; gap: $space-2; align-items: center; color: darken($orange-dark, 8%); } }
+        &__list { margin: $space-4 0 0; padding: 0; list-style: none; display: grid; gap: $space-3; }
+        &__item { display: grid; gap: $space-3; padding: $space-3 $space-4; background: $white; border: 1px solid $border; border-left: 4px solid $orange-accent; border-radius: $radius; @include respond(md) { grid-template-columns: minmax(0, 1fr) auto; align-items: end; } }
+        &__name { display: block; font-size: 1.05rem; color: $navy; }
+        &__pred { display: block; color: $ink-soft; font-size: $fs-sm; }
+        &__form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: $space-2; .field { margin: 0; min-width: 11rem; } }
+    }
+    .cal-holiday-table {
+        tbody tr.is-due td:first-child { box-shadow: inset 4px 0 0 $orange-accent; }
+        @include respond('md') { .cal-holiday-actions { min-width: 14rem; } }
+    }
+    .cal-change {
+        summary { cursor: pointer; font-size: $fs-sm; font-weight: 600; color: $orange-text; &:hover { color: $navy; } }
+        &__form { display: grid; gap: $space-3; margin-top: $space-3; padding: $space-3; background: $surface; border: 1px solid $border; border-radius: $radius; max-width: 22rem; }
+    }
+    .cal-days-search { min-width: 14rem; flex: 0 1 18rem; .input { min-width: 0; } }
+    .cal-toggle {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        .badge { white-space: nowrap; }
+        &:hover .badge { box-shadow: 0 0 0 2px rgba($gold, 0.5); }
+        &:focus-visible { @include focus-ring; border-radius: $radius-pill; }
+    }
+
+    // ---- editor
+    .cal-editor {
+        display: grid;
+        gap: $space-5;
+        margin-bottom: $space-5;
+        grid-template-columns: minmax(0, 1fr);
+        @include respond(lg) { grid-template-columns: minmax(0, 1fr) 21rem; align-items: start; }
+        &__errors, &__actions { grid-column: 1 / -1; }
+        &__errors { margin: 0; ul { margin: $space-2 0 0; padding-left: 1.1rem; display: grid; gap: 2px; } }
+        &__main { display: grid; gap: $space-5; min-width: 0; .card + .card { margin-top: 0; } }
+        &__aside {
+            display: grid;
+            gap: $space-5;
+            min-width: 0;
+            .card + .card { margin-top: 0; }
+            @include respond(lg) { position: sticky; top: calc(#{$admin-topbar-h} + #{$space-4}); }
+        }
+        &__actions { margin-top: 0; }
+        .card__body { display: grid; gap: $space-4; }
+        .card__body > * + * { margin-top: 0; }
+        small { color: $ink-soft; font-weight: 400; }
+    }
+    .cal-rules { display: grid; gap: $space-4; }
+    .cal-rule { min-width: 0; margin: 0; padding: 0; border: 0; &--grid { display: grid; gap: $space-3; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } } }
+    .cal-inline { display: flex; align-items: center; gap: $space-2; }
+    .cal-days__list { display: flex; flex-wrap: wrap; gap: $space-2; margin: $space-2 0; }
+    .cal-day-check {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.4rem 0.75rem;
+        border: 1.5px solid $border-strong;
+        border-radius: $radius-pill;
+        background: $white;
+        font-size: $fs-sm;
+        font-weight: 600;
+        cursor: pointer;
+        input { width: 1rem; height: 1rem; accent-color: $navy; }
+        &:has(input:checked) { border-color: $navy; background: rgba($gold, 0.2); }
+        &:has(input:focus-visible) { @include focus-ring; }
+    }
+    .cal-colour {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-2;
+        &__pick { flex: none; width: 2.6rem; height: 2.6rem; padding: 2px; border: 1px solid $border-strong; border-radius: $radius; background: $white; cursor: pointer; }
+        .input { flex: 1 1 8rem; min-width: 0; max-width: 11rem; }
+    }
+    .cal-facts { display: grid; gap: $space-2; margin: 0; div { display: flex; flex-wrap: wrap; gap: $space-2; } dt { font-weight: 700; color: $ink-soft; min-width: 7rem; } dd { margin: 0; } }
+    .cal-locked { display: flex; gap: $space-2; align-items: flex-start; margin: 0; padding: $space-3; background: $info-bg; border-radius: $radius; font-size: $fs-sm; .icon { flex: none; margin-top: 0.15rem; } }
+    .cal-links {
+        > summary { list-style: none; cursor: pointer; &::-webkit-details-marker { display: none; } .card__title::after { content: ' \25BE'; color: $ink-soft; } }
+        &[open] > summary .card__title::after { content: ' \25B4'; }
+        summary:focus-visible { @include focus-ring; }
+    }
+    .cal-preview {
+        &__rule { margin: 0 0 $space-2; font-weight: 600; color: $navy; }
+        &__list { margin: 0; padding-left: 1.4rem; display: grid; gap: 0.25rem; li::marker { color: $gold-deep; font-weight: 700; } }
+        &__msg { margin: 0; color: $warning; font-size: $fs-sm; }
+        &__help { margin: $space-3 0 0; font-size: $fs-xs; color: $ink-soft; }
+        .card__body { gap: 0; }
+    }
+
+    // ---- single-date changes
+    .cal-dates { scroll-margin-top: calc(#{$admin-topbar-h} + 1rem); margin-bottom: $space-5; }
+    .cal-occs { margin: $space-4 0 0; padding: 0; list-style: none; display: grid; gap: $space-3; }
+    .cal-occ {
+        display: grid;
+        gap: $space-2;
+        padding: $space-3 $space-4;
+        background: $white;
+        border: 1px solid $border;
+        border-left: 4px solid $gold;
+        border-radius: $radius;
+        &.is-cancelled { border-left-color: $danger; .cal-occ__when strong { text-decoration: line-through; } }
+        &__when { display: flex; flex-wrap: wrap; align-items: center; gap: $space-1 $space-3; }
+        &__time { color: $ink-soft; font-size: $fs-sm; }
+        &__badges { display: inline-flex; flex-wrap: wrap; gap: $space-1; }
+        &__sub { flex-basis: 100%; font-size: $fs-xs; color: $ink-soft; }
+        &__more > summary { cursor: pointer; font-size: $fs-sm; font-weight: 600; color: $orange-text; &:hover { color: $navy; } }
+        &__form { display: grid; gap: $space-3; margin-top: $space-3; padding: $space-4; background: $surface; border: 1px solid $border; border-radius: $radius; }
+        &__fields { display: grid; gap: $space-3; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    }
+    .cal-choices { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: $space-2; }
+    .cal-more-actions__row { display: flex; flex-wrap: wrap; gap: $space-3; align-items: center; form { margin: 0; } }
+    .cal-more-actions__note { margin: 0; display: inline-flex; gap: $space-2; align-items: center; }
+
+    // ---- types & colours
+    .cal-types__list { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-5; margin-bottom: $space-5; @include respond('xl') { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } .card + .card { margin-top: 0; } }
+    .cal-type {
+        &.is-off { opacity: 0.8; }
+        &__title { margin: 0; }
+        &__meta { display: inline-flex; flex-wrap: wrap; gap: $space-2; align-items: center; font-size: $fs-sm; color: $ink-soft; }
+        &__form { display: grid; gap: $space-4; }
+        &__grid { display: grid; gap: $space-4; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        &__switches { display: grid; gap: $space-2; }
+        &__why { font-size: $fs-xs; }
+        .card__body > * + * { margin-top: 0; }
+    }
+    .cal-contrast {
+        padding: $space-3 $space-4;
+        background: $surface;
+        border: 1px dashed $border-strong;
+        border-radius: $radius;
+        &__title { margin: 0 0 $space-2; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: $ink-soft; }
+        &__list { margin: 0; padding: 0; list-style: none; display: grid; gap: $space-2; li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: $space-2 $space-3; align-items: center; font-size: $fs-sm; } }
+        &__what { min-width: 0; overflow-wrap: anywhere; }
+        &__msg { margin: $space-2 0 0; font-size: $fs-xs; color: $ink-soft; &.is-warn { color: $warning; font-weight: 600; } }
+    }
+    .cal-sample {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.4rem;
+        height: 1.8rem;
+        border-radius: $radius-sm;
+        font-family: $font-heading;
+        font-weight: 700;
+        font-size: 0.85rem;
+        &--solid { background: var(--cal-solid); color: var(--cal-on); }
+        &--tint { background: var(--cal-tint); color: var(--cal-text); border-left: 3px solid var(--cal-solid); }
+        &--marker { background: $white; border: 1px solid $border; position: relative; &::after { content: ''; width: 0.9rem; height: 0.9rem; border-radius: 50%; background: var(--cal-solid); } }
+    }
+    .cal-type--new { border-style: dashed; }
+
+    // ---- import / export
+    .cal-import__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-5; @include respond(xl) { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; } .card + .card { margin-top: 0; } }
+    .cal-steps { margin: 0 0 $space-4; padding-left: 1.3rem; display: grid; gap: $space-4; li { padding-left: 0.3rem; > div, > form { margin-top: $space-2; } } li::marker { font-weight: 700; color: $navy; } }
+    .cal-upload { display: grid; gap: $space-3; max-width: 30rem; padding: $space-4; background: $surface; border: 1px solid $border; border-radius: $radius; }
+    .cal-report { scroll-margin-top: calc(#{$admin-topbar-h} + 1rem); margin-bottom: $space-5; }
+    .cal-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-3; @include respond(md) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .cal-tile {
+        display: flex;
+        flex-direction: column;
+        padding: $space-3 $space-4;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        strong { font-family: $font-heading; font-size: 1.6rem; line-height: 1.1; color: $navy; }
+        span { font-size: $fs-xs; color: $ink-soft; font-weight: 600; }
+        &--ok { border-color: rgba($success, 0.5); background: $success-bg; }
+        &--bad { border-color: rgba($danger, 0.5); background: $danger-bg; strong { color: $danger; } }
+    }
+    .cal-report__commit { display: flex; flex-wrap: wrap; gap: $space-3; align-items: center; }
+    .cal-report__msgs { margin: $space-1 0 0; padding-left: 1rem; font-size: $fs-xs; color: $ink; display: grid; gap: 2px; }
+    .cal-report__table {
+        .cal-row--error td:first-child { box-shadow: inset 4px 0 0 $danger; }
+        .cal-row--ok td:first-child { box-shadow: inset 4px 0 0 $success; }
+        .cal-row--duplicate td:first-child { box-shadow: inset 4px 0 0 $border-strong; }
+        td { overflow-wrap: anywhere; }
+    }
+
+    // ---- settings
+    .cal-settings__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-5; @include respond(lg) { grid-template-columns: minmax(0, 1fr) 20rem; align-items: start; } .card + .card { margin-top: 0; } }
+    .cal-fieldset { margin: $space-4 0 0; padding: 0; border: 0; min-width: 0; }
+    .cal-checks { display: flex; flex-wrap: wrap; gap: $space-2 $space-4; margin: $space-2 0; }
+    .cal-typecheck { align-items: center; }
+    .cal-links-list { margin: 0; padding: 0; list-style: none; display: grid; gap: $space-3; li > span { display: block; font-size: $fs-xs; } }
+    .cal-more-actions { margin-bottom: $space-5; }
+}
+
+// the month grid, the editor and the dialogs are screen furniture: nothing here is meant for paper
+@media print {
+    .admin-calendar .cal-quick, .admin-calendar .cal-cell__add, .admin-calendar .cal-tabs, .admin-calendar .filters { display: none !important; }
+}
+
+// Windows high contrast / forced colours: the today marker and the selected day rely on box-shadow and background, which that mode removes
+@media (forced-colors: active) {
+    .admin .cal-cell.is-today { box-shadow: none; outline: 2px solid CanvasText; outline-offset: -2px; }
+    .admin .cal-cell.is-today .cal-cell__num { border: 2px solid CanvasText; }
+    .admin .cal-cell.is-selected { outline: 2px dashed Highlight; outline-offset: -2px; }
+    .admin .cal-agenda__day.is-today { box-shadow: none; outline: 2px solid CanvasText; }
+}

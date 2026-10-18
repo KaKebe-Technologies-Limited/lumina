@@ -184,6 +184,7 @@ Activities (+ Gallery under Activities). This deliberately differs from the arch
 | news | News | 71 | yes* | yes* | blog |
 | stories | Impact Stories | 72 | yes* | yes* | blog |
 | contact | Contact | 80 | yes | yes | - |
+| calendar | Calendar (under Contact) | 91 | yes | yes | contact |
 | activities | Activities | 90 | yes | yes | - |
 | events | Events | 91 | yes* | yes* | activities |
 | gallery | Gallery | 92 | yes | yes | activities |
@@ -318,3 +319,20 @@ Nothing on the newsletter pages is invented: no issue count, subscriber number, 
 | **Personal data** | A sending campaign records each address (admin only) so an issue is never sent twice to the same person. Addresses never appear in logs, the activity log or the public API. | Delete old issues you no longer need; mention newsletters in the privacy notice (retention period). | Admin > Pages > Privacy |
 | **Legal** | The site makes no legal claim. Uganda's Data Protection and Privacy Act, 2019 may require registration with the Personal Data Protection Office, consent records and specific notices. | **Confirm with counsel** before the first mailing. | - |
 | **Pictures** | Newsletter pictures are uploaded by the admin or editor into `/uploads`; the editor asks for a description (alt text) of every picture. The sample issue uses only pictures the site already shows. | Make sure you have the right to publish every photo you add (see section 5). | Admin > Newsletter |
+
+## 11. Calendar and programme scheduler: what is seeded, what is not, and what the owner must do
+
+Technical contract and sources: `docs/CALENDAR.md`. Nothing here is invented: **no Lumina programme session, event, meeting or deadline is seeded**; the owner adds those. Only public, verifiable dates are pre-filled, each with its source name (and a link where the page was verified).
+
+| Topic | What ships | What the owner must do | Where |
+|---|---|---|---|
+| **Uganda public holidays** (14) | New Year's Day, NRM Liberation Day (26 Jan), Archbishop Janani Luwum Day (16 Feb), International Women's Day (8 Mar), Good Friday, Easter Monday, Labour Day (1 May), Uganda Martyrs' Day (3 Jun), National Heroes' Day (9 Jun), Eid al-Fitr, Eid al-Adha, Independence Day (9 Oct), Christmas Day, Boxing Day. Fixed days repeat every year; Good Friday and Easter Monday are calculated from Western Easter. The list was cross-checked against several sources; the text of the Public Holidays Act itself could not be opened (see `docs/CALENDAR.md` section 9). | Check the list against the current official notice for each year. | Admin > Calendar > Holidays & days |
+| **Eid al-Fitr and Eid al-Adha** | Calculated with a tabular (arithmetical) calendar, which is only a prediction: the real day follows the moon sighting and the announcement, and can differ by one day (for example 2025: 31 and 30 March). Every Eid date therefore shows **"Date to be confirmed"** on the website and in the downloadable calendar file. | When the day is announced, press **Confirm** (or enter the announced date) on Holidays & days. The label disappears for that year only. The sidebar badge and the dashboard card list the dates that still need confirming. | Admin > Calendar > Holidays & days |
+| **Extra public holidays** | Not seeded. The President can declare additional holidays at short notice (for example for an election or a swearing-in). | Add each one as a normal date of the type "Uganda public holiday". | Admin > Calendar > Add a date |
+| **Holidays that fall on a Sunday** | The calendar shows the **statutory date only**. No source confirmed an automatic move to the Monday, so none is shown. | If the government announces a substitute day, add it (or move that year's date). | Admin > Calendar |
+| **International and UN days** (46) | Days from the UN list of observances (for example Refugee Day, Humanitarian Day, Human Rights Day, Day of the Girl Child), WHO health days, UNESCO and ITU days, plus Africa Day, Day of the African Child and the Red Cross and Red Crescent day. Safer Internet Day (2nd Tuesday of February) and Girls in ICT Day (4th Thursday of April) move with the weekday. Each entry carries its source name; links that could not be verified are left empty. | Hide the days that do not suit the foundation (they are hidden, never deleted), add links, and add days that matter to your programs. | Admin > Calendar > Holidays & days, or edit the entry |
+| **Programme sessions, events, meetings, deadlines** | None. Events entered under Admin > Events appear in the calendar automatically (the Events screen stays the place where they are edited). | Add the real schedule: one date, a range, or a repeating date (daily, weekly, monthly, yearly) with an "until" date; link it to a program or project if you like. A CSV file can add up to 500 dates at once (template in Import / export). | Admin > Calendar > Add a date |
+| **Wording** | Page title, introduction, filters, the "dates may change" disclaimer and every label are editable. | Review the disclaimer and the Contact block wording. | Admin > Pages > Calendar and Admin > Pages > Contact |
+| **Where it appears** | `/calendar`, a compact month and the next dates on the Contact page under the form, the main menu under Contact, the sitemap (one page per public date) and a file to add any date or the whole calendar to a phone or computer calendar. | Switch the Contact block off or change the week start (Monday, Sunday or Saturday) under Calendar settings if you prefer. | Admin > Calendar > Settings (admin role) |
+| **Time zone** | All times are East Africa Time (Kampala, UTC+3, no daylight saving). | Nothing. | - |
+| **Personal data** | None is collected from visitors. Staff names are never shown on the public calendar. | Nothing. | - |
