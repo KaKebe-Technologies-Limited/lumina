@@ -183,16 +183,22 @@ final class CalendarController extends Controller
         }
         $desc = IcsBuilder::plainText((string) $entry['description']);
         $description = $desc !== '' ? $desc : CalendarService::dateLabel($occ) . ($occ['source_label'] ? ' (' . $occ['source_label'] . ')' : '');
+        $type = CalendarService::typeById((int) $entry['type_id']);
+        $meta = [
+            'title' => (string) $entry['title'],
+            'description' => $description,
+            // a recurring day has one canonical page; the occurrence is only a ?date= view of it
+            'canonical' => '/calendar/' . $entry['slug'],
+        ];
+        // a public MEETING (docs/MEETINGS.md) is a one-off listing that may carry a join link: visitors can read it, search engines do not index it
+        if (\App\Services\Calendar\CalendarWriter::ownedByMeeting((int) $entry['id'])) {
+            $meta['robots'] = 'noindex,follow';
+        }
         return $this->renderPage('calendar', 'web/calendar/show', [
-            'entry' => $entry, 'occ' => $occ, 'next' => $next, 'type' => CalendarService::typeById((int) $entry['type_id']),
+            'entry' => $entry, 'occ' => $occ, 'next' => $next, 'type' => $type,
             'jsonLd' => $this->eventLd([$occ]),
         ], [
-            'meta' => [
-                'title' => (string) $entry['title'],
-                'description' => $description,
-                // a recurring day has one canonical page; the occurrence is only a ?date= view of it
-                'canonical' => '/calendar/' . $entry['slug'],
-            ],
+            'meta' => $meta,
             'breadcrumbs' => [
                 [HomeSupport::navLabel('contact', 'Contact'), url('contact')],
                 [HomeSupport::navLabel('calendar', 'Calendar'), url('calendar')],

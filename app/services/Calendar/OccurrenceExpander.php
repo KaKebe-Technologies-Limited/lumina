@@ -147,7 +147,8 @@ final class OccurrenceExpander
             'program_id'         => isset($entry['program_id']) ? (int) $entry['program_id'] : null,
             'project_id'         => isset($entry['project_id']) ? (int) $entry['project_id'] : null,
             'link_url'           => ($entry['link_url'] ?? '') !== '' ? (string) $entry['link_url'] : null,
-            'link_label'         => ($entry['link_label'] ?? '') !== '' ? (string) $entry['link_label'] : null,
+            // a meeting's entry stores a token, not words: the wording stays editable in Admin > Pages > Meetings (MeetingService::JOIN_LABEL_TOKEN)
+            'link_label'         => ($entry['link_label'] ?? '') !== '' ? ((string) $entry['link_label'] === \App\Services\Meetings\MeetingService::JOIN_LABEL_TOKEN ? \App\Services\Meetings\MeetingService::calendarJoinLabel() : (string) $entry['link_label']) : null,
             'source_label'       => ($entry['source_label'] ?? '') !== '' ? (string) $entry['source_label'] : null,
             'source_url'         => ($entry['source_url'] ?? '') !== '' ? (string) $entry['source_url'] : null,
             'is_public'          => !empty($entry['is_public']),

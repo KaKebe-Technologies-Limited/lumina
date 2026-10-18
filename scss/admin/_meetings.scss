@@ -1,0 +1,499 @@
+// admin/_meetings.scss - ADMIN agent. Meetings list, the one-page schedule form (platform cards, duration pills, invitee chips and pickers), the meeting page
+// (attendee table, stats, dialogs), the request inbox. Imported by admin.scss. Every rule lives under .meetings-admin (the views put that class on their root; the
+// <dialog> elements sit outside the root, so .ma-dialog is styled on its own). Contract: docs/MEETINGS.md sections 11 and 12.1.
+// Contrast: navy / ink-soft on white or cream >= 6:1; white on navy 11.6:1; danger / warning / success text colours come from the shared tokens (all >= 4.5:1 on white).
+
+.meetings-admin {
+    // ---- small shared bits
+    .inbox-count {
+        display: inline-block;
+        min-width: 1.5rem;
+        margin-left: 0.2rem;
+        padding: 0 0.45rem;
+        border-radius: $radius-pill;
+        background: $surface-alt;
+        color: $ink-soft;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.5rem;
+        text-align: center;
+    }
+    .tabs { overflow-x: auto; overflow-y: hidden; padding-bottom: 1px; flex-wrap: nowrap; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+    .tabs__item.is-active .inbox-count { background: $navy; color: $white; }
+    .inline-form { display: inline-flex; margin: 0; }
+    .field__opt { font-weight: 400; color: $ink-soft; font-size: $fs-xs; }
+    .field__req { color: $danger; }
+    .field--full { grid-column: 1 / -1; }
+    .ma-count {
+        display: inline-block;
+        margin-left: 0.35rem;
+        padding: 0 0.55rem;
+        border-radius: $radius-pill;
+        background: $tint-cool;
+        color: $navy;
+        font-size: $fs-xs;
+        font-weight: 700;
+        line-height: 1.5rem;
+        vertical-align: middle;
+    }
+    .ma-danger { color: $danger; &:hover { color: $danger; background: $danger-bg; } }
+    .ma-lead {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-2 $space-4;
+        margin: (-$space-2) 0 $space-5;
+        color: $ink-soft;
+        font-size: $fs-sm;
+        .icon { vertical-align: -0.2em; }
+        &__when { display: inline-flex; align-items: center; gap: $space-2; color: $navy; font-weight: 600; flex-wrap: wrap; }
+        &__platform { font-weight: 600; }
+    }
+    .ma-rel { margin-left: 0.4rem; padding: 0.05rem 0.5rem; border-radius: $radius-pill; background: rgba($gold, 0.22); color: $navy-dark; font-size: $fs-xs; font-weight: 700; }
+    .ma-inline { margin-top: $space-2; }
+    .ma-banners { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-2; margin-bottom: $space-2; .alert { margin: 0; } .alert__body p { margin: $space-1 0 0; } .alert__body ul { margin: $space-1 0 0 1.1rem; padding: 0; list-style: disc; } }
+    .ma-live { font-size: $fs-sm; color: $navy; font-weight: 600; &:empty { display: none; } padding: $space-3 $space-4; background: $tint-cool; border-radius: $radius; }
+    .ma-sub { margin: $space-4 0 $space-2; font-size: 0.95rem; }
+    .ma-prose { font-size: $fs-sm; p { margin: 0 0 $space-3; } ul, ol { margin: 0 0 $space-3 1.2rem; padding: 0; } ul { list-style: disc; } ol { list-style: decimal; } a { color: $orange-text; text-decoration: underline; } }
+    .ma-quote {
+        margin: 0 0 $space-4;
+        padding: $space-4 $space-5;
+        border-left: 4px solid $gold;
+        background: $surface;
+        border-radius: 0 $radius $radius 0;
+        color: $ink;
+        font-size: $fs-sm;
+        overflow-wrap: anywhere;
+    }
+    .ma-facts-list {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: $space-3;
+        margin: 0;
+        > div { display: grid; gap: 2px; overflow-wrap: anywhere; }
+        dt { font-size: $fs-xs; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: $ink-soft; }
+        dd { margin: 0; color: $ink; font-size: $fs-sm; a { color: $orange-text; } }
+        &--cols { @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    }
+    .ma-facts {
+        list-style: none;
+        margin: $space-4 0 0;
+        padding: 0;
+        display: grid;
+        gap: $space-2;
+        font-size: $fs-sm;
+        li { display: flex; gap: $space-2; align-items: flex-start; color: $ink-soft; .icon { flex: none; margin-top: 0.2rem; color: $navy; } }
+        a { color: $orange-text; }
+    }
+    .ma-manage { display: grid; gap: $space-2; justify-items: start; > * + * { margin-top: 0; } .btn { text-align: left; } }
+    .ma-howto { margin: $space-4 auto; padding: 0 0 0 1.4rem; max-width: 34rem; text-align: left; list-style: decimal; display: grid; gap: $space-2; font-size: $fs-sm; }
+
+    // ---- page layouts
+    .ma-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: $space-5;
+        align-items: start;
+        @include respond(lg) { grid-template-columns: minmax(0, 1fr) 22rem; }
+        &__main, &__side { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-5; align-content: start; }
+        .card + .card { margin-top: 0; }
+    }
+
+    // ---- the meeting page: details beside the sending panel, the people full width, then three tool cards
+    .ma-show { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-5; .card + .card { margin-top: 0; } }
+    .ma-top { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-5; align-items: start; @include respond(lg) { grid-template-columns: minmax(0, 1fr) 22rem; } }
+    .ma-tools { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-5; align-items: start; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } @include respond(xl) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .badge { text-transform: none; white-space: nowrap; }
+
+    // ---- the list
+    .ma-table {
+        .cell-title a { text-decoration: none; }
+        .ma-err { color: $danger; font-weight: 600; overflow-wrap: anywhere; }
+        .ma-warn { color: $warning; font-weight: 600; }
+        tbody tr[hidden] { display: none; }
+        .ma-when-cell { color: $navy; }
+    }
+    .table-wrap { overflow-x: auto; }
+    // phones: every row is a small card; the label sits in its own column so badges and notes keep their natural width
+    @include respond-down(md) {
+        .ma-table {
+            tr { padding: $space-3 0; }
+            td { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: $space-3; align-items: start; text-align: left; padding: 0.35rem $space-4; }
+            td::before { padding-top: 0.15rem; }
+            td.col-actions { display: block; text-align: left; padding-top: $space-2; }
+            td.col-actions::before { content: none; }
+            .table__actions { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: $space-2; }
+            .ma-cell .badge { justify-self: start; }
+        }
+    }
+    .ma-cell { min-width: 0; display: grid; gap: 2px; justify-items: start; > * { max-width: 100%; } }
+    // a visitor's name or an address can be one very long word: it wraps instead of pushing the table sideways (the Members and Calendar tables do the same)
+    .ma-cell .cell-title, .ma-cell .cell-sub, .ma-cell .cell-title a { overflow-wrap: anywhere; }
+    // a status badge may wrap in the narrow value column of a stacked row (320 px) instead of being clipped
+    .ma-table .ma-cell .badge { white-space: normal; text-align: left; max-width: 100%; }
+    // the Person column is the one that carries long text: keep it wide enough, and give the Actions column back its room below xl by showing icons only
+    .ma-table { @include respond(md) { th:first-child, td:first-child { min-width: 11rem; } } }
+    @include respond(md) { .ma-table .ma-btn-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
+    @include respond(xl) { .ma-table .ma-btn-text { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; } }
+    .ma-filter-status { margin: $space-2 0 0; &:empty { display: none; } }
+    .ma-showall { display: flex; justify-content: center; margin-top: $space-3; &[hidden] { display: none; } }
+    .table--stack { @include respond(md) { min-width: 36rem; } }
+    .ma-empty { max-width: 44rem; margin-inline: auto; }
+
+    // ---- the meeting page: stats, filter bar, add people
+    .ma-stats {
+        list-style: none;
+        margin: 0 0 $space-4;
+        padding: 0;
+        display: grid;
+        gap: $space-2;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        @include respond(sm) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        @include respond(lg) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    }
+    .ma-stat {
+        padding: $space-3;
+        border: 1px solid $border;
+        border-radius: $radius;
+        background: $white;
+        strong { display: block; font-family: $font-heading; font-size: 1.5rem; line-height: 1.1; color: $navy; }
+        span { display: block; margin-top: 2px; font-size: $fs-xs; font-weight: 600; color: $ink-soft; }
+        &--ok strong { color: $success; }
+        &--no strong { color: $danger; }
+        &--maybe strong { color: $warning; }
+    }
+    .ma-tablebar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-3;
+        margin-bottom: $space-3;
+        .search-input { flex: 1 1 14rem; }
+    }
+    .ma-filter { display: flex; flex-wrap: wrap; gap: $space-1; .pills__item { cursor: pointer; min-height: 2.25rem; } }
+    .ma-add {
+        margin-top: $space-5;
+        border: 1px solid $border;
+        border-radius: $radius;
+        background: $surface;
+        > summary {
+            display: flex;
+            align-items: center;
+            gap: $space-2;
+            padding: $space-3 $space-4;
+            font-weight: 700;
+            color: $navy;
+            cursor: pointer;
+            list-style: none;
+            min-height: 2.75rem;
+            &::-webkit-details-marker { display: none; }
+            &:focus-visible { @include focus-ring; }
+        }
+        &[open] > summary { border-bottom: 1px solid $border; }
+        &__form { display: grid; gap: $space-4; padding: $space-4; }
+    }
+    .ma-send {
+        &__summary { margin: 0; font-size: $fs-sm; color: $ink-soft; strong { color: $navy; } }
+        &__halt { margin-top: $space-3; display: flex; gap: $space-2; }
+        [data-meeting-send-placeholder] { margin: 0; }
+    }
+    .ma-details, .meeting-details {
+        display: grid;
+        gap: $space-3;
+        margin: 0 0 $space-4;
+        font-size: $fs-sm;
+        .meeting-details__row { display: grid; gap: 2px; }
+        dt { font-size: $fs-xs; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: $ink-soft; }
+        dd { margin: 0; color: $ink; overflow-wrap: anywhere; a { color: $orange-text; } }
+    }
+    .ma-msg {
+        display: grid;
+        gap: $space-3;
+        &__status { margin: 0; font-size: $fs-sm; color: $navy; font-weight: 600; &:empty { display: none; } }
+    }
+    .ma-actions__status, [data-ma-test-status] { font-size: $fs-sm; color: $navy; font-weight: 600; &:empty { display: none; } }
+
+    // ---- the schedule form
+    .ma-form { display: block; .card + .card { margin-top: $space-5; } }
+    .ma-errors { margin-bottom: $space-4; ul { margin: $space-1 0 0 1.1rem; padding: 0; list-style: disc; } &:focus { outline: none; } }
+    .ma-reqbox { margin-bottom: $space-5; p { margin: $space-1 0 0; } &__msg { font-style: italic; overflow-wrap: anywhere; } }
+    .ma-when-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .ma-when {
+        margin: 0;
+        padding: $space-3 $space-4;
+        border-radius: $radius;
+        background: $tint-cool;
+        color: $navy;
+        font-weight: 600;
+        font-size: $fs-sm;
+        &.is-bad { background: $danger-bg; color: $danger; }
+    }
+    .ma-duration { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: $space-3; }
+    .ma-duration .ma-endtime[hidden] { display: none; }
+    .ma-pills { display: flex; flex-wrap: wrap; gap: $space-2; }
+    .ma-pill {
+        position: relative;
+        display: inline-flex;
+        cursor: pointer;
+        input { @include visually-hidden; }
+        span {
+            display: inline-flex;
+            align-items: center;
+            min-height: 2.75rem;
+            padding: 0.4rem 1rem;
+            border: 1.5px solid $border-strong;
+            border-radius: $radius-pill;
+            background: $white;
+            color: $navy;
+            font-size: $fs-sm;
+            font-weight: 600;
+            transition: background-color $t-fast ease, border-color $t-fast ease, color $t-fast ease;
+        }
+        &:hover span { border-color: $navy; }
+        input:checked + span { background: $navy; border-color: $navy; color: $white; }
+        input:focus-visible + span { @include focus-ring; }
+    }
+    .ma-platforms { border: 0; margin: 0 0 $space-4; padding: 0; min-width: 0; }
+    .ma-platform-grid { display: grid; gap: $space-2; margin-top: $space-2; grid-template-columns: repeat(2, minmax(0, 1fr)); @include respond(md) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .ma-platform {
+        position: relative;
+        display: block;
+        cursor: pointer;
+        input { @include visually-hidden; }
+        &__box {
+            display: flex;
+            align-items: center;
+            gap: $space-3;
+            min-height: 3.5rem;
+            padding: $space-3;
+            border: 1.5px solid $border-strong;
+            border-radius: $radius;
+            background: $white;
+            color: $navy;
+            font-weight: 600;
+            font-size: $fs-sm;
+            line-height: 1.25;
+            transition: background-color $t-fast ease, border-color $t-fast ease;
+            .icon { flex: none; color: $ink-soft; }
+        }
+        &__name { min-width: 0; overflow-wrap: anywhere; }
+    }
+    .ma-platform:hover .ma-platform__box { border-color: $navy; }
+    .ma-platform input:checked + .ma-platform__box { border-color: $navy; background: $tint-cool; box-shadow: inset 0 0 0 1px $navy; .icon { color: $navy; } }
+    .ma-platform input:focus-visible + .ma-platform__box { @include focus-ring; }
+    .ma-how { display: grid; gap: $space-4; .form-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); } } }
+    .ma-how__help { display: grid; gap: $space-1; .field__help { margin: 0; } &:not(:has(.field__help:not(:empty))) { display: none; } .ma-steps { margin-top: $space-1; } }
+    .ma-steps { margin: $space-2 0 0 1.2rem; padding: 0; list-style: decimal; font-size: $fs-xs; color: $ink-soft; display: grid; gap: 2px; &:empty { display: none; } }
+    .ma-jitsi { margin-top: $space-2; display: grid; gap: $space-2; justify-items: start; &__note { margin: 0; padding: $space-3; border-radius: $radius; background: $info-bg; color: $info; font-size: $fs-sm; &[hidden] { display: none; } } }
+    .ma-choices { border: 0; margin: 0 0 $space-4; padding: 0; display: grid; gap: $space-2; min-width: 0; }
+    .ma-choice {
+        display: flex;
+        gap: $space-3;
+        align-items: flex-start;
+        padding: $space-3 $space-4;
+        border: 1.5px solid $border-strong;
+        border-radius: $radius;
+        background: $white;
+        cursor: pointer;
+        font-size: $fs-sm;
+        input { width: 1.2rem; height: 1.2rem; margin-top: 0.2rem; flex: none; accent-color: $navy; }
+        strong { display: block; color: $navy; }
+        &:has(input:checked) { border-color: $navy; background: $tint-cool; }
+        &:focus-within { @include focus-ring; }
+    }
+    .ma-public { display: grid; gap: $space-3; margin: 0 0 $space-4; padding: $space-4; border: 1px dashed $border-strong; border-radius: $radius; &[hidden] { display: none; } .alert { margin: 0; } }
+    .ma-options { display: grid; gap: $space-3; .check small { color: $ink-soft; } }
+    .ma-tz { display: inline-flex; align-items: center; gap: $space-1; padding: 0.2rem 0.7rem; border-radius: $radius-pill; background: $info-bg; color: $info; font-size: $fs-xs; font-weight: 700; }
+    .ma-actions {
+        align-items: center;
+        position: static;                                   // sticky only where there is room: a bar this tall would cover a phone screen
+        margin-inline: 0;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        @include respond(md) { position: sticky; bottom: 0; }
+        .btn { min-height: 2.75rem; }
+        @include respond-down(sm) { .btn { flex: 1 1 100%; justify-content: center; } }
+    }
+    .ma-actions__help { margin: $space-3 0 0; font-size: $fs-xs; color: $ink-soft; }
+
+    // ---- the invitee box
+    .ma-inv { display: grid; gap: $space-4; }
+    .ma-inv__tabs {
+        display: flex;
+        gap: $space-1;
+        padding: 4px;
+        border-radius: $radius-pill;
+        background: $surface-alt;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        &[hidden] { display: none; }
+        @include respond-down(sm) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-radius: $radius; &[hidden] { display: none; } .ma-seg__btn { white-space: normal; text-align: center; } }
+    }
+    .ma-seg__btn {
+        justify-content: center;
+        display: inline-flex;
+        align-items: center;
+        gap: $space-2;
+        flex: 0 0 auto;
+        min-height: 2.5rem;
+        padding: 0.4rem 1rem;
+        border: 0;
+        border-radius: $radius-pill;
+        background: transparent;
+        color: $ink-soft;
+        font-family: $font-heading;
+        font-size: $fs-sm;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        &:hover { color: $navy; }
+        &.is-active { background: $white; color: $navy; box-shadow: $shadow-sm; }
+        &:focus-visible { @include focus-ring; }
+    }
+    .ma-inv__panel { display: grid; gap: $space-3; &[hidden] { display: none; } }
+    .ma-inv__text { min-height: 6rem; font-family: $font-mono; font-size: 0.88rem; }
+    .ma-inv__addrow { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; &[hidden] { display: none; } }
+    .ma-inv__msg { font-size: $fs-sm; color: $navy; font-weight: 600; &:empty { display: none; } }
+    .ma-inv__bad {
+        margin: 0;
+        padding: $space-3 $space-4 $space-3 2rem;
+        list-style: disc;
+        background: $danger-bg;
+        border-radius: $radius;
+        color: $danger;
+        font-size: $fs-sm;
+        code { font-family: $font-mono; overflow-wrap: anywhere; }
+        &[hidden] { display: none; }
+    }
+    .ma-inv__bulk { padding: $space-4; border: 1px dashed $border-strong; border-radius: $radius; background: $surface; display: grid; gap: $space-2; }
+    .ma-inv__bulkhead { margin: 0; font-weight: 700; color: $navy; font-size: $fs-sm; }
+    .ma-inv__bulkrow { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; .select { width: auto; flex: 1 1 12rem; min-width: 0; } .btn { min-height: 2.5rem; } }
+    .ma-inv__or { color: $ink-soft; font-size: $fs-sm; }
+    .ma-results {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        border: 1px solid $border;
+        border-radius: $radius;
+        background: $white;
+        max-height: 18rem;
+        overflow: auto;
+        &:empty { display: none; }
+    }
+    .ma-result {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: $space-3;
+        padding: $space-2 $space-3;
+        &--empty { color: $ink-soft; font-size: $fs-sm; justify-content: flex-start; }
+        &__who { display: grid; min-width: 0; font-size: $fs-sm; }
+        &__name { color: $navy; overflow-wrap: anywhere; }
+        &__meta { color: $ink-soft; font-size: $fs-xs; }
+        &__mail { color: $ink-soft; font-size: $fs-xs; overflow-wrap: anywhere; }
+        .btn { flex: none; min-width: 4.5rem; }
+    }
+    .ma-result + .ma-result { border-top: 1px solid $border; }
+    .ma-inv__list { display: grid; gap: $space-2; padding-top: $space-4; border-top: 1px solid $border; }
+    .ma-inv__listhead { display: flex; align-items: baseline; justify-content: space-between; gap: $space-3; flex-wrap: wrap; }
+    .ma-inv__title { margin: 0; font-size: 1rem; }
+    .ma-inv__count { margin: 0; font-size: $fs-sm; color: $ink-soft; strong { color: $navy; font-size: 1.1rem; } }
+    .ma-inv__empty { margin: 0; color: $ink-soft; font-size: $fs-sm; &[hidden] { display: none; } }
+    .ma-inv__privacy {
+        display: flex;
+        gap: $space-2;
+        align-items: flex-start;
+        margin: 0;
+        padding: $space-3 $space-4;
+        border-radius: $radius;
+        background: $tint-cool;
+        color: $navy;
+        font-size: $fs-xs;
+        .icon { flex: none; margin-top: 0.1rem; }
+    }
+    .ma-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: $space-2; max-height: 22rem; overflow: auto; &:empty { display: none; } }
+    .ma-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: $space-2;
+        max-width: 100%;
+        padding: 0.2rem 0.25rem 0.2rem 0.85rem;
+        border: 1px solid $border-strong;
+        border-radius: $radius-pill;
+        background: $tint-cool;
+        color: $navy;
+        font-size: $fs-sm;
+        &__who { display: grid; min-width: 0; line-height: 1.25; }
+        &__name { font-weight: 600; overflow-wrap: anywhere; }
+        &__mail { font-size: $fs-xs; color: $ink-soft; overflow-wrap: anywhere; }
+        &__tag { flex: none; padding: 0 0.5rem; border-radius: $radius-pill; background: $white; color: $ink-soft; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.5rem; }
+        &__x {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            width: 2.25rem;
+            height: 2.25rem;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: $ink-soft;
+            cursor: pointer;
+            &:hover { background: $danger-bg; color: $danger; }
+            &:focus-visible { @include focus-ring; }
+        }
+        &--locked { background: $white; border-style: dashed; padding-right: 0.5rem; }
+        &--group { background: rgba($gold, 0.2); border-color: $gold-deep; }
+        &.is-new { animation: ma-pop 0.4s $ease; }
+    }
+    .ma-nojs[hidden], .ma-js-only[hidden] { display: none; }
+}
+
+@keyframes ma-pop { from { transform: scale(0.92); opacity: 0.4; } to { transform: scale(1); opacity: 1; } }
+@include reduced-motion { .meetings-admin .ma-chip.is-new { animation: none; } }
+
+// ---- dialogs (native <dialog>; they are rendered outside .meetings-admin)
+.ma-dialog {
+    width: calc(100vw - 2rem);
+    max-width: 34rem;
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+    padding: 0;
+    border: 0;
+    border-radius: $radius-lg;
+    background: $white;
+    color: $ink;
+    box-shadow: $shadow-lg;
+    overflow: hidden;
+    &[open] { display: flex; flex-direction: column; }
+    &::backdrop { background: rgba($navy-dark, 0.6); }
+    // the title and the buttons stay in view on a short or zoomed screen: only the middle (the details) scrolls, so the dialog never opens scrolled past its title
+    &__form { margin: 0; padding: $space-5; display: flex; flex-direction: column; gap: $space-4; min-height: 0; max-height: inherit; }
+    &__title { flex: 0 0 auto; margin: 0; font-size: 1.25rem; color: $navy; overflow-wrap: anywhere; }
+    &__body { display: grid; align-content: start; gap: $space-3; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; font-size: $fs-sm; p { margin: 0; overflow-wrap: anywhere; } [hidden] { display: none; } .field__help { font-size: $fs-xs; color: $ink-soft; } .check small { color: $ink-soft; } }
+    &__facts {
+        display: grid;
+        gap: $space-2;
+        margin: 0;
+        padding: $space-3 $space-4;
+        background: $surface;
+        border-radius: $radius;
+        div { display: grid; gap: 0.1rem; @include respond(md) { grid-template-columns: 6rem minmax(0, 1fr); gap: $space-3; } }
+        dt { font-weight: 700; color: $ink-soft; }
+        dd { margin: 0; overflow-wrap: anywhere; }
+        &[hidden] { display: none; }
+    }
+    &__warn { margin: 0; padding: $space-3 $space-4; background: $warning-bg; color: $warning; border-radius: $radius; font-size: $fs-sm; &[hidden] { display: none; } }
+    &__actions { flex: 0 0 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: $space-3; .btn { min-height: 2.75rem; } }
+    .field__label { font-size: 0.86rem; color: $navy; }
+    .field { display: grid; gap: 0.35rem; }
+    .check { display: flex; gap: $space-3; align-items: flex-start; input { width: 1.2rem; height: 1.2rem; margin-top: 0.2rem; accent-color: $navy; flex: none; } }
+    @include respond-down(sm) { &__actions .btn { flex: 1 1 auto; justify-content: center; } }
+}
+
+// ---- keyboard focus must not end up behind the sticky action bar of the schedule form (WCAG 2.2 SC 2.4.11): the bar is up to two rows tall (about 8 rem)
+// from md up, where it is sticky; the global scroll-padding-bottom (4.5 rem) is smaller than that
+@include respond(md) { html:has(.meetings-admin .ma-actions) { scroll-padding-bottom: 9.5rem; } }
+
+// ---- calendar manager cues (additive): the day panel header holds two buttons
+.admin-calendar .cal-day-panel__actions { display: flex; flex-wrap: wrap; gap: $space-2; align-items: center; }

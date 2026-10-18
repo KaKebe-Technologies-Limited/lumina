@@ -8,7 +8,7 @@ use App\Core\Nav;
 $siteName = (string) setting('site_name', 'Lumina Africa Foundation');
 $faviconUrl = img_url((string) setting('favicon_path', 'assets/img/brand/favicon-32.png'));
 $tagline = (string) setting('tagline', '');
-$gaId = trim((string) setting('analytics_id', ''));
+$gaId = analytics_id();
 
 $sameAs = array_values(array_map(static fn(array $s): string => $s['url'], social_links()));
 $ld = array_filter([

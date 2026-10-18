@@ -163,7 +163,7 @@ class Response
             $h['Cache-Control'] = $admin ? 'private, no-store' : 'private, max-age=0, must-revalidate';
         }
         if (str_starts_with($ct, 'text/html')) {
-            $gaId = trim((string) setting('analytics_id', ''));
+            $gaId = function_exists('analytics_id') ? analytics_id() : trim((string) setting('analytics_id', ''));
             $analytics = $gaId !== '' ? ' https://www.googletagmanager.com' : '';
             $analyticsConnect = $gaId !== '' ? ' https://www.google-analytics.com https://region1.google-analytics.com' : '';
             // No inline <script> / on* handlers anywhere: JS lives in assets/js/*.js

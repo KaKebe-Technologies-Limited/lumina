@@ -1,0 +1,161 @@
+// pages/_meetings.scss - WEB agent. The invitee page /meeting/{token} (.page-meeting), the shared .meeting-details list and the "Request a meeting" form on the Contact page (.meeting-request).
+// Imported by main.scss. Scope every rule under a page class. Contract: docs/MEETINGS.md sections 11 and 12.2.
+// Contrast (computed from the hex values): white on $navy 11.6, gold on $navy 5.0, white on $cta 4.66, navy on white 11.6, ink-soft on white 6.0,
+// success text (darkened) on $success-bg and danger on $danger-bg both above 4.5.
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The detail rows (when / organiser / how to join / passcode / dial-in / where). One partial (partials/meeting-details) is used by this page.
+// ---------------------------------------------------------------------------------------------------------------------
+.meeting-details {
+    display: grid;
+    gap: $space-4;
+    margin: 0;
+
+    &__row {
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+        padding-bottom: $space-4;
+        border-bottom: 1px solid $line;
+        &:last-child { padding-bottom: 0; border-bottom: 0; }
+        @include respond(sm) { grid-template-columns: 9.5rem minmax(0, 1fr); gap: $space-4; }
+    }
+    dt { font-family: $font-heading-caps; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: $ink-soft; }
+    dd { margin: 0; min-width: 0; font-weight: 600; color: $navy; overflow-wrap: anywhere; }
+    dd a { color: $orange-text; text-decoration: underline; text-underline-offset: 3px; &:hover { color: $cta-hover; } }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// INVITEE PAGE
+// ---------------------------------------------------------------------------------------------------------------------
+.page-meeting {
+    .meeting-page { padding-top: $space-6; @include respond(lg) { padding-top: $space-7; } }
+    // the title and the organiser come from the person who scheduled the meeting: a very long word must wrap, not run out of the page
+    .page-hero__title, .page-hero__lead { overflow-wrap: anywhere; }
+    // like the other detail pages: a title typed by a person can be long (up to 190 characters), so it is set a little smaller than a landing-page headline
+    .page-hero__title { max-width: 34ch; font-size: fluid(1.8rem, '1.3rem + 2.2vw', 3rem); text-wrap: balance; }
+
+    // reading order = join first on phones; from lg: details left, actions right (explicit columns, no `order`)
+    .meeting-page__grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: $space-5;
+        @include respond(lg) {
+            grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+            gap: $space-6;
+            align-items: start;
+        }
+    }
+    .meeting-page__side, .meeting-page__main { display: grid; gap: $space-5; min-width: 0; align-content: start; }
+    .meeting-page__main { @include respond(lg) { grid-column: 1; grid-row: 1; } }
+    .meeting-page__side { @include respond(lg) { grid-column: 2; grid-row: 1; position: sticky; top: calc(#{$header-h-shrunk} + #{$space-5}); } }
+
+    .meeting-page__solo { display: grid; gap: $space-5; max-width: 46rem; margin-inline: auto; }
+    .meeting-page__home { text-align: center; margin: $space-2 0 0; &--center { margin: 0; } }
+
+    // a white card
+    .meeting-card {
+        min-width: 0;
+        padding: $space-5;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        background: $white;
+        box-shadow: $shadow-card;
+        @include respond(md) { padding: $space-6; }
+    }
+    .meeting-note { margin: $space-4 0 0; font-size: $fs-xs; line-height: 1.55; color: $ink-soft; &--card { padding-inline: $space-3; } }
+
+    // the deep navy action card: when + Join + Add to calendar
+    .meeting-card--join {
+        display: grid;
+        gap: $space-4;
+        border-color: transparent;
+        color: rgba($white, 0.92);
+        background: radial-gradient(22rem 12rem at 100% 0%, rgba($navy-light, 0.85), transparent 62%), $navy;
+        :focus-visible { outline-color: $gold; }
+        .meeting-note { margin: 0; color: rgba($white, 0.82); text-align: center; }
+    }
+    .meeting-when { display: flex; align-items: flex-start; gap: $space-4; min-width: 0; }
+    .meeting-when__icon { flex: none; display: inline-grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: rgba($white, 0.1); color: $gold; }
+    .meeting-when__text { min-width: 0; }
+    .meeting-when__label { margin: 0; font-family: $font-heading-caps; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: $gold; }
+    .meeting-when__date { margin: 2px 0 0; font-family: $font-display; font-size: fluid(1.3rem, '1.1rem + 0.9vw', 1.75rem); font-weight: 600; line-height: 1.25; color: $white; text-wrap: balance; }
+    .meeting-when__time { margin: 2px 0 0; font-family: $font-heading; font-size: $fs-md; font-weight: 600; color: $white; }
+    .meeting-when__local { margin: $space-2 0 0; font-size: $fs-sm; line-height: 1.5; color: rgba($white, 0.9); &[hidden] { display: none; } }
+    .meeting-when__local-label { font-weight: 700; color: $gold; &::after { content: ':'; } }
+    .meeting-join__button { gap: $space-2; }
+    .meeting-join__calendar { color: $white; border-color: rgba($white, 0.55); &:hover { background: $white; color: $navy; border-color: $white; } }
+
+    // the answer
+    .meeting-answer { scroll-margin-top: calc(#{$header-h-shrunk} + #{$space-5}); }
+    .meeting-answer__title { margin: 0 0 $space-3; font-size: fluid(1.3rem, '1.1rem + 0.7vw', 1.6rem); color: $navy; }
+    .meeting-answer__status { margin: 0; &:focus { outline: 3px solid $navy; outline-offset: 4px; border-radius: $radius; } &:empty { display: none; } }
+    .meeting-answer__current { margin: 0 0 $space-4; font-size: $fs-sm; color: $ink-soft; strong { color: $navy; } }
+    .meeting-answer__form { display: grid; gap: $space-3; }
+    .meeting-answer__button { gap: $space-2; min-height: 3rem; &.is-current:not(.is-suggested) .icon { color: currentColor; } }
+    .meeting-alert {
+        display: flex; align-items: flex-start; gap: $space-2;
+        margin: 0 0 $space-4; padding: $space-3 $space-4;
+        border: 1px solid transparent; border-radius: $radius;
+        font-size: $fs-sm; font-weight: 600; line-height: 1.5;
+        .icon { flex: none; margin-top: 2px; }
+        &--ok { background: $success-bg; border-color: rgba($success, 0.35); color: darken($success, 8%); }
+        &--error { background: $danger-bg; border-color: rgba($danger, 0.35); color: darken($danger, 6%); }
+    }
+
+    // agenda
+    .meeting-agenda__title { margin: 0 0 $space-3; font-size: fluid(1.3rem, '1.1rem + 0.7vw', 1.6rem); color: $navy; }
+    .meeting-agenda .prose { font-size: $fs-base; overflow-wrap: anywhere; > :first-child { margin-top: 0; } > :last-child { margin-bottom: 0; } }
+
+    // cancelled / finished
+    .meeting-state {
+        display: flex; align-items: flex-start; gap: $space-4;
+        padding: $space-5; border: 1px solid $line; border-radius: $radius-card; background: $white; box-shadow: $shadow-card;
+        &__icon { flex: none; display: inline-grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: $tint-cool; color: $navy; }
+        &__body { min-width: 0; > * + * { margin-top: $space-2; } }
+        &__title { margin: 0; font-size: fluid(1.25rem, '1.05rem + 0.8vw', 1.6rem); color: $navy; }
+        &__reason { color: $ink; overflow-wrap: anywhere; }
+        &--cancelled { border-color: rgba($danger, 0.4); border-left: 6px solid $danger; background: $danger-bg; .meeting-state__icon { background: $white; color: $danger; } .meeting-state__title { color: darken($danger, 8%); } }
+        @include respond(md) { padding: $space-6; }
+    }
+    .meeting-page--cancelled .meeting-details dd { color: $ink-soft; }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// CONTACT PAGE: "Request a meeting" (partials/meeting-request-form). The form itself uses the shared .ia-form look of the Contact page.
+// ---------------------------------------------------------------------------------------------------------------------
+.page-contact {
+    .meeting-request__layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: $space-6;
+        @include respond(lg) { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: $space-8; align-items: start; }
+    }
+    .meeting-request__intro { min-width: 0; @include respond(lg) { position: sticky; top: calc(#{$header-h-shrunk} + #{$space-5}); } }
+    .meeting-request__head { margin-bottom: 0; }
+    .meeting-request__badge {
+        display: none;
+        place-items: center;
+        width: 5rem; height: 5rem; margin-top: $space-6;
+        border-radius: 50%; background: $navy; color: $gold;
+        @include respond(lg) { display: inline-grid; }
+    }
+    .meeting-request__panel { min-width: 0; }
+    .meeting-request__done {
+        padding: $space-5 $space-5;
+        border-radius: $radius-card;
+        box-shadow: $shadow-card;
+        &:focus { outline: 3px solid $navy; outline-offset: 3px; }
+        .alert__title { font-family: $font-display; font-size: fluid(1.25rem, '1.05rem + 0.8vw', 1.6rem); font-weight: 600; }
+        .alert__body p { margin-top: $space-2; font-size: $fs-base; }
+        @include respond(md) { padding: $space-6; }
+    }
+}
+
+// two fields in one row: a label can wrap to two lines (the labels are editable and one carries "East Africa Time"). These labels reserve two lines and sit on the
+// floor of that box, so the controls of a row start at the same height whatever the wording (and an error under one field never moves its neighbour).
+.page-contact .meeting-request__form {
+    @include respond(md) {
+        .field--pair .field__label { display: flex; align-items: flex-end; line-height: 1.5; min-height: 3em; }
+    }
+}

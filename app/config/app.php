@@ -105,12 +105,15 @@ return [
         'calendar.manage'   => ['admin', 'editor'], // calendar entries, quick add, per-occurrence changes, confirming holiday dates, types, CSV import / export (docs/CALENDAR.md)
         'calendar.advanced' => ['admin'],           // the advanced repeat rules (nth weekday, Easter offset, Islamic holidays)
         'calendar.delete'   => ['admin'],           // BULK delete of calendar entries
+        'meetings.manage'   => ['admin', 'editor'], // meetings: schedule, edit, invite, cancel, answer requests, e-mail attendees (docs/MEETINGS.md)
+        'meetings.bulk'     => ['admin'],           // add more than 50 recipients at once (e.g. all approved members)
+        'meetings.delete'   => ['admin'],           // delete a meeting request
     ],
 
     /** Slugs a custom page may NOT use (they are real routes or folders). */
     'reserved_slugs' => [
         'admin', 'assets', 'uploads', 'api', 'login', 'logout', 'index', 'storage', 'app', 'bin', 'database', 'docs', 'scss', 'tools',
         'vendor', 'sitemap', 'sitemap-xml', 'robots', 'robots-txt', 'subscribe', 'unsubscribe', 'search', 'download', 'downloads',
-        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter', 'calendar',
+        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter', 'calendar', 'meeting', 'meetings',
     ],
 ];

@@ -6,10 +6,11 @@
 $p = $o['pair'];
 $t = \App\Services\Calendar\CalendarService::typeBySlug((string) ($o['type_slug'] ?? ''));
 $teamOnly = empty($o['is_public']) || ($t !== null && (!$t['is_active'] || !$t['show_on_public']));
-$edit = !empty($o['entry_id']) ? url('admin/calendar/' . (int) $o['entry_id'] . '/edit') : url('admin/events/' . (int) $o['event_id'] . '/edit');
+$meetingId = !empty($o['entry_id']) ? (int) (($meetingMap ?? [])[(int) $o['entry_id']] ?? 0) : 0;      // a meeting owns this entry: it is changed on the meeting page
+$edit = $meetingId > 0 ? url('admin/meetings/' . $meetingId) : (!empty($o['entry_id']) ? url('admin/calendar/' . (int) $o['entry_id'] . '/edit') : url('admin/events/' . (int) $o['event_id'] . '/edit'));
 $flag = !empty($o['cancelled']) ? 'Cancelled' : (empty($o['is_active']) ? 'Hidden' : ($teamOnly ? 'Team only' : (!empty($o['needs_confirmation']) ? 'To confirm' : (!empty($o['moved']) ? 'Moved' : ''))));
 $time = !empty($o['all_day']) ? '' : (string) $o['start_time'];
-$tip = $o['type_name'] . ': ' . $o['title'] . ($time !== '' ? ' at ' . $time : '') . ($flag !== '' ? ' (' . $flag . ')' : '');
+$tip = ($meetingId > 0 ? 'Meeting - ' : '') . $o['type_name'] . ': ' . $o['title'] . ($time !== '' ? ' at ' . $time : '') . ($flag !== '' ? ' (' . $flag . ')' : '') . ($meetingId > 0 ? '. Opens the meeting page' : '');
 ?>
 <a class="cal-pill<?= !empty($o['cancelled']) ? ' is-cancelled' : '' ?><?= empty($o['is_active']) || $teamOnly ? ' is-private' : '' ?><?= !empty($o['is_holiday']) ? ' is-holiday' : '' ?>"
    style="--cal-solid:<?= e($p['solid']) ?>;--cal-tint:<?= e($p['tint']) ?>;--cal-text:<?= e($p['text']) ?>" href="<?= e($edit) ?>" title="<?= e($tip) ?>">

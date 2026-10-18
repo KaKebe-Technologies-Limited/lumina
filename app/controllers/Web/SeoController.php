@@ -30,6 +30,7 @@ final class SeoController extends Controller
             'Allow: /',
             'Disallow: ' . $base . '/admin',
             'Disallow: ' . $base . '/unsubscribe/',
+            'Disallow: ' . $base . '/meeting/',
             '',
             'Sitemap: ' . abs_url('sitemap.xml'),
             '',

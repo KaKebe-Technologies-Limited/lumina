@@ -514,6 +514,7 @@ final class MembershipApplication
                 NewsletterDelivery::erase($subIds, [(string) $m['email']]);        // also out of the e-mail campaign records
             }
             Database::execute("DELETE FROM subscribers WHERE source = 'membership' AND email = ?", [(string) $m['email']]);
+            \App\Services\Meetings\MeetingService::erase((string) $m['email'], $memberId);      // meeting invitations / requests that hold the same address (docs/MEETINGS.md section 13)
             return ['ok' => true, 'message' => 'The personal data of ' . $m['application_ref'] . ' was erased. The number, fee and receipts were kept.', 'ref' => $m['application_ref']];
         });
         if ($result['ok']) {

@@ -870,3 +870,114 @@ CREATE TABLE IF NOT EXISTS `calendar_overrides` (
   CONSTRAINT `fk_calendar_overrides_entry` FOREIGN KEY (`entry_id`) REFERENCES `calendar_entries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_calendar_overrides_user` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================================================================================================================
+-- MEETING SCHEDULER (see docs/MEETINGS.md). ADDITIVE and IDEMPOTENT: three new tables, no change to existing ones.
+-- A meeting OWNS one calendar entry (calendar_entries, type "Meeting / outreach"): the entry is created, kept in step and made public / hidden
+-- by App\Services\Meetings\MeetingService; nobody else writes it. Times are plain DATETIMEs in the application time zone (Africa/Kampala = EAT,
+-- UTC+3, no daylight saving); nothing depends on the database server's time zone. Attendee e-mail addresses and the join links are PERSONAL /
+-- SECRET data: admin + editor only, never in public endpoints, logs or audit details.
+-- ======================================================================================================================
+CREATE TABLE IF NOT EXISTS `meetings` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `calendar_entry_id` INT UNSIGNED NOT NULL,
+  `uid` VARCHAR(120) NOT NULL,                                   -- iCalendar UID, stable for the life of the meeting: lumina-meet-<24 hex>@<host>
+  `title` VARCHAR(190) NOT NULL,                                 -- cache of the calendar entry title (the meeting is the source of truth)
+  `platform` ENUM('zoom','google_meet','teams','jitsi','whatsapp','phone','in_person','other') NOT NULL DEFAULT 'other',
+  `join_url` VARCHAR(500) NULL,                                  -- SECRET: https only (a phone / WhatsApp meeting may use tel: or a wa.me link)
+  `passcode` VARCHAR(100) NULL,
+  `dial_in` VARCHAR(190) NULL,
+  `location` VARCHAR(255) NULL,                                  -- address (in person)
+  `description` TEXT NULL,                                       -- sanitised HTML (agenda / description as typed)
+  `agenda` TEXT NULL,                                            -- plain-text version of `description` (ICS and text e-mail), derived on every save
+  `start_at` DATETIME NOT NULL,                                  -- EAT; the schedule's source of truth (the calendar entry is derived)
+  `end_at` DATETIME NOT NULL,                                    -- EAT, same calendar day as start_at, after it
+  `organiser_name` VARCHAR(150) NOT NULL,
+  `organiser_email` VARCHAR(190) NOT NULL,                       -- Reply-To and ICS ORGANIZER; never the From address
+  `status` ENUM('draft','scheduled','cancelled','completed') NOT NULL DEFAULT 'draft',
+  `sequence` INT UNSIGNED NOT NULL DEFAULT 0,                    -- iCalendar SEQUENCE: +1 on every change of an invitation-visible field AFTER the first invitation was sent
+  `visibility` ENUM('private','public') NOT NULL DEFAULT 'private',
+  `show_join_link_public` TINYINT(1) NOT NULL DEFAULT 0,
+  `reminder_24h` TINYINT(1) NOT NULL DEFAULT 0,
+  `reminder_1h` TINYINT(1) NOT NULL DEFAULT 0,
+  `allow_rsvp` TINYINT(1) NOT NULL DEFAULT 1,
+  `cancelled_reason` VARCHAR(500) NULL,
+  `cancelled_at` DATETIME NULL,
+  `invitations_sent_at` DATETIME NULL,                           -- first time ANY invitation was handed to the mail server
+  `send_paused` TINYINT(1) NOT NULL DEFAULT 0,                   -- the queue is paused (an admin pressed Pause, or a mail-server configuration error paused it)
+  `send_halt_reason` VARCHAR(255) NULL,                          -- short, password-free reason when the queue paused itself
+  `created_by` INT UNSIGNED NULL,
+  `updated_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_meetings_entry` (`calendar_entry_id`),
+  UNIQUE KEY `uq_meetings_uid` (`uid`),
+  KEY `ix_meetings_status_start` (`status`, `start_at`),
+  KEY `ix_meetings_start` (`start_at`),
+  CONSTRAINT `fk_meetings_entry` FOREIGN KEY (`calendar_entry_id`) REFERENCES `calendar_entries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_meetings_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_meetings_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `meeting_attendees` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `meeting_id` INT UNSIGNED NOT NULL,
+  `name` VARCHAR(150) NOT NULL DEFAULT '',
+  `email` VARCHAR(190) NOT NULL,                                 -- lower-case; PERSONAL DATA (admin + editor only, never logged)
+  `source` ENUM('manual','member','user','previous','request') NOT NULL DEFAULT 'manual',
+  `member_id` INT UNSIGNED NULL,
+  `user_id` INT UNSIGNED NULL,
+  `token` VARCHAR(64) NOT NULL,                                  -- the invitee's credential for /meeting/{token}: 48 hex = 192 bits from random_bytes
+  `rsvp` ENUM('pending','accepted','declined','tentative') NOT NULL DEFAULT 'pending',
+  `rsvp_at` DATETIME NULL,
+  `invite_status` ENUM('not_sent','queued','sent','failed') NOT NULL DEFAULT 'not_sent',
+  `queue_kind` ENUM('invite','update','cancel') NULL,            -- what a queued row will send (NULL unless invite_status = queued)
+  `invite_sequence` INT UNSIGNED NULL,                           -- SEQUENCE of the last message that was handed to the mail server (NULL = never)
+  `attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,                -- attempts for the CURRENT queued message (reset when it is queued; max 3)
+  `last_error` VARCHAR(255) NULL,                                -- short reason, never credentials or addresses
+  `invite_sent_at` DATETIME NULL,                                -- first time an invitation reached the mail server (NULL = never invited)
+  `reminder_24h_sent_at` DATETIME NULL,
+  `reminder_1h_sent_at` DATETIME NULL,
+  `reminder_attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,       -- failed tries of the reminder that is due now (max 3)
+  `removed_at` DATETIME NULL,                                    -- removed from the meeting: the token stops working, no more mail except an optional cancellation
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_meeting_attendees_email` (`meeting_id`, `email`),   -- one row per address and meeting: nobody is invited twice
+  UNIQUE KEY `uq_meeting_attendees_token` (`token`),
+  KEY `ix_meeting_attendees_queue` (`meeting_id`, `invite_status`, `id`),
+  KEY `ix_meeting_attendees_member` (`member_id`),
+  KEY `ix_meeting_attendees_user` (`user_id`),
+  CONSTRAINT `fk_meeting_attendees_meeting` FOREIGN KEY (`meeting_id`) REFERENCES `meetings` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_meeting_attendees_member` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_meeting_attendees_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `meeting_requests` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(150) NOT NULL,
+  `email` VARCHAR(190) NOT NULL,                                 -- PERSONAL DATA (admin + editor only)
+  `phone` VARCHAR(40) NULL,
+  `organisation` VARCHAR(190) NULL,
+  `topic` VARCHAR(120) NOT NULL,                                 -- one of the editable topics (setting meeting_request_topics), stored as the label
+  `message` TEXT NOT NULL,
+  `preferred_date` DATE NULL,
+  `preferred_time` VARCHAR(20) NULL,                             -- time window key: morning | afternoon | evening | any (EAT)
+  `duration_minutes` SMALLINT UNSIGNED NULL,
+  `platform_pref` ENUM('video','phone','in_person') NULL,
+  `status` ENUM('new','approved','declined','closed') NOT NULL DEFAULT 'new',
+  `meeting_id` INT UNSIGNED NULL,                                -- the meeting scheduled from this request
+  `handled_by` INT UNSIGNED NULL,
+  `admin_notes` TEXT NULL,
+  `consent_at` DATETIME NULL,
+  `ip_hash` CHAR(40) NULL,                                       -- keyed hash of the visitor's IP (abuse tracking only; cannot be reversed without the application key)
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_meeting_requests_status` (`status`, `created_at`),
+  KEY `ix_meeting_requests_email` (`email`),
+  KEY `ix_meeting_requests_meeting` (`meeting_id`),
+  CONSTRAINT `fk_meeting_requests_meeting` FOREIGN KEY (`meeting_id`) REFERENCES `meetings` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_meeting_requests_user` FOREIGN KEY (`handled_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

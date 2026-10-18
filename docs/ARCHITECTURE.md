@@ -666,7 +666,16 @@ A public calendar under the Contact page (compact block on `/contact`, full page
 * New abilities `calendar.manage` (admin, editor), `calendar.advanced` and `calendar.delete` (admin); settings group "Calendar" (`calendar_*`); registry page `calendar` (parent `contact`) and a `calendar` section in the `contact` page; reserved page slug `calendar`; admin sidebar group "Calendar" (`admin_nav/calendar.php`, order 36); route files `web_calendar.php` and `admin_calendar.php`.
 * Shared-file additions: the Contact controller / view render `partials/calendar-embed`; `DashboardController` adds the "Dates to confirm" tile; `scss/main.scss` and `scss/admin.scss` import `pages/calendar` and `admin/calendar`; `bin/selftest.php` runs `bin/selftest-calendar.php`.
 
----------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 26. Meeting scheduler - READ `docs/MEETINGS.md`
+
+Meetings with a join link (Zoom, Google Meet, Teams, Jitsi, WhatsApp, phone, in person), invitations by e-mail with iCalendar (the answer is given with the site's own Accept / Maybe / Decline buttons; native mail-app replies would go to the organiser's mailbox, so the invitation sets RSVP=FALSE), RSVP on a personal invitee page, reminders, and a "Request a meeting" form on the Contact page, scheduled from Admin > Calendar > Meetings. Documented in **`docs/MEETINGS.md`** (tables, state machines, service API, e-mail kinds and placeholders, iCalendar rules, route table with JSON shapes, batch-send algorithm, privacy rules, file ownership). Contract changes it introduced:
+* New tables `meetings`, `meeting_attendees`, `meeting_requests` (additive, idempotent); models `Meeting`, `MeetingAttendee`, `MeetingRequest`; services in `app/services/Meetings/` (`MeetingService` holds every rule). A meeting OWNS one calendar entry; `CalendarWriter` refuses to change such an entry elsewhere.
+* New abilities `meetings.manage` (admin, editor), `meetings.bulk`, `meetings.delete` (admin); settings group "Meetings" (`meeting_*`); virtual registry page `site_meetings` and a `meeting_request` section in the `contact` page; reserved slugs `meeting`, `meetings`; route files `web_meetings.php` and `admin_meetings.php`; admin sidebar items merged into the Calendar group (`AdminNav` fragments may carry `merge_into`).
+* Core additions (additive): `Mailer` options `calendar` (inline text/calendar part), `attachments` (multipart/mixed), `to_name`, `reply_to_name`; `bin/selftest.php` runs `bin/selftest-meetings.php`; robots.txt disallows `/meeting/`.
+
+---------
 
 ## API reference (generated)
 

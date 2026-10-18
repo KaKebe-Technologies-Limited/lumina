@@ -506,3 +506,33 @@ SELECT e.id, s.occurrence_date, s.new_date, 1, s.note FROM (
   UNION ALL SELECT 'eid-al-fitr', '2026-03-20', NULL, 'Announced by the Uganda Muslim Supreme Council: Idd ul Fitr on Friday 20 March 2026 (Daily Monitor).'
   UNION ALL SELECT 'eid-al-adha', '2026-05-27', NULL, 'Eid al-Adha prayers at the National Mosque on Wednesday 27 May 2026 (Uganda Muslim Supreme Council).'
 ) AS s JOIN calendar_entries e ON e.slug = s.slug AND e.is_system = 1;
+
+-- ------------------------------------------------------------------ meeting scheduler (see docs/MEETINGS.md). ADDITIVE and IDEMPOTENT.
+-- Same rules as the rest of this file: a row is refreshed from here ONLY while it is pristine (updated_at = created_at); a setting or page row an
+-- admin edited is never overwritten. NO meeting, attendee or request is seeded: the owner creates them. The calendar type "Meeting / outreach"
+-- (slug `meeting`) is seeded with the calendar types above; MeetingService::calendarTypeId() recreates it at run time if the owner deleted it.
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('meeting_default_duration', '60'),
+  ('meeting_default_platform', 'google_meet'),
+  ('meeting_from_note', ''),
+  ('meeting_request_topics', CONCAT('Partnership', CHAR(10), 'Membership', CHAR(10), 'Volunteering', CHAR(10), 'Programmes', CHAR(10), 'Media', CHAR(10), 'Other')),
+  ('meeting_request_enabled', '1')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Virtual registry page (no URL, no menu): wording of the invitee page /meeting/{token} and of the meeting e-mails (Admin > Pages > Meetings).
+-- Needed as a row because content_blocks.page_slug is a foreign key to pages.slug.
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
+  ('site_meetings', 'Meetings: invitee page & e-mail wording', 'registry', 'default', 1, 0, 0, 'Meetings', 9040, NULL)
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
+  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
+  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
+  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
+  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
+  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
+  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
+  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);

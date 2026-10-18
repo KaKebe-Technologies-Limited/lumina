@@ -14,6 +14,7 @@ $this->start('scripts'); ?>
             <p class="page-header__subtitle">Uganda public holidays, international days and the dates of your own programs. Press <strong>Add a date</strong>, or click a day in the month.</p>
         </div>
         <div class="page-header__actions">
+            <?php if (can('meetings.manage')): ?><a class="btn btn--accent" href="<?= e(url('admin/meetings/create')) ?>"><?= icon('users', 'icon--sm') ?> Schedule a meeting</a><?php endif; ?>
             <a class="btn btn--primary" href="<?= e(url('admin/calendar', ['date' => $quick['date']]) . '#quick-add') ?>" data-cal-open-quick><?= icon('plus', 'icon--sm') ?> Add a date</a>
             <a class="btn btn--outline" href="<?= e(url('admin/calendar/holidays')) ?>"><?= icon('star', 'icon--sm') ?> Holidays &amp; days</a>
             <a class="btn btn--ghost" href="<?= e(url('calendar')) ?>" target="_blank" rel="noopener"><?= icon('external-link', 'icon--sm') ?> View public calendar</a>
@@ -31,6 +32,7 @@ $this->start('scripts'); ?>
         <nav class="cal-tabs" aria-label="Calendar views">
             <a class="cal-tabs__item<?= $view === 'month' ? ' is-active' : '' ?>" href="<?= e(url('admin/calendar')) ?>"<?= $view === 'month' ? ' aria-current="page"' : '' ?>><?= icon('calendar', 'icon--sm') ?> Month</a>
             <a class="cal-tabs__item<?= $view === 'list' ? ' is-active' : '' ?>" href="<?= e(url('admin/calendar', ['view' => 'list'])) ?>"<?= $view === 'list' ? ' aria-current="page"' : '' ?>><?= icon('list', 'icon--sm') ?> List &amp; search</a>
+            <?php if (can('meetings.manage')): ?><a class="cal-tabs__item" href="<?= e(url('admin/meetings')) ?>"><?= icon('users', 'icon--sm') ?> Meetings</a><?php endif; ?>
             <span class="cal-tabs__spacer"></span>
             <a class="cal-tabs__link" href="<?= e(url('admin/calendar/export.csv')) ?>"><?= icon('download', 'icon--sm') ?> Export CSV</a>
             <a class="cal-tabs__link" href="<?= e(url('admin/calendar/import')) ?>"><?= icon('upload', 'icon--sm') ?> Import CSV</a>
@@ -39,11 +41,12 @@ $this->start('scripts'); ?>
         <?php if ($view === 'list'): ?>
             <?= partial('admin/calendar/_list', [
                 'f' => $f, 'pagination' => $pagination, 'types' => $types, 'years' => $years, 'counts' => $counts, 'filtered' => $filtered, 'canDelete' => $canDelete, 'today' => $today,
+                'meetingMap' => $meetingMap ?? [],
             ]) ?>
         <?php else: ?>
             <?= partial('admin/calendar/_month', [
                 'grid' => $grid, 'typeFilter' => $typeFilter, 'selectedDay' => $selectedDay, 'selectedItems' => $selectedItems, 'agenda' => $agenda, 'years' => $years,
-                'types' => $types, 'today' => $today,
+                'types' => $types, 'today' => $today, 'meetingMap' => $meetingMap ?? [],
             ]) ?>
         <?php endif; ?>
 

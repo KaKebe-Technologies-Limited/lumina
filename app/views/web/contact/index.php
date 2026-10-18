@@ -2,11 +2,16 @@
 /**
  * Contact. Vars: $mapUrl ('' or a Google Maps embed URL). Copy: content('contact', ...) - admin: Pages > Contact.
  * Address, emails, phone numbers, WhatsApp and socials come from Settings (Organisation-wide details).
- * Order: hero -> contact cards (+ WhatsApp, socials) -> form beside the map -> closing line on a deep navy panel.
+ * Order: hero (+ "Request a meeting" button) -> contact cards (+ WhatsApp, socials) -> form beside the map -> "Request a meeting" form
+ * (partials/meeting-request-form, anchor #meeting-request) -> calendar -> closing line on a deep navy panel.
  */
+// "Request a meeting" (docs/MEETINGS.md): shown only when the setting, the registry switch and the meeting tables all allow it
+$meetingOn = \App\Services\Meetings\MeetingRequestService::enabled() && section_on('contact', 'meeting_request');
+
 $this->start('scripts'); ?>
 <script src="<?= e(asset('js/pages/contact.js')) ?>" defer></script>
 <?php if (!empty($calendar)): ?><script src="<?= e(asset('js/calendar.js')) ?>" defer></script><?php endif; ?>
+<?php if ($meetingOn): ?><script src="<?= e(asset('js/meetings.js')) ?>" defer></script><?php endif; ?>
 <?php $this->end();
 
 $detailsOn = section_on('contact', 'details');
@@ -64,6 +69,8 @@ $fieldMeta = [
     'eyebrow' => content('contact', 'hero.eyebrow'),
     'lead'    => content('contact', 'hero.lead'),
     'image'   => $heroImg['has'] ? ['src' => $heroImg['src'], 'alt' => $heroImg['alt'], 'focus' => '50% 40%'] : null,
+    // a quick way to the meeting request form further down (its heading, from Admin > Pages > Contact, without the underline markers)
+    'actions' => $meetingOn ? [['label' => strip_highlight((string) content('contact', 'meeting_request.title')), 'url' => '#meeting-request', 'class' => 'btn--white btn--caps']] : [],
 ]) ?>
 
 <?php /* ------------------------------------------------------------------ CONTACT CARDS */ ?>
@@ -150,6 +157,11 @@ $fieldMeta = [
         </div>
     </div>
 </section>
+
+<?php /* ------------------------------------------------------------------ REQUEST A MEETING (docs/MEETINGS.md; prints nothing when switched off) */ ?>
+<?php if ($meetingOn): ?>
+    <?= partial('partials/meeting-request-form') ?>
+<?php endif; ?>
 
 <?php /* ------------------------------------------------------------------ CALENDAR (compact month + coming up; docs/CALENDAR.md) */ ?>
 <?php if (!empty($calendar)): ?>

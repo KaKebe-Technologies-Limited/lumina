@@ -40,6 +40,10 @@ final class DashboardController extends AdminController
         if ($tile = \App\Services\Calendar\CalendarService::dashboardTile()) {
             $tiles[] = $tile;
         }
+        // Meetings (docs/MEETINGS.md): "Meetings this week" and "New meeting requests"; empty when the user may not manage meetings
+        foreach (\App\Services\Meetings\MeetingService::dashboardTiles() as $tile) {
+            $tiles[] = $tile;
+        }
         if ($content) {
             $p = $counts['posts'];
             $tiles[] = ['icon' => 'newspaper', 'value' => number_format($counts['posts_total']), 'label' => 'Published posts', 'sub' => $p['blog'] . ' blog, ' . $p['news'] . ' news, ' . $p['press'] . ' press', 'url' => 'admin/posts'];
@@ -56,6 +60,7 @@ final class DashboardController extends AdminController
             can('pages.edit') ? ['icon' => 'plus', 'label' => 'Create a new page', 'url' => 'admin/pages/create'] : null,
             $content ? ['icon' => 'file-text', 'label' => 'Write a blog post', 'url' => 'admin/posts/create'] : null,
             $content ? ['icon' => 'calendar', 'label' => 'Add an event', 'url' => 'admin/events/create'] : null,
+            can('meetings.manage') ? ['icon' => 'users', 'label' => 'Schedule a meeting', 'url' => 'admin/meetings/create'] : null,
             $content ? ['icon' => 'image', 'label' => 'Add photos to the gallery', 'url' => 'admin/gallery'] : null,
             can('menus.manage') ? ['icon' => 'list', 'label' => 'Change the menus', 'url' => 'admin/menus'] : null,
             can('settings.manage') ? ['icon' => 'settings', 'label' => 'Contact details and settings', 'url' => 'admin/settings'] : null,

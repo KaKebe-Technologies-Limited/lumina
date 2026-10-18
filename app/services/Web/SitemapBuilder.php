@@ -113,9 +113,12 @@ final class SitemapBuilder
             $calPage = SitePages::get('calendar');
             if ($calPage !== null && $calPage['is_published'] && SitePages::requirementMet($calPage['requires']) && CalendarService::available()) {
                 $newest = '';
+                // an entry that a MEETING owns (docs/MEETINGS.md) is a one-off listing that may carry a join link: it stays out of the sitemap. Decided by ownership,
+                // not by type: an ordinary entry the owner filed under "Meeting / outreach" is still listed.
+                $notMeeting = Database::tableExists('meetings') ? ' AND NOT EXISTS (SELECT 1 FROM meetings mt WHERE mt.calendar_entry_id = e.id)' : '';
                 $rows = Database::all(
                     'SELECT e.slug, e.updated_at FROM calendar_entries e JOIN calendar_types t ON t.id = e.type_id'
-                    . ' WHERE e.is_active = 1 AND e.is_public = 1 AND t.is_active = 1 AND t.show_on_public = 1 ORDER BY e.id ASC LIMIT 500'
+                    . ' WHERE e.is_active = 1 AND e.is_public = 1 AND t.is_active = 1 AND t.show_on_public = 1' . $notMeeting . ' ORDER BY e.id ASC LIMIT 500'
                 );
                 foreach ($rows as $row) {
                     $add('/calendar/' . $row['slug'], (string) ($row['updated_at'] ?? ''), '0.5');

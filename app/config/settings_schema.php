@@ -108,6 +108,23 @@ return [
                     'help' => 'Type names (their short codes, separated by commas) that are ticked when a visitor opens the calendar. Leave empty to show every type. Admin > Calendar > Types shows the code of each type.'],
             ],
         ],
+        'meetings' => [
+            'label' => 'Meetings',
+            'icon'  => 'users',
+            'help'  => 'Defaults of the meeting scheduler (Admin > Meetings) and the "Request a meeting" form on the Contact page. The wording of the invitations and of the invitee page is edited in Admin > Pages > Meetings; the form wording in Admin > Pages > Contact. The site cannot create Zoom, Google Meet or Teams rooms by itself: the organiser pastes the link.',
+            'fields' => [
+                'meeting_default_duration' => ['label' => 'Default length of a meeting (minutes)', 'type' => 'select', 'default' => '60', 'rules' => 'required|in:15,30,45,60,90',
+                    'options' => ['15' => '15 minutes', '30' => '30 minutes', '45' => '45 minutes', '60' => '1 hour', '90' => '1 hour 30 minutes']],
+                'meeting_default_platform' => ['label' => 'Default meeting type', 'type' => 'select', 'default' => 'google_meet', 'rules' => 'required|in:zoom,google_meet,teams,jitsi,whatsapp,phone,in_person,other',
+                    'options' => ['zoom' => 'Zoom', 'google_meet' => 'Google Meet', 'teams' => 'Microsoft Teams', 'jitsi' => 'Jitsi (free video room)', 'whatsapp' => 'WhatsApp call', 'phone' => 'Phone call', 'in_person' => 'In person', 'other' => 'Other']],
+                'meeting_from_note' => ['label' => 'Extra line at the bottom of invitations', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:500',
+                    'help' => 'Optional, for example how to reach the office or a reminder to be on time. Leave empty for none.'],
+                'meeting_request_enabled' => ['label' => 'Accept meeting requests on the Contact page', 'type' => 'boolean', 'default' => '1',
+                    'help' => 'Switch off to hide the "Request a meeting" form and refuse new requests.'],
+                'meeting_request_topics' => ['label' => 'Topics people can choose in the request form', 'type' => 'textarea', 'default' => "Partnership\nMembership\nVolunteering\nProgrammes\nMedia\nOther", 'rules' => 'required|max:1000',
+                    'help' => 'One topic per line (at most 12, each up to 60 characters).'],
+            ],
+        ],
         'branding' => [
             'label' => 'Branding & SEO',
             'icon'  => 'image',

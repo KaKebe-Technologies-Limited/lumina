@@ -55,7 +55,7 @@ $monthNames = CivilDate::MONTHS;
                         </div>
                         <?php if ($cnt > 0): ?>
                             <ul class="cal-cell__items">
-                                <?php foreach (array_slice($c['items'], 0, $maxPills) as $o): ?><li><?= partial('admin/calendar/_pill', ['o' => $o]) ?></li><?php endforeach; ?>
+                                <?php foreach (array_slice($c['items'], 0, $maxPills) as $o): ?><li><?= partial('admin/calendar/_pill', ['o' => $o, 'meetingMap' => $meetingMap ?? []]) ?></li><?php endforeach; ?>
                                 <?php if ($cnt > $maxPills): ?><li><a class="cal-cell__more" href="<?= e($dayUrl($c['date'])) ?>">+<?= $cnt - $maxPills ?> more</a></li><?php endif; ?>
                             </ul>
                         <?php endif; ?>
@@ -73,7 +73,7 @@ $monthNames = CivilDate::MONTHS;
             <?php foreach ($agenda as $day): ?>
                 <section class="cal-agenda__day<?= $day['is_today'] ? ' is-today' : '' ?>">
                     <h3 class="cal-agenda__date"><?= e($day['label']) ?><?= $day['is_today'] ? ' <span class="badge badge--gold">Today</span>' : '' ?></h3>
-                    <ul class="cal-items"><?php foreach ($day['items'] as $o): ?><?= partial('admin/calendar/_item', ['o' => $o]) ?><?php endforeach; ?></ul>
+                    <ul class="cal-items"><?php foreach ($day['items'] as $o): ?><?= partial('admin/calendar/_item', ['o' => $o, 'meetingMap' => $meetingMap ?? []]) ?><?php endforeach; ?></ul>
                     <a class="cal-agenda__add" href="<?= e($addUrl($day['date'])) ?>" data-cal-add="<?= e($day['date']) ?>" data-cal-label="<?= e($day['label']) ?>"><?= icon('plus', 'icon--sm') ?> Add a date on this day</a>
                 </section>
             <?php endforeach; ?>
@@ -97,13 +97,16 @@ $monthNames = CivilDate::MONTHS;
     <?php else: ?>
         <div class="card__header">
             <h2 class="card__title" id="day-panel-title"><?= e(CivilDate::fmt($selectedDay, 'l j F Y')) ?><?= $selectedDay === $today ? ' <span class="badge badge--gold">Today</span>' : '' ?></h2>
-            <a class="btn btn--primary btn--sm" href="<?= e($addUrl($selectedDay)) ?>" data-cal-add="<?= e($selectedDay) ?>" data-cal-label="<?= e(CivilDate::fmt($selectedDay, 'l j F Y')) ?>"><?= icon('plus', 'icon--sm') ?> Add a date on this day</a>
+            <span class="cal-day-panel__actions">
+                <?php if (can('meetings.manage') && $selectedDay > $today): ?><a class="btn btn--outline btn--sm" href="<?= e(url('admin/meetings/create', ['date' => $selectedDay])) ?>"><?= icon('users', 'icon--sm') ?> Schedule a meeting on this day</a><?php endif; ?>
+                <a class="btn btn--primary btn--sm" href="<?= e($addUrl($selectedDay)) ?>" data-cal-add="<?= e($selectedDay) ?>" data-cal-label="<?= e(CivilDate::fmt($selectedDay, 'l j F Y')) ?>"><?= icon('plus', 'icon--sm') ?> Add a date on this day</a>
+            </span>
         </div>
         <div class="card__body">
             <?php if ($selectedItems === []): ?>
                 <p class="text-muted">Nothing is scheduled on this day.</p>
             <?php else: ?>
-                <ul class="cal-items"><?php foreach ($selectedItems as $o): ?><?= partial('admin/calendar/_item', ['o' => $o]) ?><?php endforeach; ?></ul>
+                <ul class="cal-items"><?php foreach ($selectedItems as $o): ?><?= partial('admin/calendar/_item', ['o' => $o, 'meetingMap' => $meetingMap ?? []]) ?><?php endforeach; ?></ul>
             <?php endif; ?>
         </div>
     <?php endif; ?>

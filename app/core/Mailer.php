@@ -18,7 +18,11 @@ namespace App\Core;
  *   Mailer::attempt($to, $subject, $text, $opts)     // ['ok'=>bool,'error'=>?string,'transient'=>bool] - for queues that retry (newsletter)
  *   Mailer::notify('New contact message', $body, $visitorEmail);   // to Settings notify_email (fallback email_primary)
  *
- * $opts: reply_to, from, from_name, html, headers (['List-Unsubscribe' => '<https://..>', ...]), return_path (envelope sender; default = from).
+ * $opts: reply_to, from, from_name, html, headers (['List-Unsubscribe' => '<https://..>', ...]), return_path (envelope sender; default = from),
+ *   to_name / reply_to_name (display names; to_name only with exactly one recipient),
+ *   calendar (['method' => 'REQUEST'|'CANCEL'|'PUBLISH', 'content' => iCalendar text]): an inline text/calendar alternative part, so mail apps show native Accept / Decline,
+ *   attachments (list of ['filename' => 'invite.ics', 'content' => bytes, 'type' => 'application/ics']): wraps the message in multipart/mixed (max 5 files, 5 MB).
+ *   Without html, calendar and attachments the message is a plain base64 text/plain mail exactly as before.
  */
 final class Mailer
 {
@@ -174,14 +178,14 @@ final class Mailer
         $headers = [
             'Date'         => date('r'),
             'From'         => self::formatAddress($fromName, $from),
-            'To'           => implode(', ', $recipients),
+            'To'           => (count($recipients) === 1 && self::clean((string) ($opts['to_name'] ?? '')) !== '') ? self::formatAddress((string) $opts['to_name'], $recipients[0]) : implode(', ', $recipients),
             'Subject'      => self::encodeHeader($subject),
             'Message-ID'   => '<' . bin2hex(random_bytes(12)) . '@' . $domain . '>',
             'MIME-Version' => '1.0',
             'X-Mailer'     => 'Lumina',
         ];
         if ($replyTo !== null) {
-            $headers['Reply-To'] = $replyTo;
+            $headers['Reply-To'] = self::formatAddress((string) ($opts['reply_to_name'] ?? ''), $replyTo);
         }
         foreach ((array) ($opts['headers'] ?? []) as $name => $value) {
             $name = trim((string) $name);
@@ -194,20 +198,107 @@ final class Mailer
             }
         }
 
-        if ($html !== '') {
-            $boundary = 'lumina_' . bin2hex(random_bytes(8));
-            $headers['Content-Type'] = 'multipart/alternative; boundary="' . $boundary . '"';
-            $body = "--{$boundary}\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n"
-                . chunk_split(base64_encode($text))
-                . "--{$boundary}\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n"
-                . chunk_split(base64_encode($html))
-                . "--{$boundary}--\r\n";
-        } else {
+        $calendar = self::calendarPart($opts['calendar'] ?? null);
+        $attachments = self::attachmentParts($opts['attachments'] ?? null);
+
+        if ($html === '' && $calendar === null && $attachments === []) {
             $headers['Content-Type'] = 'text/plain; charset=UTF-8';
             $headers['Content-Transfer-Encoding'] = 'base64';
             $body = chunk_split(base64_encode($text));
+        } else {
+            // multipart/alternative: text, html (when given), text/calendar (when given: Gmail, Outlook and Apple Mail then show Accept / Decline themselves)
+            $alt = [self::part('text/plain; charset=UTF-8', $text)];
+            if ($html !== '') {
+                $alt[] = self::part('text/html; charset=UTF-8', $html);
+            }
+            if ($calendar !== null) {
+                $alt[] = self::part('text/calendar; charset=UTF-8; method=' . $calendar['method'], $calendar['content']);
+            }
+            // attachments wrap the alternative in multipart/mixed
+            if ($attachments !== []) {
+                [$altType, $altBody] = self::multipart('alternative', $alt);
+                $mixed = ["Content-Type: {$altType}\r\n\r\n{$altBody}"];
+                foreach ($attachments as $att) {
+                    $mixed[] = self::part($att['type'] . '; name="' . $att['name_ascii'] . '"', $att['content'], 'Content-Disposition: attachment; ' . $att['disposition']);
+                }
+                [$type, $body] = self::multipart('mixed', $mixed);
+            } else {
+                [$type, $body] = self::multipart('alternative', $alt);
+            }
+            $headers['Content-Type'] = $type;
         }
         return ['headers' => $headers, 'body' => $body, 'subject' => $headers['Subject'], 'envelope_from' => $returnPath];
+    }
+
+    /** One MIME part, base64 encoded (so no content can ever contain the boundary): headers, blank line, 76-column body. */
+    private static function part(string $contentType, string $content, string $extraHeader = ''): string
+    {
+        return "Content-Type: {$contentType}\r\nContent-Transfer-Encoding: base64\r\n" . ($extraHeader !== '' ? $extraHeader . "\r\n" : '') . "\r\n" . chunk_split(base64_encode($content));
+    }
+
+    /**
+     * Join parts into a multipart body. Returns [the Content-Type header value, the body]. A part that starts with its own headers is wrapped as is.
+     * @param list<string> $parts complete parts (headers + blank line + body)
+     * @return array{0:string,1:string}
+     */
+    private static function multipart(string $subtype, array $parts): array
+    {
+        $boundary = 'lumina_' . bin2hex(random_bytes(8));
+        $body = '';
+        foreach ($parts as $p) {
+            $body .= "--{$boundary}\r\n" . $p . (str_ends_with($p, "\r\n") ? '' : "\r\n");
+        }
+        return ['multipart/' . $subtype . '; boundary="' . $boundary . '"', $body . "--{$boundary}--\r\n"];
+    }
+
+    /**
+     * Validate the 'calendar' option: ['method' => 'REQUEST'|'CANCEL'|'PUBLISH'|'REPLY'|..., 'content' => the iCalendar text]. Line endings become CRLF.
+     * @return array{method:string,content:string}|null
+     */
+    private static function calendarPart(mixed $cal): ?array
+    {
+        if (!is_array($cal) || !is_string($cal['content'] ?? null) || !is_string($cal['method'] ?? null)) {
+            return null;
+        }
+        $method = strtoupper(trim($cal['method']));
+        $content = str_replace(["\r\n", "\r"], "\n", $cal['content']);
+        if (preg_match('/^[A-Z]{3,10}$/', $method) !== 1 || !str_starts_with(ltrim($content), 'BEGIN:VCALENDAR') || strlen($content) > 400000) {
+            return null;
+        }
+        return ['method' => $method, 'content' => str_replace("\n", "\r\n", rtrim($content, "\n")) . "\r\n"];
+    }
+
+    /**
+     * Validate the 'attachments' option: list of ['filename' => 'invite.ics', 'content' => raw bytes, 'type' => 'application/ics']. At most 5 files,
+     * 5 MB together; the file name loses any path and control characters (non-ASCII names also get an RFC 2231 filename*).
+     * @return list<array{name_ascii:string,disposition:string,type:string,content:string}>
+     */
+    private static function attachmentParts(mixed $list): array
+    {
+        if (!is_array($list)) {
+            return [];
+        }
+        $out = [];
+        $bytes = 0;
+        foreach (array_slice(array_values($list), 0, 5) as $a) {
+            if (!is_array($a) || !is_string($a['content'] ?? null) || $a['content'] === '') {
+                continue;
+            }
+            $bytes += strlen($a['content']);
+            if ($bytes > 5 * 1024 * 1024) {
+                break;
+            }
+            $name = trim((string) preg_replace('/[\x00-\x1F\x7F"\\\\\/:*?<>|]+/u', '_', basename(str_replace('\\', '/', (string) ($a['filename'] ?? 'attachment')))));
+            $name = $name !== '' ? mb_substr($name, 0, 120) : 'attachment';
+            $ascii = trim((string) preg_replace('/[^A-Za-z0-9._ -]+/', '_', $name)) ?: 'attachment';
+            $type = strtolower(trim((string) ($a['type'] ?? '')));
+            if (preg_match('~^[a-z0-9][a-z0-9.+-]*/[a-z0-9][a-z0-9.+-]*$~', $type) !== 1) {
+                $type = 'application/octet-stream';
+            }
+            $disp = 'filename="' . $ascii . '"' . ($ascii !== $name ? "; filename*=UTF-8''" . rawurlencode($name) : '');
+            $out[] = ['name_ascii' => $ascii, 'disposition' => $disp, 'type' => $type, 'content' => $a['content']];
+        }
+        return $out;
     }
 
     /**

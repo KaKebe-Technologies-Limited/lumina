@@ -88,11 +88,13 @@ $rel = static function (string $date) use ($today): string {
                 $off = (int) $e['is_active'] !== 1;
                 $past = $n === null || $n['end_date'] < $today;
                 $typeShown = $t !== null && $t['is_active'] && $t['show_on_public'];
+                $meetingId = (int) (($meetingMap ?? [])[$id] ?? 0);      // a meeting owns this entry: changed on the meeting page, never copied / hidden / bulk-edited here
+                $editUrl = $meetingId > 0 ? url('admin/meetings/' . $meetingId) : url('admin/calendar/' . $id . '/edit');
                 ?>
                 <tr class="<?= $off ? 'is-off' : '' ?>">
-                    <td class="col-narrow" data-label=""><input type="checkbox" name="ids[]" value="<?= $id ?>" form="cal-bulk" data-select-row aria-label="Tick <?= e($e['title']) ?>"></td>
+                    <td class="col-narrow" data-label=""><?php if ($meetingId === 0): ?><input type="checkbox" name="ids[]" value="<?= $id ?>" form="cal-bulk" data-select-row aria-label="Tick <?= e($e['title']) ?>"><?php endif; ?></td>
                     <td data-label="What">
-                        <span class="cell-title"><a href="<?= e(url('admin/calendar/' . $id . '/edit')) ?>"><?= e($e['title']) ?></a></span>
+                        <span class="cell-title"><a href="<?= e($editUrl) ?>"><?= e($e['title']) ?></a></span>
                         <span class="cell-sub"><?= e($r['rule']) ?><?= !empty($e['location']) ? ' &middot; ' . e($e['location']) : '' ?></span>
                     </td>
                     <td data-label="When" class="nowrap">
@@ -113,14 +115,17 @@ $rel = static function (string $date) use ($today): string {
                         <?php if ($off): ?><span class="badge badge--neutral">Hidden</span><?php elseif (!(int) $e['is_public'] || !$typeShown): ?><span class="badge badge--neutral"<?= (int) $e['is_public'] ? ' title="Its type is hidden from visitors"' : '' ?>>Team only</span><?php else: ?><span class="badge badge--success">On the website</span><?php endif; ?>
                         <?php if ($n !== null && $n['needs_confirmation']): ?><span class="badge badge--warning">Date to be confirmed</span><?php endif; ?>
                         <?php if ((int) $e['is_system'] === 1): ?><span class="badge badge--outline" title="Came with the site. It can be edited or hidden, but not deleted.">Seeded</span><?php endif; ?>
+                        <?php if ($meetingId > 0): ?><span class="badge badge--info" title="This date belongs to a meeting. Change it on the meeting page.">Meeting</span><?php endif; ?>
                     </td>
                     <td class="col-actions" data-label="">
                         <div class="table__actions">
-                            <a class="btn btn--outline btn--sm" href="<?= e(url('admin/calendar/' . $id . '/edit')) ?>" aria-label="Edit <?= e($e['title']) ?>"><?= icon('edit', 'icon--sm') ?> <span class="cal-btn-text">Edit</span></a>
+                            <a class="btn btn--outline btn--sm" href="<?= e($editUrl) ?>" aria-label="<?= $meetingId > 0 ? 'Open the meeting' : 'Edit' ?> <?= e($e['title']) ?>"><?= icon($meetingId > 0 ? 'users' : 'edit', 'icon--sm') ?> <span class="cal-btn-text"><?= $meetingId > 0 ? 'Open meeting' : 'Edit' ?></span></a>
+                            <?php if ($meetingId === 0): ?>
                             <form method="post" action="<?= e(url('admin/calendar/' . $id . '/duplicate')) ?>" class="inline-form"><?= csrf_field() ?>
                                 <button class="btn btn--ghost btn--sm" type="submit" aria-label="Make a copy of <?= e($e['title']) ?>"><?= icon('copy', 'icon--sm') ?> <span class="cal-btn-text">Copy</span></button></form>
                             <form method="post" action="<?= e(url('admin/calendar/' . $id . '/toggle')) ?>" class="inline-form"><?= csrf_field() ?>
                                 <button class="btn btn--ghost btn--sm" type="submit" aria-label="<?= $off ? 'Show' : 'Hide' ?> <?= e($e['title']) ?>"><?= icon($off ? 'eye' : 'eye-off', 'icon--sm') ?> <span class="cal-btn-text"><?= $off ? 'Show' : 'Hide' ?></span></button></form>
+                            <?php endif; ?>
                         </div>
                     </td>
                 </tr>

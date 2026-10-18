@@ -26,6 +26,8 @@ final class CalendarWriter
     /** What the one-line "Repeat" menu of the quick-add form offers. */
     public const SIMPLE_REPEAT = ['none', 'daily', 'weekly', 'monthly', 'yearly'];
     public const MAX_DESCRIPTION = 6000;
+    /** Shown when someone tries to change a calendar entry that a meeting owns (docs/MEETINGS.md): the meeting is the source of truth. */
+    public const MEETING_OWNED = 'This entry belongs to a meeting. Change it under Meetings so the invitations stay correct.';
 
     /** CSV columns (export, template and import use exactly these, in this order). */
     public const CSV_COLUMNS = [
@@ -34,6 +36,14 @@ final class CalendarWriter
     ];
 
     // ------------------------------------------------------------------ entries
+
+    /** Does a meeting own this calendar entry? (False while the meetings table does not exist yet.) */
+    public static function ownedByMeeting(int $entryId): bool
+    {
+        static $has = null;
+        $has ??= Database::tableExists('meetings');
+        return $has && (int) Database::value('SELECT COUNT(*) FROM meetings WHERE calendar_entry_id = ?', [$entryId], 0) > 0;
+    }
 
     /**
      * INSERT a row whose slug is UNIQUE. Two editors saving the same title at the same moment can both pick the same free slug: the loser gets
@@ -226,6 +236,9 @@ final class CalendarWriter
         if ($id !== null && $existing === null) {
             return ['ok' => false, 'errors' => ['_' => 'That entry no longer exists.']];
         }
+        if ($id !== null && empty($opts['meeting']) && self::ownedByMeeting($id)) {
+            return ['ok' => false, 'errors' => ['_' => self::MEETING_OWNED]];
+        }
         $v = self::validateEntry($in, $existing, $opts);
         if (!$v['ok']) {
             return ['ok' => false, 'errors' => $v['errors']];
@@ -292,6 +305,9 @@ final class CalendarWriter
         if ($e === null) {
             return ['ok' => false, 'error' => 'That entry no longer exists.'];
         }
+        if (self::ownedByMeeting($id)) {
+            return ['ok' => false, 'error' => self::MEETING_OWNED];
+        }
         $copy = $e;
         unset($copy['id'], $copy['created_at'], $copy['updated_at']);
         $copy['title'] = mb_substr((string) $e['title'], 0, 180) . ' (copy)';
@@ -311,6 +327,9 @@ final class CalendarWriter
         $e = CalendarEntry::find($id);
         if ($e === null) {
             return ['ok' => false, 'error' => 'That entry no longer exists.'];
+        }
+        if (self::ownedByMeeting($id)) {
+            return ['ok' => false, 'error' => self::MEETING_OWNED];
         }
         if ((int) $e['is_system'] === 1) {
             return ['ok' => false, 'error' => 'Seeded holidays and international days cannot be deleted. Hide them instead (set them to inactive).'];
@@ -334,10 +353,12 @@ final class CalendarWriter
             return ['ok' => false, 'changed' => 0, 'skipped' => count($ids)];
         }
         $in = implode(',', array_fill(0, count($ids), '?'));
+        // entries owned by a meeting are never changed here (the meeting is the source of truth; they count as "skipped")
+        $notMeeting = Database::tableExists('meetings') ? ' AND id NOT IN (SELECT calendar_entry_id FROM meetings)' : '';
         if ($action === 'delete') {
-            $changed = Database::execute("DELETE FROM calendar_entries WHERE is_system = 0 AND id IN ({$in})", $ids);
+            $changed = Database::execute("DELETE FROM calendar_entries WHERE is_system = 0 AND id IN ({$in}){$notMeeting}", $ids);
         } else {
-            $changed = Database::execute("UPDATE calendar_entries SET is_active = ?, updated_by = ? WHERE id IN ({$in})", [$action === 'activate' ? 1 : 0, $userId, ...$ids]);
+            $changed = Database::execute("UPDATE calendar_entries SET is_active = ?, updated_by = ? WHERE id IN ({$in}){$notMeeting}", [$action === 'activate' ? 1 : 0, $userId, ...$ids]);
         }
         AuditLog::record('calendar.bulk_' . $action, 'calendar_entry', null, ucfirst($action) . ' ' . $changed . ' calendar entries', ['ids' => $ids]);
         CalendarService::flush();
@@ -364,6 +385,9 @@ final class CalendarWriter
         $entry = CalendarEntry::find($entryId);
         if ($entry === null) {
             return ['ok' => false, 'errors' => ['_' => 'That entry no longer exists.']];
+        }
+        if (self::ownedByMeeting($entryId)) {
+            return ['ok' => false, 'errors' => ['_' => self::MEETING_OWNED]];
         }
         $in = array_filter($in, 'is_scalar');                 // an array value is treated as missing, never cast
         if (!CivilDate::valid($occurrenceDate) || RecurrenceRules::starts($entry, $occurrenceDate, $occurrenceDate) !== [$occurrenceDate]) {

@@ -10,6 +10,10 @@ if ($canDelete) {
     $actions['delete'] = 'Delete permanently';
 }
 $headerActions = [];
+if (can('meetings.manage')) {      // Contact side of the meeting scheduler (docs/MEETINGS.md section 12.1): a visitor's message often ends in a meeting
+    $headerActions[] = ['label' => 'Schedule a meeting', 'url' => url('admin/meetings/create'), 'class' => 'btn--accent', 'icon' => 'users'];
+    $headerActions[] = ['label' => 'Meeting requests', 'url' => url('admin/meeting-requests'), 'class' => 'btn--outline', 'icon' => 'inbox'];
+}
 if ($canExport) {
     $headerActions[] = ['label' => 'Export CSV', 'url' => url('admin/messages/export', $keep + ['status' => $f['status'] === 'all' ? '' : $f['status']]), 'class' => 'btn--outline', 'icon' => 'download'];
 }

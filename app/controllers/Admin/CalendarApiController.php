@@ -34,6 +34,13 @@ final class CalendarApiController extends AdminController
             'public' => false, 'include_cancelled' => true, 'types' => $types, 'q' => $str('q'),
         ]);
         $days = [];
+        $entryIds = [];
+        foreach ($grid['items'] as $o) {
+            if (!empty($o['entry_id'])) {
+                $entryIds[] = (int) $o['entry_id'];
+            }
+        }
+        $meetingMap = \App\Services\Meetings\MeetingService::entryMeetingMap($entryIds);      // entries that belong to a meeting open the meeting page
         foreach ($grid['weeks'] as $week) {
             foreach ($week as $cell) {
                 foreach ($cell['items'] as $o) {
@@ -44,7 +51,8 @@ final class CalendarApiController extends AdminController
                         'all_day' => $o['all_day'], 'start_time' => $o['start_time'], 'end_time' => $o['end_time'], 'is_public' => $o['is_public'],
                         'is_active' => $o['is_active'], 'is_system' => $o['is_system'], 'cancelled' => $o['cancelled'],
                         'needs_confirmation' => $o['needs_confirmation'], 'moved' => $o['moved'], 'recurring' => $o['recurring'],
-                        'edit_url' => $o['entry_id'] ? url('admin/calendar/' . $o['entry_id'] . '/edit') : url('admin/events/' . $o['event_id'] . '/edit'),
+                        'meeting_id' => $o['entry_id'] ? ($meetingMap[(int) $o['entry_id']] ?? null) : null,
+                        'edit_url' => $o['entry_id'] ? (isset($meetingMap[(int) $o['entry_id']]) ? url('admin/meetings/' . $meetingMap[(int) $o['entry_id']]) : url('admin/calendar/' . $o['entry_id'] . '/edit')) : url('admin/events/' . $o['event_id'] . '/edit'),
                     ];
                 }
             }

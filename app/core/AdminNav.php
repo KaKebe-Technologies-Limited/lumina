@@ -27,6 +27,7 @@ final class AdminNav
     {
         $path = ltrim(Request::current()?->path() ?? '/', '/');
         $groups = [];
+        $merges = [];
         $files = glob(APP_PATH . '/config/admin_nav/*.php') ?: [];
         sort($files, SORT_STRING);
         foreach ($files as $file) {
@@ -73,12 +74,23 @@ final class AdminNav
                 continue;
             }
             usort($items, static fn(array $a, array $b): int => [$a['order'], $a['label']] <=> [$b['order'], $b['label']]);
+            if (!empty($frag['merge_into'])) {                      // items join another group (e.g. Meetings inside Calendar) instead of forming their own
+                $merges[(string) $frag['merge_into']] = array_merge($merges[(string) $frag['merge_into']] ?? [], $items);
+                continue;
+            }
             $groups[] = [
                 'key'   => (string) ($frag['key'] ?? basename($file, '.php')),
                 'label' => (string) ($frag['label'] ?? ''),
                 'order' => (int) ($frag['order'] ?? 100),
                 'items' => $items,
             ];
+        }
+        foreach ($groups as $gi => $g) {
+            if (isset($merges[$g['key']])) {
+                $groups[$gi]['items'] = array_merge($g['items'], $merges[$g['key']]);
+                usort($groups[$gi]['items'], static fn(array $a, array $b): int => [$a['order'], $a['label']] <=> [$b['order'], $b['label']]);
+                unset($merges[$g['key']]);
+            }
         }
         usort($groups, static fn(array $a, array $b): int => $a['order'] <=> $b['order']);
 

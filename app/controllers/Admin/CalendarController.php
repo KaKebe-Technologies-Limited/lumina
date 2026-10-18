@@ -57,6 +57,7 @@ final class CalendarController extends AdminController
             $data = ($view === 'list' ? $this->listData($request) : $this->monthData($request)) + $data;
         }
         $data['quick'] = $this->quickDefaults($request, (string) ($data['grid']['month'] ?? ''), (string) ($data['selectedDay'] ?? ''));
+        $data['meetingMap'] = $available ? $this->meetingMap($data) : [];
         return $this->render('admin/calendar/index', $data, [
             'title' => 'Calendar & schedule', 'nav' => 'calendar', 'breadcrumbs' => [['Calendar & schedule', null]],
         ]);
@@ -90,6 +91,28 @@ final class CalendarController extends AdminController
             'grid' => $grid, 'typeFilter' => $typeFilter, 'selectedDay' => $selected, 'selectedItems' => $selItems,
             'agenda' => CalendarService::groupByDay($inMonth, $first, $last), 'years' => $years,
         ];
+    }
+
+    /**
+     * Entries that belong to a meeting (docs/MEETINGS.md section 6): entry id => meeting id. The month and list views link such entries to the meeting page and
+     * hide copy / hide / delete for them (CalendarWriter refuses to change them). One query; empty when the meeting tables do not exist yet.
+     * @param array<string,mixed> $data the view data of the month or list view
+     * @return array<int,int>
+     */
+    private function meetingMap(array $data): array
+    {
+        $ids = [];
+        foreach ((array) ($data['grid']['items'] ?? []) as $o) {
+            if (!empty($o['entry_id'])) {
+                $ids[] = (int) $o['entry_id'];
+            }
+        }
+        if (isset($data['pagination'])) {
+            foreach ((array) $data['pagination']->items as $r) {
+                $ids[] = (int) ($r['entry']['id'] ?? 0);
+            }
+        }
+        return \App\Services\Meetings\MeetingService::entryMeetingMap($ids);
     }
 
     /** ?month=YYYY-MM, or the ?m=&y= pair of the "go to" form; the current month otherwise. */
@@ -322,7 +345,13 @@ final class CalendarController extends AdminController
     public function edit(Request $request, int $id): Response
     {
         $this->authorize('calendar.manage');
-        return $this->form(CalendarEntry::findOrFail($id), false);
+        $entry = CalendarEntry::findOrFail($id);
+        $meetingId = \App\Services\Meetings\MeetingService::entryMeetingMap([$id])[$id] ?? 0;
+        if ($meetingId > 0) {
+            Flash::info('This date belongs to a meeting, so it is changed on the meeting page. That keeps the invitations correct.');
+            return $this->redirect('admin/meetings/' . $meetingId);
+        }
+        return $this->form($entry, false);
     }
 
     /** @param array<string,mixed> $entry */
