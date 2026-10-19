@@ -20,7 +20,8 @@ return (static function (): array {
         'title' => 'Newsletter',
         'route' => '/newsletter',
         'help'  => 'The wording around the newsletter: page banner, labels, subscribe box, archive, share buttons and the fixed words of the e-mail edition. Write and publish the issues themselves in Admin > Newsletter.',
-        'nav'   => ['label' => 'Newsletter', 'order' => 75, 'header' => false, 'footer' => true, 'requires' => ['table' => 'newsletters']],   // hidden while the newsletter tables are not imported yet
+        // Blog > Newsletter in the header menu (a dropdown child of Blog) and in the footer. The owner can move or hide it in Admin > Menus.
+        'nav'   => ['label' => 'Newsletter', 'order' => 73, 'header' => true, 'footer' => true, 'parent' => 'blog', 'requires' => ['table' => 'newsletters']],   // hidden while the newsletter tables are not imported yet
         'seo'   => [
             'title'       => 'Newsletter',
             'description' => 'Read the latest newsletter from Lumina Africa Foundation and browse past issues.',
@@ -76,9 +77,28 @@ return (static function (): array {
                 ],
             ],
             [
+                'key' => 'pdf', 'label' => 'PDF issues',
+                'help' => 'Words used when an issue is an uploaded PDF (or has a PDF attached): the badge on the archive card, the buttons, the viewer. Write the PDF issues themselves in Admin > Newsletter > Upload a PDF.',
+                'fields' => [
+                    $text('badge', 'Badge on a PDF issue (archive and home card)', 'PDF', ['maxlength' => 20]),
+                    $text('download_label', 'Button: download the PDF', 'Download PDF', ['maxlength' => 40]),
+                    $text('open_label', 'Link: read the PDF in a new tab', 'Read in a new tab', ['maxlength' => 60]),
+                    $text('size_label', 'File size line', 'PDF · {size}', ['maxlength' => 40, 'help' => '{size} is filled in, for example "2.4 MB".']),
+                    $text('downloads_label', 'Download counter line', '{count} downloads', ['maxlength' => 40, 'help' => '{count} is filled in. Shown only while the next switch is on.']),
+                    $text('downloads_label_one', 'Download counter line when it is exactly one', '{count} download', ['maxlength' => 40, 'help' => 'Used instead of the line above when the PDF was downloaded once. Empty it to use the line above as written. The line above is never changed automatically.']),
+                    ['key' => 'show_downloads', 'label' => 'Show how many times the PDF was downloaded', 'type' => 'boolean', 'default' => false],
+                    $text('viewer_title', 'Name of the embedded viewer for screen readers', 'PDF of the newsletter: {title}', ['help' => '{title} is the issue title.']),
+                    $area('fallback', 'Text when the browser cannot show a PDF inside the page', 'Your browser cannot show this PDF inside the page. Use the buttons to download it or open it in a new tab.', 3),
+                    $text('summary_label', 'Heading above the summary of a PDF issue (optional)', '', ['maxlength' => 60]),
+                    $text('attached_label', 'Link on an online issue that also has a PDF', 'Download this issue as PDF', ['maxlength' => 60]),
+                    $text('card_fallback', 'Text on the cover-less card of a PDF issue', 'Newsletter', ['maxlength' => 40, 'help' => 'Shown on the branded picture used when an issue has no cover image.']),
+                ],
+            ],
+            [
                 'key' => 'empty', 'label' => 'When no issue is published yet',
                 'fields' => [
                     $text('title', 'Heading', 'No issue has been published yet'),
+                    $area('when', 'When the first issue will appear', 'The first issue will appear here as soon as it is published.', 2, ['help' => 'Edit this to say when readers can expect it, for example "Our first issue comes out in March."']),
                     $area('text', 'Text', 'Subscribe below to receive our latest news and updates.', 3),
                     $text('archive_title', 'Archive: heading when there are no issues', 'No issues to show yet'),
                     $area('archive_text', 'Archive: text when there are no issues', 'Past issues will appear here once they are published.', 3),
@@ -104,6 +124,7 @@ return (static function (): array {
                     $text('read_online', 'Button: read the issue online', 'Read this issue online', ['required' => true]),
                     $area('reason', 'Why they get the e-mail', 'You are receiving this e-mail because you subscribed to updates from {site}.', 3, ['required' => true]),
                     $text('unsubscribe', 'Link: unsubscribe', 'Unsubscribe', ['required' => true]),
+                    $text('download_pdf', 'Button: download the PDF (PDF issues)', 'Download PDF'),
                     $text('test_notice', 'Notice shown only in test e-mails', 'This is a test e-mail. It was not sent to the subscribers.'),
                 ],
             ],

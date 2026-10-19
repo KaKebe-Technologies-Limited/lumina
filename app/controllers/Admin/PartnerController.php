@@ -5,17 +5,23 @@ namespace App\Controllers\Admin;
 
 use App\Core\Database;
 use App\Core\Flash;
+use App\Core\ImageOptimizer;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\SitePages;
 use App\Core\UploadException;
-use App\Core\Uploader;
 use App\Core\Validator;
 use App\Models\Partner;
+use App\Services\PartnerLogos;
 
 /**
- * Admin > Partners (/admin/partners). OWNER: B8 "org-admin".
- * Logo upload, type (partner|funder|donor|collaborator), website link, ordering, active flag, bulk actions.
- * Public output: /partners (B7) shows active partners; a partner without a logo is shown by name.
+ * Admin > Partners (/admin/partners). OWNER: B8 "org-admin", reworked by the PARTNERS agent (docs/PARTNERS_NEWSLETTER.md section 6).
+ * The list is now the fast visual screen (quick add, card grid, drag-and-drop order, bulk actions: assets/js/admin-partners.js talking to
+ * Admin\PartnerApiController); this class keeps the classic full form (create / edit with description and position), the plain POST routes
+ * (toggle, move, bulk, delete, reorder page) and everything that must work without JavaScript.
+ * Logos go through the optimisation pipeline (PartnerLogos::store): trimmed, scaled, WebP + PNG, 1x/2x, sizes stored. Replaced and deleted
+ * logo files are removed with PartnerLogos::release() (a file that something else still uses is kept).
+ * Public output: /partners and the About page show active partners; a partner without a logo is shown by name.
  */
 final class PartnerController extends OrgAdminController
 {
@@ -27,59 +33,25 @@ final class PartnerController extends OrgAdminController
         return 'admin/partners';
     }
 
-    /** @return array<string,string[]> */
-    private function sortable(): array
-    {
-        return [
-            'order'  => ['sort_order'],
-            'name'   => ['name'],
-            'type'   => ['partner_type', 'name'],
-            'status' => ['is_active', 'name'],
-            'added'  => ['created_at'],
-        ];
-    }
-
     public function index(Request $request): Response
     {
         $this->authorize('content.manage');
-        $st = $this->listState($this->sortable(), 'order', 'asc');
-
-        $where = [];
-        $params = [];
-        [$sql, $sp] = $this->searchSql(['name', 'website', 'description'], $st['q']);
-        if ($sql !== '') {
-            $where[] = $sql;
-            $params = array_merge($params, $sp);
+        $rows = Database::all('SELECT * FROM partners ORDER BY sort_order ASC, id ASC');
+        $active = 0;
+        foreach ($rows as $r) {
+            $active += (int) $r['is_active'] === 1 ? 1 : 0;
         }
-        $type = $request->string('type');
-        if (in_array($type, Partner::TYPES, true)) {
-            $where[] = 'partner_type = ?';
-            $params[] = $type;
-        } else {
-            $type = '';
-        }
-        $status = $request->string('status');
-        if ($status === 'active' || $status === 'inactive') {
-            $where[] = 'is_active = ?';
-            $params[] = $status === 'active' ? 1 : 0;
-        } else {
-            $status = '';
-        }
-
-        $pager = $this->paged('partners' . $this->whereSql($where), $params, '*', $this->orderSql($this->sortable(), $st['sort'], $st['dir']));
-        $filtered = $st['q'] !== '' || $type !== '' || $status !== '';
 
         return $this->render('admin/partners/index', [
-            'pager'    => $pager,
-            'q'        => $st['q'],
-            'sort'     => $st['sort'],
-            'dir'      => $st['dir'],
-            'type'     => $type,
-            'status'   => $status,
-            'filtered' => $filtered,
-            'total'    => Partner::count(),
-            'canOrder' => $st['sort'] === 'order' && $st['dir'] === 'asc' && !$filtered,
-            'types'    => self::TYPE_LABELS,
+            'partners'  => $rows,
+            'types'     => self::TYPE_LABELS,
+            'canDelete' => can('content.delete'),
+            'total'     => count($rows),
+            'active'    => $active,
+            'pending'   => PartnerLogos::pendingCount(),
+            'notice'    => ImageOptimizer::capabilityNotice(),
+            'hasGd'     => ImageOptimizer::capabilities()['gd'],
+            'aboutLive' => SitePages::isPublished('about'),
         ], ['title' => 'Partners', 'nav' => 'partners', 'breadcrumbs' => [['Partners', null]]]);
     }
 
@@ -96,17 +68,21 @@ final class PartnerController extends OrgAdminController
     {
         $this->authorize('content.manage');
         $data = $this->collect('admin/partners/create');
-        try {
-            $data['logo'] = Uploader::resolveImageField($request, 'logo', null);
-        } catch (UploadException $e) {
-            $this->fail(['logo' => $e->getMessage()], 'admin/partners/create');
-        }
+        $up = $this->storeLogo($request, 'admin/partners/create');
         if ($data['sort_order'] === null) {
             $data['sort_order'] = $this->nextSortOrder('partners');
         }
-        $id = Partner::create($data);
-        $this->audit('partner.create', 'partner', $id, 'Added partner "' . $data['name'] . '"', ['type' => $data['partner_type'], 'active' => (bool) $data['is_active']]);
-        Flash::success('Partner "' . $data['name'] . '" was added.' . ($data['is_active'] ? '' : ' It is hidden from the website until you activate it.'));
+        try {
+            $id = Partner::create($data + ($up['columns'] ?? []));
+        } catch (\Throwable $e) {
+            if ($up !== null) {
+                PartnerLogos::discard($up['result']);
+            }
+            throw $e;
+        }
+        $this->audit('partner.create', 'partner', $id, 'Added partner #' . $id, ['type' => $data['partner_type'], 'active' => (bool) $data['is_active'], 'logo' => $up !== null]);
+        Flash::success('Partner "' . $data['name'] . '" was added.' . ($data['is_active'] ? '' : ' It is hidden from the website until you show it.'));
+        $this->logoNotice($up);
         return $this->redirect('admin/partners');
     }
 
@@ -125,24 +101,41 @@ final class PartnerController extends OrgAdminController
         $this->authorize('content.manage');
         $row = Partner::findOrFail($id);
         $data = $this->collect('admin/partners/' . $id . '/edit');
-        try {
-            $data['logo'] = Uploader::resolveImageField($request, 'logo', $row['logo'] ?? null);
-        } catch (UploadException $e) {
-            $this->fail(['logo' => $e->getMessage()], 'admin/partners/' . $id . '/edit');
+        $up = $this->storeLogo($request, 'admin/partners/' . $id . '/edit');
+        if ($up !== null) {
+            $logoColumns = $up['columns'];
+        } elseif ($request->string('logo_remove') === '1') {
+            $logoColumns = PartnerLogos::emptyColumns();
+        } else {
+            $logoColumns = [];
         }
         if ($data['sort_order'] === null) {
             $data['sort_order'] = $this->nextSortOrder('partners');
         }
-        Partner::update($id, $data);
+        try {
+            Partner::update($id, $data + $logoColumns);
+        } catch (\Throwable $e) {
+            if ($up !== null) {
+                PartnerLogos::discard($up['result']);
+            }
+            throw $e;
+        }
+        if ($logoColumns !== []) {
+            PartnerLogos::release($row);                 // AFTER the save; a file another row still uses is kept
+        }
 
         $changed = [];
-        foreach (['name', 'partner_type', 'logo', 'website', 'description', 'sort_order', 'is_active'] as $f) {
+        foreach (['name', 'partner_type', 'website', 'description', 'sort_order', 'is_active'] as $f) {
             if ((string) ($row[$f] ?? '') !== (string) ($data[$f] ?? '')) {
                 $changed[] = $f;
             }
         }
-        $this->audit('partner.update', 'partner', $id, 'Edited partner "' . $data['name'] . '"', ['fields' => $changed]);
+        if ($logoColumns !== []) {
+            $changed[] = 'logo';
+        }
+        $this->audit('partner.update', 'partner', $id, 'Edited partner #' . $id, ['fields' => $changed]);
         Flash::success('Partner "' . $data['name'] . '" was saved.');
+        $this->logoNotice($up);
         return $this->redirect('admin/partners');
     }
 
@@ -153,7 +146,7 @@ final class PartnerController extends OrgAdminController
         $row = Partner::findOrFail($id);
         $new = (int) $row['is_active'] === 1 ? 0 : 1;
         Partner::update($id, ['is_active' => $new]);
-        $this->audit('partner.' . ($new ? 'activate' : 'deactivate'), 'partner', $id, ($new ? 'Showed' : 'Hid') . ' partner "' . $row['name'] . '"');
+        $this->audit('partner.' . ($new ? 'activate' : 'deactivate'), 'partner', $id, ($new ? 'Showed' : 'Hid') . ' partner #' . $id);
         Flash::success('"' . $row['name'] . '" is now ' . ($new ? 'shown on' : 'hidden from') . ' the website.');
         return Response::redirect($this->returnUrl());
     }
@@ -165,7 +158,7 @@ final class PartnerController extends OrgAdminController
         $row = Partner::findOrFail($id);
         $dir = $request->string('direction') === 'up' ? 'up' : 'down';
         if ($this->moveWithin('partners', $id, $dir)) {
-            $this->audit('partner.reorder', 'partner', $id, 'Moved partner "' . $row['name'] . '" ' . $dir);
+            $this->audit('partner.reorder', 'partner', $id, 'Moved partner #' . $id . ' ' . $dir);
             Flash::success('"' . $row['name'] . '" moved ' . $dir . '.');
         }
         return Response::redirect($this->returnUrl());
@@ -242,11 +235,43 @@ final class PartnerController extends OrgAdminController
                 continue;
             }
             Partner::delete($id);
-            Uploader::delete($row['logo'] ?? null);
-            $this->audit('partner.delete', 'partner', $id, 'Deleted partner "' . $row['name'] . '"');
+            $removed = PartnerLogos::release($row);      // every logo file of the row, except files something else still uses
+            $this->audit('partner.delete', 'partner', $id, 'Deleted partner #' . $id, ['files_removed' => $removed]);
             $n++;
         }
         return $n;
+    }
+
+    /**
+     * Run the logo pipeline for the file posted as "logo" (null when no file was chosen). A bad picture sends the admin back to the form with a
+     * message under the field. The new files exist when this returns: the caller saves the row, or calls PartnerLogos::discard().
+     * @return array{columns:array<string,mixed>,result:array<string,mixed>}|null
+     */
+    private function storeLogo(Request $request, string $redirectTo): ?array
+    {
+        $file = $request->file('logo');
+        if ($file === null) {
+            return null;
+        }
+        try {
+            return PartnerLogos::store($file);
+        } catch (UploadException $e) {
+            $this->fail(['logo' => $e->getMessage()], $redirectTo);
+        }
+    }
+
+    /** @param array{columns:array<string,mixed>,result:array<string,mixed>}|null $up */
+    private function logoNotice(?array $up): void
+    {
+        if ($up === null) {
+            return;
+        }
+        $warnings = (array) ($up['result']['warnings'] ?? []);
+        if (!empty($up['result']['notice'])) {
+            Flash::warning((string) $up['result']['notice']);
+        } elseif (in_array('low_resolution', $warnings, true)) {
+            Flash::info('The logo is quite small, so it may look soft on high-resolution screens. A PNG at least 400 px wide gives the sharpest result.');
+        }
     }
 
     /**

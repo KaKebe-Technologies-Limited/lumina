@@ -450,6 +450,39 @@ CREATE TABLE IF NOT EXISTS `partners` (
   KEY `ix_partners_list` (`is_active`, `partner_type`, `sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Logo optimisation (docs/PARTNERS_NEWSLETTER.md): additive + idempotent. `logo` stays the fallback picture (PNG/JPEG 1x, or the validated original for
+-- rows saved before this feature / without GD); the columns below are the optimised variants and their size (no layout shift).
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_2x');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_2x` VARCHAR(255) NULL AFTER `logo`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_webp');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_webp` VARCHAR(255) NULL AFTER `logo_2x`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_webp_2x');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_webp_2x` VARCHAR(255) NULL AFTER `logo_webp`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_width');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_width` SMALLINT UNSIGNED NULL AFTER `logo_webp_2x`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_height');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_height` SMALLINT UNSIGNED NULL AFTER `logo_width`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_optimised');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_optimised` TINYINT(1) NOT NULL DEFAULT 0 AFTER `logo_height`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 CREATE TABLE IF NOT EXISTS `documents` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(220) NOT NULL,
@@ -742,6 +775,44 @@ EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
 SET @lumina_has_ix = (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND index_name = 'ix_newsletters_number');
 SET @lumina_ddl = IF(@lumina_has_ix > 0, 'ALTER TABLE `newsletters` DROP INDEX `ix_newsletters_number`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
+-- PDF issues (docs/PARTNERS_NEWSLETTER.md): additive + idempotent. kind = how the issue is read: 'online' (the block editor) or 'pdf' (an uploaded PDF).
+-- An online issue may ALSO carry a PDF. The file itself lives OUTSIDE the web root (storage/private/newsletters/YYYY/MM) and is served only by the gated download route.
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'kind');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `kind` ENUM(''online'',''pdf'') NOT NULL DEFAULT ''online'' AFTER `slug`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'pdf_path');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `pdf_path` VARCHAR(255) NULL AFTER `cover_alt`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'pdf_name');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `pdf_name` VARCHAR(190) NULL AFTER `pdf_path`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'pdf_size');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `pdf_size` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `pdf_name`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'pdf_downloads');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `pdf_downloads` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `pdf_size`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'pdf_updated_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `pdf_updated_at` DATETIME NULL AFTER `pdf_downloads`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_ix = (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND index_name = 'ix_newsletters_kind');
+SET @lumina_ddl = IF(@lumina_has_ix = 0, 'ALTER TABLE `newsletters` ADD KEY `ix_newsletters_kind` (`kind`, `status`)', 'DO 0');
 PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;

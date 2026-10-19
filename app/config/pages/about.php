@@ -137,5 +137,20 @@ return [
                 ['key' => 'map_title', 'label' => 'Map: description for screen readers', 'type' => 'text', 'default' => 'Map showing the location of Lumina Africa Foundation'],
             ],
         ],
+        [
+            'key' => 'partners', 'label' => 'Our partners', 'toggle' => true, 'default_visible' => true,
+            'help' => 'A tidy grid of the partners\' logos at the bottom of the page. The partners themselves (logo, name, website, order, show / hide) are managed in Admin > Partners and appear here at once. The whole section hides itself while there is no active partner.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => '', 'maxlength' => 60],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our Partners', 'maxlength' => 120, 'help' => $hlHelp],
+                ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 3, 'maxlength' => 400,
+                    'default' => 'We collaborate with NGOs, businesses, academic institutions, and community groups that believe in sustainable development and social impact.'],
+                ['key' => 'limit', 'label' => 'Most logos to show here', 'type' => 'number', 'default' => 24, 'min' => 4, 'max' => 60,
+                    'help' => 'If you have more partners than this, the rest are on the Partners page (see the link below).'],
+                ['key' => 'all_cta_label', 'label' => 'Link to the Partners page: text', 'type' => 'text', 'default' => 'See all partners', 'maxlength' => 60,
+                    'help' => 'Empty the text to hide the link.'],
+                ['key' => 'all_cta_url', 'label' => 'Link to the Partners page: link', 'type' => 'url', 'default' => '/partners'],
+            ],
+        ],
     ],
 ];

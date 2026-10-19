@@ -63,9 +63,9 @@ html:has(.nl-editor) { scroll-padding-top: var(--nl-scroll-pad, #{$nl-sticky + 1
     .badge { white-space: nowrap; }
     .table .col-actions { width: 1%; white-space: normal; }
     .nl-issue-cell__date { display: none; }
-    // 768-1279 px: the sidebar and seven columns do not fit. Keep Issue / No. / Status / E-mail / Actions: the date moves under the title, the
+    // 768-1399 px (the 264 px sidebar leaves only about 935-1135 px for the table, which needs about 1000): the sidebar and eight columns do not fit. Keep Issue / No. / Status / E-mail / Actions: the date moves under the title, the
     // last-change column and the thumbnail go, and the five row actions sit in two columns, so nothing needs a hidden sideways scroll
-    @media (min-width: #{bp(md)}) and (max-width: #{bp(nav) - 0.02px}) {
+    @media (min-width: #{bp(md)}) and (max-width: #{bp('2xl') - 0.02px}) {
         .table .col-date, .table .col-changed { display: none; }
         .nl-issue-cell__date { display: block; }
         .nl-thumb { display: none; }
@@ -593,4 +593,137 @@ html:has(.nl-editor) { scroll-padding-top: var(--nl-scroll-pad, #{$nl-sticky + 1
         .nl-toasts { inset-inline: $space-3; }
     }
     @include respond(md) { .nl-bar__actions .btn[data-act="delete"] { margin-left: $space-2; } }
+
+    // ================================================================================================ PDF issues + "Live on the website" (NEWSLETTER agent)
+
+    // ---- the list: format column, "why can't visitors see it" lines, page-level alerts
+    .nl-site-alert { margin-bottom: $space-4; }
+    .col-format { white-space: nowrap; }
+    .nl-issue-cell__format { display: none; }
+    .nl-why { display: flex; align-items: flex-start; gap: 0.4rem; margin-top: 0.2rem; font-size: $fs-xs; font-weight: 400; line-height: 1.45; color: $warning; .icon { flex: none; margin-top: 1px; } }
+    .nl-why__lead { font-weight: 700; }
+    @media (min-width: #{bp(md)}) and (max-width: #{bp('2xl') - 0.02px}) {
+        .table .col-format { display: none; }
+        .nl-issue-cell__format { display: block; }
+    }
+    @include respond-down(md) { .nl-why { justify-content: flex-end; text-align: right; } }
+    .nl-fmt-badge { white-space: nowrap; .icon { width: 0.9em; height: 0.9em; } }
+
+    // ---- new issue: the two format cards
+    .nl-kinds { margin: 0 0 $space-5; padding: 0; border: 0; min-width: 0; .field__help { margin-top: $space-2; } }
+    .nl-kinds__grid { display: grid; gap: $space-3; margin-top: $space-2; @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .nl-kind { position: relative; display: block; cursor: pointer; }
+    .nl-kind__input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .nl-kind__card {
+        display: grid;
+        gap: $space-1;
+        align-content: start;
+        height: 100%;
+        padding: $space-4 $space-5;
+        border: 2px solid $border;
+        border-radius: $radius-lg;
+        background: $white;
+        transition: border-color $t-fast ease, box-shadow $t-fast ease, background $t-fast ease;
+    }
+    .nl-kind:hover .nl-kind__card { border-color: $border-strong; }
+    .nl-kind__input:checked + .nl-kind__card { border-color: $navy; background: $tint-cool; box-shadow: 0 0 0 3px rgba($gold, 0.45); }
+    .nl-kind__input:focus-visible + .nl-kind__card { @include focus-ring; }
+    .nl-kind__icon { display: inline-grid; place-items: center; width: 3rem; height: 3rem; margin-bottom: $space-1; border-radius: 50%; background: $navy; color: $gold; }
+    .nl-kind__title { font-family: $font-heading; font-weight: 600; font-size: 1.05rem; color: $navy; }
+    .nl-kind__text { font-size: $fs-sm; line-height: 1.5; color: $ink-soft; }
+
+    // ---- "Live on the website"
+    .nl-live {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: $space-3 $space-5;
+        margin-bottom: $space-4;
+        padding: $space-4 $space-5;
+        border: 1px solid $border;
+        border-left-width: 6px;
+        border-radius: $radius-lg;
+        background: $white;
+        box-shadow: $shadow-sm;
+        scroll-margin-top: calc(#{$nl-sticky} + var(--nl-bar-h) + 1rem);
+        &[data-tone="success"] { border-color: rgba($success, 0.4); border-left-color: $success; background: $success-bg; }
+        &[data-tone="info"] { border-color: rgba($info, 0.4); border-left-color: $info; background: $info-bg; }
+        &[data-tone="warning"] { border-color: rgba($warning, 0.35); border-left-color: $gold-deep; background: $warning-bg; }
+        &[data-tone="neutral"] { border-left-color: $border-strong; background: $surface; }
+        &.is-changed { animation: nl-flash 2.2s ease; }
+        &__main { display: flex; align-items: flex-start; gap: $space-3; flex: 1 1 22rem; min-width: 0; }
+        &__icon {
+            flex: none;
+            display: inline-grid;
+            place-items: center;
+            width: 2.1rem;
+            height: 2.1rem;
+            border-radius: 50%;
+            background: $ink-soft;
+            color: $white;
+            font-weight: 800;
+            font-size: 1.05rem;
+            line-height: 1;
+            &::before { content: '\2013'; }
+        }
+        &[data-tone="success"] .nl-live__icon { background: $success; &::before { content: '\2713'; } }
+        &[data-tone="info"] .nl-live__icon { background: $info; &::before { content: '\23F1'; font-size: 0.95rem; } }
+        &[data-tone="warning"] .nl-live__icon { background: $warning; &::before { content: '!'; } }
+        &__text { min-width: 0; display: grid; gap: $space-1; }
+        &__title { margin: 0; font-size: 1.05rem; line-height: 1.35; color: $navy-dark; }
+        &__detail, &__unsaved, &__checked { margin: 0; font-size: $fs-sm; color: $ink; &:empty { display: none; } }
+        &__unsaved { font-weight: 600; color: $warning; }
+        &__checked { font-weight: 600; color: $navy; }
+        &__reasons { display: grid; gap: 0.2rem; margin: 0; padding-left: 1.1rem; list-style: disc; font-size: $fs-sm; color: $ink; &[hidden] { display: none; } li { overflow-wrap: anywhere; } }
+        &__actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; }
+        a[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+    }
+    @include reduced-motion { .nl-live.is-changed { animation: none; } }
+    @include respond-down(md) { .nl-live__actions { width: 100%; .btn { flex: 1 1 auto; justify-content: center; } } }
+
+    // ---- the PDF box: drop zone, the current file, progress
+    .nl-online-only { display: grid; gap: $space-4; min-width: 0; &[hidden] { display: none; } }
+    .nl-pdfbox__about { margin: 0; font-size: $fs-sm; color: $ink-soft; }
+    .nl-pdfbox.is-busy { cursor: progress; }
+    .nl-drop {
+        position: relative;
+        display: grid;
+        justify-items: center;
+        gap: $space-2;
+        padding: $space-6 $space-4;
+        border: 2px dashed $border-strong;
+        border-radius: $radius-lg;
+        background: $surface;
+        text-align: center;
+        transition: border-color $t-fast ease, background $t-fast ease;
+        &.is-drop { border-color: $orange-dark; background: rgba($gold, 0.16); }
+        &.is-compact { padding: $space-4; grid-template-columns: auto auto auto; justify-content: center; align-items: center; gap: $space-3; }
+        &.is-compact .nl-drop__icon { display: none; }
+        &.is-disabled { opacity: 0.55; pointer-events: none; }
+        &__file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0, 0, 0, 0); }
+        &__icon { color: $navy; }
+        &__title { font-family: $font-heading; font-weight: 600; color: $navy; }
+        &__or { font-size: $fs-xs; color: $ink-soft; }
+        &__pick { cursor: pointer; }
+        &:focus-within .nl-drop__pick { @include focus-ring; }
+    }
+    @include respond-down(sm) { .nl-drop.is-compact { grid-template-columns: minmax(0, 1fr); justify-items: center; } }
+    .nl-pdf-current {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-3 $space-4;
+        padding: $space-4;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        background: $white;
+        &[hidden] { display: none; }
+        &__icon { flex: none; display: inline-grid; place-items: center; width: 3.2rem; height: 3.2rem; border-radius: $radius; background: $navy; color: $gold; }
+        &__text { flex: 1 1 14rem; min-width: 0; display: grid; gap: 0.15rem; }
+        &__name { color: $navy; overflow-wrap: anywhere; }
+        &__meta { font-size: $fs-xs; color: $ink-soft; }
+        &__actions { display: flex; flex-wrap: wrap; gap: $space-2; }
+    }
+    .nl-pdf-remove-note { margin: 0; &[hidden] { display: none; } }
 }

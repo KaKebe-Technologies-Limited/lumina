@@ -506,6 +506,25 @@ final class NewsletterContent
         if (trim((string) ($issue['title'] ?? '')) === '') {
             $blocking['title'] = 'Give the issue a title.';
         }
+        $pdfPath = trim((string) ($issue['pdf_path'] ?? ''));
+        if ((string) ($issue['kind'] ?? 'online') === 'pdf') {
+            // a PDF issue has no written content: what makes it complete is the PDF itself
+            if ($pdfPath === '') {
+                $blocking['pdf'] = 'Upload the PDF of this issue.';
+            } elseif (!\App\Core\Uploader::privateExists($pdfPath)) {
+                $blocking['pdf'] = 'The PDF file of this issue is missing from the server. Upload it again.';
+            }
+            if (trim((string) ($issue['summary'] ?? '')) === '') {
+                $warn['summary'] = 'A short summary helps in the archive, in search results, in the e-mail and when the issue is shared.';
+            }
+            if (($issue['cover_image'] ?? '') !== '' && trim((string) ($issue['cover_alt'] ?? '')) === '') {
+                $warn['cover_alt'] = 'Describe the cover image for people who cannot see it.';
+            }
+            return ['blocking' => $blocking, 'warnings' => $warn];
+        }
+        if ($pdfPath !== '' && !\App\Core\Uploader::privateExists($pdfPath)) {
+            $warn['pdf'] = 'The attached PDF file is missing from the server. Upload it again or remove it.';
+        }
         $f = $c['featured'];
         $featuredFilled = $f['heading'] !== '' || $f['body_html'] !== '';
         if (!$featuredFilled && $c['blocks'] === []) {

@@ -1,29 +1,50 @@
-// partials/partner-grid.php
-.partner-grid {
-    display: grid;
-    gap: $space-4;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    @include respond(md) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: $space-5; }
+// components/partner-grid - the "Our partners" logo wall (partials/partner-grid.php; used by the About page). OWNER: PARTNERS agent.
+// A centred, wrapping row of uniform white boxes: 2 columns on phones, 3 from 576 px, 4 from 992 px, 5 from 1200 px. A last row with fewer logos is
+// centred instead of leaving an empty hole on the right. Every box has the same height (the logo box rules are in _partner-logo.scss).
+
+.partner-wall {
+    --pw-gap: #{$space-3};
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--pw-gap);
+    margin: 0;
+    padding: 0;
+    @include respond(md) { --pw-gap: #{$space-4}; }
+    @include respond(lg) { --pw-gap: #{$space-5}; }
+
+    &__item {
+        display: flex;
+        flex: 0 0 calc((100% - var(--pw-gap)) / 2);
+        min-width: 0;
+        @include respond(sm) { flex-basis: calc((100% - 2 * var(--pw-gap)) / 3); }
+        @include respond(lg) { flex-basis: calc((100% - 3 * var(--pw-gap)) / 4); }
+        @include respond(xl) { flex-basis: calc((100% - 4 * var(--pw-gap)) / 5); }
+    }
+
+    // one box
+    .plogo {
+        flex: 1 1 auto;
+        min-height: calc(var(--plogo-h) + 2 * var(--plogo-pad));
+        background: $white;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        transition: border-color $t-fast ease, box-shadow $t-fast ease;
+    }
+    a.plogo:hover, a.plogo:focus-visible { border-color: $gold; box-shadow: $shadow; }
 }
 
-.partner-logo {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: $space-3;
-    min-height: 9rem;
-    padding: $space-4;
-    background: $white;
-    border: 1px solid $line;
-    border-radius: $radius-card;
+// groups (only when more than one partner type has logos): small heading above each wall
+.partner-groups { display: grid; gap: $space-7; }
+.partner-group__title {
+    margin-bottom: $space-4;
+    font-family: $font-heading;
+    font-size: $fs-sm;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-align: center;
-    text-decoration: none;
-    color: $navy;
-    transition: border-color $t-fast ease, box-shadow $t-fast ease;
-    &:hover { border-color: $gold; box-shadow: $shadow; color: $navy; }
-    img { max-height: 4.5rem; width: auto; max-width: 100%; object-fit: contain; }
-    &__name { font-family: $font-heading; font-weight: 600; font-size: $fs-sm; }
-    &__type { font-size: $fs-xs; color: $ink-soft; text-transform: uppercase; letter-spacing: 0.08em; }
+    text-transform: uppercase;
+    color: $ink-soft;
 }
+
+.partner-wall-more { margin-top: $space-6; text-align: center; }

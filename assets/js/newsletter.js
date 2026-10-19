@@ -1,11 +1,13 @@
 /*!
- * newsletter.js - the public newsletter pages (/newsletter, /newsletter/archive, /newsletter/{slug}). OWNER: WEB agent.
+ * newsletter.js - the public newsletter pages (/newsletter, /newsletter/archive, /newsletter/{slug}). OWNER: WEB / NEWSLETTER agent.
  * Progressive enhancement ONLY: every page works without JavaScript. The "copy link" button of the share row is handled by
  * assets/js/pages/blog.js ([data-share]); the scroll-reveal of blocks and cards by assets/js/main.js ([data-reveal]).
  *
  * What this file adds:
  *  - a picture whose file has gone missing (an upload deleted after the issue was published) is taken out of the layout instead of leaving a
  *    broken-image icon with an empty frame: its <figure> (or the image itself) gets `hidden` and the class `is-broken`.
+ *  - PDF issues: when the browser has no built-in PDF viewer (most phone browsers; navigator.pdfViewerEnabled === false) the embedded viewer is
+ *    removed and the sentence "Your browser cannot show this PDF ..." is shown above the Download / Open buttons, which always work.
  */
 (function () {
     'use strict';
@@ -39,6 +41,16 @@
     }
 
     Array.prototype.forEach.call(issue.querySelectorAll('img'), watch);
+
+    // ---- PDF viewer: only where the browser can really show a PDF inside the page ---------------------------------------------------------
+    var pdf = issue.querySelector('[data-nl-pdf]');
+    if (pdf && 'pdfViewerEnabled' in navigator && navigator.pdfViewerEnabled === false) {
+        pdf.classList.add('no-pdf-viewer');
+        var viewer = pdf.querySelector('[data-nl-pdf-viewer]');
+        if (viewer && !viewer.classList.contains('nl-pdf__viewer--placeholder')) {
+            viewer.remove();                         // the iframe would only show an empty box or start a download
+        }
+    }
 
     // Printing: a button or link inside the issue prints WHERE it goes. The stylesheet spells out external addresses on its own; site-relative
     // links ("/programs") need the full address, which only the browser knows.

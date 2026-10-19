@@ -19,7 +19,7 @@ final class SeoController extends Controller
     public function sitemap(Request $request): Response
     {
         return Response::text(SitemapBuilder::xml(), 200, 'application/xml; charset=utf-8')
-            ->header('Cache-Control', 'public, max-age=900');
+            ->header('Cache-Control', 'public, max-age=0, must-revalidate');     // always current: a newly published issue is listed at once
     }
 
     public function robots(Request $request): Response

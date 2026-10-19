@@ -79,6 +79,8 @@ $galleryBtn = content_btn('blog', 'gallery.button');
     <?php section_end(); ?>
 <?php endif; ?>
 
+<?= partial('web/newsletter/_blog-cta') ?>
+
 <?php section_begin('blog', 'subscribe', ['class' => 'section--panel', 'id' => 'subscribe']); ?>
     <?= partial('web/blog/_subscribe', [
         'id'          => 'blog-subscribe',

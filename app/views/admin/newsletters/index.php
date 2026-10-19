@@ -1,8 +1,11 @@
 <?php
 /**
- * Admin > Newsletter > Issues (EDITOR agent). Vars: $pagination (items = list rows), $filters (status, q, email_status), $counts (status => n),
- * $canSend, $canDeletePublished. Status tabs, search, one row per issue with its cover, number, date, status (and when a scheduled issue goes
- * live), e-mail status and the row actions. Delete of an issue that is or was public, and every e-mail link, are for administrators only.
+ * Admin > Newsletter > Issues (EDITOR / NEWSLETTER agent). Vars: $pagination (items = list rows, each with `live` = NewsletterService::liveStatus),
+ * $filters (status, q, email_status), $counts (status => n), $pageVisible (the Newsletter page is switched on), $inMenu (it is in the header menu),
+ * $publicCount (issues visitors can open right now), $missingPdf (id => true: its PDF file is gone from the server), $canSend, $canDeletePublished. Status tabs, search, one row per issue with its cover, format
+ * (Written online / PDF), number, date, status (and when a scheduled issue goes live), e-mail status and the row actions. A row that visitors cannot
+ * see says WHY under its title (draft, scheduled for later, archived, missing the PDF, Newsletter page switched off). Delete of an issue that is or
+ * was public, and every e-mail link, are for administrators only.
  */
 use App\Services\Newsletter\NewsletterService as S;
 
@@ -16,9 +19,18 @@ $filtered = $filters['status'] !== '' || $filters['q'] !== '' || $filters['email
         'subtitle' => 'Write an issue, check it in the preview, and publish it when it is ready. The newest published issue is shown on the Newsletter page of the website.',
         'actions'  => array_values(array_filter([
             ($counts['published'] ?? 0) > 0 || ($counts['scheduled'] ?? 0) > 0 ? ['label' => 'View on the website', 'url' => url('newsletter'), 'class' => 'btn--outline', 'icon' => 'external-link', 'target' => '_blank'] : null,
+            ['label' => 'Upload a PDF issue', 'url' => url('admin/newsletters/create', ['kind' => 'pdf']), 'class' => 'btn--outline', 'icon' => 'upload'],
             ['label' => 'Write an issue', 'url' => url('admin/newsletters/create'), 'icon' => 'plus'],
         ])),
     ]) ?>
+
+    <?php if (!$pageVisible): ?>
+        <div class="alert alert--warning nl-site-alert" role="alert"><?= icon('alert-triangle') ?><div class="alert__body"><strong>The Newsletter page is switched off.</strong> Visitors get “page not found” for every issue, even published ones, until you switch the page on again (Admin &gt; Pages &gt; Newsletter).</div></div>
+    <?php elseif ((int) $publicCount === 0 && ($counts['all'] ?? 0) > 0): ?>
+        <div class="alert alert--info nl-site-alert"><?= icon('info') ?><div class="alert__body"><strong>No issue is visible on the website yet.</strong> Visitors see “No issue has been published yet” on the Newsletter page. Open a draft and press “Publish now” to put it on the website.</div></div>
+    <?php elseif (!$inMenu): ?>
+        <div class="alert alert--info nl-site-alert"><?= icon('info') ?><div class="alert__body">The Newsletter page is not in the website menu, so visitors only find it through the footer, the Home page and the Blog page. You can add it back in Admin &gt; Menus.</div></div>
+    <?php endif; ?>
 
     <nav class="tabs" aria-label="Show issues by status">
         <?php foreach ($tabs as $key => $label): $n = $counts[$key === '' ? 'all' : $key] ?? 0; $on = $filters['status'] === $key; ?>
@@ -56,11 +68,13 @@ $filtered = $filters['status'] !== '' || $filters['q'] !== '' || $filters['email
     <?php else: ?>
         <div class="table-wrap">
             <table class="table table--stack">
-                <thead><tr><th>Issue</th><th class="col-num">No.</th><th class="col-date">Date</th><th>Status</th><th>E-mail</th><th class="col-changed">Last change</th><th class="col-actions">Actions</th></tr></thead>
+                <thead><tr><th>Issue</th><th class="col-format">Format</th><th class="col-num">No.</th><th class="col-date">Date</th><th>Status</th><th>E-mail</th><th class="col-changed">Last change</th><th class="col-actions">Actions</th></tr></thead>
                 <tbody>
                 <?php foreach ($rows as $r):
                     $id = (int) $r['id'];
                     $live = S::isLive($r);
+                    $state = $r['live'] ?? null;                     // liveStatus(): visible, label, reasons ...
+                    $isPdf = (string) ($r['kind'] ?? 'online') === 'pdf';
                     $everPublic = $r['status'] === 'published' || !empty($r['published_at']);
                     $mayDelete = !$everPublic || $canDeletePublished;
                     $cover = (string) ($r['cover_image'] ?? '');
@@ -73,10 +87,19 @@ $filtered = $filters['status'] !== '' || $filters['q'] !== '' || $filters['email
                                     <a class="nl-issue-cell__title" href="<?= e(url('admin/newsletters/' . $id . '/edit')) ?>"><?= e($r['title']) ?></a>
                                     <?php if (trim((string) $r['summary']) !== ''): ?><span class="cell-sub"><?= e(excerpt($r['summary'], 90)) ?></span><?php endif; ?>
                                     <span class="cell-sub nl-issue-cell__date"><?= e(format_date($r['issue_date'], 'j M Y')) ?></span>
-                                    <?php if ($live): ?><a class="nl-live-dot" href="<?= e(S::url($r)) ?>" target="_blank" rel="noopener">Live on the website</a><?php endif; ?>
+                                    <span class="cell-sub nl-issue-cell__format"><?= $isPdf ? 'PDF issue' : 'Written online' ?></span>
+                                    <?php if ($state && $state['visible']): ?>
+                                        <a class="nl-live-dot" href="<?= e(S::url($r)) ?>" target="_blank" rel="noopener">Live on the website<span class="visually-hidden"> (opens in a new tab)</span></a>
+                                    <?php elseif ($state && $state['reasons']): ?>
+                                        <span class="nl-why"><?= icon('eye-off', 'icon--sm') ?><span><span class="nl-why__lead">Not visible to visitors:</span> <?= e(implode(' ', array_slice($state['reasons'], 0, 2))) ?><?= count($state['reasons']) > 2 ? ' (and ' . (count($state['reasons']) - 2) . ' more: open the issue)' : '' ?></span></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($missingPdf[$id])): ?>
+                                        <span class="nl-why"><?= icon('alert-triangle', 'icon--sm') ?><span><span class="nl-why__lead">The PDF file is missing from the server.</span> Open the issue and upload the PDF again<?= $live ? ': visitors cannot download it until then' : '' ?>.</span></span>
+                                    <?php endif; ?>
                                 </span>
                             </div>
                         </td>
+                        <td data-label="Format" class="col-format"><?= $isPdf ? '<span class="badge badge--info" title="An uploaded PDF">' . icon('file-text', 'icon--sm') . ' PDF</span>' : '<span class="badge badge--neutral">Online</span>' ?><?php if ($isPdf && (int) ($r['pdf_downloads'] ?? 0) > 0): ?><span class="cell-sub"><?= (int) $r['pdf_downloads'] ?> download<?= (int) $r['pdf_downloads'] === 1 ? '' : 's' ?></span><?php endif; ?></td>
                         <td data-label="No." class="col-num"><?= $r['issue_number'] !== null ? (int) $r['issue_number'] : '-' ?></td>
                         <td data-label="Date" class="col-date"><?= e(format_date($r['issue_date'], 'j M Y')) ?></td>
                         <td data-label="Status">

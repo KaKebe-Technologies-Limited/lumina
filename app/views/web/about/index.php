@@ -146,4 +146,7 @@ $quoteEyebrow = trim((string) content('about', 'quote.eyebrow')); ?>
     </div>
 <?php section_end(); ?>
 
+<?php /* ------------------------------------------------------------------ OUR PARTNERS (logo grid; hidden while there is no active partner) */ ?>
+<?= partial('web/about/_partners') ?>
+
 <?= partial('partials/cta-donate') ?>

@@ -11,12 +11,14 @@ namespace App\Core;
  *   $path = Uploader::image($request->file('photo'));                   // 5 MB max, jpg/png/gif/webp only
  *   $paths = Uploader::images($request->files('images'));               // multi-upload; stops at the first bad file
  *   Uploader::delete($oldPath);
+ *   $r = Uploader::logo($request->file('logo'));                        // partner LOGO: trimmed, fitted, WebP + PNG (+ 2x): see ImageOptimizer
  *
  * PRIVATE documents -> storage/private/<folder>/YYYY/MM/<random>.<ext>   (NEVER web accessible; stream via an auth-gated controller)
  *   $info = Uploader::privateFile($request->file('cv'), 'cv', config('upload.cv_exts'));   // ['path','name','size','mime']
  *   $info = Uploader::privateFile($request->file('file'), 'documents');                     // reports (pdf/doc(x)/xls(x)/ppt(x)/csv/txt)
  *   return Uploader::download($row['file_path'], 'Annual-report-2024.pdf');                 // after YOU checked auth / is_public
  *   Uploader::deletePrivate($row['file_path']);
+ *   $pdf = Uploader::pdf($request->file('pdf'));                                            // PDF newsletter -> storage/private/newsletters/YYYY/MM (strict PdfValidator)
  *
  * Safety: finfo MIME sniffing + magic bytes + getimagesize(), extension allow-list, random server-side names, size and
  * pixel limits, rejects php/phtml/phar/html/svg/js/exe... ANYWHERE in the client file name (double extensions).
@@ -118,6 +120,32 @@ final class Uploader
             throw $e;
         }
         return $done;
+    }
+
+    /**
+     * Upload a LOGO (partners): validated, auto-oriented, metadata-free, trimmed, fitted to 480 x 240 (+ a 2x copy when the source is big enough),
+     * WebP + PNG, written to uploads/partners/YYYY/MM. Returns the ImageOptimizer result (logo, logo_2x, logo_webp, logo_webp_2x, logo_width,
+     * logo_height, optimised, notice, warnings, files). Throws UploadException. Delete result['files'] again when the database save fails.
+     * Without GD the validated original is stored (result['optimised'] === false, result['notice'] explains it).
+     *
+     * @param array{trim?:bool,max_bytes?:int,dir?:string} $opts trim defaults to the setting partners_logo_trim
+     * @return array<string,mixed>
+     */
+    public static function logo(?array $file, array $opts = []): array
+    {
+        $file = self::requireFile($file);
+        $max = (int) ($opts['max_bytes'] ?? ImageOptimizer::MAX_BYTES);
+        self::guard($file, $max);
+        self::checkName((string) $file['name'], ['png', 'jpg', 'jpeg', 'webp', 'gif']);
+        if (!array_key_exists('trim', $opts)) {
+            $trim = true;
+            try {
+                $trim = (string) setting('partners_logo_trim', '1') !== '0';
+            } catch (\Throwable) {
+            }
+            $opts['trim'] = $trim;
+        }
+        return ImageOptimizer::logo((string) $file['tmp_name'], $opts);
     }
 
     /**
@@ -233,6 +261,125 @@ final class Uploader
         } catch (HttpException) {
             return false;
         }
+    }
+
+    // ------------------------------------------------------------------ PDF newsletters (private storage)
+
+    /** Largest upload the web server accepts (min of upload_max_filesize and post_max_size), bytes; 0 = unknown. */
+    public static function serverUploadLimit(): int
+    {
+        $toBytes = static function (string $v): int {
+            $v = trim($v);
+            if ($v === '' || $v === '-1') {
+                return 0;
+            }
+            $n = (float) $v;
+            return (int) ($n * match (strtolower(substr($v, -1))) { 'g' => 1073741824, 'm' => 1048576, 'k' => 1024, default => 1 });
+        };
+        $a = $toBytes((string) ini_get('upload_max_filesize'));
+        $b = $toBytes((string) ini_get('post_max_size'));
+        return $a > 0 && $b > 0 ? min($a, $b) : max($a, $b);
+    }
+
+    /** Largest PDF newsletter in bytes: the setting newsletter_pdf_max_mb (default 25), never more than the server accepts. */
+    public static function pdfMaxBytes(): int
+    {
+        $mb = 25;
+        try {
+            $mb = max(1, min(100, (int) setting('newsletter_pdf_max_mb', '25')));
+        } catch (\Throwable) {
+        }
+        $max = $mb * 1048576;
+        $server = self::serverUploadLimit();
+        return $server > 0 ? min($max, $server) : $max;
+    }
+
+    /**
+     * Store an uploaded PDF OUTSIDE the web root: storage/private/<folder>/YYYY/MM/<random>.pdf (default folder "newsletters"). Only a real PDF
+     * passes (see PdfValidator: header at byte 0, finfo, %%EOF, not encrypted, no scripts; the client name must end in .pdf with no
+     * dangerous middle extension). Returns ['path' (relative to storage/private), 'name' (the clean original name, for display and download),
+     * 'size', 'mime', 'pages' (?int)]. Serve it only through a controller that checked visibility (Uploader::download()).
+     *
+     * @param array{max_bytes?:int,folder?:string} $opts
+     * @return array{path:string,name:string,size:int,mime:string,pages:?int}
+     */
+    public static function pdf(?array $file, array $opts = []): array
+    {
+        $file = self::requireFile($file);
+        $folder = (string) ($opts['folder'] ?? 'newsletters');
+        if (!preg_match('/^[a-z0-9_\-]+$/', $folder)) {
+            throw new \InvalidArgumentException('Bad private folder name.');
+        }
+        $max = (int) ($opts['max_bytes'] ?? self::pdfMaxBytes());
+        self::guard($file, $max);
+        $name = (string) $file['name'];
+        self::checkName($name, ['pdf']);
+        $meta = PdfValidator::inspect((string) $file['tmp_name'], $max);
+
+        $rel = $folder . '/' . date('Y') . '/' . date('m');
+        $dir = STORAGE_PATH . '/private/' . $rel;
+        self::ensureDir($dir);
+        $stored = bin2hex(random_bytes(16)) . '.pdf';
+        self::move((string) $file['tmp_name'], $dir . '/' . $stored);
+        @chmod($dir . '/' . $stored, 0640);
+
+        return [
+            'path'  => $rel . '/' . $stored,
+            'name'  => self::pdfDisplayName($name),
+            'size'  => $meta['size'],
+            'mime'  => 'application/pdf',
+            'pages' => $meta['pages'],
+        ];
+    }
+
+    /**
+     * The name a visitor sees and saves a PDF under: the client file name without path, with Unicode letters, digits, accents, dashes and curly
+     * quotes kept ("Lettre été 2026.pdf", "Lumina’s Newsletter – Oct.pdf") and anything else (control and format characters, slashes, straight
+     * quotes, brackets) turned into "_". At most 190 characters INCLUDING the ".pdf" ending. Response::download() sends the ASCII fallback in
+     * filename= and this exact name percent-encoded in filename*=UTF-8''.
+     */
+    public static function pdfDisplayName(string $clientName): string
+    {
+        $base = basename(str_replace(chr(92), '/', $clientName));
+        $ext = preg_match('/\.pdf$/i', $base, $m) === 1 ? $m[0] : '.pdf';
+        $stem = (string) preg_replace('/\.pdf$/i', '', $base);
+        $clean = preg_replace('/[^\p{L}\p{N}\p{M}\p{Pd}\p{Pi}\p{Pf}._ ()\',&+]+/u', '_', $stem);
+        if ($clean === null) {                                           // not valid UTF-8: keep the ASCII-only rule
+            $clean = (string) preg_replace('/[^A-Za-z0-9._ \-()]+/', '_', $stem);
+        }
+        $clean = trim((string) preg_replace('/ {2,}/', ' ', $clean));
+        $clean = rtrim(mb_substr($clean, 0, 190 - strlen($ext)), ' .');
+        return ($clean !== '' && trim($clean, '_') !== '' ? $clean : 'newsletter') . $ext;
+    }
+
+    /** Does a private file (relative path as stored) exist? Never throws. */
+    public static function privateExists(?string $rel): bool
+    {
+        try {
+            return $rel !== null && $rel !== '' && is_file(self::privatePath($rel));
+        } catch (HttpException) {
+            return false;
+        }
+    }
+
+    /** Copy a private file to a new random name in the same folder (duplicating an issue). Returns the new relative path or null. */
+    public static function copyPrivate(?string $rel): ?string
+    {
+        try {
+            $src = self::privatePath((string) $rel);
+        } catch (HttpException) {
+            return null;
+        }
+        $parts = explode('/', (string) $rel);
+        array_pop($parts);
+        $dir = implode('/', $parts);
+        $ext = strtolower(pathinfo($src, PATHINFO_EXTENSION));
+        $new = $dir . '/' . bin2hex(random_bytes(16)) . '.' . $ext;
+        if (!@copy($src, STORAGE_PATH . '/private/' . $new)) {
+            return null;
+        }
+        @chmod(STORAGE_PATH . '/private/' . $new, 0640);
+        return $new;
     }
 
     // ------------------------------------------------------------------ internals

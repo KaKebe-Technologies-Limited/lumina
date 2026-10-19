@@ -12,7 +12,9 @@ namespace App\Core;
  * JPEG: APP1 (Exif/XMP), APP13 (IPTC), COM and APP3-APP12/APP15 are dropped; JFIF, ICC profile and Adobe colour markers are kept.
  *       When the camera stored a rotation flag, a minimal Exif block holding ONLY the orientation is written back so the
  *       picture does not turn sideways. PNG: eXIf, tEXt, zTXt, iTXt and tIME chunks are dropped.
- *       WebP: EXIF and XMP chunks are dropped (and the VP8X flags cleared). GIF has no location metadata and is returned as is.
+ *       WebP: EXIF and XMP chunks are dropped (and the VP8X flags cleared). GIF: comments and XMP/unknown application extensions are dropped.
+ *       JPEG and GIF are cut at the end marker found by walking the file structure (EOI / trailer), so bytes appended after the picture (a hidden
+ *       payload, `<?= ... ?>`, an old copy of a cropped picture) never reach the stored file; PNG stops at IEND, WebP at the RIFF size.
  */
 final class ImageScrubber
 {
@@ -22,7 +24,7 @@ final class ImageScrubber
             'image/jpeg' => self::jpeg($bytes),
             'image/png'  => self::png($bytes),
             'image/webp' => self::webp($bytes),
-            'image/gif'  => str_starts_with($bytes, 'GIF8') ? $bytes : null,
+            'image/gif'  => self::gif($bytes),
             default      => null,
         };
     }
@@ -60,7 +62,7 @@ final class ImageScrubber
                 return null;
             }
             if ($m === 0xDA) {
-                $tail = substr($d, $i);
+                $tail = self::jpegScans($d, $i);       // every scan up to the EOI that ends the picture; anything after it is dropped
                 break;
             }
             $seg = substr($d, $i, 2 + $segLen);
@@ -91,6 +93,144 @@ final class ImageScrubber
             $out = "\xFF\xD8" . self::orientationOnlyExif($orientation) . substr($out, 2);
         }
         return $out . $tail;
+    }
+
+    /**
+     * The scan part of a JPEG, from the first SOS marker to the EOI that ends the picture, walked by marker structure (not by searching for the
+     * last FFD9). Comments and APPn segments between scans are dropped; bytes after the EOI (a hidden payload, an appended thumbnail, the old
+     * data of a cropped picture) are never copied. Null when the scans are truncated or malformed.
+     */
+    private static function jpegScans(string $d, int $p): ?string
+    {
+        $len = strlen($d);
+        $out = '';
+        while (true) {
+            if ($p + 2 > $len || $d[$p] !== "\xFF") {
+                return null;
+            }
+            $m = ord($d[$p + 1]);
+            if ($m === 0xFF) {                                       // fill byte
+                $p++;
+                continue;
+            }
+            if ($m === 0xD9) {                                       // EOI: the picture ends here
+                return $out . "\xFF\xD9";
+            }
+            if ($m === 0xD8 || $m === 0x01 || ($m >= 0xD0 && $m <= 0xD7)) {
+                $out .= substr($d, $p, 2);
+                $p += 2;
+                continue;
+            }
+            if ($p + 4 > $len) {
+                return null;
+            }
+            $segLen = (ord($d[$p + 2]) << 8) | ord($d[$p + 3]);
+            if ($segLen < 2 || $p + 2 + $segLen > $len) {
+                return null;
+            }
+            if ($m !== 0xFE && !($m >= 0xE1 && $m <= 0xEF && $m !== 0xE2 && $m !== 0xEE)) {     // keep tables, scan headers, ICC (APP2), Adobe (APP14)
+                $out .= substr($d, $p, 2 + $segLen);
+            }
+            $p += 2 + $segLen;
+            if ($m === 0xDA) {                                       // entropy-coded data runs to the next real marker
+                $q = $p;
+                while (true) {
+                    $pos = strpos($d, "\xFF", $q);
+                    if ($pos === false || $pos + 1 >= $len) {
+                        return null;
+                    }
+                    $b = ord($d[$pos + 1]);
+                    if ($b === 0x00 || ($b >= 0xD0 && $b <= 0xD7)) {  // stuffed byte or restart marker
+                        $q = $pos + 2;
+                    } elseif ($b === 0xFF) {
+                        $q = $pos + 1;
+                    } else {
+                        break;
+                    }
+                }
+                $out .= substr($d, $p, $pos - $p);
+                $p = $pos;
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ GIF
+
+    /**
+     * Rebuilds a GIF from its blocks up to the trailer (0x3B): comments, plain-text and unknown application extensions (XMP) are dropped, and
+     * so is everything after the trailer. Null when the blocks are truncated or malformed.
+     */
+    private static function gif(string $d): ?string
+    {
+        $len = strlen($d);
+        if ($len < 14 || (!str_starts_with($d, 'GIF87a') && !str_starts_with($d, 'GIF89a'))) {
+            return null;
+        }
+        $flags = ord($d[10]);
+        $p = 13 + (($flags & 0x80) ? 3 * (1 << (($flags & 7) + 1)) : 0);
+        if ($p > $len) {
+            return null;
+        }
+        $out = substr($d, 0, $p);
+        while ($p < $len) {
+            $b = $d[$p];
+            if ($b === "\x3B") {
+                return $out . "\x3B";
+            }
+            if ($b === "\x21") {                                     // extension: label + sub-blocks ending with a zero-length block
+                if ($p + 2 >= $len) {
+                    return null;
+                }
+                $label = ord($d[$p + 1]);
+                $q = $p + 2;
+                $appId = $label === 0xFF ? substr($d, $q + 1, ord($d[$q])) : '';
+                $q = self::gifSubBlocks($d, $q);
+                if ($q === null) {
+                    return null;
+                }
+                if ($label === 0xF9 || ($label === 0xFF && (str_starts_with($appId, 'NETSCAPE') || str_starts_with($appId, 'ANIMEXTS')))) {
+                    $out .= substr($d, $p, $q - $p);                 // graphic control (transparency, timing) and the loop count stay
+                }
+                $p = $q;
+                continue;
+            }
+            if ($b === "\x2C") {                                     // image: descriptor, optional local colour table, LZW size, data blocks
+                if ($p + 10 > $len) {
+                    return null;
+                }
+                $f = ord($d[$p + 9]);
+                $q = $p + 10 + (($f & 0x80) ? 3 * (1 << (($f & 7) + 1)) : 0) + 1;
+                $q = self::gifSubBlocks($d, $q);
+                if ($q === null) {
+                    return null;
+                }
+                $out .= substr($d, $p, $q - $p);
+                $p = $q;
+                continue;
+            }
+            return null;
+        }
+        return null;
+    }
+
+    /** Position just after the sub-block chain that starts at $q (each block is a length byte + data; a zero length ends it), or null. */
+    private static function gifSubBlocks(string $d, int $q): ?int
+    {
+        $len = strlen($d);
+        while (true) {
+            if ($q >= $len) {
+                return null;
+            }
+            $n = ord($d[$q]);
+            $q++;
+            if ($n === 0) {
+                return $q;
+            }
+            $q += $n;
+            if ($q > $len) {
+                return null;
+            }
+        }
     }
 
     /** Orientation (1-8) from a TIFF block (the Exif payload after "Exif\0\0"); 1 when absent or unreadable. */

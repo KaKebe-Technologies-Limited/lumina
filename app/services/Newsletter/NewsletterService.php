@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Core\Log;
 use App\Core\Pagination;
 use App\Core\Sanitizer;
+use App\Core\SitePages;
 use App\Core\Slug;
 use App\Models\Newsletter;
 use App\Models\NewsletterRevision;
@@ -34,6 +35,9 @@ final class NewsletterService
         'archived'  => ['draft'],
     ];
     public const MAX_ISSUE_NUMBER = 99999;
+    /** how an issue is read: written online with the block editor, or an uploaded PDF (an online issue may ALSO carry a PDF) */
+    public const KINDS = ['online', 'pdf'];
+    public const KIND_LABELS = ['online' => 'Written online', 'pdf' => 'PDF'];
     public const STATUS_LABELS = ['draft' => 'Draft', 'scheduled' => 'Scheduled', 'published' => 'Published', 'archived' => 'Archived'];
     public const STATUS_TONES = ['draft' => 'warning', 'scheduled' => 'info', 'published' => 'success', 'archived' => 'neutral'];
     public const EMAIL_LABELS = [
@@ -45,7 +49,7 @@ final class NewsletterService
     /** the public ordering of issues everywhere: newest issue date first, then newest id */
     public const PUBLIC_ORDER = 'n.issue_date DESC, n.id DESC';
     /** columns for list screens (no heavy `content`) */
-    public const LIST_COLUMNS = 'n.id, n.slug, n.issue_number, n.title, n.summary, n.issue_date, n.cover_image, n.cover_alt, n.status, n.publish_at, n.published_at, n.version, n.email_enabled, n.email_status, n.email_total, n.email_sent, n.email_failed, n.updated_at';
+    public const LIST_COLUMNS = 'n.id, n.slug, n.issue_number, n.title, n.summary, n.issue_date, n.cover_image, n.cover_alt, n.status, n.publish_at, n.published_at, n.version, n.email_enabled, n.email_status, n.email_total, n.email_sent, n.email_failed, n.updated_at, n.kind, n.pdf_path, n.pdf_name, n.pdf_size, n.pdf_downloads, (n.pdf_path IS NOT NULL AND CHAR_LENGTH(n.pdf_path) > 0) AS has_pdf';
 
     private static bool $resolved = false;
 
@@ -184,7 +188,7 @@ final class NewsletterService
         [$sql, $params] = self::visibleSql('n');
         $date = (string) $issue['issue_date'];
         $id = (int) $issue['id'];
-        $cols = 'n.id, n.slug, n.issue_number, n.title, n.issue_date, n.cover_image, n.cover_alt, n.summary';
+        $cols = 'n.id, n.slug, n.kind, n.issue_number, n.title, n.issue_date, n.cover_image, n.cover_alt, n.summary';
         $prev = Database::one(
             "SELECT {$cols} FROM newsletters n WHERE {$sql} AND (n.issue_date < ? OR (n.issue_date = ? AND n.id < ?)) ORDER BY n.issue_date DESC, n.id DESC LIMIT 1",
             array_merge($params, [$date, $date, $id])
@@ -342,6 +346,7 @@ final class NewsletterService
         $row['content'] = NewsletterContent::encode($norm['content']);
         $row['status'] = 'draft';
         $row['version'] = 1;
+        $row['kind'] = $d['values']['kind'] ?? 'online';
         $row['created_by'] = $userId;
         $row['updated_by'] = $userId;
         $id = 0;
@@ -502,6 +507,17 @@ final class NewsletterService
         $has = static fn(string $k): bool => array_key_exists($k, $in);
         $str = static fn(string $k): string => is_scalar($in[$k] ?? null) ? trim((string) $in[$k]) : '';
 
+        // the format is chosen once, when the issue is created
+        if ($creating) {
+            $kind = $str('kind') === '' ? 'online' : strtolower($str('kind'));
+            if (!in_array($kind, self::KINDS, true)) {
+                $e['kind'] = 'Choose how this issue is made: written online, or an uploaded PDF.';
+            } else {
+                $v['kind'] = $kind;
+            }
+        } elseif ($has('kind') && $row !== null && strtolower($str('kind')) !== (string) ($row['kind'] ?? 'online')) {
+            $e['kind'] = 'The format of an issue cannot be changed after it was created. Create a new issue in the other format instead.';
+        }
         if ($has('title') || $creating) {
             $title = Sanitizer::text($str('title'));
             if ($title === '') {
@@ -701,8 +717,15 @@ final class NewsletterService
         $res = self::create([
             'title' => $title, 'summary' => $src['summary'], 'cover_image' => $src['cover_image'], 'cover_alt' => $src['cover_alt'],
             'seo_title' => $src['seo_title'], 'seo_description' => $src['seo_description'], 'content' => (string) $src['content'],
+            'kind' => (string) ($src['kind'] ?? 'online'),
         ], $userId);
         if ($res['ok']) {
+            // the PDF is copied (its own file), so deleting or replacing one issue's PDF never touches the other
+            $copy = NewsletterPdf::copyColumns($src);
+            if ($copy !== []) {
+                Database::update('newsletters', $copy, 'id = ?', [(int) $res['newsletter']['id']]);
+                $res['newsletter'] = Newsletter::find((int) $res['newsletter']['id']) ?? $res['newsletter'];
+            }
             AuditLog::record('newsletter.duplicate', 'newsletter', (int) $res['newsletter']['id'], 'Duplicated newsletter issue', ['source' => $id]);
         }
         return $res;
@@ -728,6 +751,7 @@ final class NewsletterService
         Newsletter::delete($id);
         self::$release = array_merge(self::$release, $paths);
         self::flushRelease();
+        NewsletterPdf::releaseFile((string) ($row['pdf_path'] ?? ''), $id);
         AuditLog::record('newsletter.delete', 'newsletter', $id, 'Deleted newsletter issue', ['status' => $row['status']]);
         return ['ok' => true];
     }
@@ -923,6 +947,148 @@ final class NewsletterService
         } catch (\Throwable $e) {
             Log::warning('Newsletter: releasing pictures failed - ' . $e->getMessage());
         }
+    }
+
+    // ------------------------------------------------------------------------------------------------ "Is it on the website?" (admin status box + list warnings)
+
+    /** Is the Newsletter page itself switched on? When it is not, EVERY issue answers 404 on the public site. */
+    public static function pageVisible(): bool
+    {
+        return SitePages::isPublished('newsletter');
+    }
+
+    /**
+     * Plain-language answer to "can visitors see this issue right now, and if not why not?", for the admin status box on an issue, the list
+     * warnings and the API. Same rules as the public site (visibleSql / isVisible), nothing is cached.
+     *
+     * $opts['content'] (bool, default true): also check that the issue is complete (needs the `content` column; the list passes false for live rows).
+     *
+     * @return array{state:string,visible:bool,label:string,tone:string,detail:string,reasons:list<string>,url:string,preview_url:string,is_latest:bool,in_menu:bool,page_visible:bool}
+     *   state: live | scheduled | draft | unpublished | archived        visible: visitors can open it right now
+     *   url: the public address (always set, even when not visible, so the admin can see what it will be); preview_url: the admin preview
+     */
+    public static function liveStatus(array $row, array $opts = []): array
+    {
+        $status = (string) ($row['status'] ?? 'draft');
+        $due = $status === 'scheduled' && self::isVisible($row);
+        $state = match (true) {
+            $status === 'published', $due => 'live',
+            $status === 'scheduled'       => 'scheduled',
+            $status === 'archived'        => 'archived',
+            default                       => !empty($row['published_at']) ? 'unpublished' : 'draft',
+        };
+        $pageOn = self::pageVisible();
+        $reasons = [];
+        $detail = '';
+        $label = '';
+        $tone = 'neutral';
+        $when = '';
+        if (!empty($row['publish_at'])) {
+            $d = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', (string) $row['publish_at']);
+            $when = $d !== false ? $d->format('j M Y, H:i') : (string) $row['publish_at'];
+        }
+        switch ($state) {
+            case 'live':
+                $label = 'Live on the website';
+                $tone = 'success';
+                $detail = 'Visitors can read this issue now.';
+                break;
+            case 'scheduled':
+                $label = 'Scheduled for ' . $when;
+                $tone = 'info';
+                $detail = 'It is not visible yet. It appears on the website by itself at that time (Uganda time); nothing else is needed.';
+                $reasons[] = 'Scheduled for the future: visitors cannot see it before ' . $when . '.';
+                break;
+            case 'unpublished':
+                $label = 'Unpublished — not visible on the website';
+                $tone = 'warning';
+                $detail = 'This issue was live once and has been taken down. Publish it again to put it back.';
+                $reasons[] = 'Unpublished (back to draft): visitors get "page not found".';
+                break;
+            case 'archived':
+                $label = 'Archived — not visible on the website';
+                $tone = 'neutral';
+                $detail = 'Archived issues are kept for you but are not shown to visitors.';
+                $reasons[] = 'Archived: visitors cannot see it. Move it back to draft to edit and publish it again.';
+                break;
+            default:
+                $label = 'Draft — not visible on the website';
+                $tone = 'warning';
+                $detail = 'Only you can see a draft. Click "Publish now" when it is ready.';
+                $reasons[] = 'Draft: not published yet.';
+        }
+        if (($opts['content'] ?? true) !== false && $state !== 'archived') {
+            $content = array_key_exists('content', $row) ? (string) $row['content'] : (string) Database::value('SELECT content FROM newsletters WHERE id = ?', [(int) ($row['id'] ?? 0)], '');
+            $ready = NewsletterContent::readiness(NewsletterContent::decode($content), $row);
+            foreach ($ready['blocking'] as $msg) {
+                $reasons[] = ($state === 'live' ? 'Needs attention: ' : 'Missing before it can be published: ') . $msg;
+            }
+        }
+        if ($state === 'live' && !$pageOn) {
+            $label = 'Published — but the Newsletter page is switched off';
+            $tone = 'warning';
+            $detail = 'The issue is published, yet visitors still get "page not found" because the Newsletter page is switched off. Switch it on in Admin > Pages.';
+        }
+        if (!$pageOn) {
+            $reasons[] = 'The Newsletter page is switched off (Admin > Pages): no issue can be seen by visitors.';
+        }
+        if (in_array((string) ($row['email_status'] ?? 'none'), Newsletter::EMAIL_ACTIVE, true)) {
+            $reasons[] = 'An e-mail campaign is running for this issue, so it cannot be changed or taken down until it is cancelled.';
+        }
+        $visible = $state === 'live' && $pageOn;
+        $latestId = 0;
+        if ($visible) {
+            [$sql, $params] = self::visibleSql('n');
+            $latestId = (int) Database::value("SELECT n.id FROM newsletters n WHERE {$sql} ORDER BY " . self::PUBLIC_ORDER . ' LIMIT 1', $params, 0);
+        }
+        $nav = SitePages::get('newsletter');
+        return [
+            'state'        => $state,
+            'visible'      => $visible,
+            'label'        => $label,
+            'tone'         => $tone,
+            'detail'       => $detail,
+            'reasons'      => array_values(array_unique($reasons)),
+            'url'          => self::url($row + ['slug' => '']),
+            'preview_url'  => url('admin/newsletters/' . (int) ($row['id'] ?? 0) . '/preview'),
+            'is_latest'    => $visible && $latestId === (int) ($row['id'] ?? 0),
+            'in_menu'      => $nav !== null && !empty($nav['show_in_nav']) && !empty($nav['is_published']),
+            'page_visible' => $pageOn,
+        ];
+    }
+
+    /**
+     * Add a `live` key (liveStatus()) to every row of an admin list. Rows that are not live get their completeness checked too, which needs the
+     * `content` column: it is fetched for those rows only, in one query.
+     *
+     * @param list<array<string,mixed>> $rows rows with LIST_COLUMNS
+     * @return list<array<string,mixed>>
+     */
+    public static function annotate(array $rows): array
+    {
+        $needContent = [];
+        foreach ($rows as $r) {
+            if (in_array((string) ($r['status'] ?? ''), ['draft', 'scheduled'], true) && !self::isVisible($r)) {
+                $needContent[] = (int) $r['id'];
+            }
+        }
+        $contents = [];
+        $paths = [];
+        if ($needContent !== []) {
+            // pdf_path is fetched here (list rows carry only has_pdf) because readiness() of a PDF issue looks at it; it is merged into a COPY of the
+            // row for liveStatus() only, so pdfInfo() still treats the row as a list row
+            foreach (Database::all('SELECT id, content, pdf_path FROM newsletters WHERE id IN (' . implode(',', array_fill(0, count($needContent), '?')) . ')', $needContent) as $c) {
+                $contents[(int) $c['id']] = (string) $c['content'];
+                $paths[(int) $c['id']] = (string) ($c['pdf_path'] ?? '');
+            }
+        }
+        foreach ($rows as &$r) {
+            $id = (int) $r['id'];
+            $withContent = isset($contents[$id]);
+            $r['live'] = self::liveStatus($withContent ? $r + ['content' => $contents[$id], 'pdf_path' => $paths[$id]] : $r, ['content' => $withContent]);
+        }
+        unset($r);
+        return $rows;
     }
 
     // ------------------------------------------------------------------------------------------------ e-mail helpers (shared by the mailing agent)

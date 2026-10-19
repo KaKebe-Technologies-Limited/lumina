@@ -1,11 +1,17 @@
 <?php
 /**
- * Partner form (create + edit). OWNER: B8.
+ * Partner form (create + edit): the full form with description and position. OWNER: B8, logo field reworked by the PARTNERS agent.
+ * The quick way to add a partner is the bar at the top of Admin > Partners; this form is for the extras.
  * Vars: $partner (row or defaults), $types (value => label), $action (POST url), $isEdit (bool).
  */
+use App\Core\ImageOptimizer;
+use App\Services\PartnerLogos;
+
 $this->start('scripts'); ?>
-<script src="<?= e(asset('js/pages/admin-org.js')) ?>" defer></script>
+<script src="<?= e(asset('js/admin-partners.js')) ?>" defer></script>
 <?php $this->end();
+$hasLogo = $isEdit && PartnerLogos::view($partner)['has'];
+$logoNotice = ImageOptimizer::capabilityNotice();
 $val = static fn(string $key, mixed $default = '') => old($key, $partner[$key] ?? $default);
 $isActive = (int) old('is_active', $partner['is_active'] ?? 1) === 1;
 ?>
@@ -21,7 +27,7 @@ $isActive = (int) old('is_active', $partner['is_active'] ?? 1) === 1;
                 <div class="form-grid">
                     <?= partial('partials/form-field', ['name' => 'name', 'label' => 'Organisation name', 'required' => true, 'value' => $val('name'), 'maxlength' => 190, 'autocomplete' => 'off', 'class' => 'field--full', 'help' => 'Also used as the logo\'s alternative text on the website.']) ?>
                     <?= partial('partials/form-field', ['name' => 'partner_type', 'label' => 'Type', 'type' => 'select', 'required' => true, 'value' => $val('partner_type', 'partner'), 'options' => $types]) ?>
-                    <?= partial('partials/form-field', ['name' => 'sort_order', 'label' => 'Position', 'type' => 'number', 'value' => $val('sort_order'), 'min' => 0, 'step' => 1, 'help' => 'Lower numbers come first. Leave empty to add the partner last, or use Reorder on the list page.']) ?>
+                    <?= partial('partials/form-field', ['name' => 'sort_order', 'label' => 'Position', 'type' => 'number', 'value' => $val('sort_order'), 'min' => 0, 'step' => 1, 'help' => 'Lower numbers come first. Leave empty to add the partner last. It is easier to drag the cards into place on the Partners screen.']) ?>
                     <?= partial('partials/form-field', ['name' => 'website', 'label' => 'Website (optional)', 'value' => $val('website'), 'maxlength' => 255, 'autocomplete' => 'off', 'class' => 'field--full', 'placeholder' => 'https://www.example.org', 'attrs' => ['inputmode' => 'url'], 'help' => 'If set, the logo links to this address.']) ?>
                     <?= partial('partials/form-field', ['name' => 'description', 'label' => 'Short description (optional)', 'type' => 'textarea', 'rows' => 5, 'value' => $val('description'), 'maxlength' => 2000, 'class' => 'field--full', 'attrs' => ['data-maxlength-counter' => true], 'help' => 'Plain text. How the organisation supports or works with the foundation.']) ?>
                 </div>
@@ -32,12 +38,16 @@ $isActive = (int) old('is_active', $partner['is_active'] ?? 1) === 1;
             <section class="card" aria-labelledby="partner-logo">
                 <div class="card__header"><h2 class="card__title" id="partner-logo">Logo</h2></div>
                 <div class="card__body">
-                    <?= partial('partials/admin/image-field', [
-                        'name'  => 'logo',
-                        'label' => 'Organisation logo',
-                        'value' => (string) $val('logo'),
-                        'help'  => 'Optional (JPG, PNG or WebP, up to 5 MB). A wide logo on a plain or transparent background works best. Without a logo the organisation\'s name is shown instead. Only upload logos you have permission to use.',
-                    ]) ?>
+                    <?= partial('admin/partners/_drop', ['id' => 'partner-logo-file', 'current' => $isEdit ? $partner : null]) ?>
+                    <?php if (error('logo')): ?><div class="field__error" role="alert"><?= e(error('logo')) ?></div><?php endif; ?>
+                    <?php if ($hasLogo): ?>
+                        <label class="check pa-removelogo">
+                            <input type="checkbox" name="logo_remove" value="1" data-pa-logo-remove>
+                            <span>Remove the current logo (the website shows the name instead)</span>
+                        </label>
+                    <?php endif; ?>
+                    <p class="form-note">Without a logo the organisation's name is shown instead. Only upload logos you have permission to use.</p>
+                    <?php if ($logoNotice !== null): ?><p class="form-note pa-form-notice"><?= icon('alert-triangle', 'icon--sm') ?> <?= e($logoNotice) ?></p><?php endif; ?>
                 </div>
             </section>
             <section class="card" aria-labelledby="partner-visibility">

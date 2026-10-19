@@ -166,6 +166,7 @@ class Response
             $gaId = function_exists('analytics_id') ? analytics_id() : trim((string) setting('analytics_id', ''));
             $analytics = $gaId !== '' ? ' https://www.googletagmanager.com' : '';
             $analyticsConnect = $gaId !== '' ? ' https://www.google-analytics.com https://region1.google-analytics.com' : '';
+            // frame-src 'self' lets the newsletter page embed its own PDF viewer (<iframe src="/newsletter/{slug}/pdf">); object-src stays 'none'.
             // No inline <script> / on* handlers anywhere: JS lives in assets/js/*.js
             $h['Content-Security-Policy'] = "default-src 'self'; "
                 . "script-src 'self'" . $analytics . "; "
@@ -173,7 +174,7 @@ class Response
                 . "font-src 'self' https://fonts.gstatic.com data:; "
                 . "img-src 'self' data: blob: https:; "
                 . "media-src 'self' https:; "
-                . "frame-src https://www.google.com https://maps.google.com https://www.youtube-nocookie.com https://www.youtube.com; "
+                . "frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube-nocookie.com https://www.youtube.com; "
                 . "connect-src 'self'" . $analyticsConnect . "; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'";
         }
         if (Request::current()?->isSecure()) {

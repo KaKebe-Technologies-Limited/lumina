@@ -19,6 +19,8 @@ return [
             'fields' => [
                 ['key' => 'blurb', 'label' => 'Short description under the logo', 'type' => 'textarea', 'rows' => 3, 'default' => 'Lumina Africa Foundation is a registered community-based non-profit in Gulu City, Northern Uganda, developing community-centred programs designed to expand opportunities for underserved communities.', 'help' => 'Leave empty to hide it.'],
                 ['key' => 'partners_title', 'label' => 'Partners strip heading', 'type' => 'text', 'default' => 'With thanks to our partners', 'help' => 'The strip appears only when partners have been added in Admin > Partners.'],
+                ['key' => 'partners_limit', 'label' => 'Most partner logos in the footer', 'type' => 'number', 'default' => 12, 'min' => 4, 'max' => 40, 'help' => 'Keeps the footer short when there are many partners. The About page shows its own number; every partner is always on the Partners page.'],
+                ['key' => 'partners_all_label', 'label' => 'Link to all partners: text', 'type' => 'text', 'default' => 'See all partners', 'maxlength' => 60, 'help' => 'Shown under the logos only when some partners are not in the strip. Empty the text to hide the link.'],
                 ['key' => 'links_title', 'label' => 'Quick links heading', 'type' => 'text', 'default' => 'Quick links'],
                 ['key' => 'show_programs', 'label' => 'Show a "programs" column', 'type' => 'boolean', 'default' => true, 'help' => 'Lists the active programs (Admin > Programs).'],
                 ['key' => 'programs_title', 'label' => 'Programs column heading', 'type' => 'text', 'default' => 'Our planned programs'],

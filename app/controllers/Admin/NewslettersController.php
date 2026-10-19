@@ -5,10 +5,12 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\Web\NewsletterController as PublicNewsletterController;
 use App\Core\AdminController;
+use App\Core\Database;
 use App\Core\Flash;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\SitePages;
+use App\Core\Uploader;
 use App\Models\Newsletter;
 use App\Services\Newsletter\NewsletterContent;
 use App\Services\Newsletter\NewsletterRenderer;
@@ -28,10 +30,26 @@ final class NewslettersController extends AdminController
         $this->authorize('newsletter.manage');
         $filters = ['status' => $request->string('status'), 'q' => $request->string('q'), 'email_status' => $request->string('email_status')];
         $p = NewsletterService::adminList($filters, $request->page(), $this->perPage());
+        $p->items = NewsletterService::annotate($p->items);              // each row gets `live`: visible to visitors, or why not
+        // a row can point at a PDF that is no longer on the disk (deleted by hand, restored from an old backup): list those, one query for the page
+        $withPdf = array_values(array_map(static fn(array $r): int => (int) $r['id'], array_filter($p->items, static fn(array $r): bool => !empty($r['has_pdf']))));
+        $missingPdf = [];
+        if ($withPdf !== []) {
+            foreach (Database::all('SELECT id, pdf_path FROM newsletters WHERE id IN (' . implode(',', array_fill(0, count($withPdf), '?')) . ')', $withPdf) as $r) {
+                if (!Uploader::privateExists((string) $r['pdf_path'])) {
+                    $missingPdf[(int) $r['id']] = true;
+                }
+            }
+        }
+        $nav = SitePages::get('newsletter');
         return $this->render('admin/newsletters/index', [
             'pagination' => $p,
             'filters'    => $filters,
             'counts'     => NewsletterService::statusCounts(),
+            'pageVisible' => NewsletterService::pageVisible(),            // false = the Newsletter page is switched off: every issue is a 404
+            'publicCount' => NewsletterService::countPublished(),         // issues visitors can open right now
+            'missingPdf' => $missingPdf,                                   // id => true: the stored PDF file is gone from the server
+            'inMenu'     => $nav !== null && !empty($nav['show_in_nav']) && !empty($nav['is_published']),
             'canSend'    => can('newsletter.send'),
             'canDeletePublished' => can('newsletter.delete_published'),
         ], ['title' => 'Newsletter', 'nav' => 'newsletters', 'breadcrumbs' => [['Newsletter', null]]]);
@@ -43,6 +61,8 @@ final class NewslettersController extends AdminController
         $this->authorize('newsletter.manage');
         return $this->render('admin/newsletters/create', [
             'nextNumber' => NewsletterService::nextIssueNumber(),
+            'kind'       => in_array($request->string('kind'), NewsletterService::KINDS, true) ? $request->string('kind') : 'online',
+            'pdfMax'     => human_filesize(Uploader::pdfMaxBytes()),
         ], ['title' => 'New issue', 'nav' => 'newsletter_create', 'breadcrumbs' => [['Newsletter', url('admin/newsletters')], ['New issue', null]]]);
     }
 
@@ -50,11 +70,13 @@ final class NewslettersController extends AdminController
     public function store(Request $request): Response
     {
         $this->authorize('newsletter.manage');
-        $res = NewsletterService::create($request->only(['title', 'issue_number', 'issue_date', 'summary']), $this->userId());
+        $res = NewsletterService::create($request->only(['title', 'issue_number', 'issue_date', 'summary', 'kind']), $this->userId());
         if (!$res['ok']) {
             $this->fail($res['errors'] ?? ['title' => 'Please check the form.'], 'admin/newsletters/create');
         }
-        Flash::success('The draft was created. Write your issue below.');
+        Flash::success(($res['newsletter']['kind'] ?? 'online') === 'pdf'
+            ? 'The draft was created. Upload the PDF of your issue below.'
+            : 'The draft was created. Write your issue below.');
         return $this->redirect('admin/newsletters/' . (int) $res['newsletter']['id'] . '/edit');
     }
 
@@ -79,9 +101,22 @@ final class NewslettersController extends AdminController
                 'preview'   => url('admin/newsletters/' . $id . '/preview'),
                 'email'     => can('newsletter.send') ? url('admin/newsletters/' . $id . '/email') : '',
                 'public'    => abs_url('newsletter'),
+                'archive_public' => abs_url('newsletter/archive'),
+                'pages_admin' => can('pages.edit') ? url('admin/pages/newsletter/edit') : '',
+                'menus_admin' => can('menus.manage') ? url('admin/menus') : '',
                 'slug_base' => abs_url('newsletter/'),
                 'archive'   => url('newsletter/archive'),
                 'login'     => url('admin/login'),
+            ],
+            'kind'    => $item['kind'],
+            'pdf'     => [
+                'max_bytes'    => Uploader::pdfMaxBytes(),
+                'max_human'    => human_filesize(Uploader::pdfMaxBytes()),
+                'server_human' => Uploader::serverUploadLimit() > 0 ? human_filesize(Uploader::serverUploadLimit()) : '',
+                'setting_mb'   => (int) setting('newsletter_pdf_max_mb', '25'),
+                'upload'       => url('admin/api/newsletters/' . $id . '/pdf'),
+                'can_settings' => can('settings.manage'),
+                'settings_url' => url('admin/settings'),
             ],
             'now'     => date('Y-m-d\TH:i'),
             'tz'      => (string) date_default_timezone_get(),

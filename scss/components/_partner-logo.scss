@@ -1,0 +1,68 @@
+// components/partner-logo - OWNER: PARTNERS agent (docs/PARTNERS_NEWSLETTER.md section 6).
+// The ONE logo look shared by the About "Our partners" wall, the /partners cards, the footer strip and the admin card grid
+// (scss/admin/_partners.scss imports this file, so the admin shows a logo exactly as the website does).
+//
+// Markup (partials/partner-logo-img.php, called by partials/partner-tile.php):
+//   <a|span class="plogo plogo--wall"><picture class="partner-logo-pic"><source type="image/webp" srcset=".."><img class="partner-logo-img" width height alt loading="lazy"></picture></a>
+//
+// How a logo is fitted: every logo sits in a box of FIXED height (--plogo-h, one value per breakpoint) and is scaled with object-fit: contain, so
+// wide, tall, square, small and big logos all look equally tall/wide-bounded and nothing is ever stretched. The pipeline already trimmed the
+// empty margins and added a 6 px safe padding, so a logo fills its box. width / height attributes (the 1x size) reserve the space: no layout shift.
+// mix-blend-mode: multiply makes the white background of a JPG logo vanish on the white / cream boxes (the logo boxes are always light).
+// Optional grey-to-colour on hover: .plogos--grey on the wrapper (setting "partners_logo_hover_grey"), only for a mouse and only when the visitor
+// has not asked for reduced motion; on touch screens and with reduced motion the logos are always in colour.
+
+.partner-logo-pic { display: contents; }
+
+// ---- the box --------------------------------------------------------------------------------------------------------------------------
+.plogo {
+    --plogo-h: 3.25rem;          // picture height, phones (52 px)
+    --plogo-pad: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    padding: var(--plogo-pad);
+    color: $navy;
+    font-family: $font-heading;
+    font-size: $fs-sm;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    @include respond(md) { --plogo-h: 3.5rem; --plogo-pad: 1rem; }
+    @include respond(lg) { --plogo-h: 4rem; --plogo-pad: 1.1rem; }
+    @include respond(xl) { --plogo-h: 4.25rem; }
+
+    &__name { display: block; max-width: 100%; text-wrap: balance; }
+}
+a.plogo:hover, a.plogo:focus-visible { color: $orange-text; }
+
+// the picture itself
+.partner-logo-img {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: var(--plogo-h, 4rem);
+    object-fit: contain;
+    object-position: center;
+    mix-blend-mode: multiply;
+}
+
+// ---- grey until hovered (only for a mouse, never with reduced motion) -------------------------------------------------------------------
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .plogos--grey .partner-logo-img {
+        filter: grayscale(1);
+        opacity: 0.8;
+        transition: filter $t-base ease, opacity $t-base ease;
+    }
+    .plogos--grey .plogo:hover .partner-logo-img,
+    .plogos--grey .plogo:focus-visible .partner-logo-img,
+    .plogos--grey .partner-card:hover .partner-logo-img,
+    .plogos--grey .partner-card:focus-within .partner-logo-img {
+        filter: none;
+        opacity: 1;
+    }
+}

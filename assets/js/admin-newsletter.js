@@ -12,8 +12,12 @@
  * a safety copy in this browser for live issues and when offline, publish / schedule / unpublish / archive / delete / duplicate with
  * confirmation, a History drawer (revisions, differences, restore), error messages next to the fields, keyboard and screen reader support.
  *
+ * PDF issues (NEWSLETTER agent, docs/PARTNERS_NEWSLETTER.md): the PDF box (drag and drop or choose, progress, replace, remove, open) talks to
+ * POST / DELETE /admin/api/newsletters/{id}/pdf; the "Live on the website" box shows what visitors see right now (label, reasons, links, a
+ * "Check the website now" button) and is refreshed from every response; publish / schedule / unpublish / archive / save say what happened on the website.
+ *
  * Sections: 1 helpers + API, 2 state and field access, 3 images and links, 4 blocks, 5 saving, 6 preview, 7 status and actions,
- * 8 history, 9 start-up.
+ * 7b the PDF box and the "Live on the website" box, 8 history, 9 start-up. (The new-issue form at /admin/newsletters/create only uses initCreate().)
  */
 (function () {
     'use strict';
@@ -21,7 +25,8 @@
     const doc = document;
     const root = doc.querySelector('[data-nl-editor]');
     if (!root) {
-        return;                                   // other newsletter admin pages need no script
+        initCreate();                             // the new-issue form; the other newsletter admin pages need no script
+        return;
     }
     const $ = (sel, scope = root) => scope.querySelector(sel);
     const $$ = (sel, scope = root) => Array.from(scope.querySelectorAll(sel));
@@ -215,6 +220,8 @@
         readiness: boot.item.readiness || { blocking: {}, warnings: {} },
         active: '',
         warned: {},
+        pdfBusy: false,                // a PDF upload is running
+        checking: false,               // "Check the website now" is running
     };
     const E = {
         bar: $('[data-bar]'),
@@ -235,7 +242,18 @@
         stage: $('[data-stage]'),
         device: $('[data-device-box]'),
         previewState: $('[data-preview-state]'),
+        live: $('[data-live]'),
+        liveIcon: $('[data-live-icon]'),
+        liveTitle: $('[data-live-title]'),
+        liveDetail: $('[data-live-detail]'),
+        liveReasons: $('[data-live-reasons]'),
+        liveUnsaved: $('[data-live-unsaved]'),
+        liveChecked: $('[data-live-checked]'),
+        liveView: $('[data-live-view]'),
+        livePreview: $('[data-live-preview]'),
     };
+    const PDFBOX = $('[data-pdf-box]');
+    const isPdfIssue = () => S.item.kind === 'pdf';
     const D = {
         title: $('#nl-title'), number: $('#nl-number'), date: $('#nl-date'), summary: $('#nl-summary'),
         slug: $('#nl-slug'), seoTitle: $('#nl-seo-title'), seoDesc: $('#nl-seo-desc'),
@@ -354,6 +372,7 @@
         else { text = 'All changes saved'; }
         E.save.dataset.state = state;
         if (E.saveText.textContent !== text) E.saveText.textContent = text;
+        if (E.liveUnsaved) E.liveUnsaved.hidden = !(S.dirty && S.item.live && S.item.live.visible);
         document.title = (S.dirty ? '• ' : '') + document.title.replace(/^• /, '');
     }
 
@@ -442,6 +461,7 @@
         if (parts[0] === 'featured') {
             return { el: fieldIn(FEAT, parts.slice(1).join('.')) || FEAT_F.heading, card: FEAT, where: 'Featured article' };
         }
+        if (parts[0] === 'pdf') return { el: PDFBOX ? $('[data-pdf-file]', PDFBOX) : null, card: PDFBOX, where: isPdfIssue() ? 'The PDF' : 'PDF download' };
         if (parts[0] === 'cover_image') return { el: $('[data-image-file]', D.cover), card: $('[data-card="details"]'), where: 'Issue details' };
         if (parts[0] === 'cover_alt') return { el: $('[data-image-alt]', D.cover), card: $('[data-card="details"]'), where: 'Issue details' };
         if (detail[parts[0]]) return { el: detail[parts[0]], card: detail[parts[0]].closest('[data-card]'), where: parts[0].indexOf('seo') === 0 || parts[0] === 'slug' ? 'Search engines and sharing' : 'Issue details' };
@@ -950,13 +970,15 @@
         const card = t.closest('[data-block]');
         if (card) { selectInPreview(card.dataset.blockId); return; }
         if (t.closest('[data-featured]')) { selectInPreview('featured'); return; }
+        if (t.closest('[data-pdf-box]')) { selectInPreview('pdf'); return; }
         if (t.closest('[data-card="details"]')) selectInPreview('details');
     });
 
     /** Called from the preview: bring the matching part of the form into view. */
     function focusBlock(id) {
         setView('edit');
-        if (id === 'details') { openCard($('[data-card="details"]')); focusEl(D.title); }
+        if (id === 'pdf' && PDFBOX) { openCard(PDFBOX); PDFBOX.scrollIntoView({ block: 'center', behavior: smooth }); const f = $('[data-pdf-file]', PDFBOX); if (f) f.focus({ preventScroll: true }); flash(PDFBOX); }
+        else if (id === 'details') { openCard($('[data-card="details"]')); focusEl(D.title); }
         else if (id === 'featured') { openCard(FEAT); focusEl(FEAT_F.heading); flash(FEAT); }
         else {
             const card = cardById(id);
@@ -1015,6 +1037,7 @@
         S.item = Object.assign({}, S.item, {
             status: item.status, is_live: item.is_live, allowed: item.allowed, publish_at: item.publish_at, published_at: item.published_at,
             updated_at: item.updated_at, url: item.url, slug: item.slug, slug_locked: item.slug_locked, email: item.email, version: item.version, readiness: item.readiness,
+            kind: item.kind || S.item.kind, pdf: item.pdf || S.item.pdf, live: item.live || S.item.live,
         });
         if (item.readiness) S.readiness = item.readiness;
     }
@@ -1390,11 +1413,13 @@
         });
         $('[data-delete-text]').textContent = blocked
             ? 'An issue that has been published can only be deleted by an administrator. You can unpublish it instead.'
-            : 'Removes the issue and its history for good. This cannot be undone.';
+            : 'Removes the issue, its history' + (it.pdf && it.pdf.has ? ' and its PDF file' : '') + ' for good. This cannot be undone.';
         const slugLocked = !!it.slug_locked;
         D.slug.readOnly = slugLocked;
         renderBanner();
         renderSave();
+        renderLive();
+        renderPdf();
     }
 
     function renderBanner() {
@@ -1417,9 +1442,8 @@
             const mailLink = $('a[data-act="email"]');
             if (mailLink) b.append(el('a', { class: 'btn btn--outline btn--sm', href: mailLink.getAttribute('href'), text: 'Open the e-mail page' }));
         } else if (it.status === 'published' && it.is_live) {
-            b.classList.add('nl-banner--live');
-            b.append(el('span', { text: 'This issue is live on the website. What you change reaches visitors when you press "Save changes". Nothing is saved automatically while an issue is live.' }));
-            b.append(el('a', { class: 'btn btn--outline btn--sm', href: it.url, target: '_blank', rel: 'noopener', text: 'View on the website' }));
+            b.hidden = true;                 // the "Live on the website" box says it (and the advice about "Save changes")
+            return;
         } else if (it.status === 'scheduled') {
             b.classList.add('nl-banner--info');
             b.append(el('span', { text: 'Scheduled: this issue goes live by itself on ' + fmtWall(it.publish_at) + ' (Kampala time). Until then it is hidden from visitors.' }));
@@ -1514,7 +1538,12 @@
 
     async function actSave() {
         const r = await saveNow('manual');
-        if (r.ok) announce(r.nothing ? 'Everything is already saved' : 'Saved');
+        if (!r.ok) return;
+        announce(r.nothing ? 'Everything is already saved' : 'Saved');
+        // a live issue is read from the database on every visit, so a saved change is on the website at once: say so
+        if (!r.nothing && S.item.live && S.item.live.visible) {
+            toast('Saved — your change is live on the website now.', { tone: 'success', href: S.item.live.url, actionLabel: 'View it', target: '_blank' });
+        }
     }
     async function actPublish() {
         const blocking = Object.entries((S.readiness && S.readiness.blocking) || {});
@@ -1527,6 +1556,8 @@
         const body = el('div');
         const d = collectDetails();
         body.append(el('p', { text: '"' + (d.title || 'This issue') + '" will appear on the website right away, at ' + S.item.url + '.' }));
+        if (isPdfIssue()) body.append(el('p', { text: 'Visitors can read the PDF on the page and download it.' }));
+        else if (S.item.pdf && S.item.pdf.has) body.append(el('p', { text: 'The attached PDF becomes available as a “Download this issue as PDF” button.' }));
         body.append(el('p', { text: boot.can.send ? 'Subscribers are not e-mailed automatically. After publishing you can send it from the E-mail button.' : 'Subscribers are not e-mailed automatically. An administrator can send it by e-mail after it is published.' }));
         const tips = Object.entries((S.readiness && S.readiness.warnings) || {});
         if (tips.length) {
@@ -1537,8 +1568,18 @@
         if (!ok) return;
         const sv = await saveNow('manual');
         if (!sv.ok) return;
-        const label = S.item.status === 'scheduled' ? 'Published. The schedule was cancelled.' : 'Published. The issue is live on the website.';
-        const t = await transition('/publish', {}, { text: label, opts: { href: S.item.url, actionLabel: 'View it', target: '_blank', timeout: 10000 } });
+        const wasScheduled = S.item.status === 'scheduled';
+        const t = await transition('/publish', {}, null);
+        if (t.ok) {
+            const live = S.item.live || {};
+            if (live.visible) {
+                toast('Published — it is now live at ' + livePath() + (wasScheduled ? ' (the schedule was cancelled)' : ''), { tone: 'success', href: live.url, actionLabel: 'View it', target: '_blank', timeout: 12000 });
+                announce('Published. The issue is live on the website.');
+            } else {
+                toast('Published, but visitors still cannot see it: ' + ((live.reasons || [])[0] || live.label), { tone: 'warning', timeout: 0 });
+                announce('Published, but not visible to visitors');
+            }
+        }
         if (t.ok && boot.can.send && boot.urls.email) {
             toast('Want subscribers to get it too?', { tone: 'info', href: boot.urls.email, actionLabel: 'Open the e-mail page', timeout: 12000 });
         }
@@ -1600,7 +1641,7 @@
                 renderCheck();
                 watchSchedule();
                 schedDlg.close('ok');
-                toast('Scheduled for ' + fmtWall(S.item.publish_at) + ' (Kampala time).', { tone: 'success' });
+                toast('Scheduled — it will appear on ' + fmtWall(S.item.publish_at) + ' (Uganda time).', { tone: 'success' });
                 announce('Issue scheduled');
             } else if (r.status === 422 && r.data && r.data.errors && r.data.errors.publish_at) {
                 schedErr.textContent = r.data.errors.publish_at;
@@ -1645,9 +1686,9 @@
         if (st === 'published') {
             title = 'Unpublish this issue?';
             text = 'The issue disappears from the website and from the archive, and goes back to being a draft. Anyone with a link will see a "page not found" message until you publish it again.' + (mailed ? '\n\nThis issue has already been e-mailed. The "view in browser" link in those e-mails will not work while it is unpublished.' : '');
-            ok = 'Unpublish'; done = 'Unpublished. The issue is a draft again.';
+            ok = 'Unpublish'; done = 'Taken down — visitors now get “not found”.';
         } else if (st === 'scheduled') {
-            title = 'Cancel the schedule?'; text = 'The issue will not go live by itself. It goes back to being a draft.'; ok = 'Cancel schedule'; done = 'The schedule was cancelled. The issue is a draft.';
+            title = 'Cancel the schedule?'; text = 'The issue will not go live by itself. It goes back to being a draft.'; ok = 'Cancel schedule'; done = 'Schedule cancelled — the issue is a draft and is not visible on the website.';
         } else {
             title = 'Move this issue to drafts?'; text = 'The issue becomes a draft again, so you can edit and publish it.'; ok = 'Move to drafts'; done = 'The issue is a draft again.';
         }
@@ -1657,13 +1698,14 @@
         await transition('/unpublish', {}, { text: done });
     }
     async function actArchive() {
+        const wasVisible = !!(S.item.live && S.item.live.visible);
         const yes = await confirmDialog({
             title: 'Archive this issue?',
             body: 'The issue is kept here but taken off the website.' + (S.item.status === 'published' ? '\n\nIt will no longer be visible to visitors.' : ''),
             okLabel: 'Archive issue',
         });
         if (!yes) return;
-        await transition('/archive', {}, { text: 'Archived. The issue is no longer on the website.' });
+        await transition('/archive', {}, { text: wasVisible ? 'Archived — visitors now get “not found”.' : 'Archived. The issue is kept here and is not on the website.' });
     }
     async function actDelete() {
         if (everPublic() && !boot.can.delete_published) { toast('Only an administrator can delete an issue that has been published. You can unpublish it instead.', { tone: 'error' }); return; }
@@ -1715,6 +1757,7 @@
             case 'duplicate': actDuplicate(); break;
             case 'preview': actPreview(); break;
             case 'history': openHistory(); break;
+            case 'check-live': checkLive(); break;
             default:
         }
     });
@@ -1734,6 +1777,266 @@
         const sv = await saveNow('manual');
         if (sv.ok) window.location.assign(a.href);
     });
+
+    // ------------------------------------------------------------------------------------------------ 7b. the PDF box and the "Live on the website" box
+    const PDF_LIMIT = (boot.pdf && boot.pdf.max_bytes) || 25 * 1048576;
+    const humanSize = (n) => (n >= 1048576 ? (Math.round(n / 104857.6) / 10) + ' MB' : n >= 1024 ? Math.round(n / 1024) + ' KB' : n + ' bytes');
+    const campaignOn = () => !!(S.item.email && ['queued', 'sending', 'paused'].indexOf(S.item.email.status) >= 0);
+    /** The path visitors type: "/newsletter/{slug}" (with the site's folder when the site lives in one). */
+    const livePath = () => (S.item.live && S.item.live.url) || ('/newsletter/' + S.item.slug);
+
+    /** A file operation (PDF upload / remove, live check) answers with the fresh issue. Keep the status, checklist and PDF, but NEVER the version number:
+     *  the text in this editor was not reloaded, so a newer version saved by somebody else must still be noticed by the next save (conflict dialog). */
+    function takeFile(item) {
+        if (!item) return;
+        const keep = S.version;
+        takeItem(item);
+        S.version = keep;
+        S.item.version = keep;
+    }
+
+    function renderPdf() {
+        if (!PDFBOX) return;
+        const p = S.item.pdf || { has: false };
+        const cur = $('[data-pdf-current]', PDFBOX);
+        const drop = $('[data-pdf-drop]', PDFBOX);
+        cur.hidden = !p.has;
+        drop.classList.toggle('is-compact', !!p.has);
+        $('[data-pdf-drop-title]', PDFBOX).textContent = p.has ? 'Drop a new PDF here to replace this one' : 'Drag your PDF here';
+        $('[data-pdf-pick-label]', PDFBOX).textContent = p.has ? 'Replace PDF' : 'Choose a PDF';
+        const sub = $('[data-pdf-sub]', PDFBOX);
+        const remove = $('[data-pdf-remove]', PDFBOX);
+        const note = $('[data-pdf-remove-note]', PDFBOX);
+        if (p.has) {
+            $('[data-pdf-name]', PDFBOX).textContent = p.filename || p.name || 'newsletter.pdf';
+            const bits = [p.size_human];
+            if (p.updated_at) bits.push('uploaded ' + ago(p.updated_at));
+            if (p.downloads > 0) bits.push(p.downloads + (p.downloads === 1 ? ' download' : ' downloads'));
+            if (p.exists === false) bits.push('the file is missing from the server: upload it again');
+            $('[data-pdf-meta]', PDFBOX).textContent = bits.join(' · ');
+            const open = $('[data-pdf-open]', PDFBOX);
+            open.href = p.admin_url || '#';
+            if (sub) sub.textContent = (p.filename || 'PDF') + ' · ' + p.size_human;
+        } else if (sub) {
+            sub.textContent = isPdfIssue() ? 'Upload the PDF of this issue' : 'No PDF attached';
+        }
+        // a published or scheduled PDF issue cannot lose its PDF (the page would be empty); the server enforces it, the box explains it
+        const locked = isPdfIssue() && (S.item.status === 'published' || S.item.status === 'scheduled');
+        remove.disabled = locked || campaignOn();
+        note.hidden = !(p.has && (locked || campaignOn()));
+        note.textContent = campaignOn()
+            ? 'The e-mail campaign of this issue is running, so the PDF cannot be changed until the campaign is finished or cancelled.'
+            : 'This PDF issue is ' + (S.item.status === 'scheduled' ? 'scheduled' : 'published') + ', so its PDF cannot be removed. Upload a different PDF to replace it, or unpublish the issue first.';
+        $('[data-pdf-file]', PDFBOX).disabled = campaignOn();
+        drop.classList.toggle('is-disabled', campaignOn());
+    }
+
+    function initPdf() {
+        if (!PDFBOX) return;
+        const input = $('[data-pdf-file]', PDFBOX);
+        const drop = $('[data-pdf-drop]', PDFBOX);
+        const prog = $('[data-pdf-progress]', PDFBOX);
+        const bar = $('progress', prog);
+        const ptext = $('[data-pdf-progress-text]', PDFBOX);
+        const err = $('[data-pdf-error]', PDFBOX);
+        if (!err.id) err.id = 'nl-pdf-err';
+        const showErr = (msg) => { err.textContent = msg; err.hidden = false; };
+        const clearErr = () => { err.hidden = true; err.textContent = ''; };
+
+        function pdfProblem(f) {
+            if (!f) return 'Choose a PDF file.';
+            if (!/\.pdf$/i.test(f.name || '')) return 'Only PDF files can be uploaded here (the file name must end in .pdf).';
+            if (f.type && f.type !== 'application/pdf' && f.type !== 'application/x-pdf') return 'That file is not a PDF. Choose a file ending in .pdf.';
+            if (f.size < 100) return 'That file is empty or too small to be a PDF.';
+            if (f.size > PDF_LIMIT) {
+                const can = boot.pdf && boot.pdf.can_settings;
+                return 'That PDF is ' + humanSize(f.size) + ', more than the limit of ' + humanSize(PDF_LIMIT) + '. Make it smaller (most PDF programs have “Reduce file size” or “Compress”)' + (can ? ', or raise the limit in Site settings > Newsletter.' : ', or ask an administrator to raise the limit.');
+            }
+            return '';
+        }
+        function upload(f) {
+            return new Promise((resolve, reject) => {
+                const fd = new FormData();
+                fd.append('pdf', f);
+                const send = (retry) => {
+                    const x = new XMLHttpRequest();
+                    x.open('POST', boot.pdf.upload);
+                    x.setRequestHeader('X-CSRF-TOKEN', csrf());
+                    x.setRequestHeader('Accept', 'application/json');
+                    x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                    x.upload.onprogress = (e) => { if (e.lengthComputable) { const pct = Math.round((e.loaded / e.total) * 100); bar.value = pct; ptext.textContent = pct < 100 ? 'Uploading... ' + pct + '%' : 'Checking the PDF...'; } };
+                    x.onload = async () => {
+                        let d = null;
+                        try { d = JSON.parse(x.responseText); } catch (_) { d = null; }
+                        if (x.status === 201 && d && d.data) { resolve(d.data); return; }
+                        if (x.status === 403 && retry && await refreshCsrf()) { send(false); return; }
+                        let msg = (d && d.errors && d.errors.pdf) || (d && d.message) || '';
+                        if (x.status === 401 || x.status === 403) msg = 'Your session has ended. Sign in again, then upload the PDF again.';
+                        else if (x.status === 413) msg = 'The server refused the file because it is too large (the limit is ' + humanSize(PDF_LIMIT) + ').';
+                        else if (x.status === 429) msg = 'Too many uploads at once. Wait a moment and try again.';
+                        else if (!msg) msg = 'The PDF could not be uploaded (error ' + x.status + '). Please try again.';
+                        reject(new Error(msg));
+                    };
+                    x.onerror = () => reject(new Error('The PDF could not be sent. Check your internet connection and try again.'));
+                    x.send(fd);
+                };
+                send(true);
+            });
+        }
+        async function add(f) {
+            if (S.pdfBusy || !f) return;
+            clearErr();
+            if (campaignOn()) { showErr('The e-mail campaign of this issue is running, so the PDF cannot be changed until the campaign is finished or cancelled.'); return; }
+            const problem = pdfProblem(f);
+            if (problem) { showErr(problem); input.focus(); return; }
+            const had = !!(S.item.pdf && S.item.pdf.has);
+            if (had && S.item.live && S.item.live.visible) {
+                const yes = await confirmDialog({
+                    title: 'Replace the PDF on the live issue?',
+                    body: 'The new PDF replaces the old one on the website straight away. Anybody who opens the download link from now on gets the new file; the old file is deleted.',
+                    okLabel: 'Replace the PDF', tone: 'cta',
+                });
+                if (!yes) return;
+            }
+            S.pdfBusy = true;
+            PDFBOX.classList.add('is-busy');
+            PDFBOX.setAttribute('aria-busy', 'true');
+            prog.hidden = false; bar.value = 0; ptext.textContent = 'Uploading... 0%';
+            try {
+                const data = await upload(f);
+                takeFile(data.item || { pdf: data.pdf, live: data.live });
+                ptext.textContent = 'PDF uploaded.';
+                applyStatus();
+                renderCheck();
+                schedulePreview();
+                const live = S.item.live && S.item.live.visible;
+                toast((had ? 'PDF replaced' : 'PDF uploaded') + ': ' + (S.item.pdf.filename || f.name) + ' (' + S.item.pdf.size_human + ').' + (live ? ' The new file is live on the website now.' : ''), live ? { tone: 'success', href: S.item.live.url, actionLabel: 'View it', target: '_blank' } : { tone: 'success' });
+                announce('PDF uploaded: ' + (S.item.pdf.filename || f.name));
+                flash(PDFBOX);
+            } catch (e) {
+                showErr(e.message);
+                input.focus();
+            } finally {
+                S.pdfBusy = false;
+                PDFBOX.classList.remove('is-busy');
+                PDFBOX.removeAttribute('aria-busy');
+                setTimeout(() => { prog.hidden = true; }, 700);
+            }
+        }
+        input.addEventListener('change', () => { const f = input.files && input.files[0]; input.value = ''; add(f); });
+        $('[data-pdf-remove]', PDFBOX).addEventListener('click', async () => {
+            clearErr();
+            const live = S.item.live && S.item.live.visible;
+            const yes = await confirmDialog({
+                title: 'Remove the PDF?',
+                body: 'The PDF file is deleted from the server.' + (live ? '\n\nThe issue is live: the “Download PDF” button disappears from the website straight away.' : '') + '\n\nYou can upload another PDF at any time.',
+                okLabel: 'Remove the PDF', tone: 'danger',
+            });
+            if (!yes) return;
+            const r = await api('DELETE', '/' + S.id + '/pdf');
+            if (r.status === 200 && r.data && r.data.data) {
+                takeFile(r.data.data.item || { pdf: r.data.data.pdf, live: r.data.data.live });
+                applyStatus();
+                renderCheck();
+                schedulePreview();
+                toast('PDF removed.', { tone: 'success' });
+                announce('PDF removed');
+                input.focus();
+            } else if (r.login) { showDialog(dialog('session')); }
+            else if (r.network) { showErr('You are offline. The PDF was not removed.'); }
+            else { showErr((r.data && r.data.message) || 'The PDF could not be removed.'); }
+        });
+        // drop a PDF on the box
+        const hasFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).indexOf('Files') >= 0;
+        PDFBOX.addEventListener('dragover', (e) => { if (hasFiles(e) && !campaignOn()) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; drop.classList.add('is-drop'); } });
+        PDFBOX.addEventListener('dragleave', (e) => { if (!PDFBOX.contains(e.relatedTarget)) drop.classList.remove('is-drop'); });
+        PDFBOX.addEventListener('drop', (e) => {
+            if (!hasFiles(e)) return;
+            e.preventDefault();
+            drop.classList.remove('is-drop');
+            add(e.dataTransfer.files[0]);
+        });
+        renderPdf();
+    }
+
+    // ---- "Live on the website"
+    let liveLabel = '';
+    let liveRenders = 0;
+    function renderLive() {
+        // the server message of the page load ("The draft was created. Upload the PDF…") is true only until the first response from the API;
+        // after that the status box tells the truth, so the old banner would contradict it
+        if (liveRenders++ > 0) document.querySelectorAll('.flash-stack .alert').forEach((a) => a.remove());
+        const live = S.item.live;
+        if (!live || !E.live) return;
+        E.live.dataset.tone = live.tone || 'neutral';
+        E.live.dataset.state = live.state || '';
+        E.live.dataset.visible = live.visible ? '1' : '0';
+        E.liveTitle.textContent = live.label;
+        E.liveDetail.textContent = live.detail || '';
+        const notes = (live.reasons || []).slice();
+        if (live.visible) {
+            notes.unshift(live.is_latest
+                ? 'This is the latest issue: it is the one shown on the Newsletter page and in the “Latest newsletter” box on the Home page.'
+                : 'It is in the archive. A newer issue is shown first on the Newsletter page and on the Home page.');
+            if (S.item.status === 'published') notes.splice(1, 0, 'What you change reaches visitors when you press “Save changes” (nothing is saved automatically while an issue is live).');
+            if (live.in_menu === false) notes.push('The Newsletter page is not in the website menu (visitors find it through the footer, Home and Blog). ' + (boot.urls.menus_admin ? 'Add it in Admin > Menus.' : 'An administrator can add it in Admin > Menus.'));
+        }
+        E.liveReasons.textContent = '';
+        notes.forEach((t) => E.liveReasons.appendChild(el('li', { text: t })));
+        E.liveReasons.hidden = !notes.length;
+        if (live.visible) { E.liveView.setAttribute('href', live.url); E.liveView.removeAttribute('aria-disabled'); E.liveView.removeAttribute('title'); E.liveView.removeAttribute('tabindex'); }
+        else { E.liveView.removeAttribute('href'); E.liveView.setAttribute('aria-disabled', 'true'); E.liveView.setAttribute('title', 'Visitors cannot see this issue yet'); }
+        E.livePreview.setAttribute('href', live.preview_url || boot.urls.preview);
+        E.liveUnsaved.hidden = !(S.dirty && live.visible);
+        if (liveLabel && liveLabel !== live.label) { E.live.classList.remove('is-changed'); void E.live.offsetWidth; E.live.classList.add('is-changed'); setTimeout(() => E.live.classList.remove('is-changed'), 2400); }
+        liveLabel = live.label;
+        E.liveChecked.textContent = '';                         // an old "checked at ..." line belongs to the state before this change
+    }
+    E.liveView.addEventListener('click', (e) => { if (E.liveView.getAttribute('aria-disabled') === 'true') e.preventDefault(); });
+
+    /** Ask the public website itself (as an anonymous visitor: no cookies, no cache) whether this issue opens. */
+    async function checkLive() {
+        const live = S.item.live;
+        if (S.checking || !live) return;
+        S.checking = true;
+        const btn = $('[data-act="check-live"]');
+        if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
+        E.liveChecked.textContent = 'Asking the website...';
+        let msg;
+        try {
+            const res = await fetch(live.url, { method: 'GET', cache: 'no-store', credentials: 'omit', redirect: 'follow', headers: { Accept: 'text/html' } });
+            const at = clock(new Date());
+            if (res.status === 200) {
+                msg = 'Checked at ' + at + ': visitors can open this issue (the website answered “OK”).' + (live.visible ? '' : ' This page says it should not be visible: reload the editor to see the latest status.');
+            } else if (res.status === 404) {
+                msg = 'Checked at ' + at + ': visitors get “page not found” for this issue.' + (live.visible ? ' It should be visible: check that the Newsletter page is switched on (Admin > Pages).' : ' That is expected while it is not live.');
+            } else {
+                msg = 'Checked at ' + at + ': the website answered with code ' + res.status + '.';
+            }
+        } catch (_) {
+            msg = 'The website could not be reached from this browser. Check your internet connection.';
+        } finally {
+            S.checking = false;
+            if (btn) { btn.disabled = false; btn.removeAttribute('aria-busy'); }
+        }
+        E.liveChecked.textContent = msg;
+    }
+
+    /** When this tab comes back to the front, ask the server for the truth (a scheduled issue may have gone live, somebody may have unpublished it). */
+    let lastLiveFetch = Date.now();
+    async function refreshLive() {
+        if (S.saving || S.pdfBusy || Date.now() - lastLiveFetch < 20000) return;
+        lastLiveFetch = Date.now();
+        const r = await api('GET', '/' + S.id + '/live', undefined, { noRetry: true });
+        if (r.status === 200 && r.data && r.data.data && r.data.data.item) {
+            const before = S.item.status;
+            takeFile(r.data.data.item);
+            applyStatus();
+            renderCheck();
+            if (before !== S.item.status) toast('This issue is now “' + (boot.labels.status[S.item.status] || S.item.status).toLowerCase() + '” (it was changed somewhere else).', { tone: 'info' });
+        }
+    }
+    doc.addEventListener('visibilitychange', () => { if (doc.visibilityState === 'visible') refreshLive(); });
 
     // ---- reload the whole form from a server item (start-up, "use their version", restore)
     function adoptTheirDetails(item) {
@@ -1913,6 +2216,7 @@
 
     initImage(D.cover);
     initImage(FEAT_F.image);
+    initPdf();
     initCounters(root);
     $$('input[type="number"]', root).forEach((i) => i.addEventListener('wheel', () => i.blur(), { passive: true }));
     loadIssue(S.item);
@@ -1932,5 +2236,18 @@
 
     root.classList.add('is-ready');
     // expose a tiny hook for tests and for the e-mail panel (read only)
-    window.LuminaNewsletterEditor = { state: S, collect, save: saveNow, refreshPreview };
+    window.LuminaNewsletterEditor = { state: S, collect, save: saveNow, refreshPreview, renderLive, renderPdf };
+
+    /** The new-issue form: the explanation under the form follows the chosen format (Write it here / Upload a PDF). */
+    function initCreate() {
+        const form = doc.querySelector('[data-nl-create] form');
+        if (!form) return;
+        const sync = () => {
+            const checked = form.querySelector('input[name="kind"]:checked');
+            const kind = checked ? checked.value : 'online';
+            form.querySelectorAll('[data-kind-note]').forEach((n) => { n.hidden = n.getAttribute('data-kind-note') !== kind; });
+        };
+        form.addEventListener('change', (e) => { if (e.target && e.target.name === 'kind') sync(); });
+        sync();
+    }
 }());

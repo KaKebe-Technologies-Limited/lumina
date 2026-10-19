@@ -130,6 +130,11 @@ final class NewsletterRenderer
                 $out[] = $piece;
             }
         }
+        if ($v['pdf'] !== null) {
+            // a PDF issue is not attached to the e-mail (size, deliverability): two links instead
+            $out[] = $v['pdf']['label'] . ': ' . $v['pdf']['download_url'] . ($v['pdf']['size_text'] !== '' ? ' (' . $v['pdf']['size_text'] . ')' : '');
+            $out[] = $v['labels']['read_online'] . ': ' . $v['browser_url'];
+        }
         $out[] = str_repeat('-', 40);
         if ($v['footer_text'] !== '') {
             $out[] = $v['footer_text'];
@@ -175,6 +180,20 @@ final class NewsletterRenderer
         };
         $address = trim(implode(', ', array_filter([trim((string) setting('address', '')), trim((string) setting('city_country', ''))], static fn(string $s): bool => $s !== '')));
         $logo = logo_url(64);
+        // PDF issue (kind = pdf): the message carries the summary and two buttons (Read online / Download PDF) instead of the file itself. Why no
+        // attachment: 5-25 MB attachments push the message over most providers' size limits and into spam, multiply the sending time by the
+        // number of subscribers, and could not be swapped after sending; the link always serves the current file and is counted.
+        $pdf = null;
+        if ((string) ($issue['kind'] ?? 'online') === 'pdf' && NewsletterPdf::has($issue)) {
+            $info = NewsletterPdf::info($issue, true);
+            $pdf = [
+                'download_url' => $info['download_url'],
+                'view_url'     => $info['view_url'],
+                'size_human'   => $info['size_human'],
+                'size_text'    => trim(strtr((string) content('newsletter', 'pdf.size_label'), ['{size}' => $info['size_human']])),
+                'label'        => $label('download_pdf'),
+            ];
+        }
         return [
             'issue'           => $issue,
             'content'         => $issue['content_data'],
@@ -189,6 +208,7 @@ final class NewsletterRenderer
             'footer_text'     => trim((string) setting('newsletter_footer_text', '')),
             'reason'          => str_replace('{site}', $site, $label('reason')),
             'logo_url'        => self::absoluteUrl($logo),
+            'pdf'             => $pdf,
             'labels'          => [
                 'view_in_browser' => $label('view_in_browser'),
                 'read_online'     => $label('read_online'),

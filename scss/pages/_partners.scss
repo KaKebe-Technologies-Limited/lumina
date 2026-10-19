@@ -24,15 +24,16 @@
         @include respond(lg) { flex-basis: calc(33.333% - #{$space-6 * 2 / 3}); }
         @include hover-lift;
 
+        // the logo area: a fixed-height box (shared rules: components/_partner-logo.scss); cream, so a JPG logo's white background disappears
         &__logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            --plogo-h: 4.5rem;
+            --plogo-pad: 1.5rem;
             min-height: 10rem;
-            padding: $space-5;
             background: $surface;
-            img { max-width: 100%; max-height: 6rem; width: auto; height: auto; object-fit: contain; }
+            @include respond(lg) { --plogo-h: 5rem; }
+            .partner-logo-img { max-width: 18rem; margin-inline: auto; }
         }
+        &__logo-link { display: flex; align-items: center; justify-content: center; width: 100%; }
         &__initial {
             display: inline-grid;
             place-items: center;

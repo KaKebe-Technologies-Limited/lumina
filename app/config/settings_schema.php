@@ -93,6 +93,16 @@ return [
                 'newsletter_footer_text'   => ['label' => 'Extra footer text', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:600', 'help' => 'Optional line at the bottom of every newsletter e-mail, above the organisation address and the unsubscribe link.'],
                 'newsletter_batch_size'    => ['label' => 'E-mails per batch', 'type' => 'number', 'default' => '30', 'rules' => 'required|integer|between:1,200', 'help' => 'How many subscribers are e-mailed per step when you send an issue from the admin screen. Lower it if your host limits how fast you can send (many shared hosts allow only a few hundred e-mails per hour).'],
                 'newsletter_default_subject_prefix' => ['label' => 'Subject prefix', 'type' => 'text', 'default' => '', 'rules' => 'nullable|max:60', 'help' => 'Put in front of the issue title in the e-mail subject, for example "Lumina Newsletter:". Leave empty for no prefix.'],
+                'newsletter_pdf_max_mb'    => ['label' => 'Largest PDF newsletter (MB)', 'type' => 'number', 'default' => '25', 'rules' => 'required|integer|between:1,100', 'help' => 'The biggest PDF you can upload for a "PDF" issue. The web host may allow less: if an upload fails with "larger than the server allows", ask your host to raise upload_max_filesize and post_max_size.'],
+            ],
+        ],
+        'partners' => [
+            'label' => 'Partners',
+            'icon'  => 'handshake',
+            'help'  => 'How partner logos look on the website. Add, hide, delete and reorder the partners in Admin > Partners; the headings and texts are edited in Admin > Pages > About and Pages > Partners. Logos are trimmed, resized and compressed automatically when you upload them.',
+            'fields' => [
+                'partners_logo_hover_grey' => ['label' => 'Show logos in grey until the mouse is over them', 'type' => 'boolean', 'default' => '1', 'help' => 'Makes a row of very different logos look calm and tidy. Switched off automatically for visitors who prefer reduced motion and on touch screens.'],
+                'partners_logo_trim'       => ['label' => 'Trim empty margins around uploaded logos', 'type' => 'boolean', 'default' => '1', 'help' => 'Cuts away transparent or white space around a logo so every logo fills its box equally. Applies to logos uploaded from now on.'],
             ],
         ],
         'calendar' => [

@@ -1,24 +1,19 @@
 <?php
 /**
- * Logo grid. Vars: $partners (list of partners rows), $showType (bool, default false), $typeLabels (map partner_type => label).
- * Logos are shown at their natural aspect; the alt text is the organisation name.
+ * The "Our partners" logo WALL: a responsive grid of uniform white boxes (2 / 3 / 4 / 5 columns), one logo per box.
+ * OWNER: PARTNERS agent. Vars: $partners (list of partners rows)*, $labelledby (id of the heading above, optional), $label (aria-label, optional).
+ * Prints NOTHING when the list is empty. Each box comes from partials/partner-tile (link rules, name fallback); the grey-until-hover look is
+ * switched by the setting "partners_logo_hover_grey" and only applies to a mouse (scss/components/_partner-logo.scss).
  */
 if (empty($partners)) {
     return;
 }
+$pgGrey = (string) setting('partners_logo_hover_grey', '1') !== '0';
+$pgLabelledby = preg_replace('/[^a-z0-9_-]/i', '', (string) ($labelledby ?? ''));
+$pgLabel = trim((string) ($label ?? ''));
 ?>
-<div class="partner-grid">
-    <?php foreach ($partners as $p):
-        $logo = img_url($p['logo'] ?? '');
-        $tag = !empty($p['website']) ? 'a' : 'div';
-    ?>
-        <<?= $tag ?> class="partner-logo"<?= $tag === 'a' ? ' href="' . e($p['website']) . '" target="_blank" rel="noopener noreferrer"' : '' ?> data-reveal>
-            <?php if ($logo !== ''): ?>
-                <img src="<?= e($logo) ?>" alt="<?= e($p['name']) ?>" loading="lazy">
-            <?php else: ?>
-                <span class="partner-logo__name"><?= e($p['name']) ?></span>
-            <?php endif; ?>
-            <?php if (!empty($showType) && !empty($typeLabels[$p['partner_type']] ?? '')): ?><span class="partner-logo__type"><?= e($typeLabels[$p['partner_type']]) ?></span><?php endif; ?>
-        </<?= $tag ?>>
+<ul class="partner-wall plogos<?= $pgGrey ? ' plogos--grey' : '' ?>" role="list"<?= $pgLabelledby !== '' ? ' aria-labelledby="' . e($pgLabelledby) . '"' : ($pgLabel !== '' ? ' aria-label="' . e($pgLabel) . '"' : '') ?>>
+    <?php foreach ($partners as $pgPartner): ?>
+        <li class="partner-wall__item" data-reveal><?= partial('partials/partner-tile', ['partner' => $pgPartner, 'variant' => 'wall']) ?></li>
     <?php endforeach; ?>
-</div>
+</ul>

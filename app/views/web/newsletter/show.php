@@ -3,7 +3,7 @@
  * A newsletter issue page (used by /newsletter and /newsletter/{slug}, and by the admin "Preview in new tab").
  * Vars: $issue (row), $issueHtml (NewsletterRenderer::renderIssue - the only place the issue itself is rendered), $seo, $adjacent (prev = older,
  * next = newer, either may be null), $isCurrent (this is the newest public issue), $preview, $banner, $absUrl, $share (ShareLinks),
- * $ld (NewsArticle JSON-LD). All wording: content('newsletter', ...). OWNER: WEB agent.
+ * $ld (NewsArticle / Article JSON-LD). All wording: content('newsletter', ...). OWNER: WEB / NEWSLETTER agent.
  */
 use App\Services\Newsletter\NewsletterContent;
 
@@ -63,6 +63,9 @@ $this->start('head'); ?>
                     <a class="link-arrow" href="<?= e(url('newsletter/archive')) ?>"><?= e(content('newsletter', 'pager.archive_link')) ?> <?= icon('arrow-right', 'icon--sm') ?></a>
                     <?php if (!$isCurrent): ?>
                         <a class="link-arrow" href="<?= e(url('newsletter')) ?>"><?= e(content('newsletter', 'pager.latest_link')) ?> <?= icon('arrow-right', 'icon--sm') ?></a>
+                    <?php endif; ?>
+                    <?php if (section_on('newsletter', 'subscribe')): ?>
+                        <a class="link-arrow nl-links__subscribe" href="#subscribe"><?= e(content('newsletter', 'subscribe.button')) ?> <?= icon('arrow-right', 'icon--sm') ?></a>
                     <?php endif; ?>
                 </p>
 

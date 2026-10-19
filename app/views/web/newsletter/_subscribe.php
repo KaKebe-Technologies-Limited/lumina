@@ -1,10 +1,10 @@
 <?php
 /**
  * The subscribe box of the newsletter pages (posts to the existing POST /subscribe; source "newsletter"). Wording: content('newsletter', 'subscribe.*').
- * Reuses the blog's subscribe panel markup. No vars.
+ * The section has the anchor id "subscribe" (a link to /newsletter#subscribe lands on the box). Reuses the blog's subscribe panel markup. No vars.
  */
 ?>
-<section class="section nl-subscribe" aria-label="<?= e(strip_highlight((string) content('newsletter', 'subscribe.title'))) ?>">
+<section class="section nl-subscribe" id="subscribe" aria-label="<?= e(strip_highlight((string) content('newsletter', 'subscribe.title'))) ?>">
     <div class="container">
         <?= partial('web/blog/_subscribe', [
             'id'          => 'nl-subscribe',

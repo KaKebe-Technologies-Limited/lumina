@@ -10,6 +10,7 @@ use App\Core\UploadException;
 use App\Core\Uploader;
 use App\Models\Newsletter;
 use App\Services\Newsletter\NewsletterContent;
+use App\Services\Newsletter\NewsletterPdf;
 use App\Services\Newsletter\NewsletterRenderer;
 use App\Services\Newsletter\NewsletterService;
 
@@ -40,9 +41,10 @@ final class NewsletterApiController extends AdminController
             'email_status' => $request->string('email_status'),
             'q'            => $request->string('q'),
         ], $request->page(), $this->perPage());
+        $rows = NewsletterService::annotate($p->items);                 // adds `live` (visible? why not?) to every row
         return $this->json([
-            'data' => array_map(fn(array $r): array => $this->item($r, false), $p->items),
-            'meta' => ['page' => $p->page, 'per_page' => $p->perPage, 'total' => $p->total, 'pages' => $p->pages, 'counts' => NewsletterService::statusCounts()],
+            'data' => array_map(fn(array $r): array => $this->item($r, false), $rows),
+            'meta' => ['page' => $p->page, 'per_page' => $p->perPage, 'total' => $p->total, 'pages' => $p->pages, 'counts' => NewsletterService::statusCounts(), 'page_visible' => NewsletterService::pageVisible()],
         ]);
     }
 
@@ -135,6 +137,7 @@ final class NewsletterApiController extends AdminController
         }
         $input = $request->post();
         $issue = NewsletterRenderer::previewRow($row, $input);
+        $issue['pdf_embed'] = false;         // the editor's preview frame is sandboxed, and a sandboxed document cannot show a PDF: it gets a placeholder
         return $this->json([
             'html'      => NewsletterRenderer::previewDocument($issue),
             'readiness' => self::readiness($issue),
@@ -274,6 +277,7 @@ final class NewsletterApiController extends AdminController
         $item = [
             'id'              => (int) $r['id'],
             'slug'            => (string) $r['slug'],
+            'kind'            => (string) ($r['kind'] ?? 'online') === 'pdf' ? 'pdf' : 'online',
             'issue_number'    => $r['issue_number'] !== null ? (int) $r['issue_number'] : null,
             'title'           => (string) $r['title'],
             'summary'         => (string) ($r['summary'] ?? ''),
@@ -289,6 +293,9 @@ final class NewsletterApiController extends AdminController
             'slug_locked'     => !empty($r['published_at']),
             'updated_at'      => (string) ($r['updated_at'] ?? ''),
             'url'             => NewsletterService::url($r, true),
+            'pdf'             => self::pdfInfo($r),
+            // "Live on the website": can visitors see it right now, and if not why not (same rules as the public site, nothing cached)
+            'live'            => $r['live'] ?? NewsletterService::liveStatus($r, ['content' => array_key_exists('content', $r)]),
             'allowed'         => NewsletterService::allowedTransitions($status),
             'email'           => [
                 'enabled' => (bool) ($r['email_enabled'] ?? false),
@@ -307,6 +314,22 @@ final class NewsletterApiController extends AdminController
             ];
         }
         return $item;
+    }
+
+    /**
+     * The PDF of an issue as the admin UI needs it: NewsletterPdf::info() plus `admin_url` (the stored file streamed inline for ANY status, the
+     * "Open PDF" link). List rows carry no path, only has_pdf / pdf_name / pdf_size, so for them `exists` is not checked.
+     * @return array<string,mixed>
+     */
+    public static function pdfInfo(array $r): array
+    {
+        $listRow = !array_key_exists('pdf_path', $r);
+        $info = NewsletterPdf::info($listRow ? $r + ['pdf_path' => !empty($r['has_pdf']) ? 'listed' : ''] : $r);
+        if ($listRow && $info['has']) {
+            $info['exists'] = true;
+        }
+        $info['admin_url'] = $info['has'] ? url('admin/newsletters/' . (int) ($r['id'] ?? 0) . '/pdf') : '';
+        return $info;
     }
 
     /** @return array{blocking:object,warnings:object} */

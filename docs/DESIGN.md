@@ -333,7 +333,7 @@ Params: `url`*, `label`, `title`, `class` (default `btn btn--photo btn--caps`). 
 Hooks: `a[data-video-lightbox][data-video-id][data-video-title][data-close-label][data-fallback-label]`. Any page may add the attributes to its own link.
 
 ### 7.20 Partner strip - `partials/partner-strip`
-Params `partners` (rows of `partners`), `title`. Renders nothing when empty. Greyscale logos that colourise on hover. (The footer already shows it - pages normally do NOT.)
+Params `partners` (rows of `partners`), `title`, `limit` (most logos shown, default 12), `all_label` (link to `/partners`, printed only when some partners are cut off). Renders nothing when empty. A labelled `<section>` landmark. Greyscale logos that colourise on hover. (The footer already shows it - pages normally do NOT.) The newsletter row is a `<section>` labelled by its heading as well.
 
 ### 7.21 Newsletter row - `partials/newsletter-row`
 Optional `title`, `text`, `placeholder`, `button`, `source` (stored on the subscriber), `idp` (id prefix, required if used twice). The footer already contains one.

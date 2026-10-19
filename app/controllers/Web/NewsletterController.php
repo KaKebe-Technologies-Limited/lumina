@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\SitePages;
 use App\Services\Newsletter\NewsletterContent;
+use App\Services\Newsletter\NewsletterPdf;
 use App\Services\Newsletter\NewsletterRenderer;
 use App\Services\Newsletter\NewsletterService;
 use App\Services\Web\ShareLinks;
@@ -28,7 +29,11 @@ final class NewsletterController extends Controller
 {
     private const PER_PAGE = 12;
     private const API_MAX_PER_PAGE = 50;
-    private const API_CACHE = 'public, max-age=60';
+    /**
+     * LIVE REFLECTION: the JSON API revalidates on every request (the ETag makes the answer a cheap 304 while nothing changed), so a newly
+     * published, edited, unpublished or deleted issue is visible to API readers, browsers and any CDN at once. (It used to be max-age=60.)
+     */
+    private const API_CACHE = 'public, max-age=0, must-revalidate';
 
     /** GET /newsletter - the newest published issue, or the friendly empty state. */
     public function index(Request $request): Response
@@ -100,7 +105,8 @@ final class NewsletterController extends Controller
 
     /**
      * GET /api/newsletters?page=&per_page= - published issues, newest first (no content). Read-only, public data only (no e-mail addresses,
-     * no drafts), cacheable for a minute, conditional requests (ETag / 304) supported, readable cross-origin (GET, no credentials).
+     * no drafts), always revalidated (Cache-Control max-age=0 + ETag / 304, so a change shows at once), readable cross-origin (GET, no credentials).
+     * Every item says how it is read: kind = online | pdf, and pdf = {url (download), view_url (inline), size (bytes), name} or null.
      */
     public function apiIndex(Request $request): Response
     {
@@ -145,11 +151,28 @@ final class NewsletterController extends Controller
         return $response->withHeaders($headers);
     }
 
+    /**
+     * The PDF of an issue for API readers: absolute download and inline addresses, size in bytes, the file name a browser saves; null when the issue
+     * has none (list rows carry only has_pdf, full rows carry the path).
+     * @return array{url:string,view_url:string,size:int,name:string}|null
+     */
+    private function apiPdf(array $r): ?array
+    {
+        // the file must really be on disk, otherwise url / view_url would answer 404 (a restored database without the storage folder)
+        $has = array_key_exists('pdf_path', $r) ? NewsletterPdf::exists($r) : !empty($r['has_pdf']);
+        if (!$has) {
+            return null;
+        }
+        $u = NewsletterPdf::urls($r, true);
+        return ['url' => $u['download'], 'view_url' => $u['view'], 'size' => (int) ($r['pdf_size'] ?? 0), 'name' => NewsletterPdf::downloadName($r)];
+    }
+
     /** @return array<string,mixed> */
     private function apiItem(array $r, bool $full): array
     {
         $item = [
             'slug'         => (string) $r['slug'],
+            'kind'         => (string) ($r['kind'] ?? 'online') === 'pdf' ? 'pdf' : 'online',
             'issue_number' => $r['issue_number'] !== null ? (int) $r['issue_number'] : null,
             'title'        => (string) $r['title'],
             'summary'      => (string) ($r['summary'] ?? ''),
@@ -157,6 +180,7 @@ final class NewsletterController extends Controller
             'published_at' => $this->iso($r['published_at'] ?? $r['publish_at'] ?? null),
             'url'          => NewsletterService::url($r, true),
             'cover'        => NewsletterContent::validImagePath((string) ($r['cover_image'] ?? '')) ? ['url' => abs_url_for_image((string) $r['cover_image']), 'alt' => (string) ($r['cover_alt'] ?? '')] : null,
+            'pdf'          => $this->apiPdf($r),
         ];
         if ($full) {
             $item['content'] = $this->apiContent(NewsletterContent::decode((string) $r['content']));
@@ -278,8 +302,11 @@ final class NewsletterController extends Controller
     }
 
     /**
-     * NewsArticle structured data for an issue. The issue number and date belong to a PublicationIssue of the newsletter (a Periodical): schema.org
-     * has no issueNumber on an article. @return array<string,mixed>
+     * Structured data for an issue: NewsArticle for a written issue, Article for a PDF issue. A PDF (the issue itself, or the PDF attached to a
+     * written issue) is described as a MediaObject (`encoding` and `associatedMedia`: contentUrl = the absolute inline PDF address, encodingFormat
+     * application/pdf, contentSize). The PDF routes themselves are noindex; the page is what search engines list.
+     * The issue number and date belong to a PublicationIssue of the newsletter (a Periodical): schema.org has no issueNumber on an article.
+     * @return array<string,mixed>
      */
     private function jsonLd(array $issue, array $seo, string $navLabel): array
     {
@@ -290,10 +317,23 @@ final class NewsletterController extends Controller
         $logo = abs_url_for_image((string) setting('logo_path', ''));
         $org = ['@type' => 'Organization', 'name' => $site];
         $number = $issue['issue_number'] !== null ? (int) $issue['issue_number'] : 0;
-        $words = str_word_count(NewsletterContent::plainText(NewsletterContent::decode((string) ($issue['content'] ?? ''))));
+        $isPdf = (string) ($issue['kind'] ?? 'online') === 'pdf';
+        $words = $isPdf ? 0 : str_word_count(NewsletterContent::plainText(NewsletterContent::decode((string) ($issue['content'] ?? ''))));
+        $media = null;
+        if (NewsletterPdf::exists($issue)) {
+            $info = NewsletterPdf::info($issue, true);
+            $media = array_filter([
+                '@type'          => 'MediaObject',
+                'name'           => $info['filename'],
+                'contentUrl'     => $info['view_url'],
+                'encodingFormat' => 'application/pdf',
+                'contentSize'    => $info['size_human'],
+                'uploadDate'     => to_datetime($info['updated_at'] !== '' ? $info['updated_at'] : ($seo['published'] ?? ''))?->format(DATE_ATOM),
+            ], static fn($v): bool => $v !== null && $v !== '');
+        }
         return array_filter([
             '@context'         => 'https://schema.org',
-            '@type'            => 'NewsArticle',
+            '@type'            => $isPdf ? 'Article' : 'NewsArticle',
             'headline'         => mb_substr((string) $issue['title'], 0, 110),
             'description'      => $seo['description'],
             'inLanguage'       => 'en',
@@ -303,6 +343,8 @@ final class NewsletterController extends Controller
             'url'              => $seo['canonical'],
             'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $seo['canonical']],
             'wordCount'        => $words > 0 ? $words : null,
+            'encoding'         => $media,
+            'associatedMedia'  => $media,
             'author'           => $org,
             'publisher'        => $org + ($logo !== '' ? ['logo' => ['@type' => 'ImageObject', 'url' => $logo]] : []),
             'isPartOf'         => array_filter([

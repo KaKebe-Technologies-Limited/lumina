@@ -29,7 +29,7 @@ final class ImageCleanup
     /** Columns that hold exactly one stored image path. @var list<array{0:string,1:string}> */
     private const IMAGE_COLUMNS = [
         ['programs', 'image'], ['projects', 'image'], ['posts', 'cover_image'], ['activities', 'image'], ['gallery_images', 'image'],
-        ['events', 'image'], ['stories', 'image'], ['team_members', 'photo'], ['partners', 'logo'], ['pages', 'hero_image'], ['pages', 'og_image'], ['newsletters', 'cover_image'],
+        ['events', 'image'], ['stories', 'image'], ['team_members', 'photo'], ['partners', 'logo'], ['partners', 'logo_2x'], ['partners', 'logo_webp'], ['partners', 'logo_webp_2x'], ['pages', 'hero_image'], ['pages', 'og_image'], ['newsletters', 'cover_image'],
     ];
 
     /** Text columns that may embed an image path (rich bodies, JSON repeaters, settings). @var list<array{0:string,1:string}> */

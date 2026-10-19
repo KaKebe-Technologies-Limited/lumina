@@ -79,8 +79,10 @@ AddDefaultCharset UTF-8
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^(assets|uploads)/ - [L]
 
-    # Everything else is the application (clean URLs).
-    RewriteRule ^ index.php [L]
+    # Everything else is the application (clean URLs). The environment flag tells a LiteSpeed server-level page cache (some shared hosts switch
+    # one on for the whole account) never to store these dynamic pages: an admin change (a published newsletter, a new partner) must be visible
+    # at once. Apache ignores it. (The application also sends "private, max-age=0, must-revalidate" itself.)
+    RewriteRule ^ index.php [L,E=Cache-Control:no-cache]
 </IfModule>
 
 # Without mod_rewrite the app cannot route; refuse to serve rather than expose source.

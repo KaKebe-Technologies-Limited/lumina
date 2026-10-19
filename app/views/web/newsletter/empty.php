@@ -1,8 +1,9 @@
 <?php
 /**
- * /newsletter while nothing is published yet: friendly empty state + the subscribe box. noindex (set by the controller).
- * All wording: content('newsletter', ...). OWNER: WEB agent.
+ * /newsletter while nothing is published yet: friendly empty state + "when the first issue will appear" (editable) + the subscribe box.
+ * noindex (set by the controller). All wording: content('newsletter', ...). OWNER: WEB / NEWSLETTER agent.
  */
+$when = trim((string) content('newsletter', 'empty.when'));
 ?>
 <?= partial('partials/page-hero', [
     'title'   => content('newsletter', 'hero.title'),
@@ -17,6 +18,7 @@
             'text'  => content('newsletter', 'empty.text'),
             'icon'  => 'newspaper',
         ]) ?>
+        <?php if ($when !== ''): ?><p class="nl-empty__when" role="note"><?= icon('clock', 'icon--sm') ?> <span><?= e($when) ?></span></p><?php endif; ?>
     </div>
 </section>
 

@@ -261,6 +261,9 @@ if ($storyCards):
 endif;
 ?>
 
+<?php /* ------------------------------------------------------------------ 8b. LATEST NEWSLETTER (newest published issue; hidden when there is none) */ ?>
+<?= partial('web/newsletter/_home-teaser') ?>
+
 <?php /* ------------------------------------------------------------------ 9. FAQ (photo + accordion, first item open) */ ?>
 <?php
 if ($faqs):

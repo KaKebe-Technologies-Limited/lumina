@@ -459,6 +459,39 @@ CREATE TABLE IF NOT EXISTS `partners` (
   KEY `ix_partners_list` (`is_active`, `partner_type`, `sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Logo optimisation (docs/PARTNERS_NEWSLETTER.md): additive + idempotent. `logo` stays the fallback picture (PNG/JPEG 1x, or the validated original for
+-- rows saved before this feature / without GD); the columns below are the optimised variants and their size (no layout shift).
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_2x');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_2x` VARCHAR(255) NULL AFTER `logo`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_webp');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_webp` VARCHAR(255) NULL AFTER `logo_2x`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_webp_2x');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_webp_2x` VARCHAR(255) NULL AFTER `logo_webp`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_width');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_width` SMALLINT UNSIGNED NULL AFTER `logo_webp_2x`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_height');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_height` SMALLINT UNSIGNED NULL AFTER `logo_width`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'partners' AND column_name = 'logo_optimised');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `partners` ADD COLUMN `logo_optimised` TINYINT(1) NOT NULL DEFAULT 0 AFTER `logo_height`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 CREATE TABLE IF NOT EXISTS `documents` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(220) NOT NULL,
@@ -751,6 +784,44 @@ EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
 SET @lumina_has_ix = (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND index_name = 'ix_newsletters_number');
 SET @lumina_ddl = IF(@lumina_has_ix > 0, 'ALTER TABLE `newsletters` DROP INDEX `ix_newsletters_number`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
+-- PDF issues (docs/PARTNERS_NEWSLETTER.md): additive + idempotent. kind = how the issue is read: 'online' (the block editor) or 'pdf' (an uploaded PDF).
+-- An online issue may ALSO carry a PDF. The file itself lives OUTSIDE the web root (storage/private/newsletters/YYYY/MM) and is served only by the gated download route.
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'kind');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `kind` ENUM(''online'',''pdf'') NOT NULL DEFAULT ''online'' AFTER `slug`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'pdf_path');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `pdf_path` VARCHAR(255) NULL AFTER `cover_alt`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'pdf_name');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `pdf_name` VARCHAR(190) NULL AFTER `pdf_path`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'pdf_size');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `pdf_size` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `pdf_name`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'pdf_downloads');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `pdf_downloads` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `pdf_size`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'pdf_updated_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `pdf_updated_at` DATETIME NULL AFTER `pdf_downloads`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_ix = (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND index_name = 'ix_newsletters_kind');
+SET @lumina_ddl = IF(@lumina_has_ix = 0, 'ALTER TABLE `newsletters` ADD KEY `ix_newsletters_kind` (`kind`, `status`)', 'DO 0');
 PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
@@ -1329,25 +1400,39 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('newsletter_reply_to', ''),
   ('newsletter_footer_text', ''),
   ('newsletter_batch_size', '30'),
-  ('newsletter_default_subject_prefix', '')
+  ('newsletter_default_subject_prefix', ''),
+  ('newsletter_pdf_max_mb', '25')
 ON DUPLICATE KEY UPDATE
   setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
   updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
 
--- Page: /newsletter (footer menu, not in the header). All its copy comes from the page registry (app/config/pages/newsletter.php).
-INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
-  ('newsletter', 'Newsletter', 'registry', 'default', 1, 0, 1, 'Newsletter', 75, NULL)
+-- Page: /newsletter. Header menu: a child of Blog (dropdown "Blog > Newsletter"), plus the footer menu. All its copy comes from the page registry
+-- (app/config/pages/newsletter.php). The owner can move or hide it in Admin > Menus. parent_slug is looked up so the statement also works on a database
+-- whose `blog` row is not there yet (then it is NULL and the entry is a top-level item).
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug)
+SELECT 'newsletter', 'Newsletter', 'registry', 'default', 1, 1, 1, 'Newsletter', 73, (SELECT p.slug FROM pages p WHERE p.slug = 'blog')
 ON DUPLICATE KEY UPDATE
-  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
-  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
-  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
-  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
-  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
-  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
-  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
-  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
-  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
-  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+  title = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(title), pages.title),
+  type = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(type), pages.type),
+  template = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(template), pages.template),
+  is_published = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(is_published), pages.is_published),
+  show_in_nav = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(show_in_nav), pages.show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(show_in_footer), pages.show_in_footer),
+  nav_label = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(nav_label), pages.nav_label),
+  nav_order = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(nav_order), pages.nav_order),
+  parent_slug = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(parent_slug), pages.parent_slug),
+  updated_at = IF((@reseed = 1 OR pages.updated_at = pages.created_at), pages.created_at, pages.updated_at);
+
+-- ONE-TIME menu upgrade (guarded by the marker setting below). The first build put Newsletter in the footer only (show_in_nav = 0, no parent, order 75).
+-- A database that already has that row and where the owner has edited the page since (so the pristine refresh above skipped it) would otherwise never
+-- get the new menu entry. The row is moved ONLY while its three menu fields still hold those first-build values, i.e. the owner never touched the
+-- menu placement; updated_at is left alone. After the first run the marker stops this for good, so hiding the entry later (Admin > Menus) sticks.
+UPDATE pages SET show_in_nav = 1, nav_order = 73,
+  parent_slug = (SELECT b.slug FROM (SELECT slug FROM pages WHERE slug = 'blog') b),
+  updated_at = updated_at
+WHERE slug = 'newsletter' AND show_in_nav = 0 AND parent_slug IS NULL AND nav_order = 75
+  AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_newsletter_nav_v1') m);
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_newsletter_nav_v1', '1');
 
 -- ONE sample issue, a DRAFT (never public until the owner publishes it), built ONLY from wording that already exists on this site / in the
 -- owner's copy: the planned-programs introduction (docs/content-source/planned-programs.md), the "Visit to Wii Got Quarry Site" activity, the
@@ -1364,6 +1449,15 @@ WHERE NOT EXISTS (SELECT 1 FROM newsletters);
 INSERT INTO newsletter_revisions (newsletter_id, version, title, content, source)
 SELECT n.id, n.version, n.title, n.content, 'save' FROM newsletters n
 WHERE n.slug = 'sample-issue-edit-or-delete-me' AND NOT EXISTS (SELECT 1 FROM newsletter_revisions r WHERE r.newsletter_id = n.id);
+
+-- ------------------------------------------------------------------ partners logos (see docs/PARTNERS_NEWSLETTER.md). ADDITIVE and IDEMPOTENT.
+-- Settings only (defaults of app/config/settings_schema.php, group "Partners"); refreshed only while pristine. NO partner is seeded: the owner adds them.
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('partners_logo_hover_grey', '1'),
+  ('partners_logo_trim', '1')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
 
 -- ------------------------------------------------------------------ calendar (see docs/CALENDAR.md). ADDITIVE and IDEMPOTENT.
 -- Same rules as the rest of this file: a row is refreshed from here ONLY while it is pristine (updated_at = created_at); a row an admin

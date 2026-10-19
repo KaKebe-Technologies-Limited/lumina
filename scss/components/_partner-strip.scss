@@ -1,4 +1,5 @@
 // "Thanks to our partners" strip (footer + anywhere). partials/partner-strip.php - renders nothing when there are no partners.
+// Logos use the shared box rules in _partner-logo.scss (fixed height, object-fit: contain, grey until hovered); here: only the layout of the strip.
 .partner-strip {
     display: grid;
     gap: $space-5;
@@ -7,9 +8,21 @@
     @include respond(lg) { grid-template-columns: minmax(0, 0.38fr) minmax(0, 0.62fr); gap: $space-7; }
 
     &__title { max-width: 18ch; font-family: $font-display; font-size: fluid(1.35rem, '1.1rem + 0.9vw', 1.9rem); font-weight: 600; line-height: 1.2; color: $navy; }
-    &__list { display: flex; flex-wrap: wrap; align-items: center; gap: $space-4 $space-6; }
-    &__item { display: inline-flex; align-items: center; min-height: 2.75rem; color: $navy; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; text-decoration: none; }
-    a.partner-strip__item:hover { color: $orange-text; }
-    &__item img { max-height: 2.9rem; width: auto; max-width: 9rem; object-fit: contain; filter: grayscale(1); opacity: 0.75; transition: filter $t-fast ease, opacity $t-fast ease; }
-    a.partner-strip__item:hover img, a.partner-strip__item:focus-visible img { filter: none; opacity: 1; }
+    &__body { min-width: 0; }
+    &__more { margin: $space-4 0 0; font-size: $fs-sm; font-weight: 600; a { color: $navy; text-decoration: underline; text-underline-offset: 3px; &:hover, &:focus-visible { color: $orange-text; } } .icon--arrow { width: 1em; height: 1em; vertical-align: -0.125em; } }
+    &__list { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3 $space-5; margin: 0; padding: 0; @include respond(md) { gap: $space-4 $space-6; } }
+    &__cell { flex: 0 0 auto; }
+
+    // a cell of the strip: fixed width and height, so very different logos line up
+    .plogo--strip {
+        --plogo-h: 2.5rem;
+        --plogo-pad: 0.25rem 0.5rem;
+        width: 6.75rem;
+        min-height: 2.75rem;                // 44 px target for a linked logo
+        @include respond(md) { --plogo-h: 2.75rem; width: 8.25rem; }
+        @include respond(lg) { --plogo-h: 3rem; width: 8.75rem; }
+    }
+    a.plogo--strip { border-radius: $radius-sm; }
+    a.plogo--strip:hover, a.plogo--strip:focus-visible { color: $orange-text; }
+    .plogo--strip .plogo__name { font-size: $fs-xs; }
 }

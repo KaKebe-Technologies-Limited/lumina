@@ -32,7 +32,7 @@ try {
 ?>
 <div class="footer-pre">
     <div class="container">
-        <?= partial('partials/partner-strip', ['partners' => $ftPartners, 'title' => (string) content('global', 'footer.partners_title')]) ?>
+        <?= partial('partials/partner-strip', ['partners' => $ftPartners, 'title' => (string) content('global', 'footer.partners_title'), 'limit' => max(4, min(40, (int) content('global', 'footer.partners_limit'))), 'all_label' => (string) content('global', 'footer.partners_all_label')]) ?>
         <?= partial('partials/newsletter-row', ['idp' => 'footer-newsletter', 'source' => 'footer']) ?>
     </div>
 </div>

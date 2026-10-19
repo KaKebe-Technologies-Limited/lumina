@@ -40,6 +40,19 @@ return [
             ],
         ],
         [
+            'key' => 'newsletter', 'label' => 'Newsletter call to action', 'toggle' => true,
+            'help' => 'A prominent link to the newsletter, shown under the list of posts. It appears only once at least one newsletter issue is published. Write and publish the issues in Admin > Newsletter.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Newsletter', 'maxlength' => 60],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Read Our Newsletter', 'maxlength' => 120],
+                ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Our latest news and updates, in one place. Read the newest issue or browse the earlier ones.'],
+                ['key' => 'button_label', 'label' => 'Main button: text', 'type' => 'text', 'default' => 'Read the latest newsletter'],
+                ['key' => 'button_url', 'label' => 'Main button: link', 'type' => 'url', 'default' => '/newsletter'],
+                ['key' => 'archive_label', 'label' => 'Second link: text (optional)', 'type' => 'text', 'default' => 'Browse all issues'],
+                ['key' => 'archive_url', 'label' => 'Second link: link', 'type' => 'url', 'default' => '/newsletter/archive'],
+            ],
+        ],
+        [
             'key' => 'subscribe', 'label' => 'Subscribe box', 'toggle' => true, 'help' => 'Newsletter sign-up shown under the list of posts.',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Newsletter', 'maxlength' => 60],

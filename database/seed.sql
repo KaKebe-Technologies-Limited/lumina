@@ -331,25 +331,39 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('newsletter_reply_to', ''),
   ('newsletter_footer_text', ''),
   ('newsletter_batch_size', '30'),
-  ('newsletter_default_subject_prefix', '')
+  ('newsletter_default_subject_prefix', ''),
+  ('newsletter_pdf_max_mb', '25')
 ON DUPLICATE KEY UPDATE
   setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
   updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
 
--- Page: /newsletter (footer menu, not in the header). All its copy comes from the page registry (app/config/pages/newsletter.php).
-INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
-  ('newsletter', 'Newsletter', 'registry', 'default', 1, 0, 1, 'Newsletter', 75, NULL)
+-- Page: /newsletter. Header menu: a child of Blog (dropdown "Blog > Newsletter"), plus the footer menu. All its copy comes from the page registry
+-- (app/config/pages/newsletter.php). The owner can move or hide it in Admin > Menus. parent_slug is looked up so the statement also works on a database
+-- whose `blog` row is not there yet (then it is NULL and the entry is a top-level item).
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug)
+SELECT 'newsletter', 'Newsletter', 'registry', 'default', 1, 1, 1, 'Newsletter', 73, (SELECT p.slug FROM pages p WHERE p.slug = 'blog')
 ON DUPLICATE KEY UPDATE
-  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
-  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
-  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
-  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
-  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
-  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
-  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
-  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
-  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
-  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+  title = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(title), pages.title),
+  type = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(type), pages.type),
+  template = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(template), pages.template),
+  is_published = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(is_published), pages.is_published),
+  show_in_nav = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(show_in_nav), pages.show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(show_in_footer), pages.show_in_footer),
+  nav_label = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(nav_label), pages.nav_label),
+  nav_order = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(nav_order), pages.nav_order),
+  parent_slug = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(parent_slug), pages.parent_slug),
+  updated_at = IF((@reseed = 1 OR pages.updated_at = pages.created_at), pages.created_at, pages.updated_at);
+
+-- ONE-TIME menu upgrade (guarded by the marker setting below). The first build put Newsletter in the footer only (show_in_nav = 0, no parent, order 75).
+-- A database that already has that row and where the owner has edited the page since (so the pristine refresh above skipped it) would otherwise never
+-- get the new menu entry. The row is moved ONLY while its three menu fields still hold those first-build values, i.e. the owner never touched the
+-- menu placement; updated_at is left alone. After the first run the marker stops this for good, so hiding the entry later (Admin > Menus) sticks.
+UPDATE pages SET show_in_nav = 1, nav_order = 73,
+  parent_slug = (SELECT b.slug FROM (SELECT slug FROM pages WHERE slug = 'blog') b),
+  updated_at = updated_at
+WHERE slug = 'newsletter' AND show_in_nav = 0 AND parent_slug IS NULL AND nav_order = 75
+  AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_newsletter_nav_v1') m);
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_newsletter_nav_v1', '1');
 
 -- ONE sample issue, a DRAFT (never public until the owner publishes it), built ONLY from wording that already exists on this site / in the
 -- owner's copy: the planned-programs introduction (docs/content-source/planned-programs.md), the "Visit to Wii Got Quarry Site" activity, the
@@ -366,6 +380,15 @@ WHERE NOT EXISTS (SELECT 1 FROM newsletters);
 INSERT INTO newsletter_revisions (newsletter_id, version, title, content, source)
 SELECT n.id, n.version, n.title, n.content, 'save' FROM newsletters n
 WHERE n.slug = 'sample-issue-edit-or-delete-me' AND NOT EXISTS (SELECT 1 FROM newsletter_revisions r WHERE r.newsletter_id = n.id);
+
+-- ------------------------------------------------------------------ partners logos (see docs/PARTNERS_NEWSLETTER.md). ADDITIVE and IDEMPOTENT.
+-- Settings only (defaults of app/config/settings_schema.php, group "Partners"); refreshed only while pristine. NO partner is seeded: the owner adds them.
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('partners_logo_hover_grey', '1'),
+  ('partners_logo_trim', '1')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
 
 -- ------------------------------------------------------------------ calendar (see docs/CALENDAR.md). ADDITIVE and IDEMPOTENT.
 -- Same rules as the rest of this file: a row is refreshed from here ONLY while it is pristine (updated_at = created_at); a row an admin

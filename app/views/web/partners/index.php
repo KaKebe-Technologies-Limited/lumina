@@ -9,6 +9,7 @@ $visitLabel = (string) content('partners', 'labels.visit');
 $empty = content_btn('partners', 'empty.cta');
 $empty2 = content_btn('partners', 'empty.cta2');
 $join = content_btn('partners', 'join.cta');
+$grey = (string) setting('partners_logo_hover_grey', '1') !== '0';      // logos grey until hovered (mouse only), see components/_partner-logo.scss
 $emptyActions = [];
 if ($empty['has']) {
     $emptyActions[] = ['label' => $empty['label'], 'url' => $empty['url'], 'class' => 'btn--cta btn--caps'];
@@ -50,7 +51,7 @@ if ($empty2['has']) {
             'id'      => $headingId,
             'align'   => 'center',
         ]) ?>
-        <div class="partner-cards">
+        <div class="partner-cards plogos<?= $grey ? ' plogos--grey' : '' ?>">
             <?php foreach ($groups[$type] as $partner): ?>
                 <?= partial('web/partners/_card', ['partner' => $partner, 'visitLabel' => $visitLabel]) ?>
             <?php endforeach; ?>

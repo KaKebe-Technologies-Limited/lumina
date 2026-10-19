@@ -227,6 +227,20 @@ return [
                 ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/stories'],
             ],
         ],
+        // ------------------------------------------------------------------ 8b. latest newsletter
+        [
+            'key' => 'newsletter', 'label' => '8b. Latest newsletter', 'toggle' => true, 'default_visible' => true,
+            'help' => 'A card for the newest published newsletter issue (title, number and date, summary, cover picture). It is filled in by itself from Admin > Newsletter and stays hidden until an issue is published; only the words around it are edited here.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Newsletter'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our Latest [[Newsletter]]', 'help' => $hl],
+                ['key' => 'lead', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => 'Our latest news and updates.'],
+                ['key' => 'cta_label', 'label' => 'Button on the card: text', 'type' => 'text', 'default' => 'Read this issue', 'help' => 'The same button opens the PDF issues too.'],
+                ['key' => 'archive_cta_label', 'label' => 'Link to all issues: text (optional)', 'type' => 'text', 'default' => 'All issues'],
+                ['key' => 'archive_cta_url', 'label' => 'Link to all issues: link', 'type' => 'url', 'default' => '/newsletter/archive'],
+                ['key' => 'badge', 'label' => 'Small label on the card', 'type' => 'text', 'default' => 'Latest issue'],
+            ],
+        ],
         // ------------------------------------------------------------------ 9. FAQ
         [
             'key' => 'faq', 'label' => '9. FAQ (photo + questions)', 'toggle' => true, 'default_visible' => true,

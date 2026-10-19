@@ -11,9 +11,9 @@ $nlButton = $button ?? (string) content('global', 'footer.newsletter_button');
 $nlSource = preg_replace('/[^a-z0-9_-]/i', '', (string) ($source ?? 'footer')) ?: 'footer';
 $nlId = preg_replace('/[^a-z0-9_-]/i', '', (string) ($idp ?? 'newsletter')) . '-email';
 ?>
-<div class="newsletter-row">
+<section class="newsletter-row" aria-labelledby="<?= e($nlId) ?>-title">
     <div>
-        <h2 class="newsletter-row__title"><?= e($nlTitle) ?></h2>
+        <h2 class="newsletter-row__title" id="<?= e($nlId) ?>-title"><?= e($nlTitle) ?></h2>
         <?php if (trim((string) $nlText) !== ''): ?><p class="newsletter-row__text"><?= e($nlText) ?></p><?php endif; ?>
     </div>
     <form class="newsletter-row__form" method="post" action="<?= e(url('subscribe')) ?>">
@@ -24,4 +24,4 @@ $nlId = preg_replace('/[^a-z0-9_-]/i', '', (string) ($idp ?? 'newsletter')) . '-
         <input class="input" id="<?= e($nlId) ?>" type="email" name="email" autocomplete="email" required maxlength="190" placeholder="<?= e($nlPlaceholder) ?>">
         <button class="btn btn--gold btn--caps" type="submit"><?= e($nlButton) ?></button>
     </form>
-</div>
+</section>

@@ -1,0 +1,356 @@
+// admin/partners - OWNER: PARTNERS agent (docs/PARTNERS_NEWSLETTER.md section 6): quick-add bar, logo card grid, drag-and-drop order, bulk bar, dialog, toasts.
+// The logo boxes use the website's own rules: components/_partner-logo.scss is imported here, so a card shows a logo exactly as the About page does.
+// Everything lives under .partners-admin (the root of admin/partners/index.php) or .pa-drop (also used in the full form).
+
+@import 'components/partner-logo';
+
+.pa-hidden-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+// ---- logo drop zone (quick add + full form) ----------------------------------------------------------------------------------------------
+.pa-drop {
+    display: grid;
+    gap: $space-2;
+    min-width: 0;
+
+    &__input { @include visually-hidden; }
+    &__area { position: relative; display: block; cursor: pointer; }
+    &__box {
+        --plogo-h: 5rem;
+        --plogo-pad: 1rem;
+        flex-direction: column;
+        min-height: 9.5rem;
+        background: $white;
+        border: 2px dashed $border-strong;
+        border-radius: $radius-lg;
+        transition: border-color $t-fast ease, background-color $t-fast ease;
+    }
+    &__area:hover &__box, &.is-over &__box { border-color: $orange-dark; background: $warning-bg; }
+    &__input:focus-visible + &__area &__box { @include focus-ring; }
+    &.has-file &__box { border-style: solid; border-color: $border; }
+    &__empty {
+        display: grid;
+        justify-items: center;
+        gap: 0.15rem;
+        color: $ink-soft;
+        font-family: $font-body;
+        font-size: $fs-sm;
+        font-weight: 400;
+        .icon { color: $navy; margin-bottom: $space-2; }
+        strong { color: $navy; font-family: $font-heading; font-size: $fs-sm; }
+    }
+    &__over {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        border-radius: $radius-lg;
+        background: rgba($navy-dark, 0.82);
+        color: $white;
+        font-family: $font-heading;
+        font-weight: 600;
+        pointer-events: none;
+    }
+    &.is-over &__over { display: flex; }
+    &__help { margin: 0; font-size: $fs-xs; line-height: 1.5; color: $ink-soft; }
+    &__help-more { display: block; margin-top: 0.1rem; }
+    &__status {
+        margin: 0;
+        min-height: 1.2em;
+        font-size: $fs-xs;
+        line-height: 1.45;
+        color: $ink-soft;
+        overflow-wrap: anywhere;
+        &.is-bad { color: $danger; font-weight: 600; }
+        &.is-warn { color: $warning; font-weight: 600; }
+    }
+    &__clear { justify-self: start; }
+}
+.pa-removelogo { display: flex; align-items: center; gap: $space-2; margin-top: $space-3; font-size: $fs-sm; }
+.pa-form-notice { color: $warning; }
+
+// ---- the screen ---------------------------------------------------------------------------------------------------------------------------
+.partners-admin {
+    [hidden] { display: none !important; }
+
+    .pa-notices { display: grid; gap: $space-3; margin-bottom: $space-5; &:empty { display: none; } .alert { margin: 0; } }
+    .pa-optimise__row { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; margin-top: $space-3; }
+    .pa-optimise__progress { font-size: $fs-sm; }
+
+    // ---- quick add
+    .pa-quick {
+        margin-bottom: $space-6;
+        &__tip { font-size: $fs-sm; color: $ink-soft; }
+        &__form { display: grid; gap: $space-5; @include respond(md) { grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr); align-items: start; } }
+        &__form > * + * { margin-top: 0; }
+        &__fields { display: grid; gap: $space-4; align-content: start; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        &__fields > * + * { margin-top: 0; }
+        &__go { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3 $space-4; align-self: end; }
+        &__add { min-width: 11rem; justify-content: center; }
+        .field { margin: 0; min-width: 0; }
+        .field__error { margin-top: $space-1; font-size: $fs-xs; color: $danger; font-weight: 600; &.is-soft { color: $warning; } }
+        .field__help { margin-top: $space-1; font-size: $fs-xs; color: $ink-soft; }
+        .pa-optional { font-weight: 400; color: $ink-soft; }
+        .input[aria-invalid='true'] { border-color: $danger; box-shadow: 0 0 0 1px $danger; }
+    }
+
+    // ---- toolbar
+    .pa-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: $space-3 $space-5;
+        margin-bottom: $space-4;
+        h2 { margin: 0; font-size: 1.3rem; }
+        &__tools { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3 $space-4; }
+    }
+    .pa-counts { margin: 0.1rem 0 0; font-size: $fs-sm; color: $ink-soft; }
+    .pa-selectall { display: inline-flex; align-items: center; gap: 0.4rem; font-size: $fs-sm; font-weight: 500; cursor: pointer; input { width: 1.1rem; height: 1.1rem; accent-color: $navy; cursor: pointer; } }
+    .pa-search { margin: 0; .input { min-width: 12rem; padding: 0.5rem 0.9rem; } }
+    .pa-filter { display: inline-flex; flex-wrap: wrap; gap: $space-2; }
+    .pa-chip {
+        padding: 0.35rem 0.9rem;
+        border: 1.5px solid $border-strong;
+        border-radius: $radius-pill;
+        background: $white;
+        color: $navy;
+        font-family: $font-heading;
+        font-size: $fs-sm;
+        font-weight: 600;
+        cursor: pointer;
+        &:hover { border-color: $navy; }
+        &.is-on { background: $navy; border-color: $navy; color: $white; }
+    }
+
+    // ---- bulk bar
+    .pa-bulk {
+        position: sticky;
+        top: calc(#{$admin-topbar-h} + #{$space-2});
+        z-index: 5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: $space-3;
+        margin-bottom: $space-4;
+        padding: $space-3 $space-4;
+        border-radius: $radius-lg;
+        background: $navy-dark;
+        color: $white;
+        box-shadow: $shadow-lg;
+        &__count { font-family: $font-heading; }
+        &__buttons { display: flex; flex-wrap: wrap; gap: $space-2; }
+        .btn--outline { border-color: rgba($white, 0.6); color: $white; &:hover { background: $white; border-color: $white; color: $navy-dark; } }
+        .btn--ghost { color: $white; &:hover { background: rgba($white, 0.14); color: $white; } }
+        :focus-visible { outline-color: $gold; }
+    }
+
+    // ---- card grid
+    .pa-grid {
+        display: grid;
+        gap: $space-4;
+        grid-template-columns: repeat(auto-fill, minmax(#{unquote('min(100%, 16.5rem)')}, 1fr));
+        align-items: start;
+        margin: 0;
+        padding: 0;
+    }
+    .pa-nomatch { margin: $space-4 0; color: $ink-soft; }
+    .pa-order-hint { display: flex; align-items: flex-start; gap: $space-2; margin: $space-5 0 0; font-size: $fs-sm; color: $ink-soft; .icon { flex: none; margin-top: 0.15rem; } }
+    .pa-order-status { margin-left: $space-2; font-weight: 600; color: $success; &.is-bad { color: $danger; } }
+
+    .pa-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: $space-3;
+        min-width: 0;
+        padding: $space-3;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+        transition: border-color $t-fast ease, box-shadow $t-fast ease, opacity $t-fast ease;
+        &:hover { box-shadow: $shadow; }
+        &.is-selected { border-color: $navy; box-shadow: 0 0 0 2px rgba($navy, 0.22); }
+        &.is-off { background: $surface; }
+        &.is-off .pa-card__logo { opacity: 0.45; }
+        &.is-off .pa-card__name a { color: $ink-soft; }
+        &.is-dragging { opacity: 0.35; }
+        &.is-drop { border-color: $orange-dark; box-shadow: 0 0 0 3px rgba($orange-dark, 0.35); }
+        &.is-new { animation: pa-pop 2.6s ease-out; }
+        &.is-busy .pa-card__foot, &.is-busy .pa-card__bar { pointer-events: none; opacity: 0.6; }
+
+        // top bar: select, position, handle
+        &__bar { display: flex; align-items: center; gap: $space-2; }
+        &__pos {
+            display: inline-grid;
+            place-items: center;
+            min-width: 1.6rem;
+            height: 1.6rem;
+            padding: 0 0.4rem;
+            border-radius: $radius-pill;
+            background: $surface-alt;
+            color: $ink-soft;
+            font-family: $font-heading;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        // the logo, in the website's box
+        &__logo {
+            position: relative;
+            flex: none;
+            min-height: calc(var(--plogo-h) + 2 * var(--plogo-pad));
+            background: $white;
+            border: 1px solid $line;
+            border-radius: $radius-lg;
+            transition: opacity $t-fast ease;
+        }
+        &__busy { position: absolute; inset: 0; display: grid; place-items: center; border-radius: inherit; background: rgba($white, 0.8); }
+        &__drop {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: $space-2;
+            border-radius: inherit;
+            background: rgba($navy-dark, 0.86);
+            color: $white;
+            font-family: $font-heading;
+            font-size: $fs-xs;
+            font-weight: 600;
+            text-align: center;
+            pointer-events: none;
+        }
+        &.is-drop .pa-card__drop { display: flex; }
+        &__nologo, &__legacy { margin: -0.25rem 0 0; font-size: $fs-xs; line-height: 1.4; color: $ink-soft; }
+        &__legacy { color: $warning; font-weight: 600; .icon { display: inline-block; vertical-align: -0.2em; } }
+
+        &__main { display: grid; gap: $space-2; min-width: 0; }
+        &__name { margin: 0; font-family: $font-heading; font-size: 1rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; a { color: $navy; text-decoration: none; &:hover { color: $orange-dark; text-decoration: underline; } } }
+        &__meta { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; margin: 0; font-size: $fs-xs; }
+        &__site { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: $orange-text; &--none { color: $ink-soft; } }
+        a.pa-card__site:hover { text-decoration: underline; }
+
+        // inline edit
+        &__edit { display: grid; gap: $space-3; padding: $space-3; border-radius: $radius; background: $surface; border: 1px solid $border; .field { margin: 0; } .field__label { font-size: $fs-xs; } .input, .select { padding: 0.45rem 0.7rem; font-size: $fs-sm; } .field__error { margin-top: 0.2rem; font-size: $fs-xs; color: $danger; font-weight: 600; } .input[aria-invalid='true'] { border-color: $danger; } }
+        &__edit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; }
+        &__more { margin-left: auto; font-size: $fs-xs; color: $orange-text; }
+
+        &__foot { display: grid; gap: $space-2; margin-top: auto; padding-top: $space-3; border-top: 1px solid $line; }
+    }
+
+    .pa-spinner {
+        width: 1.6rem;
+        height: 1.6rem;
+        border: 3px solid $border-strong;
+        border-top-color: $navy;
+        border-radius: 50%;
+        animation: pa-spin 0.8s linear infinite;
+    }
+
+    // select checkbox
+    .pa-check {
+        position: relative;
+        display: inline-flex;
+        cursor: pointer;
+        input { @include visually-hidden; }
+        &__box { display: inline-grid; place-items: center; width: 1.45rem; height: 1.45rem; border: 2px solid $border-strong; border-radius: 6px; background: $white; color: transparent; transition: background-color $t-fast ease, border-color $t-fast ease; }
+        &:hover .pa-check__box { border-color: $navy; }
+        input:checked + .pa-check__box { background: $navy; border-color: $navy; color: $white; }
+        input:focus-visible + .pa-check__box { @include focus-ring; }
+    }
+
+    // drag handle + small icon buttons
+    .pa-handle, .pa-tool {
+        display: inline-grid;
+        place-items: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        padding: 0;
+        border: 0;
+        border-radius: $radius-sm;
+        background: transparent;
+        color: $ink-soft;
+        cursor: pointer;
+        transition: background-color $t-fast ease, color $t-fast ease;
+        &:hover { background: $surface-alt; color: $navy; }
+        &[disabled] { opacity: 0.3; cursor: not-allowed; &:hover { background: transparent; color: $ink-soft; } }
+    }
+    .pa-handle { margin-left: auto; cursor: grab; touch-action: none; &:active { cursor: grabbing; } }
+    .pa-grid.is-filtered .pa-handle { cursor: not-allowed; opacity: 0.4; }
+    // a finger cannot start an HTML5 drag: on touch screens the arrow buttons (and keyboard) are the way to reorder
+    @media (hover: none) and (pointer: coarse) { .pa-handle, .pa-hint-drag { display: none; } }
+    .pa-tool--danger:hover { background: $danger-bg; color: $danger; }
+    .pa-tools { display: flex; align-items: center; gap: 2px; [data-pa-edit] { margin-left: auto; } }
+    .pa-switch { justify-self: start; }
+    .pa-switch .switch__text { font-size: $fs-xs; }
+
+    .pa-card.is-editing .pa-tools [data-pa-edit] { background: $navy; color: $white; }
+}
+
+// ---- confirmation dialog (native <dialog>; it is rendered inside .partners-admin but styled on its own) -------------------------------------
+.pa-dialog {
+    width: #{unquote('min(28rem, calc(100vw - 2rem))')};
+    padding: 0;
+    border: 0;
+    border-radius: $radius-lg;
+    background: $white;
+    color: $ink;
+    box-shadow: $shadow-lg;
+    &::backdrop { background: rgba($navy-dark, 0.55); }
+    &__box { display: grid; gap: $space-4; padding: $space-5; }
+    &__title { margin: 0; font-size: 1.2rem; line-height: 1.3; overflow-wrap: anywhere; }
+    &__text { margin: 0; color: $ink-soft; font-size: $fs-sm; line-height: 1.6; }
+    &__preview { --plogo-h: 3.5rem; --plogo-pad: 0.75rem; background: $white; border: 1px solid $line; border-radius: $radius-lg; .pa-card__busy, .pa-card__drop { display: none; } }
+    &__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: $space-2; .btn { flex: 1 1 auto; justify-content: center; } }
+}
+
+// ---- toasts ------------------------------------------------------------------------------------------------------------------------------------
+.pa-toasts {
+    position: fixed;
+    z-index: $z-toast;
+    left: $space-4;
+    right: $space-4;
+    bottom: $space-4;
+    display: grid;
+    gap: $space-2;
+    justify-items: start;
+    pointer-events: none;
+    @include respond(md) { left: auto; right: $space-5; bottom: $space-5; justify-items: end; }
+}
+.pa-toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: $space-3;
+    max-width: 30rem;
+    padding: $space-3 $space-4;
+    border-radius: $radius;
+    background: $navy-dark;
+    color: $white;
+    font-size: $fs-sm;
+    line-height: 1.45;
+    box-shadow: $shadow-lg;
+    border-left: 5px solid $gold;
+    animation: pa-toast-in 0.25s ease-out;
+    &--success { border-left-color: #4CC38A; }
+    &--warning { border-left-color: $gold; }
+    &--error { border-left-color: #FF8A7A; }
+    &__text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    &__action { flex: none; color: $gold; font-weight: 600; text-decoration: underline; background: none; border: 0; padding: 0; cursor: pointer; font-size: inherit; }
+    &__close { flex: none; margin: -0.2rem -0.3rem 0 0; padding: 0 0.4rem; border: 0; background: none; color: rgba($white, 0.75); font-size: 1.3rem; line-height: 1; cursor: pointer; &:hover { color: $white; } }
+    :focus-visible { outline-color: $gold; }
+}
+
+@keyframes pa-spin { to { transform: rotate(360deg); } }
+@keyframes pa-pop { 0% { box-shadow: 0 0 0 0 rgba($gold, 0.9); background: lighten($gold, 30%); } 25% { box-shadow: 0 0 0 6px rgba($gold, 0.45); } 100% { box-shadow: $shadow-sm; background: $white; } }
+@keyframes pa-toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .partners-admin .pa-card.is-new { animation: none; border-color: $gold; }
+    .pa-toast { animation: none; }
+    .pa-spinner { animation-duration: 2.4s; }
+}

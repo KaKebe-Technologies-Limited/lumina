@@ -215,6 +215,9 @@ require __DIR__ . '/selftest-membership.php';     // membership service checks (
 require __DIR__ . '/selftest-newsletter.php';     // newsletter schema / service / renderer / SMTP driver checks (starts and stops the mock SMTP server, removes its own test data)
 require __DIR__ . '/selftest-calendar.php';       // calendar date engine, recurrence rules, overrides, iCal output, seed, visibility, writer, HTTP endpoints (removes its own test data)
 require __DIR__ . '/selftest-meetings.php';       // meeting scheduler: times, invitee parser, iCalendar, service rules, queue, reminders, messages, Mailer multipart (file driver + mock SMTP), requests (removes its own test data)
+require __DIR__ . '/selftest-partners-ui.php';           // partner tile / grid / strip markup, admin card, About "Our partners" section (rolled-back transaction, removes its own test data)
+require __DIR__ . '/selftest-newsletter-live.php';      // admin change -> public site at once: real HTTP requests to http://localhost/<folder>/ (the HTTP part skips itself when the site does not answer), PDF e-mail, live status
+require __DIR__ . '/selftest-partners-newsletter.php';   // partner-logo pipeline, PDF newsletters, live status, public PDF routes, menu, schema (removes its own test data; GD checks need -d extension=gd)
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);

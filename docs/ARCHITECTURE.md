@@ -675,6 +675,12 @@ Meetings with a join link (Zoom, Google Meet, Teams, Jitsi, WhatsApp, phone, in 
 * New abilities `meetings.manage` (admin, editor), `meetings.bulk`, `meetings.delete` (admin); settings group "Meetings" (`meeting_*`); virtual registry page `site_meetings` and a `meeting_request` section in the `contact` page; reserved slugs `meeting`, `meetings`; route files `web_meetings.php` and `admin_meetings.php`; admin sidebar items merged into the Calendar group (`AdminNav` fragments may carry `merge_into`).
 * Core additions (additive): `Mailer` options `calendar` (inline text/calendar part), `attachments` (multipart/mixed), `to_name`, `reply_to_name`; `bin/selftest.php` runs `bin/selftest-meetings.php`; robots.txt disallows `/meeting/`.
 
+## 27. Partners section, logo pipeline, PDF newsletters - READ `docs/PARTNERS_NEWSLETTER.md`
+
+Partner logos are optimised on upload (`Uploader::logo()` -> `ImageOptimizer`: trim, fit 480x240 + exact 2x, WebP + PNG, metadata stripped, no GD = stored as uploaded with a notice) and rendered by `partials/partner-logo-img`; the About page gets an "Our partners" section. Newsletter issues have two formats (`newsletters.kind`: written online / uploaded PDF, PDF stored privately in `storage/private/newsletters` and streamed by `/newsletter/{slug}/pdf` and `/download`), the Newsletter page is in the menu (Blog > Newsletter), Home has a "Latest newsletter" teaser, and the admin shows a "Live on the website" status (`NewsletterService::liveStatus()`). CSP `frame-src` now includes `'self'`; sitemap and API caching rules are in section 10 of that file.
+
+---------
+
 ---------
 
 ## API reference (generated)

@@ -4,16 +4,20 @@
  * Behaviour: assets/js/admin-newsletter.js (autosave, block list, drag and drop, preview, publish...). Styles: scss/admin/_newsletter.scss.
  * Vars: $issue (row), $item (JSON shape of the API), $boot (data block for the script), $pages (link suggestions), $canSend, $canDeletePublished.
  * The block cards are built by the script from the <template> elements of _templates.php, using the issue's JSON content.
+ * A PDF issue (kind = pdf) shows the PDF box first and hides the featured article and the sections (they stay in the page, hidden, so the script's
+ * field access works and the stored content stays the empty structure). Every issue has the "Live on the website" box (what visitors see right now).
  */
 $id = (int) $item['id'];
 $urls = $boot['urls'];
 $publicOnce = !empty($issue['published_at']);
+$kind = (string) ($item['kind'] ?? 'online');                  // chosen when the issue was created: 'online' (block editor) or 'pdf' (an uploaded PDF)
+$pdfIssue = $kind === 'pdf';
 $this->start('scripts'); ?>
 <script src="<?= e(asset('js/admin-editor.js')) ?>" defer></script>
 <script src="<?= e(asset('js/admin-newsletter.js')) ?>" defer></script>
 <?php $this->end(); ?>
 
-<div class="nl-admin nl-editor" data-nl-editor data-status="<?= e($item['status']) ?>">
+<div class="nl-admin nl-editor" data-nl-editor data-status="<?= e($item['status']) ?>" data-kind="<?= e($kind) ?>">
     <script type="application/json" id="nl-boot"><?= json_encode($boot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_PARTIAL_OUTPUT_ON_ERROR) ?></script>
     <noscript><div class="alert alert--error"><?= icon('alert-circle') ?><div class="alert__body">The newsletter editor needs JavaScript. Please turn it on in your browser, then reload this page.</div></div></noscript>
 
@@ -28,11 +32,12 @@ $this->start('scripts'); ?>
             <div class="nl-bar__id">
                 <h1 class="nl-bar__title" data-bar-title><?= e($item['title']) ?></h1>
                 <span class="badge badge--neutral badge--dot" data-status-badge><?= e(\App\Services\Newsletter\NewsletterService::STATUS_LABELS[$item['status']] ?? $item['status']) ?></span>
+                <span class="badge badge--info nl-fmt-badge" title="<?= $pdfIssue ? 'This issue is an uploaded PDF' : 'This issue is written in the editor' ?>"><?= $pdfIssue ? icon('file-text', 'icon--sm') . ' PDF issue' : 'Written online' ?></span>
             </div>
             <p class="nl-save" data-save data-state="saved" role="status" aria-live="polite"><span class="nl-save__dot" aria-hidden="true"></span><span data-save-text>Loading...</span></p>
         </div>
         <div class="nl-bar__actions" role="group" aria-label="Issue actions">
-            <button type="button" class="btn btn--ghost btn--sm" data-act="history"><?= icon('history', 'icon--sm') ?> History</button>
+            <?php if (!$pdfIssue): ?><button type="button" class="btn btn--ghost btn--sm" data-act="history"><?= icon('history', 'icon--sm') ?> History</button><?php endif; /* a PDF issue has no written content to bring back */ ?>
             <button type="button" class="btn btn--outline btn--sm" data-act="preview" title="Opens the saved issue as visitors will see it, in a new tab"><?= icon('eye', 'icon--sm') ?> Preview in new tab</button>
             <?php if ($canSend): ?><a class="btn btn--outline btn--sm" href="<?= e($urls['email']) ?>" data-act="email"><?= icon('mail', 'icon--sm') ?> E-mail</a><?php endif; ?>
             <button type="button" class="btn btn--primary btn--sm" data-act="save"><?= icon('save', 'icon--sm') ?> <span data-save-label>Save draft</span></button>
@@ -48,6 +53,25 @@ $this->start('scripts'); ?>
         <div class="alert alert--error nl-errors" data-errors tabindex="-1" role="alert" hidden></div>
     </div>
 
+    <?php /* ----------------------------------------------------------------- "Live on the website": the truth about what visitors see, refreshed after every change */ ?>
+    <section class="nl-live" data-live data-tone="neutral" aria-labelledby="nl-live-title">
+        <div class="nl-live__main">
+            <span class="nl-live__icon" aria-hidden="true" data-live-icon></span>
+            <div class="nl-live__text">
+                <h2 class="nl-live__title" id="nl-live-title" data-live-title>Checking...</h2>
+                <p class="nl-live__detail" data-live-detail></p>
+                <ul class="nl-live__reasons" data-live-reasons></ul>
+                <p class="nl-live__unsaved" data-live-unsaved hidden>You have changes that are not saved yet. Visitors see the last saved version.</p>
+                <p class="nl-live__checked" data-live-checked role="status" aria-live="polite"></p>
+            </div>
+        </div>
+        <div class="nl-live__actions">
+            <a class="btn btn--outline btn--sm" href="#" target="_blank" rel="noopener" data-live-view><?= icon('external-link', 'icon--sm') ?> View on the website<span class="visually-hidden"> (opens in a new tab)</span></a>
+            <a class="btn btn--ghost btn--sm" href="<?= e($urls['preview']) ?>" target="_blank" rel="noopener" data-live-preview><?= icon('eye', 'icon--sm') ?> Preview<span class="visually-hidden"> (opens in a new tab)</span></a>
+            <button type="button" class="btn btn--ghost btn--sm" data-act="check-live"><?= icon('refresh', 'icon--sm') ?> Check the website now</button>
+        </div>
+    </section>
+
     <div class="nl-view-toggle" role="group" aria-label="Show">
         <button type="button" aria-pressed="true" data-view="edit"><?= icon('edit', 'icon--sm') ?> Write</button>
         <button type="button" aria-pressed="false" data-view="preview"><?= icon('eye', 'icon--sm') ?> Preview</button>
@@ -62,13 +86,18 @@ $this->start('scripts'); ?>
                 <ul class="nl-check__list" data-check-list></ul>
             </section>
 
+            <?php if ($pdfIssue): ?>
+                <!-- ------------------------------------------------------------- the PDF (a PDF issue) -->
+                <?= partial('admin/newsletters/_pdf', ['kind' => $kind, 'pdfLimits' => $boot['pdf']]) ?>
+            <?php endif; ?>
+
             <!-- ------------------------------------------------------------- issue details -->
             <section class="nl-card is-open" data-card="details" id="nl-card-details" aria-labelledby="nl-details-title">
                 <header class="nl-card__head">
                     <h2 class="nl-card__h" id="nl-details-title">
                         <button type="button" class="nl-card__toggle" data-collapse-toggle aria-expanded="true" aria-controls="nl-details-body">
                             <span class="nl-card__title">Issue details</span>
-                            <span class="nl-card__sub">Title, number, date, summary and cover picture</span>
+                            <span class="nl-card__sub"><?= $pdfIssue ? 'Title, number, date, summary and cover picture shown on the website' : 'Title, number, date, summary and cover picture' ?></span>
                             <?= icon('chevron-down', 'icon--sm nl-card__chev') ?>
                         </button>
                     </h2>
@@ -98,11 +127,15 @@ $this->start('scripts'); ?>
                     </div>
                     <div class="nl-cover" data-cover>
                         <?= partial('admin/newsletters/_image', ['idp' => 'nl-cover', 'label' => 'Cover picture (optional)', 'caption' => false, 'altMax' => 190,
-                            'help' => 'A wide picture shown at the top of the issue and on its archive card. JPG, PNG, GIF or WebP, up to 5 MB. You can also drop a picture on this box.']) ?>
+                            'help' => $pdfIssue
+                                ? 'A picture of the first page or a cover design. It is shown next to the download button, on the archive card and when the issue is shared. JPG, PNG, GIF or WebP, up to 5 MB. You can also drop a picture on this box.'
+                                : 'A wide picture shown at the top of the issue and on its archive card. JPG, PNG, GIF or WebP, up to 5 MB. You can also drop a picture on this box.']) ?>
                     </div>
                 </div>
             </section>
 
+            <?php /* a PDF issue has no written content: the next two blocks stay in the page (hidden) so the script's field access works unchanged */ ?>
+            <div class="nl-online-only"<?= $pdfIssue ? ' hidden' : '' ?>>
             <!-- ------------------------------------------------------------- featured article -->
             <section class="nl-card is-open" data-card="featured" data-featured id="nl-card-featured" aria-labelledby="nl-featured-title-h">
                 <header class="nl-card__head">
@@ -163,6 +196,12 @@ $this->start('scripts'); ?>
                     <p class="nl-add__limit" data-add-limit hidden>An issue can have at most <?= (int) $boot['limits']['blocks'] ?> sections. Remove one to add another.</p>
                 </div>
             </section>
+            </div><?php /* /.nl-online-only */ ?>
+
+            <?php if (!$pdfIssue): ?>
+                <!-- ------------------------------------------------------------- optional PDF download (a written issue) -->
+                <?= partial('admin/newsletters/_pdf', ['kind' => $kind, 'pdfLimits' => $boot['pdf']]) ?>
+            <?php endif; ?>
 
             <!-- ------------------------------------------------------------- search engines -->
             <section class="nl-card" data-card="seo" id="nl-card-seo" aria-labelledby="nl-seo-card-title">
@@ -216,7 +255,7 @@ $this->start('scripts'); ?>
                         <button type="button" class="btn btn--outline btn--sm" data-act="archive"><?= icon('folder', 'icon--sm') ?> <span data-archive-label>Archive</span></button>
                     </div>
                     <div class="nl-actions__row nl-actions__row--danger">
-                        <div><strong>Delete this issue</strong><p data-delete-text>Removes the issue and its history for good. This cannot be undone.</p></div>
+                        <div><strong>Delete this issue</strong><p data-delete-text>Removes the issue, its history<?= $pdfIssue ? ' and its PDF file' : '' ?> for good. This cannot be undone.</p></div>
                         <button type="button" class="btn btn--danger btn--sm" data-act="delete"><?= icon('trash', 'icon--sm') ?> Delete</button>
                     </div>
                 </div>
