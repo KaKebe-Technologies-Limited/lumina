@@ -1082,6 +1082,94 @@ CREATE TABLE IF NOT EXISTS `meeting_requests` (
   CONSTRAINT `fk_meeting_requests_user` FOREIGN KEY (`handled_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ======================================================================================================================
+-- FORMS (see docs/FORMS.md). ADDITIVE and IDEMPOTENT: three new tables + one guarded column on `jobs`.
+-- `forms.definition` and `forms.settings` are JSON stored as text and validated / normalised in PHP (App\Services\Forms\FormDefinition,
+-- FormSettings), so the schema works on MariaDB 10.4 and MySQL 8 alike. Date-times are plain DATETIMEs in the application time zone
+-- (Africa/Kampala = EAT, UTC+3, no daylight saving). A submission stores a SNAPSHOT of every answer (label + type + value) so history stays
+-- readable after the form is edited. Submissions, answers, IP hashes and uploaded files are PERSONAL DATA: admin only (forms.submissions),
+-- never in logs / audit details / sitemap / JSON endpoints; files live in storage/private/forms and are streamed by an authenticated controller.
+-- ======================================================================================================================
+CREATE TABLE IF NOT EXISTS `forms` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` VARCHAR(120) NOT NULL,                                   -- public address /forms/{slug}; unique, reserved words refused
+  `title` VARCHAR(190) NOT NULL,
+  `description` TEXT NULL,                                        -- plain text: short description (directory card, SEO fallback)
+  `status` ENUM('draft','published','closed','archived') NOT NULL DEFAULT 'draft',
+  `definition` LONGTEXT NOT NULL,                                 -- JSON, version 1: {"pages":[{"id","title","fields":[...]}]} (FormDefinition)
+  `settings` LONGTEXT NULL,                                       -- JSON: intro, messages, notifications, theme, retention ... (FormSettings)
+  `version` INT UNSIGNED NOT NULL DEFAULT 1,                      -- optimistic locking: +1 on every save
+  `opens_at` DATETIME NULL,                                       -- EAT; NULL = open as soon as published
+  `closes_at` DATETIME NULL,                                      -- EAT; NULL = no closing time
+  `max_submissions` INT UNSIGNED NULL,                            -- NULL = unlimited
+  `listed` TINYINT(1) NOT NULL DEFAULT 0,                         -- shown in the public /forms directory (when that page is switched on)
+  `submissions_count` INT UNSIGNED NOT NULL DEFAULT 0,            -- kept in step by SubmissionService (store / delete / retention)
+  `template_key` VARCHAR(40) NULL,                                -- template this form started from (informational)
+  `published_at` DATETIME NULL,                                   -- first time it went live
+  `created_by` INT UNSIGNED NULL,
+  `updated_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_forms_slug` (`slug`),
+  KEY `ix_forms_status` (`status`, `updated_at`),
+  KEY `ix_forms_listed` (`listed`, `status`),
+  CONSTRAINT `fk_forms_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_forms_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `form_submissions` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `form_id` INT UNSIGNED NOT NULL,
+  `form_version` INT UNSIGNED NOT NULL DEFAULT 1,                 -- version of the form the visitor saw
+  `answers` LONGTEXT NOT NULL,                                    -- JSON list of SNAPSHOT entries: {"id","key","type","label","value","text",...} (SubmissionService::buildSnapshot)
+  `search_text` MEDIUMTEXT NULL,                                  -- plain text of all answers, for the admin search (LIKE)
+  `submitter_email` VARCHAR(190) NULL,                            -- lower-case; PERSONAL DATA; used for "one submission per e-mail" and the confirmation e-mail
+  `context_type` VARCHAR(30) NULL,                                -- server-verified context, e.g. "job"
+  `context_ref` VARCHAR(190) NULL,                                -- e.g. the job slug
+  `context_label` VARCHAR(220) NULL,                              -- e.g. the job title at the time ("Applying for: ...")
+  `status` VARCHAR(30) NOT NULL DEFAULT 'new',                    -- new | read | starred | shortlisted | rejected | accepted | archived | spam (labels editable per form)
+  `notes` TEXT NULL,                                              -- internal notes (admin only)
+  `consent_at` DATETIME NULL,                                     -- when the visitor ticked a consent box (NULL = the form has none)
+  `ip_hash` CHAR(64) NULL,                                        -- keyed hash of the visitor's IP (abuse tracking only)
+  `user_agent` VARCHAR(255) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_form_submissions_inbox` (`form_id`, `status`, `created_at`),
+  KEY `ix_form_submissions_email` (`form_id`, `submitter_email`),
+  KEY `ix_form_submissions_status` (`status`, `created_at`),
+  KEY `ix_form_submissions_created` (`created_at`),
+  CONSTRAINT `fk_form_submissions_form` FOREIGN KEY (`form_id`) REFERENCES `forms` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `form_files` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `submission_id` INT UNSIGNED NOT NULL,
+  `field_id` VARCHAR(40) NOT NULL,                                -- the stable field id inside forms.definition
+  `original_name` VARCHAR(255) NOT NULL,                          -- cleaned client file name (display + download name)
+  `stored_path` VARCHAR(255) NOT NULL,                            -- relative to storage/private: forms/YYYY/MM/<random>.<ext>  (never web accessible)
+  `mime` VARCHAR(100) NOT NULL DEFAULT 'application/octet-stream',
+  `size` INT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_form_files_submission` (`submission_id`),
+  CONSTRAINT `fk_form_files_submission` FOREIGN KEY (`submission_id`) REFERENCES `form_submissions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Careers integration (guarded, idempotent): a job may name the form that replaces the built-in application form. NULL = built-in form.
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'jobs' AND column_name = 'form_id');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `jobs` ADD COLUMN `form_id` INT UNSIGNED NULL AFTER `apply_email`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_fk = (SELECT COUNT(*) FROM information_schema.table_constraints WHERE table_schema = DATABASE() AND table_name = 'jobs' AND constraint_name = 'fk_jobs_form');
+SET @lumina_ddl = IF(@lumina_has_fk = 0, 'ALTER TABLE `jobs` ADD KEY `ix_jobs_form` (`form_id`), ADD CONSTRAINT `fk_jobs_form` FOREIGN KEY (`form_id`) REFERENCES `forms` (`id`) ON DELETE SET NULL ON UPDATE CASCADE', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 
 -- ======================================================================
 -- PART: seed.sql
@@ -1661,9 +1749,50 @@ ON DUPLICATE KEY UPDATE
 -- ---------------------------------------------------------------------------------------------------------------------------------------
 INSERT IGNORE INTO roles (slug, name, description, abilities, is_system) VALUES
   ('admin', 'Administrator', 'Can do everything, including users, roles, settings and menus.', '[]', 1),
-  ('editor', 'Editor', 'Edits pages and content, handles the inbox, members, newsletters, calendar and meetings.', '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage"]', 1),
+  ('editor', 'Editor', 'Edits pages and content, handles the inbox, members, newsletters, calendar and meetings.', '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions"]', 1),
   ('content-writer', 'Content Writer', 'Writes and edits website pages and content (blog, programmes, gallery, events). Cannot see messages, members or settings.', '["dashboard.view","pages.edit","content.manage"]', 0),
   ('communications', 'Communications Officer', 'Content, newsletters, calendar and meetings. Cannot email the whole list or see the inbox.', '["dashboard.view","content.manage","newsletter.manage","calendar.manage","meetings.manage"]', 0),
   ('membership-officer', 'Membership Officer', 'Handles membership applications, payments and receipts, with CSV export and meetings. No website editing.', '["dashboard.view","members.manage","export.csv","meetings.manage"]', 0),
   ('support-officer', 'Support Officer', 'Answers messages and handles the inbox (messages, subscribers, applications, donations). No website editing.', '["dashboard.view","inbox.manage","export.csv"]', 0);
+
+-- ------------------------------------------------------------------ forms (see docs/FORMS.md). ADDITIVE and IDEMPOTENT.
+-- Same rules as the rest of this file: a row is refreshed from here ONLY while it is pristine (updated_at = created_at); a setting or page row an
+-- admin edited is never overwritten. NO form and NO submission is seeded: the form templates are code (App\Services\Forms\FormTemplates) and the
+-- owner creates forms in Admin > Forms.
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('forms_directory_enabled', '0'),
+  ('forms_default_notify', ''),
+  ('forms_max_upload_mb', '5'),
+  ('forms_submit_limit', '10'),
+  ('forms_retention_default_days', '0')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Page: /forms (the optional public list of forms) and the wording of every public form (buttons, messages, e-mails): app/config/pages/forms.php.
+-- Not in the menus by default (the list itself is switched off until Settings > Forms says otherwise); needed as a row because content_blocks.page_slug
+-- is a foreign key to pages.slug.
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
+  ('forms', 'Forms', 'registry', 'default', 1, 0, 0, 'Forms', 92, NULL)
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
+  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
+  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
+  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
+  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
+  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
+  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
+  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- ONE-TIME role upgrade (guarded by the marker setting below): the built-in Editor role gets "Create and edit forms" and "See and handle form answers".
+-- It is changed ONLY while its stored ability list is still EXACTLY the original default (the list before forms existed), i.e. the owner never edited
+-- the role; a list the owner changed in Admin > Roles is left alone. (On a fresh database the INSERT IGNORE above already carries the new list.)
+UPDATE roles SET abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions"]',
+  updated_at = updated_at
+WHERE slug = 'editor' AND is_system = 1
+  AND abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage"]'
+  AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_forms_editor_role_v1') m);
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_forms_editor_role_v1', '1');
 

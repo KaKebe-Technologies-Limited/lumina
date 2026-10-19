@@ -44,6 +44,13 @@ final class DashboardController extends AdminController
         foreach (\App\Services\Meetings\MeetingService::dashboardTiles() as $tile) {
             $tiles[] = $tile;
         }
+        // Forms (docs/FORMS.md): "New form submissions" (counts only) for people who may read the answers; hidden until a form exists
+        if (can('forms.submissions') && \App\Services\Forms\FormService::available()) {
+            $fs = \App\Services\Forms\FormService::summary();
+            if ($fs['forms'] > 0 || $fs['new'] > 0) {
+                $tiles[] = ['icon' => 'inbox', 'value' => number_format($fs['new']), 'label' => 'New form submissions', 'sub' => number_format($fs['week']) . ' in the last 7 days', 'url' => 'admin/form-answers', 'alert' => $fs['new'] > 0];
+            }
+        }
         if ($content) {
             $p = $counts['posts'];
             $tiles[] = ['icon' => 'newspaper', 'value' => number_format($counts['posts_total']), 'label' => 'Published posts', 'sub' => $p['blog'] . ' blog, ' . $p['news'] . ' news, ' . $p['press'] . ' press', 'url' => 'admin/posts'];

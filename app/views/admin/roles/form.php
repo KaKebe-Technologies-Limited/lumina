@@ -3,7 +3,9 @@
 $creating = $mode === 'create';
 $action = $creating ? url('admin/roles') : url('admin/roles/' . (int) $row['id']);
 $v = static fn(string $k, mixed $d = ''): string => (string) old($k, $row[$k] ?? $d);
-$have = old('abilities') !== null ? (array) old('abilities') : (array) ($row['abilities'] ?? []);
+// old() answers '' (not null) when nothing was flashed, so ask for null explicitly: otherwise every ability shows unticked on a normal edit and a plain Save wipes the role
+$oldAbilities = old('abilities', null);
+$have = is_array($oldAbilities) ? $oldAbilities : (array) ($row['abilities'] ?? []);
 ?>
 <div class="admin-pages-editor">
 <?= partial('partials/admin/page-header', ['title' => $creating ? 'New role' : 'Edit role: ' . (string) $row['name'], 'subtitle' => 'Tick what people with this role are allowed to do. They only see the menu items they are allowed to use.']) ?>

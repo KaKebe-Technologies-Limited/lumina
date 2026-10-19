@@ -17,11 +17,22 @@ final class Honeypot
 {
     private const TS = '_hp_ts';
 
-    public static function field(): string
+    /**
+     * @param ?string $keep  the signed timestamp of the page the visitor was on ("<unix>.<sig>"): a form re-rendered after a validation error keeps it, so
+     *                       the visitor's quick re-send is not mistaken for a bot (it is only reused while genuine and younger than 7 hours)
+     */
+    public static function field(?string $keep = null): string
     {
         $name = (string) Config::get('forms.honeypot_field', 'website');
         $ts = (string) time();
         $sig = hash_hmac('sha256', $ts, Config::appKey());
+        if ($keep !== null && str_contains($keep, '.')) {
+            [$kts, $ksig] = explode('.', $keep, 2);
+            if (ctype_digit($kts) && strlen($kts) <= 12 && hash_equals(hash_hmac('sha256', $kts, Config::appKey()), $ksig) && (int) $kts <= time() && time() - (int) $kts < 25000) {
+                $ts = $kts;
+                $sig = $ksig;
+            }
+        }
         return '<div class="hp-field" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden">'
             . '<label>Leave this field empty<input type="text" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" value="" tabindex="-1" autocomplete="off"></label>'
             . '<input type="hidden" name="' . self::TS . '" value="' . $ts . '.' . $sig . '">'

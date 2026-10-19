@@ -1,0 +1,324 @@
+// pages/_forms.scss - PUBLIC FORMS: the form page, multi-step progress, fields, file drop zone, notices (closed / full / not open), the thank-you page,
+// the [form] embed, the optional /forms list and the print-a-blank-copy sheet.
+// Owner: PUBLIC agent (docs/FORMS.md section 8). Markup: views/web/forms/_form.php + _field.php; behaviour: assets/js/forms.js.
+// Rules: tokens only, mobile first, 44px+ targets, visible focus, no colour-only cues, reduced motion respected, labels / help left-aligned
+// (the justified-text rule applies to reading text only: forms carry data-no-justify).
+// The accent of a form (settings.theme.accent) arrives as a body / wrapper class: theme-orange | theme-navy | theme-teal | theme-gold.
+//   --lf-accent  fill of buttons       --lf-accent-ink  text on that fill     --lf-mark  borders / marks that must reach 3:1 on white
+//   --lf-soft    pale accent tint      --lf-ring        focus ring colour
+
+$lf-accent: $cta;
+$lf-accent-hover: $cta-hover;
+
+// a form title chosen by the owner may hold one very long word: wrap it instead of clipping it on phones
+.is-form,
+.is-form-state,
+.is-form-thanks,
+.is-forms-index {
+    .page-hero__title, .page-hero__lead { overflow-wrap: anywhere; }
+}
+
+.is-form,
+.is-form-state,
+.is-form-thanks,
+.is-form-print,
+.lf-embed {
+    --lf-accent: #{$lf-accent};
+    --lf-accent-hover: #{$lf-accent-hover};
+    --lf-accent-ink: #{$white};
+    --lf-mark: #{$lf-accent};
+    --lf-soft: #{rgba($lf-accent, 0.08)};
+    --lf-ring: #{$lf-accent};
+    &.theme-navy { --lf-accent: #{$navy}; --lf-accent-hover: #{$navy-dark}; --lf-mark: #{$navy}; --lf-soft: #{rgba($navy, 0.07)}; --lf-ring: #{$navy}; }
+    &.theme-teal { --lf-accent: #{$teal-dark}; --lf-accent-hover: #{darken($teal-dark, 8%)}; --lf-mark: #{$teal-dark}; --lf-soft: #{rgba($teal-dark, 0.09)}; --lf-ring: #{$teal-dark}; }
+    &.theme-gold { --lf-accent: #{$gold}; --lf-accent-hover: #{darken($gold, 8%)}; --lf-accent-ink: #{$navy-dark}; --lf-mark: #{$gold-text}; --lf-soft: #{rgba($gold, 0.16)}; --lf-ring: #{$navy}; }
+}
+
+@keyframes lf-step-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes lf-reveal { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes lf-pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+
+.lf-section { padding-block: $space-6 $space-8; @include respond(md) { padding-block: $space-7 $space-9; } }
+
+// ---- the card ------------------------------------------------------------------------------------------------------------
+.lf-card {
+    position: relative;
+    overflow: hidden;
+    background: $white;
+    border: 1px solid $line;
+    border-radius: $radius-card;
+    box-shadow: $shadow-card;
+    padding: $space-5 $space-4;
+    @include respond(sm) { padding: $space-6 $space-5; }
+    @include respond(md) { padding: $space-7; }
+    &::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--lf-mark, #{$lf-accent}); }
+    &--notice { text-align: center; padding-block: $space-7; }
+}
+
+.lf-intro { margin-bottom: $space-5; }
+.lf-notes { display: flex; flex-wrap: wrap; gap: $space-2 $space-3; margin: 0 0 $space-5; padding: 0; list-style: none; }
+.lf-note {
+    display: inline-flex; align-items: center; gap: $space-2; margin: 0;
+    padding: $space-2 $space-4; border-radius: $radius-pill; background: $tint-cool; color: $navy; font-size: $fs-sm; font-weight: 500; text-align: left;
+    .icon { flex: none; }
+    &--warn { background: $warning-bg; color: $warning; }
+}
+.lf-banner { margin-bottom: $space-4; padding: $space-3 $space-4; border-radius: $radius; background: $warning-bg; color: $warning; font-weight: 600; text-align: left; }
+
+// ---- the form --------------------------------------------------------------------------------------------------------------
+.lf {
+    text-align: left;
+    p, label, legend, li { text-align: left; hyphens: manual; }
+
+    &__summary {
+        margin-bottom: $space-5;
+        padding: $space-4 $space-5;
+        border: 2px solid $danger;
+        border-radius: $radius-lg;
+        background: $danger-bg;
+        color: $ink;
+        &:focus { outline: none; box-shadow: 0 0 0 4px rgba($danger, 0.25); }
+        &[hidden] { display: none; }
+        &-title { display: flex; align-items: center; gap: $space-2; font-family: $font-heading; font-size: $fs-md; color: $danger; margin: 0 0 $space-1; }
+        p { margin: 0 0 $space-2; font-size: $fs-sm; }
+        ul { margin: $space-2 0 0; padding-left: $space-5; list-style: disc; display: grid; gap: $space-1; }
+        a { color: $danger; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; &:hover { color: darken($danger, 10%); } }
+    }
+
+    // progress
+    &__progress { margin-bottom: $space-6; }
+    &__progress-head { display: flex; align-items: baseline; justify-content: space-between; gap: $space-3; margin-bottom: $space-2; }
+    &__step { margin: 0; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; color: $ink-soft; strong { color: $navy; font-weight: 700; } }
+    &__pct { margin: 0; font-family: $font-heading; font-size: $fs-xs; font-weight: 600; color: $ink-soft; font-variant-numeric: tabular-nums; }
+    &__bar { height: 10px; border-radius: $radius-pill; background: $tint-cool; overflow: hidden; }
+    &__bar-fill { display: block; height: 100%; width: 0; border-radius: $radius-pill; background: var(--lf-mark, #{$lf-accent}); transition: width $t-base $ease; }
+
+    // pages
+    &__page { margin: 0 0 $space-5; padding: 0; border: 0; min-width: 0; }
+    &__page[hidden] { display: none; }
+    &.is-stepped &__page { margin-bottom: 0; }
+    &.is-stepped &__page:not(.is-current) { display: none; }
+    &.is-stepped &__page.is-current { animation: lf-step-in $t-base $ease both; }
+    &__page-title { margin: 0 0 $space-2; font-family: $font-display; font-size: fluid(1.35rem, '1.1rem + 0.9vw', 1.75rem); color: $navy; &:focus { outline: none; } }
+    &__page-text { margin: 0 0 $space-4; color: $ink-soft; }
+    &:not(.is-stepped) &__page + &__page { margin-top: $space-6; padding-top: $space-6; border-top: 1px solid $line; }
+
+    &__grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: $space-5 $space-4; margin-top: $space-4; }
+    &__field, &__block { grid-column: 1 / -1; min-width: 0; }
+    &__field[hidden], &__block[hidden] { display: none; }
+    &__field.is-revealed, &__block.is-revealed { animation: lf-reveal $t-base $ease both; }
+    @include respond(md) {
+        &__field--half { grid-column: span 3; }
+        &__field--third { grid-column: span 2; }
+    }
+
+    // labels, help, errors
+    &__label, legend.lf__label { display: block; margin: 0 0 $space-1; padding: 0; font-family: $font-heading; font-weight: 600; font-size: $fs-sm; line-height: 1.4; color: $navy; }
+    &__req { color: $danger; margin-left: 0.15em; }
+    &__help { margin: 0 0 $space-2; color: $ink-soft; font-size: $fs-xs; line-height: 1.5; }
+    &__error { display: flex; gap: $space-2; align-items: flex-start; margin: $space-2 0 0; color: $danger; font-weight: 600; font-size: $fs-sm; line-height: 1.4;
+        &::before { content: '!'; flex: none; display: inline-grid; place-items: center; width: 1.25rem; height: 1.25rem; margin-top: 0.05rem; border-radius: 50%; background: $danger; color: $white; font-size: 0.8rem; font-weight: 800; line-height: 1; }
+        &[hidden] { display: none; }
+        &--form { margin-bottom: $space-4; }
+    }
+    &__heading { margin: 0; padding-top: $space-4; font-family: $font-display; font-size: $fs-lg; color: $navy; border-top: 1px solid $line; }
+    &__block--divider hr { border: 0; border-top: 1px solid $line; margin: $space-2 0; }
+    &__block--text p { margin: 0; color: $ink-soft; }
+    &__block--text p + p { margin-top: $space-3; }
+    &__block--text p { text-align: left; }
+
+    // inputs
+    &__input, .input, .select, .textarea {
+        width: 100%; min-height: 3.1rem; padding: 0.8rem 1rem;
+        border: 1.5px solid $border-strong; border-radius: 14px; background: $white; color: $ink; font-size: $fs-base;
+        transition: border-color $t-fast ease, box-shadow $t-fast ease, background-color $t-fast ease;
+        &:hover { border-color: $navy-light; }
+        &:focus, &:focus-visible { outline: 3px solid transparent; outline-offset: 2px; border-color: var(--lf-ring, #{$lf-accent}); box-shadow: 0 0 0 4px rgba($navy, 0.14); }
+        &[disabled] { background: $surface-alt; color: $ink-soft; cursor: not-allowed; }
+        &::placeholder { color: #727b86; }
+    }
+    textarea.lf__input, .textarea { min-height: 9rem; resize: vertical; line-height: 1.55; }
+    &__field.has-error &__input, &__field.has-error .input, &__field.has-error .select, &__field.has-error .textarea { border-color: $danger; box-shadow: 0 0 0 1px $danger; background: #fffafa; }
+    &__field.is-valid &__input.is-touched { border-color: $success; }
+    &__counter { margin: $space-1 0 0; text-align: right; font-size: $fs-xs; color: $ink-soft; font-variant-numeric: tabular-nums; &.is-near { color: $warning; font-weight: 600; } }
+    &__other { margin-top: $space-2; max-width: 24rem; min-height: 2.75rem; }
+    &__option > &__other { flex: 1 1 100%; max-width: none; margin-top: 0; }
+    &__other[hidden] { display: none; }
+
+    // choices as tiles
+    &__group { margin: 0; padding: 0; border: 0; min-width: 0; &:focus { outline: none; } }
+    &__options { display: grid; gap: $space-2; margin-top: $space-1; }
+    &__option, &__consent {
+        position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-3; min-height: 3rem;
+        padding: $space-2 $space-4; border: 1.5px solid $border-strong; border-radius: 14px; background: $white;
+        transition: border-color $t-fast ease, background-color $t-fast ease, box-shadow $t-fast ease;
+        label { flex: 1 1 10rem; min-width: 0; align-self: stretch; display: flex; align-items: center; margin: 0; padding-block: $space-2; cursor: pointer; font-family: $font-body; font-weight: 500; font-size: $fs-base; color: $ink; line-height: 1.4; }
+        &:hover { border-color: $navy-light; background: $surface; }
+        &.is-checked { border-color: var(--lf-mark, #{$lf-accent}); background: var(--lf-soft); box-shadow: 0 0 0 1px var(--lf-mark, #{$lf-accent}); }
+        &:has(input:checked) { border-color: var(--lf-mark, #{$lf-accent}); background: var(--lf-soft); box-shadow: 0 0 0 1px var(--lf-mark, #{$lf-accent}); }
+        &:has(input:focus-visible) { outline: 3px solid var(--lf-ring, #{$lf-accent}); outline-offset: 2px; }
+    }
+    &__consent { align-items: flex-start; label { align-items: flex-start; } }
+    &__field.has-error &__consent, &__field.has-error &__option { border-color: $danger; }
+    &__check { flex: none; width: 1.3rem; height: 1.3rem; margin: 0; accent-color: var(--lf-mark, #{$lf-accent}); cursor: pointer; }
+    &__options--yes_no { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 24rem;
+        .lf__option { flex-wrap: nowrap; justify-content: center; padding-inline: $space-3; gap: $space-2; }
+        .lf__option label { flex: 0 1 auto; justify-content: center; font-family: $font-heading; font-weight: 600; }
+    }
+    &__options--rating { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: $space-2; max-width: 30rem;
+        .lf__option { padding: 0; justify-content: center; min-height: 3.25rem;
+            label { flex: 1; justify-content: center; text-align: center; padding: $space-3 0; font-family: $font-heading; font-weight: 700; font-size: $fs-md; }
+            .lf__check { position: absolute; opacity: 0; width: 100%; height: 100%; inset: 0; margin: 0; cursor: pointer; }
+            &.is-checked { background: var(--lf-accent, #{$lf-accent}); border-color: var(--lf-accent, #{$lf-accent}); label { color: var(--lf-accent-ink, #{$white}); } }
+            &:has(input:checked) { background: var(--lf-accent, #{$lf-accent}); border-color: var(--lf-accent, #{$lf-accent}); label { color: var(--lf-accent-ink, #{$white}); } }
+        }
+    }
+    &__scale { display: flex; justify-content: space-between; max-width: 30rem; margin: $space-1 0 0; font-size: $fs-xs; color: $ink-soft; }
+
+    // file drop zone
+    &__drop {
+        position: relative; display: flex; align-items: center; gap: $space-4; min-height: 5rem; padding: $space-4 $space-5;
+        border: 2px dashed $border-strong; border-radius: 16px; background: $surface;
+        transition: border-color $t-fast ease, background-color $t-fast ease;
+        &:hover, &.is-over { border-color: var(--lf-mark, #{$lf-accent}); background: var(--lf-soft); }
+        &:focus-within { border-color: var(--lf-ring, #{$lf-accent}); box-shadow: 0 0 0 4px rgba($navy, 0.14); }
+        &-icon { flex: none; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: var(--lf-soft); color: var(--lf-mark, #{$lf-accent}); }
+        &-text { min-width: 0; display: grid; gap: 2px; }
+        &-title { font-family: $font-heading; font-weight: 600; color: $navy; }
+        &-hint { font-size: $fs-xs; color: $ink-soft; }
+    }
+    &__field.has-error &__drop { border-color: $danger; background: #fffafa; }
+    &__file { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
+    &__file::file-selector-button { cursor: pointer; }
+    &__files { display: grid; gap: $space-2; margin: $space-2 0 0; padding: 0; list-style: none; }
+    &__files:empty { display: none; }
+    &__file-item { display: flex; align-items: center; gap: $space-3; padding: $space-2 $space-3 $space-2 $space-4; border: 1px solid $line; border-radius: 12px; background: $white; min-width: 0;
+        .icon { flex: none; color: var(--lf-mark, #{$lf-accent}); }
+    }
+    &__file-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: $fs-sm; color: $ink; }
+    &__file-size { flex: none; font-size: $fs-xs; color: $ink-soft; }
+    &__file-remove { flex: none; min-width: 44px; min-height: 44px; padding: 0 $space-2; border: 0; border-radius: 12px; background: transparent; color: $danger; font-family: $font-heading; font-weight: 600; font-size: $fs-xs; cursor: pointer;
+        &:hover { background: $danger-bg; text-decoration: underline; }
+        &:focus-visible { outline: 3px solid $danger; outline-offset: 0; }
+    }
+
+    // footer of the form
+    &__note, &__privacy { margin: $space-5 0 0; font-size: $fs-xs; line-height: 1.55; color: $ink-soft; a { color: $orange-text; text-decoration: underline; text-underline-offset: 2px; } }
+    &__note { margin-top: $space-5; }
+    &__privacy { margin-top: $space-2; display: flex; gap: $space-2; align-items: flex-start; .icon { flex: none; margin-top: 0.1rem; color: $ink-soft; } }
+    &__draft { margin: $space-3 0 0; font-size: $fs-xs; color: $ink-soft; .btn { min-height: 2.75rem; min-width: 2.75rem; padding-inline: $space-2; font-size: inherit; } }
+    &__actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; margin-top: $space-5; padding-top: $space-5; border-top: 1px solid $line; }
+    &__actions .btn { min-height: 3rem; }
+    &__prev { margin-right: auto; }
+    &__submit, &__next { margin-left: auto; background: var(--lf-accent, #{$lf-accent}); border-color: var(--lf-accent, #{$lf-accent}); color: var(--lf-accent-ink, #{$white}); min-width: 9rem;
+        &:hover { background: var(--lf-accent-hover, #{$lf-accent-hover}); border-color: var(--lf-accent-hover, #{$lf-accent-hover}); color: var(--lf-accent-ink, #{$white}); }
+        &:focus-visible { outline: 3px solid var(--lf-ring, #{$lf-accent}); outline-offset: 3px; }
+    }
+    &__prev + &__next, &__prev ~ &__submit { margin-left: 0; }
+    &__submit { min-height: 3.25rem; }
+    &__submit.is-busy { opacity: 0.75; cursor: progress; pointer-events: none; }
+    &__prev[hidden], &__next[hidden], &__submit[hidden], &__print[hidden], &__draft[hidden] { display: none; }
+    &__print { margin-left: auto; font-size: $fs-sm; }
+    &__prev ~ &__print, &__next ~ &__print, &__submit ~ &__print { margin-left: 0; }
+    @include respond-down(sm) {
+        &__actions { flex-direction: column-reverse; align-items: stretch; }
+        &__actions .btn { width: 100%; }
+        &__prev, &__submit, &__next, &__print { margin: 0; }
+    }
+}
+
+// ---- notices (closed / full / not open / unavailable) and the thank-you page ---------------------------------------------------
+.lf-mark {
+    display: grid; place-items: center; width: 4.5rem; height: 4.5rem; margin: 0 auto $space-5; border-radius: 50%;
+    background: var(--lf-soft); color: var(--lf-mark, #{$lf-accent}); animation: lf-pop 480ms $ease both;
+    .icon { width: 2rem; height: 2rem; }
+    &--ok { background: $success-bg; color: $success; }
+}
+.lf-notice__title { margin: 0; font-family: $font-display; color: $navy; font-size: fluid(1.5rem, '1.2rem + 1vw', 2rem); }
+.lf-notice__text { margin: $space-3 auto 0; max-width: 36rem; color: $ink-soft; text-align: center; p { text-align: center; } }
+.lf-notice__text.prose { text-align: center; p { text-align: inherit; } ul, ol { display: inline-block; text-align: left; } }
+.lf-notice__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: $space-3; margin-top: $space-6; }
+.lf-reference { display: inline-flex; flex-direction: column; gap: 2px; margin: $space-5 auto 0; padding: $space-3 $space-6; border: 1.5px dashed $border-strong; border-radius: $radius-lg; background: $surface;
+    &__label { font-family: $font-heading; font-size: $fs-xs; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: $ink-soft; }
+    &__value { font-family: $font-mono; font-size: $fs-lg; font-weight: 700; color: $navy; letter-spacing: 0.04em; user-select: all; }
+}
+.lf-reference-help { margin: $space-3 auto 0; max-width: 30rem; font-size: $fs-sm; color: $ink-soft; text-align: center; }
+
+// ---- the [form] shortcode embed (inside a custom page body; the .prose rules must not leak into it) ---------------------------------
+.lf-embed {
+    margin-block: $space-7;
+    padding: $space-5 $space-4; background: $white; border: 1px solid $line; border-radius: $radius-card; box-shadow: $shadow-card; position: relative; overflow: hidden;
+    @include respond(md) { padding: $space-6; }
+    &::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--lf-mark, #{$lf-accent}); }
+    &__title { margin: 0 0 $space-3; font-family: $font-display; font-size: fluid(1.4rem, '1.1rem + 1vw', 1.9rem); color: $navy; }
+    ul.lf__files, ul.lf__summary-list { margin: $space-2 0 0; }
+    .lf__options, .lf__grid { margin-top: 0; }
+    .lf__grid { margin-top: $space-4; }
+    h2, h3 { margin-top: 0; }
+    .lf-card { box-shadow: none; border: 0; padding: 0; &::before { display: none; } }
+}
+.prose .lf-embed .lf-embed__title, .prose .lf-embed h2, .prose .lf-embed h3 { margin-top: 0; }
+.prose .lf-embed .lf-embed__title { margin-bottom: $space-3; }
+.prose .lf-embed .lf__summary-title { margin: 0 0 $space-1; }
+.prose .lf-embed { max-width: none; > * + * { margin-top: 0; } .lf__grid > * { margin-top: 0; } label { font-weight: 600; } ul.lf__files { padding-left: 0; list-style: none; } ul:not(.lf__files):not(.lf-notes) { padding-left: $space-5; } .lf__summary ul { list-style: disc; } }
+.lf-embed .lf-notes { margin-top: $space-3; }
+
+// ---- vacancy page: the Apply button of a job that uses a custom application form ----------------------------------------------------
+.job-apply-cta { text-align: center; padding-block: $space-3; p { margin: 0; text-align: center; } }
+
+// ---- the optional /forms list ------------------------------------------------------------------------------------------------------
+.lf-directory {
+    &__card { position: relative; overflow: hidden; display: flex; flex-direction: column; height: 100%; transition: transform $t-base $ease, box-shadow $t-base $ease;
+        &::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--lf-mark, #{$lf-accent}); }
+        &:hover { transform: translateY(-3px); box-shadow: $shadow-lg; }
+        @include reduced-motion { transition: none; &:hover { transform: none; } }
+        .card__body { flex: 1 1 auto; padding: $space-5 $space-5 $space-3; }
+        .card__footer { padding: 0 $space-5 $space-5; border: 0; background: none; }
+        .card__title { margin: 0 0 $space-2; font-family: $font-display; color: $navy; }
+        .card__text { color: $ink-soft; }
+    }
+    &__icon { display: grid; place-items: center; width: 3rem; height: 3rem; margin-bottom: $space-3; border-radius: 50%; background: var(--lf-soft); color: var(--lf-mark, #{$lf-accent}); }
+}
+
+// ---- reduced motion ---------------------------------------------------------------------------------------------------------------
+@include reduced-motion {
+    .lf__page, .lf__field, .lf__block, .lf-mark, .lf__bar-fill { animation: none !important; transition: none !important; }
+}
+
+// ---- print a blank copy -----------------------------------------------------------------------------------------------------------
+.lf-print { &__head { display: none; } &__bar { margin: 0 0 $space-4; text-align: right; } }
+.is-form-print .lf-print__head { display: block; }
+
+@media print {
+    .is-form, .is-form-print {
+        .site-header, .topbar, .site-footer, .page-hero, .breadcrumbs, .back-to-top, .lf__actions, .lf__progress, .lf__draft, .lf__summary, .flash-stack, .newsletter,
+        .lf-banner, .lf-notes, .lf-print__bar, .lf__note, .skip-link, .lf__counter, .lf__drop-icon, .lf__error { display: none !important; }
+        .lf-section { padding: 0 !important; background: none !important; }
+        .lf-card { border: 0; box-shadow: none; padding: 0; overflow: visible; &::before { display: none; } }
+        .lf-print__head { display: block; margin-bottom: 1rem; h1 { font-size: 1.6rem; margin: 0 0 0.25rem; color: #000; } p { margin: 0; color: #000; } }
+        .lf__page { display: block !important; break-inside: auto; margin-bottom: 1.25rem; animation: none; }
+        .lf__page-title, .lf__label, legend.lf__label, .lf__heading { color: #000; }
+        .lf__field, .lf__block { break-inside: avoid; }
+        .lf__grid { gap: 1rem; }
+        .lf__input, .input, .select, .textarea { border: 1px solid #000 !important; border-radius: 4px; min-height: 2.2rem; background: #fff !important; box-shadow: none !important; color: #000; -webkit-appearance: none; appearance: none; background-image: none !important; }
+        textarea.lf__input, .textarea { min-height: 6rem; }
+        .lf__drop { border: 1px dashed #000; background: none; min-height: 2.5rem; padding: 0.5rem; }
+        .lf__file { display: none; }
+        .lf__option, .lf__consent { border: 0 !important; background: none !important; box-shadow: none !important; min-height: 0; padding: 0.15rem 0; }
+        .lf__check { width: 1rem; height: 1rem; }
+        .lf__options--rating, .lf__options--yes_no { max-width: none; }
+        .lf__options--rating .lf__option { border: 1px solid #000 !important; min-height: 2rem; .lf__check { opacity: 1; position: static; width: 1rem; height: 1rem; } }
+        .lf__options--rating .lf__option label { padding: 0.15rem 0.4rem; color: #000 !important; }
+        .lf__privacy { color: #000; }
+    }
+}
+
+// Windows high-contrast (forced-colors) drops backgrounds and shadows, so a chosen tile, rating or file zone must stay recognisable by an outline / a mark
+@media (forced-colors: active) {
+    .lf__option.is-checked, .lf__option:has(input:checked), .lf__consent:has(input:checked) { border: 3px solid Highlight; box-shadow: none; }
+    .lf__options--rating .lf__option.is-checked label::after, .lf__options--rating .lf__option:has(input:checked) label::after { content: "\2713"; margin-left: 0.25rem; }
+    .lf__options--rating .lf__option { forced-color-adjust: auto; }
+    .lf__field.has-error .lf__option, .lf__field.has-error .lf__consent, .lf__field.has-error .lf__drop { border-color: Mark; }
+    .lf__drop.is-over, .lf__drop:focus-within { outline: 3px solid Highlight; outline-offset: 2px; }
+    .lf__bar-fill { forced-color-adjust: none; background: Highlight; }
+}

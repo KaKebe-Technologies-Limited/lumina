@@ -74,6 +74,34 @@ return [
         'min_seconds'    => 3,             // a human needs at least this long to submit
         'max_seconds'    => 7200,          // stale form token after 2 h
     ],
+    /**
+     * FORM BUILDER limits (docs/FORMS.md). Read with config('form_builder.max_fields'). The definition normaliser (App\Services\Forms\FormDefinition)
+     * enforces every one of them on the server; the builder UI only mirrors them.
+     */
+    'form_builder' => [
+        'max_pages'          => 12,
+        'max_fields'         => 150,          // input + layout fields, all pages together
+        'max_options'        => 200,          // per choice field
+        'max_rules'          => 2,            // conditions per field / page
+        'max_title'          => 190,
+        'max_label'          => 200,
+        'max_help'           => 600,
+        'max_text'           => 2000,         // paragraph block
+        'max_option_label'   => 120,
+        'max_definition_kb'  => 512,          // JSON size of one definition
+        'max_settings_kb'    => 64,
+        'max_answer_chars'   => 8000,         // one text answer (long text)
+        'max_total_answer_kb' => 256,         // all answers of one submission together
+        'file_types'         => ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'png'],   // the ONLY file types a form can accept
+        'file_max_mb'        => 25,           // hard ceiling per file (also capped by the setting forms_max_upload_mb and the server limit)
+        'file_max_files'     => 5,            // per file field
+        'file_total_mb'      => 40,           // all files of one submission
+        'staff_emails_max'   => 10,
+        'confirm_per_address' => [3, 3600],   // confirmation e-mails: max 3 per MAILBOX per hour (+tags and Gmail dots count as one)
+        'confirm_per_form'    => [120, 3600], // ... and at most 120 per form per hour
+        'notify_per_form'     => [60, 3600],  // staff notifications per form per hour (beyond it only the first of each batch is sent)
+        'retention_max_days'  => 3650,
+    ],
     // extra Host values accepted besides the APP_URL host (comma list). Only enforced when APP_ENV is not "local".
     'allowed_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) Env::get('ALLOWED_HOSTS', ''))))),
     'trusted_proxies' => array_values(array_filter(array_map('trim', explode(',', (string) Env::get('TRUSTED_PROXIES', ''))))),
@@ -110,12 +138,16 @@ return [
         'meetings.manage'   => ['admin', 'editor'], // meetings: schedule, edit, invite, cancel, answer requests, e-mail attendees (docs/MEETINGS.md)
         'meetings.bulk'     => ['admin'],           // add more than 50 recipients at once (e.g. all approved members)
         'meetings.delete'   => ['admin'],           // delete a meeting request
+        'forms.manage'      => ['admin', 'editor'], // create / edit / publish / close / archive forms, templates, the builder (docs/FORMS.md)
+        'forms.submissions' => ['admin', 'editor'], // view and handle the answers people sent through a form: status, notes, files (PERSONAL DATA)
+        'forms.export'      => ['admin'],           // download the answers of a form as CSV
+        'forms.delete'      => ['admin'],           // delete a form, or delete submissions (single or bulk)
     ],
 
     /** Slugs a custom page may NOT use (they are real routes or folders). */
     'reserved_slugs' => [
         'admin', 'assets', 'uploads', 'api', 'login', 'logout', 'index', 'storage', 'app', 'bin', 'database', 'docs', 'scss', 'tools',
         'vendor', 'sitemap', 'sitemap-xml', 'robots', 'robots-txt', 'subscribe', 'unsubscribe', 'search', 'download', 'downloads',
-        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter', 'calendar', 'meeting', 'meetings',
+        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter', 'calendar', 'meeting', 'meetings', 'forms',
     ],
 ];

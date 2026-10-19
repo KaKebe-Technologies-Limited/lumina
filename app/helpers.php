@@ -293,9 +293,9 @@ function method_field(string $method): string
 }
 
 /** Spam-trap fields for PUBLIC forms (hidden input + signed timestamp). */
-function honeypot_field(): string
+function honeypot_field(?string $keep = null): string
 {
-    return Honeypot::field();
+    return Honeypot::field($keep);
 }
 
 /** Old input after a failed validation redirect (ESCAPE it: <?= e(old('email')) ?>). */

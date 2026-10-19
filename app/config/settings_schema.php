@@ -149,6 +149,23 @@ return [
                     'help' => 'One topic per line (at most 12, each up to 60 characters).'],
             ],
         ],
+        'forms' => [
+            'label' => 'Forms',
+            'icon'  => 'file-text',
+            'help'  => 'Defaults for the form builder (Admin > Forms). Each form has its own settings (open and close dates, notification e-mails, spam protection, retention); these are the site-wide defaults and limits. The fixed words on public forms (buttons, error messages, closed notices) are edited in Admin > Pages > Forms.',
+            'fields' => [
+                'forms_directory_enabled' => ['label' => 'Show a public list of forms at /forms', 'type' => 'boolean', 'default' => '0',
+                    'help' => 'Off by default. When on, /forms lists every published form that you ticked "Show in the public list" for. Forms stay reachable by their own link either way.'],
+                'forms_default_notify' => ['label' => 'Who is e-mailed about new form submissions (default)', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:600',
+                    'help' => 'Used by forms that have no list of their own. One e-mail address per line or separated by commas. While empty, the notification e-mail from the Contact tab is used. The e-mail only contains a link to the submission, never the answers (unless a form is set to include them).'],
+                'forms_max_upload_mb' => ['label' => 'Largest file a form can accept (MB)', 'type' => 'number', 'default' => '5', 'rules' => 'required|integer|between:1,25',
+                    'help' => 'The ceiling for every upload field. A single form may allow less. The web host may allow less still: if uploads fail with "larger than the server allows", ask your host to raise upload_max_filesize and post_max_size.'],
+                'forms_submit_limit' => ['label' => 'Submissions allowed from one visitor in 10 minutes', 'type' => 'number', 'default' => '10', 'rules' => 'required|integer|between:2,100',
+                    'help' => 'A flood guard per visitor address, on top of the spam traps. A form with strict spam protection allows half as many.'],
+                'forms_retention_default_days' => ['label' => 'Delete submissions after this many days (default for new forms)', 'type' => 'number', 'default' => '0', 'rules' => 'required|integer|between:0,3650',
+                    'help' => '0 keeps submissions until you delete them. Each form can set its own period. Uganda\'s Data Protection and Privacy Act 2019 asks you to keep personal data no longer than needed: confirm the right period with your legal adviser.'],
+            ],
+        ],
         'branding' => [
             'label' => 'Branding & SEO',
             'icon'  => 'image',

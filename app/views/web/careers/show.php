@@ -2,6 +2,9 @@
 /** Vacancy page. Vars: $job (row), $closed (bool). Labels: content('careers', 'job.*') and content('careers', 'form.*'). */
 $typeMap = ['full_time' => 'FULL_TIME', 'part_time' => 'PART_TIME', 'contract' => 'CONTRACTOR', 'internship' => 'INTERN', 'volunteer' => 'VOLUNTEER'];
 $closing = !empty($job['closing_date']) ? format_date($job['closing_date']) : '';
+// Forms module: a vacancy may use a custom application form (jobs.form_id). null while that form is not live -> the built-in form below stays as it was.
+$customForm = !$closed ? \App\Services\Forms\FormService::jobForm($job) : null;
+$customUrl = $customForm !== null ? \App\Services\Forms\FormService::jobApplyUrl($job, $customForm) : '';
 $ld = array_filter([
     '@context'           => 'https://schema.org',
     '@type'              => 'JobPosting',
@@ -57,6 +60,9 @@ $this->start('head'); ?>
                     <?php if (!empty($job['location'])): ?><div class="ia-facts__row"><span class="ia-facts__icon" aria-hidden="true"><?= icon('map-pin') ?></span><div><dt><?= e(content('careers', 'job.location_label')) ?></dt><dd><?= e($job['location']) ?></dd></div></div><?php endif; ?>
                     <?php if ($closing !== ''): ?><div class="ia-facts__row"><span class="ia-facts__icon" aria-hidden="true"><?= icon('calendar') ?></span><div><dt><?= e(content('careers', 'job.closing_label')) ?></dt><dd><time datetime="<?= e(format_date($job['closing_date'], 'Y-m-d')) ?>"><?= e($closing) ?></time></dd></div></div><?php endif; ?>
                 </dl>
+                <?php if ($customForm !== null): ?>
+                    <p><a class="btn btn--cta btn--caps btn--block" href="<?= e($customUrl) ?>"><?= e(\App\Services\Forms\FormText::get('job.apply_button')) ?> <?= icon('arrow-right', 'icon--sm') ?></a></p>
+                <?php endif; ?>
                 <p><a class="btn btn--outline btn--caps btn--block" href="<?= e(url('careers')) ?>"><?= icon('arrow-left', 'icon--sm') ?> <?= e(content('careers', 'job.back_label')) ?></a></p>
             </aside>
         </div>
@@ -70,6 +76,11 @@ $this->start('head'); ?>
                 <span class="no-openings__icon"><?= icon('briefcase', 'icon--xl') ?></span>
                 <p class="no-openings__title" id="apply-title"><?= e(content('careers', 'job.closed_text')) ?></p>
                 <p><a class="btn btn--cta btn--caps" href="<?= e(url('careers')) ?>#openings"><?= e(content('careers', 'job.closed_button')) ?></a></p>
+            </div>
+        <?php elseif ($customForm !== null): ?>
+            <?= partial('partials/section-head', ['title' => (string) content('careers', 'job.apply_title'), 'align' => 'center', 'id' => 'apply-title']) ?>
+            <div class="job-apply-cta">
+                <p><a class="btn btn--cta btn--caps btn--lg" href="<?= e($customUrl) ?>"><?= e(\App\Services\Forms\FormText::get('job.apply_button')) ?> <?= icon('arrow-right', 'icon--sm') ?></a></p>
             </div>
         <?php else: ?>
             <?= partial('partials/section-head', ['title' => (string) content('careers', 'job.apply_title'), 'align' => 'center', 'id' => 'apply-title']) ?>

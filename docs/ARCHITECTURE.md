@@ -679,6 +679,15 @@ Meetings with a join link (Zoom, Google Meet, Teams, Jitsi, WhatsApp, phone, in 
 
 Partner logos are optimised on upload (`Uploader::logo()` -> `ImageOptimizer`: trim, fit 480x240 + exact 2x, WebP + PNG, metadata stripped, no GD = stored as uploaded with a notice) and rendered by `partials/partner-logo-img`; the About page gets an "Our partners" section. Newsletter issues have two formats (`newsletters.kind`: written online / uploaded PDF, PDF stored privately in `storage/private/newsletters` and streamed by `/newsletter/{slug}/pdf` and `/download`), the Newsletter page is in the menu (Blog > Newsletter), Home has a "Latest newsletter" teaser, and the admin shows a "Live on the website" status (`NewsletterService::liveStatus()`). CSP `frame-src` now includes `'self'`; sitemap and API caching rules are in section 10 of that file.
 
+
+## 28. Forms (form builder, public forms, submissions) - READ `docs/FORMS.md`
+
+Admin-built forms (templates for job applications, volunteers, RSVPs, enquiries, surveys, applications, intake, training) with a conditional-logic definition, public pages at `/forms/{slug}`, private file uploads, an inbox with a status workflow, CSV export, statistics, retention and e-mail notifications. Documented in **`docs/FORMS.md`** (definition + settings JSON specs, condition semantics shared by PHP and JS, validator, submissions and snapshots, public flow and markup contract, file rules, e-mail, templates, JSON API, abilities, ownership). Contract changes it introduced:
+* New tables `forms`, `form_submissions`, `form_files` and a guarded column `jobs.form_id` (additive, idempotent); models `Form`, `FormSubmission`, `FormFile`; services in `app/services/Forms/`.
+* New abilities `forms.manage` and `forms.submissions` (admin, editor), `forms.export` and `forms.delete` (admin), all in the ability catalogue; the built-in Editor role is upgraded once by the seed only while its list is still the original default; settings group "Forms"; registry page `forms` (all public wording); reserved slug `forms`; config block `form_builder`; admin sidebar group "Forms" (`admin_nav/forms.php`, order 38); route files `web_forms.php` and `admin_forms.php`.
+* Shared-file additions: `SitemapBuilder` lists open, listed, indexable forms; `scss/main.scss` and `scss/admin.scss` import the forms partials; `bin/selftest.php` runs `bin/selftest-forms.php`; cron script `bin/forms-maintenance.php`.
+* Submissions are personal data: role-gated, private files, ids only in the audit log, never public.
+* Hardening after the security review (no schema change): destructive / privacy settings need a second ability (`retention_days` -> `forms.delete`, e-mailing answers -> `forms.submissions`, `FormService::deniedSettings`); `PdfValidator::inspect(.., strict: true)` and `Services\Forms\OfficeInspector` check visitor uploads; `Honeypot::field($keep)` keeps the page timestamp on a re-rendered form; `forms.submissions_count` leaves spam out; `FormValidator::plainEmail`; `FormMailer::canonicalAddress`. See `docs/FORMS.md` sections 4, 8.4, 9, 10, 13.
 ---------
 
 ---------

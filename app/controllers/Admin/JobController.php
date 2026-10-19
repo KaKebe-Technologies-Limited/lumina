@@ -4,9 +4,11 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Controllers\Admin\Content\CrudController;
+use App\Core\Database;
 use App\Core\Flash;
 use App\Core\Request;
 use App\Models\Job;
+use App\Services\Forms\FormService;
 
 /**
  * Admin CRUD for `jobs` (/admin/jobs), the vacancies on the Careers page. A vacancy closes by itself when its closing date has passed
@@ -54,7 +56,48 @@ final class JobController extends CrudController
 
     protected function formData(?array $row): array
     {
-        return ['types' => self::typeLabels()];
+        return ['types' => self::typeLabels(), 'appForms' => $this->applicationForms($row), 'canPickForm' => $this->canPickForm()];
+    }
+
+    /**
+     * The custom application forms a vacancy can use (Admin > Forms): id => title. The form already attached to this vacancy stays in the list even
+     * when it was archived since, so saving the vacancy never silently detaches it. Empty when the Forms module is not installed.
+     * @return array<int,string>
+     */
+    private function applicationForms(?array $row): array
+    {
+        if (!$this->hasFormColumn()) {
+            return [];
+        }
+        $choices = FormService::formChoices();
+        $current = (int) ($row['form_id'] ?? 0);
+        if ($current > 0 && !isset($choices[$current])) {
+            $f = FormService::find($current);
+            if ($f !== null) {
+                $choices[$current] = (string) $f['title'] . ' (' . $f['status'] . ')';
+            }
+        }
+        return $choices;
+    }
+
+    /** Only people who can manage forms may change which form a vacancy uses; others never touch the field. */
+    private function canPickForm(): bool
+    {
+        return can('forms.manage') && $this->hasFormColumn();
+    }
+
+    /** Is `jobs.form_id` there (an old database without the Forms upgrade must keep working)? */
+    private function hasFormColumn(): bool
+    {
+        static $has = null;
+        if ($has === null) {
+            try {
+                $has = Database::tableExists('forms') && Database::one("SHOW COLUMNS FROM jobs LIKE 'form_id'") !== null;
+            } catch (\Throwable) {
+                $has = false;
+            }
+        }
+        return $has;
     }
 
     protected function listData(): array
@@ -114,7 +157,12 @@ final class JobController extends CrudController
     protected function payload(Request $request, ?array $row, array $valid): array
     {
         $title = (string) $this->text($valid['title']);
-        return [
+        $extra = [];
+        if ($this->canPickForm()) {
+            $formId = $request->int('form_id');
+            $extra['form_id'] = $formId > 0 && isset($this->applicationForms($row)[$formId]) ? $formId : null;
+        }
+        return $extra + [
             'slug'            => $this->slugFor($request, $row, $title),
             'title'           => $title,
             'department'      => $this->text($valid['department']),

@@ -53,7 +53,7 @@ final class CustomPageController extends Controller
             $meta['og_image'] = (string) $row['hero_image'];        // share the hero photo when no dedicated social image was set
         }
         if (trim((string) ($row['seo_description'] ?? '')) === '') {
-            $meta['description'] = trim((string) ($row['subtitle'] ?? '')) !== '' ? (string) $row['subtitle'] : excerpt((string) ($row['body'] ?? ''), 175);
+            $meta['description'] = trim((string) ($row['subtitle'] ?? '')) !== '' ? (string) $row['subtitle'] : excerpt((string) preg_replace('~\[form\s[^\]]*\]~iu', '', (string) ($row['body'] ?? '')), 175);   // an embedded-form shortcode is not description text
         }
 
         return $this->render('web/custom/show', [

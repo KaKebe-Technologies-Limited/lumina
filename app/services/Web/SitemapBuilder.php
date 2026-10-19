@@ -7,6 +7,7 @@ use App\Core\Database;
 use App\Core\Log;
 use App\Core\SitePages;
 use App\Services\Calendar\CalendarService;
+use App\Services\Forms\FormService;
 use App\Services\Newsletter\NewsletterService;
 
 /**
@@ -131,6 +132,28 @@ final class SitemapBuilder
             }
         } catch (\Throwable $e) {
             Log::warning('Sitemap: calendar skipped - ' . $e->getMessage());
+        }
+
+        // ---- forms (docs/FORMS.md section 14) -------------------------------------------------------------------------------
+        // The /forms list is a public page only when Site settings > Forms switches it on; a form is listed only when it is published, OPEN, flagged "show in the
+        // public list" and not set to noindex. Submissions, files and the thank-you pages never appear.
+        try {
+            unset($entries[abs_url('forms')]);                          // the generic page loop added it unconditionally
+            $formsPage = SitePages::get('forms');
+            if ($formsPage !== null && $formsPage['is_published'] && FormService::available() && FormService::directoryEnabled()) {
+                $newest = '';
+                foreach (Database::all("SELECT * FROM forms WHERE status = 'published' AND listed = 1 ORDER BY title ASC LIMIT 200") as $row) {
+                    $form = FormService::hydrate($row);
+                    if (!FormService::availability($form)['can_submit'] || !empty($form['cfg']['seo']['noindex'])) {
+                        continue;
+                    }
+                    $add('/forms/' . $form['slug'], (string) ($form['updated_at'] ?? ''), '0.5');
+                    $newest = max($newest, (string) ($form['updated_at'] ?? ''));
+                }
+                $add('/forms', $newest !== '' ? $newest : null, '0.5');
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Sitemap: forms skipped - ' . $e->getMessage());
         }
 
         $out = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";

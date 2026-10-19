@@ -25,7 +25,7 @@ $showUpdated = (bool) content('site_custom', 'labels.show_updated');
             </figure>
         <?php endif; ?>
 
-        <div class="prose<?= $template === 'default' ? '' : ' prose--wide' ?> custom-page__body"><?= rich((string) ($row['body'] ?? '')) ?></div>
+        <div class="prose<?= $template === 'default' ? '' : ' prose--wide' ?> custom-page__body"><?= \App\Services\Forms\FormShortcode::expand(rich((string) ($row['body'] ?? ''))) ?></div>
 
         <?php if ($children): ?>
             <nav class="custom-page__children" aria-labelledby="children-title">

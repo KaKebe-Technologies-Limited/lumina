@@ -1,0 +1,1060 @@
+// admin/_forms-builder.scss - ADMIN > FORMS (list, template picker) and the BUILDER. Owner: BUILDER agent (docs/FORMS.md section 17).
+//
+// Markup: views/admin/forms/{index,templates,builder}.php (list + picker are server-rendered); the builder is drawn by assets/js/admin-form-builder.js
+// inside #form-builder.form-builder. The script measures the root and sets data-layout="wide|compact" (wide = three columns: palette | form | question
+// settings + live preview; compact = one column, the right panel becomes a drawer), data-ws="questions|settings", data-side="field|preview",
+// data-drawer="open|closed" and the custom property --fb-bar-h (height of the sticky bar). Dialogs / toasts / menus are appended by the script.
+// Contrast: only tokens of docs/DESIGN.md (AA). No colour-only cues: every state also has an icon or words. Reduced motion respected at the end.
+
+$fb-top: $admin-topbar-h;
+$fb-ink-faint: #6B7785;                       // placeholder / hint text on white (4.9:1)
+$fb-z-menu: 270;
+$fb-z-drawer: 260;
+
+// =====================================================================================================================
+// 1. Forms list + template picker (server-rendered pages)
+// =====================================================================================================================
+.admin-forms {
+    .btn--cta { background: $cta; color: $white; border-color: $cta; &:hover { background: $cta-hover; border-color: $cta-hover; color: $white; } }
+    .btn--danger { background: $danger; border-color: $danger; color: $white; &:hover { background: darken($danger, 8%); border-color: darken($danger, 8%); color: $white; } }
+    .forms-embed { margin-top: $space-2; font-size: $fs-sm; summary { cursor: pointer; color: $ink-soft; } label { display: block; font-weight: 600; margin-top: $space-2; } .input { font-family: $font-mono; font-size: $fs-xs; } }
+    .fl-wrap { overflow: visible; }                                       // the forms LIST only: its "More" menu must not be clipped (the answers inbox keeps the scrolling .table-wrap)
+
+    .fl-table td { vertical-align: top; }
+    .fl-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.35rem; }
+    .fl-tag { display: inline-flex; align-items: center; padding: 0.05rem 0.55rem; border-radius: $radius-pill; background: $tint-cool; color: $navy; font-size: 0.72rem; font-weight: 600; }
+    .fl-actions { align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    @include respond-down(md) { .fl-actions { justify-content: flex-end; } }
+
+    // "More" menu (<details data-menu>, closed by the script on outside click / Escape; works without script too)
+    .fl-menu {
+        position: relative;
+        > summary { list-style: none; cursor: pointer; &::-webkit-details-marker { display: none; } }
+        &[open] > summary { background: $surface-alt; color: $navy; }
+        &__panel {
+            position: absolute;
+            top: calc(100% + 4px);
+            right: 0;
+            z-index: 30;
+            min-width: 16.5rem;
+            padding: $space-1;
+            background: $white;
+            border: 1px solid $border;
+            border-radius: $radius;
+            box-shadow: $shadow-lg;
+            text-align: left;
+            form { margin: 0; }
+        }
+        &__item {
+            display: flex;
+            align-items: center;
+            gap: $space-3;
+            width: 100%;
+            min-height: 2.5rem;
+            padding: 0.5rem $space-3;
+            border: 0;
+            border-radius: $radius-sm;
+            background: none;
+            color: $ink;
+            font: inherit;
+            font-size: $fs-sm;
+            font-weight: 500;
+            text-align: left;
+            text-decoration: none;
+            cursor: pointer;
+            .icon { color: $ink-soft; }
+            &:hover, &:focus-visible { background: $tint-cool; color: $navy; text-decoration: none; }
+            &--danger { color: $danger; .icon { color: $danger; } &:hover, &:focus-visible { background: $danger-bg; color: $danger; } }
+        }
+    }
+    .fl-table tbody tr:nth-last-child(-n+2) .fl-menu__panel { top: auto; bottom: calc(100% + 4px); }       // the last rows open upwards
+    @include respond-down(md) {
+        .fl-menu__text { display: inline; }
+        .fl-menu__panel { right: 0; left: auto; }
+        // stacked rows: let every cell wrap inside the card instead of pushing the page sideways (badges, "All places taken", the action buttons)
+        .fl-table {
+            td { flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
+            td > * { min-width: 0; }
+            td.col-actions { width: auto; white-space: normal; justify-content: flex-end; }
+            thead th { position: static; }
+        }
+    }
+}
+
+// ---- template picker -------------------------------------------------------------------------------------------
+.tp {
+    display: grid;
+    gap: $space-5;
+
+    &__fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+    &__legend { margin: 0 0 $space-3; padding: 0; font-family: $font-heading; font-weight: 600; font-size: 1.05rem; color: $navy; }
+    &__grid { display: grid; gap: $space-4; grid-template-columns: repeat(auto-fill, minmax(#{'min(100%, 16.5rem)'}, 1fr)); }
+    &__card { position: relative; display: flex; flex-direction: column; gap: $space-2; min-width: 0; }
+    &__radio { @include visually-hidden; }
+    &__label {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: $space-2;
+        flex: 1;
+        padding: $space-4;
+        background: $white;
+        border: 2px solid $border;
+        border-radius: $radius-lg;
+        cursor: pointer;
+        transition: border-color $t-fast ease, box-shadow $t-fast ease, transform $t-fast ease;
+        &:hover { border-color: $border-strong; box-shadow: $shadow; }
+    }
+    &__radio:focus-visible + &__label { @include focus-ring; }
+    &__radio:checked + &__label { border-color: $orange-dark; box-shadow: 0 0 0 3px rgba($orange-dark, 0.18), $shadow; background: #FFFCF8; }
+    &__icon { display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: $tint-cool; color: $navy; .icon { width: 1.35rem; height: 1.35rem; } }
+    &__radio:checked + &__label &__icon { background: $orange-dark; color: $white; }
+    &__name { font-family: $font-heading; font-weight: 600; font-size: 1.02rem; color: $navy; line-height: 1.25; }
+    &__text { color: $ink-soft; font-size: $fs-sm; line-height: 1.5; }
+    &__meta { display: flex; flex-wrap: wrap; gap: $space-2; margin-top: auto; padding-top: $space-2; font-size: $fs-xs; color: $ink-soft; font-weight: 600; }
+    &__tag { padding: 0 0.55rem; border-radius: $radius-pill; background: $tint-cool; color: $navy; }
+    &__tick {
+        position: absolute;
+        top: $space-3;
+        right: $space-3;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.7rem;
+        height: 1.7rem;
+        border-radius: 50%;
+        background: $orange-dark;
+        color: $white;
+        opacity: 0;
+        transform: scale(0.6);
+        transition: opacity $t-fast ease, transform $t-fast ease;
+        .icon { width: 1rem; height: 1rem; }
+    }
+    &__radio:checked + &__label &__tick { opacity: 1; transform: none; }
+    &__copy-select { max-width: none; }
+
+    &__bar {
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: $space-4;
+        padding: $space-4;
+        background: rgba($white, 0.97);
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: 0 -6px 20px rgba($navy-dark, 0.08);
+        backdrop-filter: blur(6px);
+    }
+    &__name-field { flex: 1 1 18rem; min-width: 0; }
+}
+
+// =====================================================================================================================
+// 2. The builder
+// =====================================================================================================================
+.admin-forms--builder { margin: 0; }
+.admin-content:has(.form-builder) { max-width: none; }
+
+.form-builder {
+    --fb-bar-h: 64px;
+    position: relative;
+    min-width: 0;
+    color: $ink;
+    [hidden] { display: none !important; }
+    .icon { vertical-align: middle; }
+    .input, .select, .textarea { width: 100%; max-width: 100%; }
+    .textarea { min-height: 0; resize: vertical; }
+    .input::placeholder, .textarea::placeholder { color: $fb-ink-faint; opacity: 1; }
+    .btn--cta { background: $cta; color: $white; border-color: $cta; &:hover { background: $cta-hover; border-color: $cta-hover; color: $white; } }
+    .btn--danger { background: $danger; border-color: $danger; color: $white; &:hover { background: darken($danger, 8%); border-color: darken($danger, 8%); color: $white; } }
+    .btn .icon { margin: 0; }
+    :focus-visible { outline: 3px solid $orange-dark; outline-offset: 2px; }
+
+    // ---- loading -------------------------------------------------------------------------------------------------
+    .fb-loading { max-width: 30rem; margin: $space-8 auto; padding: $space-6; text-align: center; background: $white; border: 1px solid $border; border-radius: $radius-lg; box-shadow: $shadow-sm; }
+    .fb-loading__title { font-family: $font-heading; font-weight: 600; font-size: 1.2rem; color: $navy; margin-bottom: $space-2; }
+    .fb-loading__text { color: $ink-soft; }
+    .fb-muted { color: $ink-soft; font-size: $fs-sm; }
+    .fb-only-compact { display: none; }
+    &[data-layout='compact'] .fb-only-compact { display: inline-flex; }
+}
+
+// ---- icon buttons ----------------------------------------------------------------------------------------------------
+.form-builder, .fb-dialog {
+    .fb-iconbtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 2.5rem;
+        height: 2.5rem;
+        padding: 0;
+        border: 1px solid transparent;
+        border-radius: $radius;
+        background: transparent;
+        color: $navy;
+        cursor: pointer;
+        transition: background-color $t-fast ease, border-color $t-fast ease, color $t-fast ease;
+        &:hover { background: $tint-cool; border-color: $border; }
+        &[disabled] { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+        &--sm { width: 2.25rem; height: 2.25rem; border-radius: $radius-sm; }
+        &--xs { width: 1.65rem; height: 1.65rem; border-radius: 6px; }
+        @media (pointer: coarse) { width: 2.75rem; height: 2.75rem; &--sm { width: 2.75rem; height: 2.75rem; } &--xs { width: 2.25rem; height: 1.9rem; } }
+    }
+}
+
+// =====================================================================================================================
+// 3. The top bar (name, status, tabs, save state, tools, primary action)
+// =====================================================================================================================
+.form-builder {
+    .fb-bar {
+        position: relative;
+        z-index: 20;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $space-2 $space-4;
+        padding: $space-2 $space-3;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+        min-height: 3.5rem;
+        @include respond(md) { position: sticky; top: calc(#{$fb-top} + 0.5rem); }
+    }
+    .fb-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        min-height: 2.5rem;
+        padding: 0 $space-2;
+        border-radius: $radius;
+        color: $ink-soft;
+        font-weight: 600;
+        font-size: $fs-sm;
+        text-decoration: none;
+        &:hover { background: $tint-cool; color: $navy; text-decoration: none; }
+    }
+    .fb-title {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: $space-2;
+        flex: 1 1 15rem;
+        min-width: 0;
+        max-width: 34rem;
+    }
+    .fb-title__input {
+        flex: 1;
+        min-width: 0;
+        height: 2.5rem;
+        padding: 0 $space-3;
+        border: 1px solid transparent;
+        border-radius: $radius;
+        background: transparent;
+        font-family: $font-heading;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: $navy;
+        text-overflow: ellipsis;
+        &:hover { border-color: $border; background: #FBFAF8; }
+        &:focus { border-color: $navy; background: $white; outline: 0; box-shadow: 0 0 0 3px rgba($navy, 0.14); }
+        &::placeholder { color: $fb-ink-faint; font-weight: 500; }
+    }
+    .fb-statusbtn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex: none;
+        height: 2.1rem;
+        padding: 0 0.6rem 0 0.7rem;
+        border: 1px solid $border-strong;
+        border-radius: $radius-pill;
+        background: $white;
+        color: $navy;
+        font-size: $fs-xs;
+        font-weight: 700;
+        cursor: pointer;
+        &:hover { background: $tint-cool; }
+        &__dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: $ink-soft; }
+        &[data-status='draft'] { background: $warning-bg; border-color: #E8D3A0; color: $warning; .fb-statusbtn__dot { background: $gold-deep; } }
+        &[data-status='published'] { background: $success-bg; border-color: #B7DFC6; color: $success; .fb-statusbtn__dot { background: $success; } }
+        &[data-status='closed'] { background: $surface-alt; color: $ink-soft; .fb-statusbtn__dot { background: $ink-soft; } }
+        &[data-status='archived'] { background: $surface-alt; color: $ink-soft; .fb-statusbtn__dot { background: $border-strong; } }
+    }
+
+    .fb-tabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: $radius; background: $surface-alt; }
+    .fb-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        height: 2.25rem;
+        padding: 0 $space-3;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        color: $ink-soft;
+        font: inherit;
+        font-size: $fs-sm;
+        font-weight: 600;
+        cursor: pointer;
+        &:hover { color: $navy; }
+        &[aria-selected='true'] { background: $white; color: $navy; box-shadow: $shadow-sm; }
+        &__count { min-width: 1.35rem; padding: 0 0.4rem; border-radius: $radius-pill; background: $tint-cool; color: $navy; font-size: 0.72rem; font-weight: 700; line-height: 1.35rem; text-align: center; &--bad { background: $danger; color: $white; } }
+    }
+
+    .fb-bar__right { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; margin-left: auto; }
+    .fb-bar__tools { display: inline-flex; }
+    .fb-primary { display: inline-flex; }
+    .fb-primary .btn, .fb-bar .btn { white-space: nowrap; }
+
+    .fb-save {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        max-width: 15rem;
+        font-size: $fs-xs;
+        font-weight: 600;
+        color: $ink-soft;
+        &__dot { flex: none; width: 0.6rem; height: 0.6rem; border-radius: 50%; background: $success; }
+        &__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        &[data-tone='busy'] .fb-save__dot { background: $info; animation: fb-pulse 1s ease-in-out infinite; }
+        &[data-tone='warn'] { color: $warning; .fb-save__dot { background: $gold-deep; } }
+        &[data-tone='error'] { color: $danger; .fb-save__dot { background: $danger; } }
+    }
+
+    .fb-checkbtn {
+        &[data-level='error'] { border-color: $danger; color: $danger; &:hover { background: $danger; color: $white; } }
+        &[data-level='warn'] { border-color: $gold-deep; color: $warning; &:hover { background: $warning; color: $white; } }
+    }
+    .fb-count {
+        display: inline-block;
+        min-width: 1.3rem;
+        padding: 0 0.4rem;
+        border-radius: $radius-pill;
+        background: $warning;
+        color: $white;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.3rem;
+        text-align: center;
+        &[data-level='error'] { background: $danger; }
+    }
+    @include respond-down(lg) { .fb-btn-text { display: none; } }
+    &[data-cols='3'] .fb-btn-text, &[data-cols='2'] .fb-btn-text { display: none; }
+    @media (min-width: 1680px) { &[data-cols='3'] .fb-btn-text { display: inline; } }
+
+    // popup menu opened by the status button / the "..." button (appended right after its button)
+    .fb-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        z-index: $fb-z-menu;
+        min-width: 16rem;
+        padding: $space-1;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius;
+        box-shadow: $shadow-lg;
+    }
+    .fb-title .fb-menu { left: auto; right: 0; }
+    .fb-bar__right .fb-menu { right: 0; }
+    .fb-menu__sep { height: 1px; margin: $space-1 $space-2; background: $border; }
+    .fb-menu__item {
+        display: flex;
+        align-items: center;
+        gap: $space-3;
+        width: 100%;
+        min-height: 2.5rem;
+        padding: 0.45rem $space-3;
+        border: 0;
+        border-radius: $radius-sm;
+        background: none;
+        color: $ink;
+        font: inherit;
+        font-size: $fs-sm;
+        font-weight: 500;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+        .icon { color: $ink-soft; }
+        &:hover, &:focus-visible { background: $tint-cool; color: $navy; text-decoration: none; }
+        &[disabled] { opacity: 0.45; cursor: not-allowed; }
+        &--danger { color: $danger; .icon { color: $danger; } &:hover, &:focus-visible { background: $danger-bg; color: $danger; } }
+    }
+}
+// the "more" menu is anchored to the last button of the right group; the status menu to the title group
+@keyframes fb-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+// =====================================================================================================================
+// 4. Body: columns (wide) / one column + drawer (compact)
+// =====================================================================================================================
+.form-builder {
+    .fb-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-4; align-items: start; margin-top: $space-4; }
+    .fb-left, .fb-main { min-width: 0; }
+
+    // wide = the question settings + preview are docked on the right. 3 columns (palette | form | panel) from ~1040px of builder width,
+    // 2 columns (the palette becomes a strip above the form) from ~860px.
+    &[data-layout='wide'] {
+        .fb-body { grid-template-columns: minmax(0, 1fr) 22rem; grid-template-areas: 'left side' 'main side'; }
+        .fb-left { grid-area: left; }
+        .fb-main { grid-area: main; }
+        .fb-side {
+            grid-area: side;
+            position: sticky;
+            top: calc(#{$fb-top} + var(--fb-bar-h) + 1.25rem);
+            height: calc(100vh - #{$fb-top} - var(--fb-bar-h) - 2rem);
+        }
+        .fb-drawer-close, .fb-drawer-backdrop { display: none; }
+        &[data-cols='3'] {
+            .fb-body { grid-template-columns: 14.5rem minmax(0, 1fr) 23rem; grid-template-areas: 'left main side'; }
+            .fb-left {
+                position: sticky;
+                top: calc(#{$fb-top} + var(--fb-bar-h) + 1.25rem);
+                max-height: calc(100vh - #{$fb-top} - var(--fb-bar-h) - 2rem);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                padding-right: 2px;
+            }
+            .fb-palette__toggle { display: none; }
+            .fb-palette__inner { display: block !important; }
+            @media (min-width: 1680px) { .fb-body { grid-template-columns: 17rem minmax(0, 1fr) 27rem; } }
+        }
+    }
+    &[data-cols='3'] .fb-pal__help { display: none; }
+    @media (min-width: 1680px) { &[data-cols='3'] .fb-pal__help { display: block; } }
+    &:not([data-cols='3']) .fb-pal__help { display: none; }
+}
+
+// ---- right panel: question settings + live preview --------------------------------------------------------------------
+.form-builder {
+    .fb-side {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        background: $white;
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-sm;
+        overflow: hidden;
+    }
+    .fb-side__tabs { display: flex; align-items: center; gap: $space-1; padding: $space-2 $space-3 0; border-bottom: 1px solid $border; background: #FBFAF8; }
+    .fb-stab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        height: 2.6rem;
+        padding: 0 $space-3;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -1px;
+        background: transparent;
+        color: $ink-soft;
+        font: inherit;
+        font-size: $fs-sm;
+        font-weight: 600;
+        cursor: pointer;
+        &:hover { color: $navy; }
+        &[aria-selected='true'] { color: $navy; border-bottom-color: $orange-accent; }
+    }
+    .fb-drawer-close { margin-left: auto; margin-bottom: $space-1; }
+    .fb-side__tablist { display: flex; align-items: center; gap: $space-1; }
+    .fb-inspector, .fb-previewpane { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .fb-inspector { padding: 0 0 $space-5; }
+    .fb-previewpane { display: flex; flex-direction: column; gap: $space-3; padding: $space-3; }
+
+    // compact: the panel is a drawer from the right edge
+    &[data-layout='compact'] {
+        .fb-side {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            z-index: $fb-z-drawer;
+            width: #{'min(27rem, 100vw)'};
+            border-radius: $radius-lg 0 0 $radius-lg;
+            border-width: 0 0 0 1px;
+            box-shadow: $shadow-lg;
+            transform: translateX(104%);
+            visibility: hidden;
+            transition: transform $t-base $ease, visibility 0s linear $t-base;
+        }
+        &[data-drawer='open'] .fb-side { transform: none; visibility: visible; transition: transform $t-base $ease, visibility 0s; }
+        .fb-drawer-backdrop { position: fixed; inset: 0; z-index: $fb-z-drawer - 10; background: rgba($navy-dark, 0.45); }
+        .fb-side__tabs { padding-top: $space-3; }
+    }
+    @media (max-width: 575px) { &[data-layout='compact'] .fb-side { width: 100vw; border-radius: 0; } }
+}
+
+// =====================================================================================================================
+// 5. Left column: palette (questions) and settings navigation
+// =====================================================================================================================
+.form-builder {
+    .fb-palette { background: $white; border: 1px solid $border; border-radius: $radius-lg; box-shadow: $shadow-sm; overflow: hidden; }
+    .fb-palette__toggle {
+        display: flex;
+        align-items: center;
+        gap: $space-2;
+        width: 100%;
+        min-height: 3rem;
+        padding: 0 $space-4;
+        border: 0;
+        background: $white;
+        color: $navy;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        .fb-palette__chev { margin-left: auto; transition: transform $t-fast ease; }
+        &[aria-expanded='true'] .fb-palette__chev { transform: rotate(180deg); }
+        &:hover { background: $tint-cool; }
+    }
+    .fb-palette__inner { padding: $space-3; }
+    .fb-palette[data-open='0'] .fb-palette__inner { display: none; }
+    .fb-palette__title { font-size: 1rem; }
+    .fb-palette__hint { margin: $space-1 0 $space-3; color: $ink-soft; font-size: $fs-xs; line-height: 1.45; }
+    .fb-palette__group + .fb-palette__group { margin-top: $space-3; }
+    .fb-palette__label { margin: 0 0 $space-1; font-family: $font-body; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: $ink-soft; }
+    .fb-palette__list { display: grid; gap: 4px; list-style: none; margin: 0; padding: 0; }
+    .fb-pal {
+        display: flex;
+        align-items: center;
+        gap: $space-2;
+        width: 100%;
+        min-height: 2.6rem;
+        padding: 0.35rem 0.55rem;
+        border: 1px solid $border;
+        border-radius: $radius;
+        background: $white;
+        color: $navy;
+        font: inherit;
+        text-align: left;
+        cursor: grab;
+        transition: border-color $t-fast ease, background-color $t-fast ease, box-shadow $t-fast ease;
+        &:hover { border-color: $navy; background: #FBFAF8; box-shadow: $shadow-sm; }
+        &:active { cursor: grabbing; }
+        &__icon { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 2rem; height: 2rem; border-radius: 9px; background: $tint-cool; color: $navy; }
+        &__text { display: flex; flex-direction: column; min-width: 0; }
+        &__name { font-size: $fs-sm; font-weight: 600; line-height: 1.25; }
+        &__help { color: $ink-soft; font-size: 0.74rem; line-height: 1.3; font-weight: 400; }
+    }
+    &:not([data-cols='3']) .fb-palette__inner { padding: $space-3 $space-4 $space-4; }
+    &:not([data-cols='3']) .fb-palette__list { grid-template-columns: repeat(auto-fill, minmax(#{'min(100%, 12rem)'}, 1fr)); }
+    &:not([data-cols='3']) .fb-palette__group { padding-top: $space-1; }
+    &:not([data-cols='3']) .fb-palette__toggle { border-bottom: 1px solid transparent; }
+    &:not([data-cols='3']) .fb-palette[data-open='1'] .fb-palette__toggle { border-bottom-color: $border; }
+    &:not([data-cols='3']) .fb-palette__title, &:not([data-cols='3']) .fb-palette__hint { display: none; }
+    &:not([data-cols='3']) .fb-palette__hint { display: block; margin-top: 0; }
+    &.is-dragging-new .fb-canvas .fb-fields, &.is-dragging-field .fb-canvas .fb-fields { outline: 2px dashed rgba($orange-dark, 0.35); outline-offset: 4px; border-radius: $radius; }
+
+    // settings navigation
+    .fb-snav { background: $white; border: 1px solid $border; border-radius: $radius-lg; box-shadow: $shadow-sm; padding: $space-3; }
+    .fb-snav__title { padding: $space-1 $space-2 $space-2; font-size: 1rem; }
+    .fb-snav__list { display: grid; gap: 2px; list-style: none; margin: 0; padding: 0; }
+    .fb-snav__item {
+        display: flex;
+        align-items: center;
+        gap: $space-3;
+        width: 100%;
+        min-height: 2.9rem;
+        padding: 0.4rem $space-3;
+        border: 0;
+        border-radius: $radius;
+        background: transparent;
+        color: $navy;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        &:hover { background: $tint-cool; }
+        &.is-active { background: $navy; color: $white; .fb-snav__help { color: rgba($white, 0.78); } }
+        .fb-count { margin-left: auto; }
+    }
+    .fb-snav__text { display: flex; flex-direction: column; min-width: 0; }
+    .fb-snav__label { font-size: $fs-sm; font-weight: 600; line-height: 1.25; }
+    .fb-snav__help { font-size: 0.72rem; color: $ink-soft; line-height: 1.3; }
+    &:not([data-cols='3']) .fb-snav { padding: $space-2; }
+    &:not([data-cols='3']) .fb-snav__title, &:not([data-cols='3']) .fb-snav__help { display: none; }
+    &:not([data-cols='3']) .fb-snav__list { display: flex; gap: $space-1; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+    &:not([data-cols='3']) .fb-snav__item { width: auto; white-space: nowrap; min-height: 2.6rem; flex: none; }
+    &[data-cols='2'] .fb-snav__list { flex-wrap: wrap; overflow: visible; }
+}
+
+// =====================================================================================================================
+// 6. Canvas: pages, question cards
+// =====================================================================================================================
+.form-builder {
+    .fb-canvas { display: grid; gap: $space-4; min-width: 0; }
+    .fb-global-issues:empty { display: none; }
+    .fb-global-issues { display: grid; gap: $space-2; }
+
+    .fb-page {
+        min-width: 0;
+        padding: $space-3 $space-3 $space-4;
+        background: rgba($white, 0.65);
+        border: 1px solid $border;
+        border-radius: $radius-lg;
+        transition: border-color $t-fast ease, box-shadow $t-fast ease;
+        &.is-selected { border-color: $orange-dark; box-shadow: 0 0 0 3px rgba($orange-dark, 0.14); }
+    }
+    .fb-page__head { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-3; padding: 0 $space-1 $space-3; }
+    .fb-page__num { flex: none; padding: 0.15rem 0.7rem; border-radius: $radius-pill; background: $navy; color: $white; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; }
+    .fb-page__title {
+        flex: 1 1 12rem;
+        min-width: 0;
+        height: 2.5rem;
+        padding: 0 $space-3;
+        border: 1px solid transparent;
+        border-radius: $radius;
+        background: transparent;
+        font-family: $font-heading;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: $navy;
+        &:hover { border-color: $border; background: $white; }
+        &:focus { border-color: $navy; background: $white; outline: 0; box-shadow: 0 0 0 3px rgba($navy, 0.14); }
+        &::placeholder { color: $fb-ink-faint; font-weight: 500; }
+    }
+    .fb-page__actions { display: inline-flex; flex-wrap: wrap; margin-left: auto; }
+    .fb-page__issues:empty { display: none; }
+    .fb-page__issues { padding: 0 $space-1 $space-2; display: grid; gap: $space-1; }
+    .fb-page__foot { display: flex; justify-content: center; padding-top: $space-3; }
+    .fb-page__add {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        min-height: 2.5rem;
+        padding: 0 $space-4;
+        border: 1.5px dashed $border-strong;
+        border-radius: $radius-pill;
+        background: $white;
+        color: $navy;
+        font: inherit;
+        font-size: $fs-sm;
+        font-weight: 600;
+        cursor: pointer;
+        &:hover, &.is-active { border-color: $orange-dark; color: $orange-text; background: #FFF8F0; border-style: solid; }
+    }
+
+    // the questions: a 6-column grid, so "half" and "one third" sit side by side
+    .fb-fields { position: relative; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: $space-3; min-height: 3rem; align-items: stretch; }
+    .fb-empty {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: $space-2;
+        padding: $space-6 $space-4;
+        border: 2px dashed $border-strong;
+        border-radius: $radius;
+        background: $white;
+        color: $ink-soft;
+        text-align: center;
+        p { margin: 0; max-width: 28rem; }
+    }
+    .fb-drop {
+        grid-column: 1 / -1;
+        height: 6px;
+        margin: -3px 0;
+        border-radius: 3px;
+        background: $orange-dark;
+        box-shadow: 0 0 0 3px rgba($orange-dark, 0.2);
+        pointer-events: none;
+    }
+
+    .fb-card {
+        grid-column: span 6;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        background: $white;
+        border: 1.5px solid $border;
+        border-radius: $radius;
+        box-shadow: $shadow-sm;
+        cursor: pointer;
+        transition: border-color $t-fast ease, box-shadow $t-fast ease, opacity $t-fast ease;
+        &--half { grid-column: span 3; }
+        &--third { grid-column: span 2; }
+        &:hover { border-color: $border-strong; }
+        &.is-selected { border-color: $orange-dark; box-shadow: 0 0 0 3px rgba($orange-dark, 0.18), $shadow; }
+        &.has-warning { border-left: 5px solid $gold-deep; }
+        &.has-error { border-left: 5px solid $danger; }
+        &.is-dragging { opacity: 0.4; }
+        &:focus-visible { outline: 3px solid $orange-dark; outline-offset: 2px; }
+        &--layout { background: #FBFAF8; }
+    }
+    @media (max-width: 639px) { .fb-card--half, .fb-card--third { grid-column: span 6; } }
+
+    .fb-card__bar { display: flex; flex-wrap: wrap; align-items: center; gap: $space-1 $space-2; padding: 0.3rem 0.4rem 0.3rem 0.2rem; border-bottom: 1px solid $border; }
+    .fb-handle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.8rem;
+        height: 2rem;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: $ink-soft;
+        cursor: grab;
+        &:active { cursor: grabbing; }
+    }
+    .fb-card__type { display: inline-flex; align-items: center; gap: 0.4rem; color: $ink-soft; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .fb-card__num { padding: 0 0.45rem; border-radius: $radius-pill; background: $tint-cool; color: $navy; font-size: 0.72rem; font-weight: 700; line-height: 1.35rem; }
+    .fb-card__actions { display: inline-flex; margin-left: auto; opacity: 0.85; }
+    .fb-card:hover .fb-card__actions, .fb-card.is-selected .fb-card__actions, .fb-card:focus-within .fb-card__actions { opacity: 1; }
+    .fb-card__actions .fb-iconbtn { width: 2rem; height: 2rem; @media (pointer: coarse) { width: 2.5rem; height: 2.5rem; } }
+    // narrow cards (half / third): the drawing already shows the width, the label shows the star, so keep the bar short
+    .fb-card--half, .fb-card--third { .fb-card__type span:last-child, .fb-chip--w, .fb-chip--req { display: none; } }
+    .fb-card--half .fb-card__bar, .fb-card--third .fb-card__bar { flex-wrap: nowrap; .fb-card__actions { flex: none; } }
+    .fb-card--third .fb-card__bar { flex-wrap: wrap; .fb-card__actions { flex: 1 1 100%; justify-content: flex-end; margin-left: 0; } }
+    @media (max-width: 640px) { .fb-card--half .fb-card__bar { flex-wrap: wrap; } }
+    .fb-card__body { display: grid; gap: $space-2; padding: $space-3 $space-4 $space-4; min-width: 0; }
+    .fb-card__label { font-weight: 600; color: $navy; font-size: 1rem; line-height: 1.35; overflow-wrap: anywhere; }
+    .fb-card__heading { font-family: $font-heading; font-weight: 600; font-size: 1.3rem; line-height: 1.25; color: $navy; overflow-wrap: anywhere; }
+    .fb-card__para { color: $ink; white-space: pre-line; overflow-wrap: anywhere; }
+    .fb-card__help { color: $ink-soft; font-size: $fs-sm; overflow-wrap: anywhere; }
+    .fb-card__empty { color: $fb-ink-faint; font-style: italic; font-weight: 400; }
+    .fb-card__hr { margin: $space-2 0; border: 0; border-top: 2px solid $border-strong; }
+    .fb-card__issues:empty { display: none; }
+    .fb-card__issues { display: grid; gap: $space-1; padding: 0 $space-3 $space-3; }
+    .fb-req { color: $danger; font-weight: 700; }
+
+    .fb-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.05rem 0.55rem;
+        border-radius: $radius-pill;
+        background: $surface-alt;
+        color: $navy;
+        font-size: 0.72rem;
+        font-weight: 700;
+        &--req { background: $danger-bg; color: $danger; }
+        &--logic { background: $info-bg; color: $info; }
+    }
+    .fb-issue {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-2;
+        margin: 0;
+        padding: 0.4rem 0.65rem;
+        border-radius: $radius-sm;
+        font-size: $fs-xs;
+        font-weight: 600;
+        line-height: 1.4;
+        .icon { margin-top: 0.1rem; flex: none; }
+        &--error { background: $danger-bg; color: $danger; }
+        &--warning { background: $warning-bg; color: $warning; }
+    }
+
+    // a drawing of the answer box so the canvas looks like the real form
+    .fb-mock { color: $fb-ink-faint; font-size: $fs-sm; }
+    .fb-mock--line, .fb-mock--area, .fb-mock--file, .fb-mock--yn span {
+        display: flex;
+        align-items: center;
+        gap: $space-2;
+        min-height: 2.4rem;
+        padding: 0.4rem 0.75rem;
+        border: 1px solid $border-strong;
+        border-radius: 10px;
+        background: #FBFAF8;
+    }
+    .fb-mock--select { justify-content: space-between; }
+    .fb-mock--area { align-items: flex-start; min-height: 4.5rem; }
+    .fb-mock__ph { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fb-mock--file { border-style: dashed; color: $ink-soft; }
+    .fb-mock--opts { display: grid; gap: $space-1; list-style: none; margin: 0; padding: 0; li { display: flex; align-items: center; gap: $space-2; color: $ink; min-width: 0; overflow-wrap: anywhere; } }
+    .fb-mock__box { flex: none; width: 1.05rem; height: 1.05rem; border: 2px solid $border-strong; border-radius: 4px; background: $white; }
+    .fb-mock--radio .fb-mock__box { border-radius: 50%; }
+    .fb-mock__more { color: $ink-soft !important; font-style: italic; }
+    .fb-mock--yn { display: flex; gap: $space-2; span { min-width: 4.5rem; justify-content: center; color: $navy; font-weight: 600; } }
+    .fb-mock--stars { display: flex; gap: 2px; color: $gold-deep; .icon { width: 1.4rem; height: 1.4rem; } }
+    .fb-mock--consent { display: flex; align-items: flex-start; gap: $space-3; .fb-mock__box { margin-top: 0.2rem; } }
+
+    .fb-canvas__foot { display: grid; gap: $space-2; justify-items: start; padding: $space-1 $space-2 $space-4; }
+    .fb-canvas__hint { margin: 0; color: $ink-soft; font-size: $fs-xs; }
+}
+
+// =====================================================================================================================
+// 7. Question / page settings panel (inspector)
+// =====================================================================================================================
+.form-builder {
+    .fb-insp-empty { display: grid; justify-items: center; gap: $space-2; padding: $space-7 $space-5; text-align: center; color: $ink-soft; }
+    .fb-insp-empty__icon { display: inline-flex; align-items: center; justify-content: center; width: 3.2rem; height: 3.2rem; border-radius: 50%; background: $tint-cool; color: $navy; }
+    .fb-insp-empty h2 { font-size: 1.1rem; }
+    .fb-insp-empty p { margin: 0; max-width: 18rem; font-size: $fs-sm; }
+
+    .fb-insp__head { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: $space-2; padding: $space-3 $space-4; background: rgba($white, 0.97); border-bottom: 1px solid $border; backdrop-filter: blur(6px); }
+    .fb-insp__type { display: flex; align-items: center; gap: $space-3; min-width: 0; strong, .fb-insp__name { margin: 0; display: block; color: $navy; font-family: $font-heading; font-size: 0.98rem; line-height: 1.2; } }
+    .fb-insp__icon { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 2.25rem; height: 2.25rem; border-radius: 10px; background: $tint-cool; color: $navy; }
+    .fb-insp__pos { display: block; color: $ink-soft; font-size: $fs-xs; }
+    .fb-insp__actions { display: inline-flex; }
+
+    .fb-sec { border-bottom: 1px solid $border; }
+    .fb-sec__title {
+        display: flex;
+        align-items: center;
+        gap: $space-2;
+        min-height: 3rem;
+        padding: 0 $space-4;
+        list-style: none;
+        cursor: pointer;
+        color: $navy;
+        font-family: $font-heading;
+        font-size: 0.92rem;
+        font-weight: 600;
+        &::-webkit-details-marker { display: none; }
+        &:hover { background: #FBFAF8; }
+        > span:first-child { flex: 1; }
+    }
+    .fb-sec__badge { padding: 0 0.5rem; border-radius: $radius-pill; background: $tint-cool; color: $navy; font-size: 0.72rem; font-weight: 700; line-height: 1.35rem; }
+    .fb-sec__chev { color: $ink-soft; transition: transform $t-fast ease; }
+    .fb-sec[open] > .fb-sec__title .fb-sec__chev { transform: rotate(180deg); }
+    .fb-sec__body { display: grid; gap: $space-4; padding: $space-1 $space-4 $space-5; }
+}
+
+// ---- controls (shared by the panel and the form settings) ------------------------------------------------------
+.form-builder {
+    .fb-stack { display: grid; gap: $space-4; min-width: 0; }
+    .fb-field { display: grid; gap: 0.3rem; min-width: 0; }
+    .fb-field__label { margin: 0; padding: 0; font-size: 0.86rem; font-weight: 600; color: $navy; }
+    .fb-opt { color: $ink-soft; font-weight: 400; }
+    .fb-field__help { margin: 0; color: $ink-soft; font-size: 0.8rem; line-height: 1.45; overflow-wrap: anywhere; code { font-size: 0.95em; word-break: break-all; } }
+    .fb-field__help--warn { color: $warning; font-weight: 600; }
+    .fb-field__error, .fb-field__error-static { margin: 0; color: $danger; font-size: 0.82rem; font-weight: 600; &::before { content: '! '; font-weight: 800; } }
+    .fb-field__error:empty { display: none; }
+    [aria-invalid='true'] { border-color: $danger !important; box-shadow: 0 0 0 3px rgba($danger, 0.14); }
+    .fb-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-3; }
+    .fb-btnrow { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; }
+    .fb-switch { display: grid; gap: 0.3rem; }
+    .fb-switch .switch { align-items: flex-start; }
+    .fb-switch .switch__text { font-size: 0.9rem; line-height: 1.35; }
+    .fb-switch .switch__track { margin-top: 1px; }
+
+    // segmented choice (radio group drawn as buttons)
+    .fb-seg { display: grid; gap: 0.35rem; min-width: 0; border: 0; margin: 0; padding: 0; }
+    .fb-seg__row { display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: $radius; background: $surface-alt; }
+    .fb-seg__opt {
+        position: relative;
+        flex: 1 1 auto;
+        input { @include visually-hidden; }
+        label { display: flex; align-items: center; justify-content: center; min-height: 2.25rem; padding: 0.25rem 0.7rem; border-radius: 9px; color: $ink-soft; font-size: $fs-xs; font-weight: 700; text-align: center; cursor: pointer; }
+        label:hover { color: $navy; }
+        input:checked + label { background: $white; color: $navy; box-shadow: $shadow-sm, inset 0 -3px 0 $orange-accent; }
+        input:focus-visible + label { outline: 3px solid $orange-dark; outline-offset: 1px; }
+    }
+
+    .fb-checks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px $space-3; }
+    .fb-check { display: flex; align-items: center; gap: $space-2; min-height: 2.25rem; font-size: $fs-sm; cursor: pointer; overflow-wrap: anywhere; input { width: 1.1rem; height: 1.1rem; accent-color: $navy; flex: none; } }
+
+    .fb-prefix { display: flex; align-items: stretch; min-width: 0; .input { border-radius: 0 $radius $radius 0; } }
+    .fb-prefix__text { display: inline-flex; align-items: center; padding: 0 $space-3; border: 1px solid $border-strong; border-right: 0; border-radius: $radius 0 0 $radius; background: $surface-alt; color: $ink-soft; font-size: $fs-sm; font-weight: 600; }
+    .fb-url { display: inline; word-break: break-all; }
+
+    .fb-note { display: flex; gap: $space-3; padding: $space-3 $space-4; border-radius: $radius; background: $info-bg; color: darken($info, 8%); font-size: $fs-sm; .icon { flex: none; margin-top: 0.2rem; } p { margin: 0; } &--warn { background: $warning-bg; color: $warning; } }
+    .fb-bullets { margin: $space-2 0 0; padding-left: 1.2rem; display: grid; gap: $space-2; }
+    .fb-copyrow { display: flex; gap: $space-2; align-items: stretch; .input { flex: 1; min-width: 0; font-family: $font-mono; font-size: $fs-xs; } }
+
+    // answer choices
+    .fb-opts { display: grid; gap: $space-3; }
+    .fb-opts__list { display: grid; gap: 6px; list-style: none; margin: 0; padding: 0; }
+    .fb-opts__row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: $space-1; }
+    .fb-opts__order { display: grid; gap: 0; }
+    .fb-opts__paste { display: grid; gap: $space-2; padding: $space-3; border: 1px dashed $border-strong; border-radius: $radius; background: #FBFAF8; }
+    .fb-opts__other { display: grid; gap: $space-3; padding-top: $space-2; border-top: 1px solid $border; }
+
+    // conditions
+    .fb-cond { display: grid; gap: $space-3; }
+    .fb-cond__lead { margin: 0; font-size: 0.86rem; font-weight: 700; color: $navy; }
+    .fb-cond__join { margin: 0; justify-self: start; padding: 0 0.7rem; border-radius: $radius-pill; background: $navy; color: $white; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.5rem; }
+    .fb-rule { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: $space-1; align-items: start; padding: $space-3; border: 1px solid $border; border-radius: $radius; background: #FBFAF8; }
+    .fb-rule__fields { display: grid; gap: $space-2; min-width: 0; }
+}
+
+// =====================================================================================================================
+// 8. Form settings workspace
+// =====================================================================================================================
+.form-builder {
+    .fb-settings { min-width: 0; }
+    .fb-set { max-width: 46rem; padding: $space-5; background: $white; border: 1px solid $border; border-radius: $radius-lg; box-shadow: $shadow-sm; display: grid; gap: $space-4; }
+    .fb-set__title { font-size: 1.35rem; &:focus { outline: 0; } }
+    .fb-set__lead { margin: (-$space-3) 0 0; color: $ink-soft; }
+    .fb-set__sub { margin-top: $space-3; padding-top: $space-4; border-top: 1px solid $border; font-size: 1.02rem; }
+
+    .fb-swatches { display: flex; flex-wrap: wrap; gap: $space-2; }
+    .fb-swatch {
+        input { @include visually-hidden; }
+        label { display: inline-flex; align-items: center; gap: $space-2; min-height: 2.6rem; padding: 0 $space-4 0 $space-3; border: 2px solid $border; border-radius: $radius-pill; background: $white; color: $navy; font-size: $fs-sm; font-weight: 600; cursor: pointer; }
+        label:hover { border-color: $border-strong; }
+        input:checked + label { border-color: $navy; box-shadow: 0 0 0 3px rgba($navy, 0.14); }
+        input:focus-visible + label { outline: 3px solid $orange-dark; outline-offset: 2px; }
+        &__dot { display: inline-block; width: 1.15rem; height: 1.15rem; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba($navy-dark, 0.25); }
+    }
+    .fb-labels { display: grid; gap: $space-3; }
+    .fb-labels__row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: $space-3; align-items: center; }
+    .fb-labels__name { font-weight: 600; color: $navy; font-size: $fs-sm; }
+    .fb-tokens { display: flex; flex-wrap: wrap; gap: $space-1; }
+    .fb-token { padding: 0.15rem 0.6rem; border: 1px solid $border-strong; border-radius: $radius-pill; background: $white; color: $navy; font-family: $font-mono; font-size: 0.78rem; cursor: pointer; &:hover { background: $navy; border-color: $navy; color: $white; } }
+}
+
+// =====================================================================================================================
+// 9. Live preview, test submit
+// =====================================================================================================================
+.form-builder, .fb-dialog {
+    .fb-pv__head { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; }
+    .fb-pv__tools { display: inline-flex; margin-left: auto; }
+    .fb-pv__busy { color: $ink-soft; font-size: $fs-xs; font-weight: 600; }
+    .fb-pv__msg { margin: 0; padding: $space-3; border-radius: $radius; background: $warning-bg; color: $warning; font-size: $fs-sm; font-weight: 600; }
+    .fb-devs { display: inline-flex; gap: 3px; padding: 3px; border-radius: $radius; background: $surface-alt; }
+    .fb-devbtn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        height: 2.15rem;
+        padding: 0 0.7rem;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        color: $ink-soft;
+        font: inherit;
+        font-size: $fs-xs;
+        font-weight: 700;
+        cursor: pointer;
+        &:hover { color: $navy; }
+        &[aria-pressed='true'] { background: $white; color: $navy; box-shadow: $shadow-sm; }
+    }
+    .fb-pv { flex: 1 0 20rem; position: relative; min-height: 20rem; overflow: hidden; border: 1px solid $border; border-radius: $radius; background: $tint-cool; }
+    .fb-pv__stage { position: relative; margin: 0 auto; overflow: hidden; background: $white; box-shadow: 0 0 0 1px $border; }
+    .fb-pv__frame { display: block; border: 0; background: $white; transform-origin: 0 0; max-width: none; }
+    .fb-bigpv { display: grid; gap: $space-3; .fb-pv { height: 58vh; min-height: 22rem; } }
+
+    .fb-test { display: grid; gap: $space-2; padding: $space-3; border: 1px solid $border; border-radius: $radius; background: #FBFAF8; justify-items: start; }
+    .fb-test__head { strong { display: block; color: $navy; font-size: $fs-sm; } p { margin: 0; color: $ink-soft; font-size: $fs-xs; } }
+    .fb-test__out { width: 100%; max-height: 14rem; overflow-y: auto; }
+    .fb-test__out:empty { display: none; }
+    .fb-test__ok, .fb-test__bad { display: flex; gap: $space-3; align-items: flex-start; padding: $space-3; border-radius: $radius; strong { display: block; } p { margin: 0; font-size: $fs-xs; } .icon { flex: none; margin-top: 0.15rem; } }
+    .fb-test__ok { background: $success-bg; color: $success; }
+    .fb-test__bad { background: $danger-bg; color: $danger; }
+    .fb-test__answers { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: $space-2 0 0; dt { margin-top: $space-2; color: $ink-soft; font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; } dd { margin: 0; overflow-wrap: anywhere; font-size: $fs-sm; } }
+    .fb-test__errors { display: grid; gap: $space-2; margin: $space-2 0 0; padding: 0; list-style: none; li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-2; padding: $space-2 $space-3; border-left: 4px solid $danger; background: $white; border-radius: $radius-sm; font-size: $fs-sm; } }
+}
+
+// =====================================================================================================================
+// 10. Dialogs, checklist, toasts
+// =====================================================================================================================
+.fb-dialog {
+    width: #{'min(34rem, calc(100vw - 2rem))'};
+    max-height: calc(100vh - 2rem);
+    padding: 0;
+    border: 0;
+    border-radius: $radius-lg;
+    background: $white;
+    color: $ink;
+    box-shadow: $shadow-lg;
+    overflow: hidden;
+    &[open] { display: flex; flex-direction: column; }
+    &::backdrop { background: rgba($navy-dark, 0.55); }
+    &--wide { width: #{'min(46rem, calc(100vw - 2rem))'}; }
+    &--preview { width: #{'min(70rem, calc(100vw - 2rem))'}; }
+    :focus-visible { outline: 3px solid $orange-dark; outline-offset: 2px; }
+    .btn--cta { background: $cta; color: $white; border-color: $cta; &:hover { background: $cta-hover; border-color: $cta-hover; color: $white; } }
+    .btn--danger { background: $danger; border-color: $danger; color: $white; &:hover { background: darken($danger, 8%); color: $white; } }
+    .btn--primary { background: $navy; color: $white; &:hover { background: $navy-dark; color: $white; } }
+    .btn--outline { border: 1.5px solid $border-strong; color: $navy; background: transparent; &:hover { background: $navy; border-color: $navy; color: $white; } }
+    .btn--ghost { background: transparent; color: $ink-soft; &:hover { background: $surface-alt; color: $navy; } }
+    .input, .select, .textarea { width: 100%; }
+    .fb-muted { color: $ink-soft; font-size: $fs-sm; }
+
+    &__head { display: flex; align-items: center; justify-content: space-between; gap: $space-3; padding: $space-3 $space-3 $space-3 $space-5; border-bottom: 1px solid $border; }
+    &__title { margin: 0; font-family: $font-heading; font-size: 1.15rem; color: $navy; line-height: 1.25; }
+    &__body { flex: 1 1 auto; overflow-y: auto; padding: $space-5; }
+    &__text { display: grid; gap: $space-3; p { margin: 0; } }
+    &__foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: $space-2; padding: $space-3 $space-5; border-top: 1px solid $border; background: #FBFAF8; }
+    @include respond-down(sm) { &__foot .btn { flex: 1 1 auto; } &__body { padding: $space-4; } }
+
+    .fb-bullets { margin: $space-2 0 0; padding-left: 1.2rem; display: grid; gap: $space-2; }
+    .fb-set__sub { margin: $space-4 0 $space-2; font-size: 1.02rem; }
+    .fb-set__sub:first-child { margin-top: 0; }
+    .fb-field__help { margin: 0 0 $space-2; color: $ink-soft; font-size: 0.82rem; }
+    .fb-copyrow { display: flex; gap: $space-2; .input { flex: 1; min-width: 0; font-family: $font-mono; font-size: $fs-xs; } }
+
+    .fb-checklist { display: grid; gap: $space-2; }
+    .fb-ck__list { display: grid; gap: $space-2; margin: 0; padding: 0; list-style: none; }
+    .fb-ck {
+        display: flex;
+        align-items: center;
+        gap: $space-3;
+        padding: $space-3;
+        border-radius: $radius;
+        border-left: 5px solid transparent;
+        .icon { flex: none; }
+        &__text { flex: 1; min-width: 0; font-size: $fs-sm; font-weight: 500; overflow-wrap: anywhere; }
+        &--error { background: $danger-bg; border-left-color: $danger; color: $danger; .fb-ck__text { color: $ink; } }
+        &--warn { background: $warning-bg; border-left-color: $gold-deep; color: $warning; .fb-ck__text { color: $ink; } }
+    }
+    @include respond-down(sm) { .fb-ck { flex-wrap: wrap; } }
+
+    .fb-keys { width: 100%; border-collapse: collapse; th, td { padding: $space-2 $space-2; border-bottom: 1px solid $border; text-align: left; vertical-align: top; font-size: $fs-sm; } th { width: 45%; font-weight: 600; } kbd { background: $surface-alt; border: 1px solid $border-strong; border-bottom-width: 2px; border-radius: 6px; padding: 0.1rem 0.45rem; white-space: nowrap; } }
+    .fb-test__ok, .fb-test__bad { display: flex; gap: $space-3; align-items: flex-start; padding: $space-3; border-radius: $radius; strong { display: block; } p { margin: 0; font-size: $fs-xs; } }
+    .fb-test__ok { background: $success-bg; color: $success; }
+    .fb-test__bad { background: $danger-bg; color: $danger; }
+}
+
+.fb-toasts { position: fixed; left: 50%; bottom: $space-5; z-index: $z-toast; display: grid; gap: $space-2; width: #{'min(30rem, calc(100vw - 2rem))'}; transform: translateX(-50%); pointer-events: none; }
+.fb-toast {
+    padding: 0.75rem 1rem;
+    border-radius: $radius;
+    border-left: 5px solid $info;
+    background: $navy-dark;
+    color: $white;
+    font-size: $fs-sm;
+    font-weight: 500;
+    box-shadow: $shadow-lg;
+    animation: fb-toast-in $t-base $ease;
+    &--success { border-left-color: #55C07F; }
+    &--error { border-left-color: #FF8A7E; }
+    &--warn { border-left-color: $gold; }
+}
+@keyframes fb-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+// ---- small screens: the bar stacks, controls get roomy ---------------------------------------------------------------------
+@include respond-down(md) {
+    .form-builder {
+        .fb-bar { gap: $space-2; padding: $space-2; }
+        .fb-title { flex: 1 1 100%; max-width: none; order: 1; }
+        .fb-back { order: 0; }
+        .fb-tabs { order: 2; flex: 1 1 auto; }
+        .fb-tab { flex: 1; justify-content: center; }
+        .fb-bar__right { order: 3; flex: 1 1 100%; margin-left: 0; justify-content: space-between; }
+        .fb-save { max-width: none; flex: 1 1 100%; }
+        .fb-set { padding: $space-4; }
+        .fb-grid2, .fb-checks { grid-template-columns: minmax(0, 1fr); }
+        .fb-labels__row { grid-template-columns: minmax(0, 1fr); gap: $space-1; }
+        .fb-devbtn__text { display: none; }
+    }
+    @include respond-down(sm) {
+        .form-builder .fb-back__text { display: none; }
+        .form-builder .fb-back { flex: none; padding: 0 0.4rem; }
+        // back arrow + name + status share the first row; the tabs take the full second row (a squeezed name used to let the status pill cover the tabs)
+        .form-builder .fb-title { flex: 1 1 calc(100% - 3.5rem); min-width: 0; }
+        .form-builder .fb-tabs { flex: 1 1 100%; }
+        .form-builder .fb-save { flex: 1 1 auto; }
+    }
+    .admin-forms .tp__bar { position: static; }
+}
+
+@include reduced-motion {
+    .form-builder, .fb-dialog, .fb-toast, .tp__label, .tp__tick {
+        &, *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+    }
+}
+
+// Windows high-contrast (forced-colors): backgrounds and shadows vanish, so the selected card / section need an outline and a mark
+@media (forced-colors: active) {
+    .form-builder .fb-card.is-selected { outline: 3px solid Highlight; outline-offset: 0; }
+    .form-builder .fb-page.is-selected { outline: 3px solid Highlight; outline-offset: 0; }
+    .form-builder .fb-snav.is-active { outline: 2px solid Highlight; outline-offset: -2px; font-weight: 700; }
+    .form-builder .fb-snav.is-active::before { content: "\2192\00a0"; }
+    .tp__radio:checked + .tp__label { outline: 3px solid Highlight; outline-offset: 0; }
+}

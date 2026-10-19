@@ -572,8 +572,49 @@ ON DUPLICATE KEY UPDATE
 -- ---------------------------------------------------------------------------------------------------------------------------------------
 INSERT IGNORE INTO roles (slug, name, description, abilities, is_system) VALUES
   ('admin', 'Administrator', 'Can do everything, including users, roles, settings and menus.', '[]', 1),
-  ('editor', 'Editor', 'Edits pages and content, handles the inbox, members, newsletters, calendar and meetings.', '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage"]', 1),
+  ('editor', 'Editor', 'Edits pages and content, handles the inbox, members, newsletters, calendar and meetings.', '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions"]', 1),
   ('content-writer', 'Content Writer', 'Writes and edits website pages and content (blog, programmes, gallery, events). Cannot see messages, members or settings.', '["dashboard.view","pages.edit","content.manage"]', 0),
   ('communications', 'Communications Officer', 'Content, newsletters, calendar and meetings. Cannot email the whole list or see the inbox.', '["dashboard.view","content.manage","newsletter.manage","calendar.manage","meetings.manage"]', 0),
   ('membership-officer', 'Membership Officer', 'Handles membership applications, payments and receipts, with CSV export and meetings. No website editing.', '["dashboard.view","members.manage","export.csv","meetings.manage"]', 0),
   ('support-officer', 'Support Officer', 'Answers messages and handles the inbox (messages, subscribers, applications, donations). No website editing.', '["dashboard.view","inbox.manage","export.csv"]', 0);
+
+-- ------------------------------------------------------------------ forms (see docs/FORMS.md). ADDITIVE and IDEMPOTENT.
+-- Same rules as the rest of this file: a row is refreshed from here ONLY while it is pristine (updated_at = created_at); a setting or page row an
+-- admin edited is never overwritten. NO form and NO submission is seeded: the form templates are code (App\Services\Forms\FormTemplates) and the
+-- owner creates forms in Admin > Forms.
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('forms_directory_enabled', '0'),
+  ('forms_default_notify', ''),
+  ('forms_max_upload_mb', '5'),
+  ('forms_submit_limit', '10'),
+  ('forms_retention_default_days', '0')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Page: /forms (the optional public list of forms) and the wording of every public form (buttons, messages, e-mails): app/config/pages/forms.php.
+-- Not in the menus by default (the list itself is switched off until Settings > Forms says otherwise); needed as a row because content_blocks.page_slug
+-- is a foreign key to pages.slug.
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
+  ('forms', 'Forms', 'registry', 'default', 1, 0, 0, 'Forms', 92, NULL)
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
+  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
+  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
+  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
+  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
+  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
+  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
+  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- ONE-TIME role upgrade (guarded by the marker setting below): the built-in Editor role gets "Create and edit forms" and "See and handle form answers".
+-- It is changed ONLY while its stored ability list is still EXACTLY the original default (the list before forms existed), i.e. the owner never edited
+-- the role; a list the owner changed in Admin > Roles is left alone. (On a fresh database the INSERT IGNORE above already carries the new list.)
+UPDATE roles SET abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions"]',
+  updated_at = updated_at
+WHERE slug = 'editor' AND is_system = 1
+  AND abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage"]'
+  AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_forms_editor_role_v1') m);
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_forms_editor_role_v1', '1');

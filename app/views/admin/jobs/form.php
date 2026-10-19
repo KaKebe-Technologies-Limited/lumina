@@ -59,6 +59,28 @@ $this->start('scripts'); ?>
                         'help' => 'Lower numbers come first. You can also use the arrows on the list.']) ?>
                 </div>
             </section>
+            <?php if (!empty($canPickForm)): ?>
+                <section class="card" aria-labelledby="c-appform">
+                    <div class="card__header"><h2 class="card__title" id="c-appform">How people apply</h2></div>
+                    <div class="card__body">
+                        <?php $pickedForm = (int) $v('form_id', 0); ?>
+                        <div class="field">
+                            <label class="field__label" for="f-form_id">Application form</label>
+                            <select class="select" id="f-form_id" name="form_id" aria-describedby="f-form_id-help">
+                                <option value="">The built-in application form (CV upload)</option>
+                                <?php foreach ((array) $appForms as $fid => $ftitle): ?>
+                                    <option value="<?= (int) $fid ?>"<?= $pickedForm === (int) $fid ? ' selected' : '' ?>><?= e($ftitle) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="field__help" id="f-form_id-help">
+                                Pick one of your own forms to collect applications with your own questions. It is used only while it is published and open;
+                                otherwise visitors see the built-in form.
+                                <a href="<?= e(url('admin/forms/new')) ?>">Create a job application form</a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            <?php endif; ?>
         </aside>
     </div>
     <?= partial('admin/_content/form-actions', ['listUrl' => $listUrl, 'isNew' => $isNew, 'publicUrl' => $publicUrl]) ?>

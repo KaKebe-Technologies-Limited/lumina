@@ -57,6 +57,15 @@ return [
             'meetings.delete'   => ['Delete meeting requests', null],
         ],
     ],
+    'forms' => [
+        'label' => 'Forms',
+        'items' => [
+            'forms.manage'      => ['Create and edit forms', 'Build forms from templates (job applications, volunteer sign-up, event RSVP, surveys ...), change their settings and publish, close or archive them.'],
+            'forms.submissions' => ['See and handle form answers', 'Read what people sent, change the status, add notes and download uploaded files. Also needed to have the answers themselves e-mailed to staff or to change who gets those e-mails. This is personal information.'],
+            'forms.export'      => ['Download form answers as CSV', null],
+            'forms.delete'      => ['Delete forms and answers', 'Delete a whole form or single and bulk submissions. Also needed to set or shorten the retention period of a form, because answers older than that are deleted for good.'],
+        ],
+    ],
     'site' => [
         'label' => 'Website administration',
         'items' => [
