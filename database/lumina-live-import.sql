@@ -1367,7 +1367,7 @@ ON DUPLICATE KEY UPDATE
 
 -- Pages: the Membership tab (header + footer, right after Involvement) and its terms page (not in the menus).
 INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
-  ('membership', 'Membership', 'registry', 'default', 1, 1, 1, 'Membership', 52, NULL),
+  ('membership', 'Membership', 'registry', 'default', 1, 1, 1, 'Membership', 52, 'involvement'),
   ('membership-terms', 'Membership terms', 'registry', 'default', 1, 0, 0, 'Membership terms', 53, NULL)
 ON DUPLICATE KEY UPDATE
   title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
@@ -1433,6 +1433,13 @@ UPDATE pages SET show_in_nav = 1, nav_order = 73,
 WHERE slug = 'newsletter' AND show_in_nav = 0 AND parent_slug IS NULL AND nav_order = 75
   AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_newsletter_nav_v1') m);
 INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_newsletter_nav_v1', '1');
+
+-- ONE-TIME menu upgrade: Membership becomes a child of Involvement. Moved ONLY while the owner never touched its menu placement (top level, order 52);
+-- the marker stops this after the first run so a later change in Admin > Menus sticks.
+UPDATE pages SET parent_slug = 'involvement', updated_at = updated_at
+WHERE slug = 'membership' AND parent_slug IS NULL AND nav_order = 52
+  AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_membership_nav_v1') m);
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_membership_nav_v1', '1');
 
 -- ONE sample issue, a DRAFT (never public until the owner publishes it), built ONLY from wording that already exists on this site / in the
 -- owner's copy: the planned-programs introduction (docs/content-source/planned-programs.md), the "Visit to Wii Got Quarry Site" activity, the
