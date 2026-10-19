@@ -4676,6 +4676,7 @@ body.nav-open {
   padding: 1.5rem;
   border-radius: 24px;
   background: #EEF1F6;
+  transition: transform .35s ease, box-shadow .35s ease;
 }
 
 @media (min-width: 768px) {
@@ -4694,19 +4695,26 @@ body.nav-open {
 }
 
 .quote-card__text {
-  font-size: 0.9375rem;
-  line-height: 1.7;
+  font-size: 1.0625rem;
+  line-height: 1.75;
   color: #1D1E20;
+  text-wrap: pretty;
   display: -webkit-box;
   -webkit-line-clamp: 7;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
+@media (min-width: 768px) {
+  .quote-card__text {
+    font-size: 1.0625rem;
+  }
+}
+
 .quote-card__person {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
   margin-top: auto;
   padding-top: 1rem;
   border-top: 1px solid rgba(44, 57, 80, 0.12);
@@ -4716,14 +4724,23 @@ body.nav-open {
   display: grid;
   place-items: center;
   flex: none;
-  width: 3rem;
-  height: 3rem;
+  width: 4.5rem;
+  height: 4.5rem;
+  box-shadow: 0 0 0 3px rgba(214, 161, 81, 0.55);
+  transition: transform .35s ease, box-shadow .35s ease;
   overflow: hidden;
   border-radius: 50%;
   background: #2C3950;
   color: #D6A151;
   font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .quote-card__avatar {
+    width: 5.5rem;
+    height: 5.5rem;
+  }
 }
 
 .quote-card__avatar img {
@@ -4736,7 +4753,8 @@ body.nav-open {
 .quote-card__name {
   display: block;
   font-family: "Poppins", "Poppins Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
-  font-size: 0.9375rem;
+  font-size: 1.25rem;
+  line-height: 1.25;
   font-weight: 600;
   color: #2C3950;
 }
@@ -4755,8 +4773,36 @@ body.nav-open {
 
 .quote-card__role {
   display: block;
-  font-size: 0.8125rem;
+  margin-top: .2rem;
+  font-size: 1.0625rem;
   color: #5A6470;
+}
+
+.quote-card__mark .icon {
+  transition: transform .35s ease;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .quote-card:hover, .quote-card:focus-within {
+    transform: translateY(-6px);
+    box-shadow: 0 18px 40px rgba(44, 57, 80, 0.22);
+  }
+  .js .quote-card[data-reveal].is-visible {
+    transition: opacity 600ms cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.35s ease, box-shadow 0.35s ease;
+  }
+  .js .quote-card[data-reveal].is-visible:hover, .js .quote-card[data-reveal].is-visible:focus-within {
+    transform: translateY(-6px);
+  }
+  .quote-card:hover .quote-card__avatar, .quote-card:focus-within .quote-card__avatar {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 4px #D6A151, 0 8px 20px rgba(44, 57, 80, 0.3);
+  }
+  .quote-card:hover .quote-card__mark .icon, .quote-card:focus-within .quote-card__mark .icon {
+    transform: scale(1.12) rotate(-4deg);
+  }
+  .quote-card:hover .quote-card__mark {
+    color: #D6A151;
+  }
 }
 
 .quote-card--dark {
