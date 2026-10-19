@@ -510,6 +510,22 @@ small, .small {
   max-width: none;
 }
 
+.is-justified {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphenate-limit-chars: 6 3 3;
+}
+
+@media print {
+  .is-justified {
+    text-align: justify;
+  }
+}
+
 .visually-hidden {
   position: absolute !important;
   width: 1px;

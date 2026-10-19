@@ -571,7 +571,7 @@ try {
     check('schema: kind defaults to online (every existing issue stays an online issue)', $defaultKind !== null && $defaultKind['Default'] === 'online');
     check('registry: About has the "partners" section (toggle, heading, intro, limit, link to /partners)', PageRegistry::field('about', 'partners.title') !== null && PageRegistry::field('about', 'partners.all_cta_label') !== null && (string) \App\Core\Content::get('about', 'partners.all_cta_url') === '/partners');
     check('registry: Home "newsletter" teaser, Blog "newsletter" CTA, Newsletter "pdf" labels and "empty.when"', PageRegistry::field('home', 'newsletter.title') !== null && PageRegistry::field('blog', 'newsletter.button_url') !== null && PageRegistry::field('newsletter', 'pdf.download_label') !== null && PageRegistry::field('newsletter', 'empty.when') !== null && PageRegistry::field('newsletter', 'email.download_pdf') !== null);
-    check('settings: newsletter_pdf_max_mb (25), partners_logo_hover_grey, partners_logo_trim exist with defaults', (string) setting('newsletter_pdf_max_mb') === '25' && (string) setting('partners_logo_hover_grey') === '1' && (string) setting('partners_logo_trim') === '1');
+    check('settings: newsletter_pdf_max_mb (25), partners_logo_hover_grey, partners_logo_trim exist with defaults', (string) setting('newsletter_pdf_max_mb') === '25' && (string) setting('partners_logo_hover_grey') === '0' && (string) setting('partners_logo_trim') === '1');
     SitePages::flush();
     Nav::flush();
     $blog = null;

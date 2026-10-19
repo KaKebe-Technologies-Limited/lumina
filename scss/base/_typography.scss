@@ -193,3 +193,17 @@ small, .small {
 .prose--wide {
     max-width: none;
 }
+
+// Justified reading text: the class is set by assets/js/main.js only on long, left-aligned paragraphs / list items in wide-enough columns.
+.is-justified {
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    overflow-wrap: break-word;
+    word-break: normal;
+    hyphenate-limit-chars: 6 3 3;
+}
+@media print {
+    .is-justified { text-align: justify; }
+}

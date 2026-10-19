@@ -48,8 +48,14 @@ try {
     SitePages::flush();
     Nav::flush();
     $top = array_column(Nav::header(), 'label');
-    $iInv = array_search('Involvement', $top, true);
-    check('Membership tab sits right after Involvement in the header', $iInv !== false && ($top[$iInv + 1] ?? '') === 'Membership', json_encode($top));
+    $inv = null;
+    foreach (Nav::header() as $item) {
+        if (($item['label'] ?? '') === 'Involvement') {
+            $inv = $item;
+        }
+    }
+    $kids = $inv ? array_column((array) ($inv['children'] ?? []), 'label') : [];
+    check('Membership sits inside the Involvement dropdown in the header', in_array('Membership', $kids, true) && !in_array('Membership', $top, true), json_encode([$top, $kids]));
     check('Membership is in the footer menu', in_array('Membership', array_column(Nav::footer(), 'label'), true));
     $schemaGroups = require dirname(__DIR__) . '/app/config/settings_schema.php';
     check('settings defaults (registration is closed until the owner opens it)', MS::prefix() === 'LAF' && MS::defaultCurrency() === 'UGX' && !MS::collectsId()

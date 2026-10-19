@@ -543,6 +543,28 @@
         if (btn) { const box = btn.closest('.alert'); if (box) box.remove(); }
     });
 
+    // ------------------------------------------------------------------ justified body text
+    // Long reading text (paragraphs / list items of 90+ characters in a column at least 260px wide) is justified with hyphenation
+    // (html lang="en"); centred, right-aligned, short, narrow or UI text is left exactly as designed. Re-evaluated on resize.
+    const justifyTargets = $$('main p, main li, .site-footer p, .site-footer li');
+    const justifySkip = '[data-no-justify], nav, button, a.btn, .btn, label, figcaption, table, .calendar, [class*="calendar"], .site-nav, .topbar, .breadcrumbs, .pagination, .badge, .chip, .tabs, [role="tablist"], [role="grid"], .stat, .stat-band, .page-hero, .hero, [class*="hero"], .lead, .band, .cta';
+    const justifyApply = () => {
+        justifyTargets.forEach((el) => {
+            let on = false;
+            if (el.textContent.trim().length >= 90 && el.offsetWidth >= 260 && !el.closest(justifySkip)) {
+                const cs = getComputedStyle(el);
+                on = (cs.textAlign === 'start' || cs.textAlign === 'left' || cs.textAlign === 'justify') && parseFloat(cs.fontSize) <= 18.5;
+            }
+            el.classList.toggle('is-justified', on);
+        });
+    };
+    if (justifyTargets.length) {
+        justifyApply();
+        let jt;
+        window.addEventListener('resize', () => { clearTimeout(jt); jt = setTimeout(justifyApply, 150); }, { passive: true });
+        if (document.fonts && document.fonts.ready) { document.fonts.ready.then(justifyApply); }
+    }
+
     // Google Analytics (only when an ID is configured in Settings)
     const ga = document.body.dataset.gaId;
     if (ga && /^G-[A-Z0-9]+$/.test(ga)) {
