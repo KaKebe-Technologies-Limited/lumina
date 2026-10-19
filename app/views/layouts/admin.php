@@ -78,6 +78,9 @@ $logoUrl = logo_url(38);
         </header>
 
         <main id="main" class="admin-content" tabindex="-1">
+            <?php if (\App\Core\Maintenance::isOn() && can('settings.manage')): ?>
+                <div class="mt-banner" role="status"><?= icon('clock', 'icon--sm') ?> <span><strong>Your website is switched OFF</strong> — visitors see the maintenance page.</span> <a class="btn btn--sm btn--outline" href="<?= e(url('admin/maintenance')) ?>">Turn it back on</a></div>
+            <?php endif; ?>
             <?php if (!empty($breadcrumbs)): ?>
                 <?= partial('partials/breadcrumbs', ['breadcrumbs' => array_merge([['Dashboard', url('admin')]], $breadcrumbs), 'home' => false]) ?>
             <?php endif; ?>

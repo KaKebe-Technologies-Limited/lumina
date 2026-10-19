@@ -82,6 +82,20 @@ return [
                     'help' => 'Shown to applicants and used as the reply-to address of membership e-mails. While empty, the primary e-mail from the Contact tab is used.'],
             ],
         ],
+        'maintenance' => [
+            'label' => 'Website on / off (maintenance)',
+            'icon'  => 'clock',
+            'help'  => 'Switch the public website off while you work on it. Visitors see a branded "we will be back soon" page with your logo and contact details; the admin area and signed-in staff keep working. Easiest from Admin > Website on/off.',
+            'fields' => [
+                'maintenance_enabled'   => ['label' => 'Maintenance mode is ON (website closed to visitors)', 'type' => 'boolean', 'default' => '0'],
+                'maintenance_title'     => ['label' => 'Headline', 'type' => 'text', 'default' => 'We will be back soon', 'rules' => 'nullable|max:120'],
+                'maintenance_message'   => ['label' => 'Message to visitors', 'type' => 'textarea', 'default' => 'Our website is currently undergoing scheduled maintenance. We are working to make it better and it will be live again soon. Thank you for your patience.', 'rules' => 'nullable|max:800'],
+                'maintenance_return_at' => ['label' => 'Expected back (date and time, East Africa Time)', 'type' => 'text', 'default' => '', 'rules' => 'nullable|max:20', 'help' => 'Optional. Format 2026-10-25 09:00. Shows a countdown.'],
+                'maintenance_auto_open' => ['label' => 'Open the website automatically at that time', 'type' => 'boolean', 'default' => '0'],
+                'maintenance_show_contact' => ['label' => 'Show email, phone, WhatsApp and address', 'type' => 'boolean', 'default' => '1'],
+                'maintenance_show_social'  => ['label' => 'Show social media links', 'type' => 'boolean', 'default' => '1'],
+            ],
+        ],
         'newsletter' => [
             'label' => 'Newsletter',
             'icon'  => 'newspaper',

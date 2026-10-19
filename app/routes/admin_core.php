@@ -11,6 +11,7 @@ use App\Controllers\Admin\AuthController;
 use App\Controllers\Admin\CustomPagesController;
 use App\Controllers\Admin\DashboardController;
 use App\Controllers\Admin\FaqsController;
+use App\Controllers\Admin\MaintenanceController;
 use App\Controllers\Admin\MediaController;
 use App\Controllers\Admin\MenusController;
 use App\Controllers\Admin\PagesController;
@@ -60,6 +61,12 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
         // site settings (admins)
         $router->get('/settings', [SettingsController::class, 'index'])->name('admin.settings')->middleware('can:settings.manage');
         $router->post('/settings', [SettingsController::class, 'update'])->middleware('can:settings.manage');
+
+        // website on / off (maintenance page for visitors; admins only)
+        $router->get('/maintenance', [MaintenanceController::class, 'index'])->name('admin.maintenance')->middleware('can:settings.manage');
+        $router->post('/maintenance/toggle', [MaintenanceController::class, 'toggle'])->middleware('can:settings.manage');
+        $router->post('/maintenance/save', [MaintenanceController::class, 'save'])->middleware('can:settings.manage');
+        $router->get('/maintenance/preview', [MaintenanceController::class, 'preview'])->middleware('can:settings.manage');
 
         // impact figures + FAQs (content.manage)
         $router->group(['middleware' => ['can:content.manage']], function ($router) {

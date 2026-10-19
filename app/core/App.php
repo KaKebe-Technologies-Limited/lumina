@@ -19,8 +19,7 @@ final class App
             Session::start();      // lazy: only really starts when a session cookie exists (see Session)
             $router = new Router();
             self::loadRoutes($router);
-            self::maintenanceGate($request);
-            $response = self::oversizedPost($request) ?? $router->dispatch($request);
+            $response = self::maintenanceGate($request) ?? self::oversizedPost($request) ?? $router->dispatch($request);
         } catch (ValidationException $e) {
             $response = self::validationResponse($e, $request);
         } catch (\Throwable $e) {
@@ -107,13 +106,16 @@ final class App
         }
     }
 
-    /** APP_MAINTENANCE=1: everything except /admin (and logged-in staff) gets a 503. */
-    private static function maintenanceGate(Request $request): void
+    /**
+     * Maintenance mode (Admin > Website on/off, or APP_MAINTENANCE=1 in .env): visitors get the branded 503 page; /admin and signed-in
+     * staff keep working. Returns the response, or null when the site is open.
+     */
+    private static function maintenanceGate(Request $request): ?Response
     {
-        if (!(bool) Config::get('app.maintenance', false) || $request->pathIs('/admin') || Auth::check()) {
-            return;
+        if ($request->pathIs('/admin') || Auth::check() || !Maintenance::isOn()) {
+            return null;
         }
-        throw new HttpException(503, 'Maintenance', ['Retry-After' => '3600']);
+        return Maintenance::response();
     }
 
     /** Banner above a form with mistakes (editable: Admin > Pages > Error pages > Form messages). */
