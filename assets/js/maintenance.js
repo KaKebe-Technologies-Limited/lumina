@@ -1,6 +1,26 @@
 /* Maintenance page: live countdown to the expected-back time (data-mt-countdown = unix seconds) and a reload when it is reached. */
 (() => {
     'use strict';
+
+    // Live date and time (Africa/Kampala), updated every second.
+    const clock = document.querySelector('[data-mt-clock]');
+    if (clock) {
+        const tz = clock.getAttribute('data-tz') || 'Africa/Kampala';
+        const dEl = clock.querySelector('[data-mt-date]');
+        const tEl = clock.querySelector('[data-mt-time]');
+        let dFmt; let tFmt;
+        try {
+            dFmt = new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            tFmt = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        } catch (e) { dFmt = null; }
+        if (dFmt && dEl && tEl) {
+            const paint = () => { const n = new Date(); dEl.textContent = dFmt.format(n); tEl.textContent = tFmt.format(n); };
+            paint();
+            const loop = () => { paint(); setTimeout(loop, 1000 - (Date.now() % 1000) + 5); };
+            setTimeout(loop, 1000 - (Date.now() % 1000) + 5);
+        }
+    }
+
     const box = document.querySelector('[data-mt-countdown]');
     if (!box) { return; }
     const target = parseInt(box.getAttribute('data-mt-countdown'), 10) * 1000;

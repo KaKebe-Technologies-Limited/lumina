@@ -39,6 +39,12 @@ $c = is_array($contact ?? null) ? $contact : [];
 <main class="mt__wrap" id="main">
     <section class="mt__card" aria-labelledby="mt-title">
         <div class="mt__logo"><span class="mt__ring" aria-hidden="true"></span><img src="<?= e($logo) ?>" alt="<?= e($siteName) ?> logo" width="120" height="120"></div>
+<?php $mtNow = new DateTimeImmutable('now', new DateTimeZone('Africa/Kampala')); ?>
+        <p class="mt__clock" data-mt-clock data-tz="Africa/Kampala" role="timer" aria-live="off" aria-label="Current date and time in Uganda">
+            <span class="mt__clock-date" data-mt-date><?= e($mtNow->format('l, j F Y')) ?></span>
+            <span class="mt__clock-time" data-mt-time><?= e($mtNow->format('H:i:s')) ?></span>
+            <span class="mt__clock-tz">EAT · Uganda time</span>
+        </p>
         <p class="mt__eyebrow"><?= e($siteName) ?></p>
         <h1 class="mt__title" id="mt-title"><?= e($title) ?></h1>
         <?php if ($message !== ''): ?><p class="mt__text"><?= nl2br(e($message), false) ?></p><?php endif; ?>
