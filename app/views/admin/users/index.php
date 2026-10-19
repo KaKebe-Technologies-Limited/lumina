@@ -34,7 +34,7 @@
                     <a href="<?= e(url('admin/users/' . (int) $u['id'] . '/edit')) ?>"><?= e($u['name']) ?></a><?= $me ? ' <span class="badge badge--info">You</span>' : '' ?>
                     <span class="cell-sub"><?= e($u['email']) ?></span>
                 </td>
-                <td data-label="Role"><?= partial('partials/admin/status-badge', ['status' => $u['role'], 'label' => $u['role'] === 'admin' ? 'Administrator' : 'Editor', 'tone' => $u['role'] === 'admin' ? 'primary' : 'info']) ?></td>
+                <td data-label="Role"><?= partial('partials/admin/status-badge', ['status' => $u['role'], 'label' => \App\Core\Roles::name((string) $u['role']), 'tone' => $u['role'] === 'admin' ? 'primary' : 'info']) ?></td>
                 <td data-label="Status">
                     <?= partial('partials/admin/status-badge', ['status' => (int) $u['is_active'] === 1 ? 'active' : 'inactive', 'label' => (int) $u['is_active'] === 1 ? 'Active' : 'Disabled']) ?>
                     <?php if ((int) $u['must_change_password'] === 1): ?><span class="cell-sub">Must choose a new password</span><?php endif; ?>

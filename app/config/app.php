@@ -81,7 +81,8 @@ return [
 
     /**
      * Abilities: can('name') / middleware 'can:name'. ability => roles that hold it.
-     * Roles: admin (everything) and editor (content only).
+     * Roles: stored in the `roles` table (Admin > Roles). The role lists below are the built-in defaults, used for the admin and editor roles
+     * until the roles table exists; once it does, the table decides (admin always holds every ability).
      */
     'abilities' => [
         'dashboard.view'  => ['admin', 'editor'],
@@ -90,6 +91,7 @@ return [
         'menus.manage'    => ['admin'],
         'settings.manage' => ['admin'],
         'users.manage'    => ['admin'],
+        'roles.manage'    => ['admin'],             // create / edit roles and choose what each role may do (never assignable to a custom role)
         'audit.view'      => ['admin'],
         'content.manage'  => ['admin', 'editor'],   // programs, projects, posts, activities, gallery, jobs, team, partners, documents, events, stories, FAQs, stats
         'content.delete'  => ['admin', 'editor'],

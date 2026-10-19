@@ -12,6 +12,7 @@ use App\Controllers\Admin\CustomPagesController;
 use App\Controllers\Admin\DashboardController;
 use App\Controllers\Admin\FaqsController;
 use App\Controllers\Admin\MaintenanceController;
+use App\Controllers\Admin\RolesController;
 use App\Controllers\Admin\MediaController;
 use App\Controllers\Admin\MenusController;
 use App\Controllers\Admin\PagesController;
@@ -61,6 +62,14 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
         // site settings (admins)
         $router->get('/settings', [SettingsController::class, 'index'])->name('admin.settings')->middleware('can:settings.manage');
         $router->post('/settings', [SettingsController::class, 'update'])->middleware('can:settings.manage');
+
+        // roles and permissions (administrators only)
+        $router->get('/roles', [RolesController::class, 'index'])->name('admin.roles')->middleware('can:roles.manage');
+        $router->get('/roles/create', [RolesController::class, 'create'])->middleware('can:roles.manage');
+        $router->post('/roles', [RolesController::class, 'store'])->middleware('can:roles.manage');
+        $router->get('/roles/{id}/edit', [RolesController::class, 'edit'])->middleware('can:roles.manage');
+        $router->post('/roles/{id}', [RolesController::class, 'update'])->middleware('can:roles.manage');
+        $router->post('/roles/{id}/delete', [RolesController::class, 'delete'])->middleware('can:roles.manage');
 
         // website on / off (maintenance page for visitors; admins only)
         $router->get('/maintenance', [MaintenanceController::class, 'index'])->name('admin.maintenance')->middleware('can:settings.manage');

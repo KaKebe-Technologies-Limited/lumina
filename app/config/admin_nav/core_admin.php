@@ -11,6 +11,7 @@ return [
         ['key' => 'maintenance', 'label' => 'Website on / off', 'url' => 'admin/maintenance', 'icon' => 'clock', 'can' => 'settings.manage', 'order' => 5],
         ['key' => 'settings', 'label' => 'Site settings', 'url' => 'admin/settings', 'icon' => 'settings', 'can' => 'settings.manage', 'order' => 10],
         ['key' => 'users', 'label' => 'Users', 'url' => 'admin/users', 'icon' => 'users', 'can' => 'users.manage', 'order' => 20],
+        ['key' => 'roles', 'label' => 'Roles', 'url' => 'admin/roles', 'icon' => 'lock', 'can' => 'roles.manage', 'order' => 25],
         ['key' => 'audit', 'label' => 'Activity log', 'url' => 'admin/audit-log', 'icon' => 'history', 'can' => 'audit.view', 'order' => 30],
         ['key' => 'profile', 'label' => 'My profile', 'url' => 'admin/profile', 'icon' => 'user', 'can' => 'dashboard.view', 'order' => 40],
     ],

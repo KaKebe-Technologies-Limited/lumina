@@ -11,6 +11,7 @@ final class User extends Model
     protected static string $table = 'users';
     protected static string $order = 'name ASC';
 
+    /** Built-in roles; the real list (with custom roles) is App\Core\Roles::slugs(). */
     public const ROLES = ['admin', 'editor'];
 
     public static function findByEmail(string $email): ?array

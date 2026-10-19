@@ -566,3 +566,14 @@ ON DUPLICATE KEY UPDATE
   nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
   parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
   updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- ---------------------------------------------------------------------------------------------------------------------------------------
+-- ROLES (Admin > Roles). INSERT IGNORE: rows the owner edited or created are never overwritten. admin always holds every ability (the empty list is ignored).
+-- ---------------------------------------------------------------------------------------------------------------------------------------
+INSERT IGNORE INTO roles (slug, name, description, abilities, is_system) VALUES
+  ('admin', 'Administrator', 'Can do everything, including users, roles, settings and menus.', '[]', 1),
+  ('editor', 'Editor', 'Edits pages and content, handles the inbox, members, newsletters, calendar and meetings.', '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage"]', 1),
+  ('content-writer', 'Content Writer', 'Writes and edits website pages and content (blog, programmes, gallery, events). Cannot see messages, members or settings.', '["dashboard.view","pages.edit","content.manage"]', 0),
+  ('communications', 'Communications Officer', 'Content, newsletters, calendar and meetings. Cannot email the whole list or see the inbox.', '["dashboard.view","content.manage","newsletter.manage","calendar.manage","meetings.manage"]', 0),
+  ('membership-officer', 'Membership Officer', 'Handles membership applications, payments and receipts, with CSV export and meetings. No website editing.', '["dashboard.view","members.manage","export.csv","meetings.manage"]', 0),
+  ('support-officer', 'Support Officer', 'Answers messages and handles the inbox (messages, subscribers, applications, donations). No website editing.', '["dashboard.view","inbox.manage","export.csv"]', 0);

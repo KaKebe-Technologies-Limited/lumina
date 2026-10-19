@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `name` VARCHAR(120) NOT NULL,
   `email` VARCHAR(190) NOT NULL,
   `password_hash` VARCHAR(255) NOT NULL,
-  `role` ENUM('admin','editor') NOT NULL DEFAULT 'editor',
+  `role` VARCHAR(40) NOT NULL DEFAULT 'editor',
   `is_active` TINYINT(1) NOT NULL DEFAULT 1,
   `must_change_password` TINYINT(1) NOT NULL DEFAULT 0,
   `last_login_at` DATETIME NULL,
@@ -27,6 +27,26 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_users_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `roles` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` VARCHAR(40) NOT NULL,
+  `name` VARCHAR(80) NOT NULL,
+  `description` VARCHAR(255) NOT NULL DEFAULT '',
+  `abilities` TEXT NULL,
+  `is_system` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_roles_slug` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Migration (idempotent): users.role was ENUM('admin','editor'); custom roles need any role slug.
+SET @lumina_role_type = (SELECT DATA_TYPE FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'users' AND column_name = 'role');
+SET @lumina_ddl = IF(@lumina_role_type = 'enum', 'ALTER TABLE `users` MODIFY COLUMN `role` VARCHAR(40) NOT NULL DEFAULT ''editor''', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
 
 CREATE TABLE IF NOT EXISTS `settings` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,

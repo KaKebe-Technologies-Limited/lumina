@@ -14439,3 +14439,35 @@ html:not(.js) .admin-calendar [data-cal-tbc][hidden] {
   padding: 0;
   border: 0;
 }
+
+.role-group {
+  margin: 1.25rem 0 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: .5rem;
+}
+
+.role-group__title {
+  padding: 0;
+  margin-bottom: .35rem;
+  font-weight: 700;
+  color: #1f2a44;
+}
+
+.role-ability {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  padding: .6rem .8rem;
+  border: 1px solid #e3e6ee;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.role-ability small {
+  display: block;
+  margin-top: .15rem;
+  font-weight: 400;
+  color: #5b6578;
+}

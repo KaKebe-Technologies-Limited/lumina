@@ -47,7 +47,7 @@ final class UsersController extends AdminController
         $d = $this->validate([
             'name'  => 'required|max:120',
             'email' => 'required|email|max:190|unique:users,email',
-            'role'  => 'required|in:' . implode(',', User::ROLES),
+            'role'  => 'required|in:' . implode(',', \App\Core\Roles::slugs()),
         ], ['email.unique' => 'There is already a user with this email address.'], ['name' => 'Name', 'email' => 'Email address', 'role' => 'Role'], 'admin/users/create');
 
         $password = Auth::generatePassword(16);
@@ -80,7 +80,7 @@ final class UsersController extends AdminController
         $d = $this->validate([
             'name'  => 'required|max:120',
             'email' => 'required|email|max:190|unique:users,email,' . $id,
-            'role'  => 'required|in:' . implode(',', User::ROLES),
+            'role'  => 'required|in:' . implode(',', \App\Core\Roles::slugs()),
         ], ['email.unique' => 'There is already a user with this email address.'], ['name' => 'Name', 'email' => 'Email address', 'role' => 'Role'], $back);
 
         $self = $id === Auth::id();
@@ -170,7 +170,7 @@ final class UsersController extends AdminController
             'row'       => $row,
             'self'      => $self,
             'lastAdmin' => $lastAdmin,
-            'roles'     => ['admin' => 'Administrator - can do everything, including users, settings and menus', 'editor' => 'Editor - can edit pages and content and handle the inbox'],
+            'roles'     => \App\Core\Roles::options(),
         ], [
             'title'       => $mode === 'create' ? 'Add a user' : 'Edit user',
             'nav'         => 'users',

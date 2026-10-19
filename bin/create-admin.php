@@ -2,7 +2,7 @@
 /**
  * Create (or reset the password of) an admin/editor account from the command line.
  *
- *   /c/xampp/php/php.exe bin/create-admin.php --email=owner@example.org --name="Site Owner" [--role=admin|editor] [--password=...]
+ *   /c/xampp/php/php.exe bin/create-admin.php --email=owner@example.org --name="Site Owner" [--role=admin|editor|<any role slug>] [--password=...]
  *
  * Without --password a strong random password is generated and written ONLY to storage/dev-admin-credentials.txt
  * (git-ignored); the path is printed, never the password. If the email already exists its password is reset and the
@@ -30,8 +30,8 @@ $email = strtolower(trim($args['email'] ?? ''));
 $name = trim($args['name'] ?? 'Administrator');
 $role = $args['role'] ?? 'admin';
 
-if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !in_array($role, ['admin', 'editor'], true)) {
-    fwrite(STDERR, "Usage: php bin/create-admin.php --email=you@example.org --name=\"Your Name\" [--role=admin|editor] [--password=...]\n");
+if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !\App\Core\Roles::exists($role)) {
+    fwrite(STDERR, "Usage: php bin/create-admin.php --email=you@example.org --name=\"Your Name\" [--role=admin|editor|<any role slug>] [--password=...]\n");
     exit(1);
 }
 $generated = !isset($args['password']) || $args['password'] === '';

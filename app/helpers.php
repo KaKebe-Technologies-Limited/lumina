@@ -379,8 +379,7 @@ function can(string $ability): bool
         }
         return false;
     }
-    $role = Auth::role();
-    return $role !== null && in_array($role, $map[$ability], true);
+    return \App\Core\Roles::can(Auth::role(), $ability);      // roles table (custom roles) with the built-in map as fallback
 }
 
 /** [['key','label','url','icon'], ...] of the social profiles that have a URL in settings (footer, JSON-LD sameAs). */

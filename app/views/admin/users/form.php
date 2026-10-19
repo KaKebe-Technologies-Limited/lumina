@@ -18,7 +18,7 @@ $locked = $self || $lastAdmin;
             <fieldset class="field field--full pe-roles"<?= $locked ? ' disabled' : '' ?>>
                 <legend class="field__label">Role</legend>
                 <?php foreach ($roles as $rv => $rl): ?>
-                    <label class="pe-role"><input type="radio" name="role" value="<?= e($rv) ?>"<?= $role === $rv ? ' checked' : '' ?>><span><strong><?= e(ucfirst($rv)) ?></strong><small><?= e(substr($rl, strpos($rl, ' - ') + 3)) ?></small></span></label>
+                    <label class="pe-role"><input type="radio" name="role" value="<?= e($rv) ?>"<?= $role === $rv ? ' checked' : '' ?>><span><strong><?= e(trim(explode(' - ', $rl, 2)[0])) ?></strong><small><?= e(substr($rl, strpos($rl, ' - ') + 3)) ?></small></span></label>
                 <?php endforeach; ?>
                 <?php if (has_error('role')): ?><div class="field__error" role="alert"><?= e(error('role')) ?></div><?php endif; ?>
                 <?php if ($self): ?><div class="field__help">You cannot change your own role.</div><?php elseif ($lastAdmin): ?><div class="field__help">This is the only active administrator, so the role cannot be changed.</div><?php endif; ?>
