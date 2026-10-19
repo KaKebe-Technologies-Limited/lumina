@@ -16,7 +16,7 @@
 
 // ---- the box --------------------------------------------------------------------------------------------------------------------------
 .plogo {
-    --plogo-h: 3.25rem;          // picture height, phones (52 px)
+    --plogo-h: 4.5rem;          // picture height, phones (52 px)
     --plogo-pad: 0.9rem;
     display: flex;
     align-items: center;
@@ -32,9 +32,9 @@
     text-align: center;
     text-decoration: none;
     overflow-wrap: anywhere;
-    @include respond(md) { --plogo-h: 3.5rem; --plogo-pad: 1rem; }
-    @include respond(lg) { --plogo-h: 4rem; --plogo-pad: 1.1rem; }
-    @include respond(xl) { --plogo-h: 4.25rem; }
+    @include respond(md) { --plogo-h: 5rem; --plogo-pad: 1rem; }
+    @include respond(lg) { --plogo-h: 5.75rem; --plogo-pad: 1.1rem; }
+    @include respond(xl) { --plogo-h: 6.25rem; }
 
     &__name { display: block; max-width: 100%; text-wrap: balance; }
 }

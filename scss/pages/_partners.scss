@@ -26,12 +26,12 @@
 
         // the logo area: a fixed-height box (shared rules: components/_partner-logo.scss); cream, so a JPG logo's white background disappears
         &__logo {
-            --plogo-h: 4.5rem;
+            --plogo-h: 7rem;
             --plogo-pad: 1.5rem;
             min-height: 10rem;
             background: $surface;
-            @include respond(lg) { --plogo-h: 5rem; }
-            .partner-logo-img { max-width: 18rem; margin-inline: auto; }
+            @include respond(lg) { --plogo-h: 8.5rem; }
+            .partner-logo-img { max-width: 22rem; margin-inline: auto; }
         }
         &__logo-link { display: flex; align-items: center; justify-content: center; width: 100%; }
         &__initial {

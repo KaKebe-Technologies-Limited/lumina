@@ -6029,7 +6029,7 @@ body.admin-receipt .receipt__sign-label {
 }
 
 .plogo {
-  --plogo-h: 3.25rem;
+  --plogo-h: 4.5rem;
   --plogo-pad: 0.9rem;
   display: flex;
   align-items: center;
@@ -6049,21 +6049,21 @@ body.admin-receipt .receipt__sign-label {
 
 @media (min-width: 768px) {
   .plogo {
-    --plogo-h: 3.5rem;
+    --plogo-h: 5rem;
     --plogo-pad: 1rem;
   }
 }
 
 @media (min-width: 992px) {
   .plogo {
-    --plogo-h: 4rem;
+    --plogo-h: 5.75rem;
     --plogo-pad: 1.1rem;
   }
 }
 
 @media (min-width: 1200px) {
   .plogo {
-    --plogo-h: 4.25rem;
+    --plogo-h: 6.25rem;
   }
 }
 

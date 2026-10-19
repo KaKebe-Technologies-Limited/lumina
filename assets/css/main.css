@@ -5166,7 +5166,7 @@ body.nav-open {
 }
 
 .plogo {
-  --plogo-h: 3.25rem;
+  --plogo-h: 4.5rem;
   --plogo-pad: 0.9rem;
   display: flex;
   align-items: center;
@@ -5186,21 +5186,21 @@ body.nav-open {
 
 @media (min-width: 768px) {
   .plogo {
-    --plogo-h: 3.5rem;
+    --plogo-h: 5rem;
     --plogo-pad: 1rem;
   }
 }
 
 @media (min-width: 992px) {
   .plogo {
-    --plogo-h: 4rem;
+    --plogo-h: 5.75rem;
     --plogo-pad: 1.1rem;
   }
 }
 
 @media (min-width: 1200px) {
   .plogo {
-    --plogo-h: 4.25rem;
+    --plogo-h: 6.25rem;
   }
 }
 
@@ -10564,7 +10564,7 @@ body.page-team.is-dialog-open {
 }
 
 .page-partners .partner-card__logo {
-  --plogo-h: 4.5rem;
+  --plogo-h: 7rem;
   --plogo-pad: 1.5rem;
   min-height: 10rem;
   background: #F7F3EC;
@@ -10572,12 +10572,12 @@ body.page-team.is-dialog-open {
 
 @media (min-width: 992px) {
   .page-partners .partner-card__logo {
-    --plogo-h: 5rem;
+    --plogo-h: 8.5rem;
   }
 }
 
 .page-partners .partner-card__logo .partner-logo-img {
-  max-width: 18rem;
+  max-width: 22rem;
   margin-inline: auto;
 }
 
