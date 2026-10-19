@@ -9,7 +9,7 @@ $visitLabel = (string) content('partners', 'labels.visit');
 $empty = content_btn('partners', 'empty.cta');
 $empty2 = content_btn('partners', 'empty.cta2');
 $join = content_btn('partners', 'join.cta');
-$grey = (string) setting('partners_logo_hover_grey', '1') !== '0';      // logos grey until hovered (mouse only), see components/_partner-logo.scss
+$grey = (string) setting('partners_logo_hover_grey', '0') !== '0';      // logos grey until hovered (mouse only), see components/_partner-logo.scss
 $emptyActions = [];
 if ($empty['has']) {
     $emptyActions[] = ['label' => $empty['label'], 'url' => $empty['url'], 'class' => 'btn--cta btn--caps'];

@@ -8,7 +8,7 @@
 if (empty($partners)) {
     return;
 }
-$pgGrey = (string) setting('partners_logo_hover_grey', '1') !== '0';
+$pgGrey = (string) setting('partners_logo_hover_grey', '0') !== '0';
 $pgLabelledby = preg_replace('/[^a-z0-9_-]/i', '', (string) ($labelledby ?? ''));
 $pgLabel = trim((string) ($label ?? ''));
 ?>

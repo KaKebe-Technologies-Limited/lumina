@@ -384,7 +384,7 @@ WHERE n.slug = 'sample-issue-edit-or-delete-me' AND NOT EXISTS (SELECT 1 FROM ne
 -- ------------------------------------------------------------------ partners logos (see docs/PARTNERS_NEWSLETTER.md). ADDITIVE and IDEMPOTENT.
 -- Settings only (defaults of app/config/settings_schema.php, group "Partners"); refreshed only while pristine. NO partner is seeded: the owner adds them.
 INSERT INTO settings (setting_key, setting_value) VALUES
-  ('partners_logo_hover_grey', '1'),
+  ('partners_logo_hover_grey', '0'),
   ('partners_logo_trim', '1')
 ON DUPLICATE KEY UPDATE
   setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),

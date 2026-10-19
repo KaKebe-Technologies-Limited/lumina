@@ -101,7 +101,7 @@ return [
             'icon'  => 'handshake',
             'help'  => 'How partner logos look on the website. Add, hide, delete and reorder the partners in Admin > Partners; the headings and texts are edited in Admin > Pages > About and Pages > Partners. Logos are trimmed, resized and compressed automatically when you upload them.',
             'fields' => [
-                'partners_logo_hover_grey' => ['label' => 'Show logos in grey until the mouse is over them', 'type' => 'boolean', 'default' => '1', 'help' => 'Makes a row of very different logos look calm and tidy. Switched off automatically for visitors who prefer reduced motion and on touch screens.'],
+                'partners_logo_hover_grey' => ['label' => 'Show logos in grey until the mouse is over them', 'type' => 'boolean', 'default' => '0', 'help' => 'Makes a row of very different logos look calm and tidy. Switched off automatically for visitors who prefer reduced motion and on touch screens.'],
                 'partners_logo_trim'       => ['label' => 'Trim empty margins around uploaded logos', 'type' => 'boolean', 'default' => '1', 'help' => 'Cuts away transparent or white space around a logo so every logo fills its box equally. Applies to logos uploaded from now on.'],
             ],
         ],

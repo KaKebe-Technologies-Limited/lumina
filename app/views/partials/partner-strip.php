@@ -13,7 +13,7 @@ if (empty($partners)) {
     return;
 }
 $psTitle = trim((string) ($title ?? ''));
-$psGrey = (string) setting('partners_logo_hover_grey', '1') !== '0';
+$psGrey = (string) setting('partners_logo_hover_grey', '0') !== '0';
 $psLimit = max(1, (int) ($limit ?? 12));
 $psTotal = count($partners);
 $psShown = array_slice($partners, 0, $psLimit);
