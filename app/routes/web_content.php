@@ -12,6 +12,7 @@ use App\Controllers\Web\BlogController;
 use App\Controllers\Web\CareersController;
 use App\Controllers\Web\ContactController;
 use App\Controllers\Web\GalleryController;
+use App\Controllers\Web\OpportunitiesController;
 use App\Controllers\Web\PrivacyController;
 use App\Controllers\Web\SeoController;
 use App\Controllers\Web\SubscribeController;
@@ -28,6 +29,11 @@ $router->get('/activities/{slug}', [ActivitiesController::class, 'show'])->name(
 $router->get('/gallery', [GalleryController::class, 'index'])->name('gallery.index');
 
 // ---- Careers (+ general expression of interest, + application with optional private CV upload) --------------------------------
+// ---- Opportunities (scholarships, fellowships ... added by the team or read from other websites) ---------------------------------
+$router->get('/opportunities', [OpportunitiesController::class, 'index'])->name('opportunities.index');
+$router->get('/opportunities/{slug}', [OpportunitiesController::class, 'show'])->name('opportunities.show');
+$router->get('/opportunities/{slug}/file', [OpportunitiesController::class, 'file'])->middleware('throttle:60,60')->name('opportunities.file');
+
 $router->get('/careers', [CareersController::class, 'index'])->name('careers.index');
 $router->get('/careers/{slug}', [CareersController::class, 'show'])->name('careers.show');
 $router->post('/careers/apply', [CareersController::class, 'applyGeneral'])

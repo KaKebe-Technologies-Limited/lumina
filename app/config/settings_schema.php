@@ -99,6 +99,19 @@ return [
                 'maintenance_show_social'  => ['label' => 'Show social media links', 'type' => 'boolean', 'default' => '1'],
             ],
         ],
+        'opportunities' => [
+            'label' => 'Opportunities',
+            'icon'  => 'award',
+            'help'  => 'The Opportunities section (Involvement > Opportunities). Besides the ones you add yourself, the website can read the news feeds of other opportunity websites (Admin > Opportunities > Sources). Only a short excerpt and a link back to the source are shown.',
+            'fields' => [
+                'opp_feeds_enabled' => ['label' => 'Read opportunities from other websites automatically', 'type' => 'boolean', 'default' => '1', 'help' => 'Switch off to show only the opportunities you add yourself.'],
+                'opp_auto_publish'  => ['label' => 'Show new ones straight away', 'type' => 'boolean', 'default' => '1', 'help' => 'Switch off to approve each one first: they wait under Admin > Opportunities > Waiting for approval and appear on the website only after you approve them.'],
+                'opp_refresh_hours' => ['label' => 'Look for new ones every', 'type' => 'select', 'default' => '12', 'rules' => 'required|in:3,6,12,24,48',
+                    'options' => ['3' => '3 hours', '6' => '6 hours', '12' => '12 hours', '24' => 'day', '48' => '2 days'], 'help' => 'Checked when someone visits the website. A scheduled cron job (see docs/OPPORTUNITIES.md) does it even when nobody visits.'],
+                'opp_per_feed'      => ['label' => 'Newest items taken from each website', 'type' => 'number', 'default' => '15', 'rules' => 'required|min:1|max:60'],
+                'opp_keep_days'     => ['label' => 'Keep items without a closing date for (days)', 'type' => 'number', 'default' => '45', 'rules' => 'required|min:7|max:365', 'help' => 'Items read from other websites are removed once they have closed, or after this many days when they have no closing date. Items you add yourself are never removed.'],
+            ],
+        ],
         'pwa' => [
             'label' => 'Install as an app (PWA)',
             'icon'  => 'phone',

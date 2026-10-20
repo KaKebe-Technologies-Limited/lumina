@@ -17,7 +17,7 @@ return [
         'items' => [
             'pages.edit'     => ['Edit page text and custom pages', 'Headings, paragraphs, images, buttons and SEO on every page, and create custom pages.'],
             'pages.delete'   => ['Delete custom pages', null],
-            'content.manage' => ['Manage content items', 'Programs, projects, blog and news posts, activities, gallery, jobs, team, partners, documents, events, stories, FAQs and impact figures.'],
+            'content.manage' => ['Manage content items', 'Programs, projects, blog and news posts, activities, gallery, jobs, opportunities (add, upload, approve, and the websites they are read from), team, partners, documents, events, stories, FAQs and impact figures.'],
             'content.delete' => ['Delete content items', null],
             'menus.manage'   => ['Change the website menus', null],
         ],

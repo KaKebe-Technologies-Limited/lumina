@@ -14,5 +14,6 @@ return [
         ['key' => 'activities', 'label' => 'Activities', 'url' => 'admin/activities', 'icon' => 'activity',  'can' => 'content.manage', 'order' => 40],
         ['key' => 'gallery',    'label' => 'Gallery',    'url' => 'admin/gallery',    'icon' => 'image',     'can' => 'content.manage', 'order' => 50],
         ['key' => 'jobs',       'label' => 'Jobs',       'url' => 'admin/jobs',       'icon' => 'briefcase', 'can' => 'content.manage', 'order' => 60],
+        ['key' => 'opportunities', 'label' => 'Opportunities', 'url' => 'admin/opportunities', 'icon' => 'award', 'can' => 'content.manage', 'order' => 70],
     ],
 ];

@@ -14,6 +14,8 @@
 use App\Controllers\Admin\ActivityController;
 use App\Controllers\Admin\GalleryController;
 use App\Controllers\Admin\JobController;
+use App\Controllers\Admin\OpportunitiesController;
+use App\Controllers\Admin\OpportunityFeedsController;
 use App\Controllers\Admin\PostController;
 use App\Controllers\Admin\ProgramController;
 use App\Controllers\Admin\ProjectController;
@@ -26,6 +28,7 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth', 'can:content.manag
         'posts'      => [PostController::class, false],
         'activities' => [ActivityController::class, true],
         'jobs'       => [JobController::class, true],
+        'opportunities' => [OpportunitiesController::class, false],
         'gallery'    => [GalleryController::class, false],
     ];
     foreach ($areas as $path => [$controller, $movable]) {
@@ -43,6 +46,17 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth', 'can:content.manag
 
     // posts: preview of drafts / scheduled posts rendered in the public layout
     $router->get('/posts/{id}/preview', [PostController::class, 'preview'])->name('admin.posts.preview');
+
+    // opportunities: approve what was read from other websites; the sources (feeds) the website reads
+    $router->post('/opportunities/approve-all', [OpportunitiesController::class, 'approveAll'])->name('admin.opportunities.approve_all');
+    $router->post('/opportunities/{id}/approve', [OpportunitiesController::class, 'approve'])->name('admin.opportunities.approve');
+    $router->get('/opportunity-sources', [OpportunityFeedsController::class, 'index'])->name('admin.opportunity_sources.index');
+    $router->post('/opportunity-sources', [OpportunityFeedsController::class, 'store'])->middleware('throttle:20,60')->name('admin.opportunity_sources.store');
+    $router->post('/opportunity-sources/fetch-all', [OpportunityFeedsController::class, 'fetchAll'])->middleware('throttle:10,60')->name('admin.opportunity_sources.fetch_all');
+    $router->post('/opportunity-sources/{id}', [OpportunityFeedsController::class, 'update'])->name('admin.opportunity_sources.update');
+    $router->post('/opportunity-sources/{id}/toggle', [OpportunityFeedsController::class, 'toggle'])->name('admin.opportunity_sources.toggle');
+    $router->post('/opportunity-sources/{id}/fetch', [OpportunityFeedsController::class, 'fetch'])->middleware('throttle:20,60')->name('admin.opportunity_sources.fetch');
+    $router->post('/opportunity-sources/{id}/delete', [OpportunityFeedsController::class, 'destroy'])->name('admin.opportunity_sources.delete');
 
     // gallery: multi upload, drag-and-drop ordering, bulk actions, inline quick edit
     $router->post('/gallery/upload', [GalleryController::class, 'upload'])->middleware('throttle:600,60')->name('admin.gallery.upload');

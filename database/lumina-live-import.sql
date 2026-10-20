@@ -1615,6 +1615,83 @@ CREATE TABLE IF NOT EXISTS `social_images` (
   CONSTRAINT `fk_social_images_issue` FOREIGN KEY (`newsletter_id`) REFERENCES `newsletters` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- =====================================================================================================================
+-- OPPORTUNITIES (scholarships, fellowships, internships, grants ... for young people). ADDITIVE and IDEMPOTENT: two new tables, nothing existing is touched.
+-- `opportunity_feeds` = the websites (RSS/Atom feeds) the site reads; `opportunities` = what visitors see: items the team typed/uploaded (source 'manual')
+-- and items read from a feed (source 'feed': a short excerpt + a link back to the source, never a copy of the whole article).
+-- needs_review = 1 -> read from a feed and waiting for a person to approve it (only when "approve before showing" is switched on).
+-- =====================================================================================================================
+CREATE TABLE IF NOT EXISTS `opportunity_feeds` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(120) NOT NULL,
+  `url` VARCHAR(500) NOT NULL,
+  `url_hash` CHAR(40) NOT NULL,
+  `default_category` VARCHAR(30) NOT NULL DEFAULT 'other',
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `last_fetched_at` DATETIME NULL,
+  `last_status` VARCHAR(20) NULL,                                 -- ok | error
+  `last_message` VARCHAR(255) NULL,                               -- short text for the admin ("12 new, 3 updated" / the reason it failed)
+  `last_new` INT UNSIGNED NOT NULL DEFAULT 0,
+  `total_imported` INT UNSIGNED NOT NULL DEFAULT 0,
+  `fail_count` INT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_opportunity_feeds_url` (`url_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `opportunities` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(255) NOT NULL,
+  `slug` VARCHAR(190) NOT NULL,
+  `category` VARCHAR(30) NOT NULL DEFAULT 'other',                -- scholarship | fellowship | internship | grant | job | training | competition | conference | volunteer | other
+  `organisation` VARCHAR(190) NULL,
+  `location` VARCHAR(190) NULL,
+  `summary` TEXT NULL,
+  `description` MEDIUMTEXT NULL,
+  `eligibility` TEXT NULL,
+  `benefits` TEXT NULL,
+  `how_to_apply` TEXT NULL,
+  `deadline` DATE NULL,                                           -- NULL = rolling / not stated
+  `apply_url` VARCHAR(500) NULL,
+  `image` VARCHAR(255) NULL,
+  `image_alt` VARCHAR(255) NULL,
+  `file_path` VARCHAR(255) NULL,                                  -- an uploaded PDF (call text, flyer), stored privately in storage/private/opportunities
+  `file_name` VARCHAR(190) NULL,
+  `file_size` INT UNSIGNED NULL,
+  `source` ENUM('manual','feed') NOT NULL DEFAULT 'manual',
+  `feed_id` INT UNSIGNED NULL,
+  `source_name` VARCHAR(190) NULL,
+  `source_url` VARCHAR(500) NULL,
+  `source_hash` CHAR(40) NULL,                                    -- sha1 of the source link: the same item is never imported twice
+  `posted_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,        -- when it was published at the source (feed) or here (manual)
+  `is_featured` TINYINT(1) NOT NULL DEFAULT 0,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `needs_review` TINYINT(1) NOT NULL DEFAULT 0,
+  `seo_title` VARCHAR(190) NULL,
+  `seo_description` VARCHAR(300) NULL,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `created_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_opportunities_slug` (`slug`),
+  UNIQUE KEY `uq_opportunities_source` (`source_hash`),
+  KEY `ix_opportunities_list` (`is_active`, `needs_review`, `deadline`),
+  KEY `ix_opportunities_category` (`category`, `is_active`),
+  KEY `ix_opportunities_feed` (`feed_id`),
+  CONSTRAINT `fk_opportunities_feed` FOREIGN KEY (`feed_id`) REFERENCES `opportunity_feeds` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- The starting list of websites (only when the list is empty, so a feed you deleted never comes back on a re-import).
+INSERT INTO `opportunity_feeds` (`name`, `url`, `url_hash`, `default_category`)
+SELECT x.`name`, x.`url`, SHA1(x.`url`), x.`cat` FROM (
+  SELECT 'Opportunities For Africans' AS `name`, 'https://www.opportunitiesforafricans.com/feed/' AS `url`, 'other' AS `cat`
+  UNION ALL SELECT 'Opportunity Desk', 'https://opportunitydesk.org/feed/', 'other'
+  UNION ALL SELECT 'Opportunities For Youth', 'https://www.opportunitiesforyouth.org/feed/', 'other'
+  UNION ALL SELECT 'Funds for NGOs', 'https://www.fundsforngos.org/feed/', 'grant'
+) x WHERE NOT EXISTS (SELECT 1 FROM `opportunity_feeds`);
+
 
 -- ======================================================================
 -- PART: seed.sql
