@@ -30,6 +30,7 @@ final class ImageCleanup
     private const IMAGE_COLUMNS = [
         ['programs', 'image'], ['projects', 'image'], ['posts', 'cover_image'], ['activities', 'image'], ['gallery_images', 'image'],
         ['events', 'image'], ['stories', 'image'], ['team_members', 'photo'], ['partners', 'logo'], ['partners', 'logo_2x'], ['partners', 'logo_webp'], ['partners', 'logo_webp_2x'], ['pages', 'hero_image'], ['pages', 'og_image'], ['newsletters', 'cover_image'],
+        ['shop_product_images', 'path'], ['shop_product_images', 'path_webp'], ['shop_product_images', 'path_2x'], ['shop_product_images', 'path_webp_2x'], ['shop_order_items', 'image'],
     ];
 
     /** Text columns that may embed an image path (rich bodies, JSON repeaters, settings). @var list<array{0:string,1:string}> */

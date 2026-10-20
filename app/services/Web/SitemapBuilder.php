@@ -9,6 +9,7 @@ use App\Core\SitePages;
 use App\Services\Calendar\CalendarService;
 use App\Services\Forms\FormService;
 use App\Services\Newsletter\NewsletterService;
+use App\Services\Shop\ProductService;
 
 /**
  * Builds /sitemap.xml from the database so it is always current:
@@ -49,6 +50,9 @@ final class SitemapBuilder
             ['activities', 'SELECT slug, updated_at FROM activities WHERE is_active = 1 ORDER BY activity_date DESC, id DESC',                              '/activities/'],
             ['events',     'SELECT slug, updated_at FROM events WHERE is_active = 1 ORDER BY start_at DESC',                                               '/events/'],
             ['stories',    'SELECT slug, updated_at FROM stories WHERE is_active = 1 AND consent_confirmed = 1 AND (published_at IS NULL OR published_at <= NOW()) ORDER BY published_at DESC', '/stories/'],
+            // shop: published products (never SAMPLE products: their price is a placeholder) and the categories that hold one; never the cart, checkout or an order
+            ['shop',       'SELECT p.slug, p.updated_at FROM shop_products p WHERE ' . ProductService::visibleSql('p') . ' AND p.is_sample = 0 ORDER BY p.sort_order, p.id', '/shop/'],
+            ['shop',       "SELECT c.slug, c.created_at AS updated_at FROM shop_categories c WHERE c.is_active = 1 AND EXISTS (SELECT 1 FROM shop_products p WHERE p.category_id = c.id AND p.status = 'published' AND p.is_sample = 0) ORDER BY c.sort_order, c.id", '/shop/category/'],
             ['careers',    'SELECT slug, updated_at FROM jobs WHERE is_active = 1 AND (closing_date IS NULL OR closing_date >= CURDATE()) ORDER BY sort_order, id DESC', '/careers/'],
         ];
         $latest = [];                       // group => newest updated_at among its detail pages (the list page changes with them)

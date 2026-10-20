@@ -1,0 +1,572 @@
+// pages/_shop.scss - PUBLIC SHOP: catalogue, product page, cart, checkout, order page, receipt, terms.
+// Owner: STOREFRONT (docs/SHOP.md). Markup: app/views/web/shop/*, app/views/partials/shop-*.php; behaviour: assets/js/shop.js.
+// Rules: tokens only (abstracts/_tokens.scss), mobile first, 44px+ targets, visible focus, no colour-only cues (a "Sold out" badge always has text),
+// reduced motion respected, images carry width / height (no layout shift), the justified-text rule applies to long descriptions (.prose) only.
+// Prefix: .sh-   Body classes added by the controllers: page-shop, is-shop, is-shop-product, is-shop-cart, is-shop-checkout, is-shop-order, is-shop-receipt, is-shop-terms.
+
+// ---- pieces used on every shop page ---------------------------------------------------------------------------------------------------------------
+.sh-nojs { .js & { display: none !important; } }
+[hidden] { display: none !important; }
+
+.sh-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.7rem;
+  border-radius: $radius-pill;
+  font-family: $font-heading;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+  background: $white;
+  color: $navy;
+  border: 1px solid $border-strong;
+  &--sale { background: $cta; color: $white; border-color: $cta; }
+  &--dark { background: $navy-dark; color: $white; border-color: $navy-dark; }
+  &--low { background: $gold; color: $navy-dark; border-color: $gold; }
+  &--sample { background: $white; color: $ink-soft; border-style: dashed; }
+}
+
+.sh-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.9rem;
+  border-radius: $radius-pill;
+  font-family: $font-heading;
+  font-size: $fs-xs;
+  font-weight: 600;
+  background: $surface-alt;
+  color: $ink;
+  &--success { background: $success-bg; color: $success; }
+  &--warning { background: $warning-bg; color: $warning; }
+  &--danger { background: $danger-bg; color: $danger; }
+  &--neutral { background: $tint-cool; color: $navy; }
+}
+
+.sh-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.6rem;
+  margin: 0;
+  font-family: $font-heading;
+  &__now { font-size: 1.05rem; font-weight: 600; color: $navy; }
+  &__was { font-size: $fs-sm; font-weight: 400; color: $ink-soft; }
+  &--lg { margin: $space-2 0 $space-3; align-items: center; .sh-price__now { font-size: 1.9rem; font-family: $font-display; font-weight: 600; } .sh-price__was { font-size: 1.1rem; } }
+}
+
+.sh-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: $space-2 $space-3;
+  margin: 0 0 $space-4;
+  padding: $space-3 $space-4;
+  border: 1px solid $border;
+  border-left: 4px solid $info;
+  border-radius: $radius;
+  background: $info-bg;
+  color: $ink;
+  font-size: $fs-sm;
+  .icon { flex: none; margin-top: 0.2rem; color: $info; }
+  &--error { border-left-color: $danger; background: $danger-bg; .icon { color: $danger; } }
+  &--success { border-left-color: $success; background: $success-bg; .icon { color: $success; } }
+  &__title { display: block; width: 100%; font-family: $font-heading; color: $danger; }
+  ul { margin: 0; padding-left: 1.2rem; list-style: disc; width: 100%; }
+  a { color: $danger; font-weight: 600; }
+  &:focus { outline: 3px solid $orange-dark; outline-offset: 2px; }
+}
+
+.sh-note {
+  display: flex;
+  gap: $space-2;
+  align-items: flex-start;
+  margin: $space-3 0;
+  padding: $space-3 $space-4;
+  border: 1px dashed $border-strong;
+  border-radius: $radius;
+  background: $surface;
+  color: $ink-soft;
+  font-size: $fs-sm;
+  .icon { flex: none; margin-top: 0.2rem; color: $gold-text; }
+}
+
+// "closed" notice (shop switched off)
+.sh-closed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-3 $space-4;
+  margin-bottom: $space-6;
+  padding: $space-4 $space-5;
+  border: 1px solid $border;
+  border-left: 5px solid $gold;
+  border-radius: $radius-card;
+  background: $surface;
+  &__icon { display: inline-flex; color: $gold-text; }
+  &__text { flex: 1 1 16rem; p { margin: 0.2rem 0 0; color: $ink-soft; font-size: $fs-sm; } }
+  &__title { font-family: $font-heading; color: $navy; }
+  &--inline { margin: $space-4 0 0; padding: $space-3 $space-4; }
+}
+
+// quantity stepper (the +/- buttons are enabled by shop.js; the number field works alone)
+.sh-qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid $border-strong;
+  border-radius: $radius-pill;
+  background: $white;
+  overflow: hidden;
+  &__btn {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 0;
+    color: $navy;
+    background: transparent;
+    &:hover { background: $tint-cool; }
+    &:disabled { opacity: 0.35; cursor: not-allowed; background: transparent; }
+  }
+  &__input {
+    width: 3.2rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: center;
+    font-family: $font-heading;
+    font-weight: 600;
+    color: $navy;
+    -moz-appearance: textfield;
+    &::-webkit-outer-spin-button, &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  }
+}
+
+// ---- catalogue ---------------------------------------------------------------------------------------------------------------------------------------
+.sh-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: $space-3 $space-5;
+  margin-bottom: $space-5;
+}
+.sh-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: $radius-pill;
+  background: $cta;
+  color: $white;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.sh-chips { margin-bottom: $space-4; }
+.sh-tools {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  margin-bottom: $space-3;
+  @include respond(md) { flex-direction: row; align-items: center; justify-content: space-between; }
+  &__search {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    gap: $space-2;
+    max-width: 30rem;
+    .input { padding-left: 2.6rem; }
+  }
+  &__icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: $ink-soft; pointer-events: none; display: inline-flex; z-index: 1; }
+  &__sort { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; label { font-family: $font-heading; font-size: $fs-sm; font-weight: 500; color: $ink-soft; white-space: nowrap; } .select { min-width: 12rem; } }
+}
+.sh-count-line { margin: 0 0 $space-5; color: $ink-soft; font-size: $fs-sm; }
+.sh-clear { margin-left: $space-2; font-weight: 600; }
+
+.sh-grid {
+  display: grid;
+  gap: $space-4;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  @include respond(md) { gap: $space-5; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.sh-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: $white;
+  border: 1px solid $line;
+  border-radius: 20px;
+  box-shadow: $shadow-sm;
+  transition: transform $t-base $ease, box-shadow $t-base $ease;
+  @include respond(md) { border-radius: $radius-card; }
+  &:hover, &:focus-within { box-shadow: $shadow-card; transform: translateY(-3px); }
+  @include reduced-motion { transition: none; &:hover, &:focus-within { transform: none; } }
+
+  &__media {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: $surface;
+  }
+  &__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 600ms $ease, opacity $t-base $ease; }
+  picture { display: contents; }
+  &__img--hover { opacity: 0; }
+  @media (hover: hover) {
+    &:hover .has-hover .sh-card__img:first-of-type { opacity: 0; }
+    &:hover .sh-card__img--hover { opacity: 1; }
+    &:hover .sh-card__media:not(.has-hover) .sh-card__img { transform: scale(1.04); }
+  }
+  &.is-soldout &__img { filter: grayscale(0.6); opacity: 0.8; }
+  &.is-soldout &__img--hover { display: none; }
+  &__badges { position: absolute; top: 0.6rem; left: 0.6rem; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; margin: 0; padding: 0; list-style: none; pointer-events: none; }
+  &__body { display: flex; flex-direction: column; flex: 1; gap: 0.25rem; padding: $space-3 $space-3 $space-4; @include respond(md) { padding: $space-4 $space-4 $space-5; } }
+  &__cat { font-family: $font-heading-caps; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: $ink-soft; }
+  &__title { margin: 0; font-family: $font-display; font-size: 1.05rem; line-height: 1.25; font-weight: 600; a { color: $navy; text-decoration: none; &::after { content: ''; position: absolute; inset: 0; z-index: 1; } &:hover { color: $orange-text; } } @include respond(md) { font-size: 1.2rem; } }
+  &__actions { position: relative; z-index: 3; margin-top: auto; padding-top: $space-3; form { margin: 0; } }
+  &__btn { width: 100%; justify-content: center; min-height: 2.75rem; gap: 0.4rem; padding-inline: 0.6rem; font-size: 0.74rem; }
+}
+
+// fundraising strip
+.sh-mission {
+  &__inner { display: flex; flex-direction: column; align-items: flex-start; gap: $space-5; @include respond(md) { flex-direction: row; align-items: center; justify-content: space-between; gap: $space-7; } }
+  &__text { max-width: 44rem; h2 { margin: $space-2 0 $space-3; color: $white; } p { margin: 0; color: rgba($white, 0.9); } }
+  .btn { flex: none; }
+}
+.sh-trust, .sh-faq { }
+.sh-faq .faq-split { display: block; }
+
+// ---- product page -----------------------------------------------------------------------------------------------------------------------------------
+.sh-product {
+  padding-top: $space-5;
+  &__top { margin-bottom: $space-5; .breadcrumbs { margin: 0; color: $ink-soft; a { color: $ink-soft; } } }
+  // minmax(0, 1fr) at every width: one very long word or pasted link in the description can never stretch the column past the screen
+  &__layout { display: grid; gap: $space-6; grid-template-columns: minmax(0, 1fr); > * { min-width: 0; } @include respond(lg) { grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr); gap: $space-8; align-items: start; } }
+}
+.sh-gallery {
+  &__stage {
+    position: relative;
+    border-radius: $radius-photo;
+    background: $surface;
+    overflow: hidden;
+    &--empty { display: grid; place-items: center; aspect-ratio: 1 / 1; color: $ink-soft; }
+  }
+  &__frame { aspect-ratio: 1 / 1; display: grid; place-items: center; picture { display: contents; } }
+  &__img { width: 100%; height: 100%; object-fit: contain; }
+  &__badge { position: absolute; top: 1rem; left: 1rem; z-index: 2; font-size: 0.8rem; padding: 0.3rem 0.9rem; }
+  &__zoom {
+    position: absolute; right: 0.9rem; bottom: 0.9rem; z-index: 2;
+    display: grid; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; border: 0;
+    border-radius: 50%; background: rgba($white, 0.94); color: $navy; box-shadow: $shadow;
+    &:hover { background: $white; }
+  }
+  &__thumbs { display: flex; flex-wrap: wrap; gap: $space-2; margin: $space-3 0 0; padding: 0; list-style: none; }
+  &__thumb {
+    display: block; width: 4.5rem; height: 4.5rem; border: 2px solid transparent; border-radius: 14px; overflow: hidden; background: $surface; padding: 0;
+    picture { display: contents; }
+    &-img { width: 100%; height: 100%; object-fit: cover; }
+    &:hover { border-color: $border-strong; }
+    &.is-current { border-color: $navy; }
+    @include respond(md) { width: 5.25rem; height: 5.25rem; }
+  }
+}
+.sh-buy {
+  @include respond(lg) { position: sticky; top: calc(#{$header-h-shrunk} + 1.5rem); }
+  &__cat { font-family: $font-heading-caps; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: $orange-text; text-decoration: none; &:hover { text-decoration: underline; } }
+  &__title { margin: $space-1 0 0; font-size: fluid(1.9rem, '1.3rem + 2vw', 2.8rem); line-height: 1.12; }
+  &__summary { margin: 0 0 $space-3; color: $ink-soft; overflow-wrap: anywhere; }
+  &__buttons { display: flex; flex-wrap: wrap; gap: $space-3; margin-top: $space-4; .btn { flex: 1 1 14rem; justify-content: center; } }
+  &__help { margin: $space-2 0 0; color: $ink-soft; font-size: $fs-xs; }
+}
+.sh-stock {
+  display: inline-flex; align-items: center; gap: 0.5rem; margin: 0 0 $space-3;
+  font-family: $font-heading; font-size: $fs-sm; font-weight: 500; color: $ink-soft;
+  &__dot { width: 0.65rem; height: 0.65rem; border-radius: 50%; background: $success; }
+  &--low .sh-stock__dot { background: $gold-deep; }
+  &--out .sh-stock__dot { background: $danger; }
+  &--out { color: $danger; }
+}
+.sh-form { margin-top: $space-4; padding-top: $space-4; border-top: 1px solid $line; }
+.sh-opt {
+  margin: 0 0 $space-4; padding: 0; border: 0; min-width: 0;
+  &__legend { padding: 0; margin-bottom: $space-2; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; color: $navy; }
+  &__values { display: flex; flex-wrap: wrap; gap: $space-2; }
+  &__item { position: relative; }
+  &__input { position: absolute; opacity: 0; width: 100%; height: 100%; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
+  &__label {
+    display: inline-flex; align-items: center; gap: 0.5rem; min-width: 3rem; min-height: 2.75rem; padding: 0.4rem 1rem;
+    justify-content: center; border: 1.5px solid $border-strong; border-radius: $radius-pill; background: $white;
+    font-family: $font-heading; font-size: $fs-sm; font-weight: 500; color: $navy;
+  }
+  &__input:hover + &__label { border-color: $navy; }
+  &__input:checked + &__label { background: $navy; border-color: $navy; color: $white; }
+  &__input:focus-visible + &__label { outline: 3px solid $orange-dark; outline-offset: 2px; }
+  &__item.is-gone &__label { color: $ink-soft; background: $surface-alt; text-decoration: line-through; }
+  &__item.is-gone &__input { cursor: not-allowed; }
+  &__gone { text-decoration: none; display: inline-block; }
+  &__swatch { width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 1px solid rgba($navy-dark, 0.25); }
+  &.has-error &__legend { color: $danger; }
+  &.has-error &__label { border-color: $danger; }
+}
+.sh-qty-row { display: flex; align-items: center; gap: $space-4; margin-bottom: $space-2; }
+.sh-qty__label { font-family: $font-heading; font-size: $fs-sm; font-weight: 600; color: $navy; }
+.sh-added {
+  display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-3; margin-top: $space-4; padding: $space-3 $space-4;
+  border-radius: $radius; background: $success-bg; color: $success; font-weight: 600; font-size: $fs-sm;
+  .icon { flex: none; }
+  [data-shop-added-text] { flex: 1 1 10rem; }
+}
+.sh-facts { margin: $space-4 0 0; div { display: flex; gap: $space-3; font-size: $fs-sm; } dt { color: $ink-soft; } dd { margin: 0; color: $ink; font-weight: 500; } }
+.sh-share { margin-top: $space-5; padding-top: $space-4; border-top: 1px solid $line; }
+.sh-about {
+  display: grid; gap: $space-6; grid-template-columns: minmax(0, 1fr); margin-top: $space-8; padding-top: $space-7; border-top: 1px solid $line;
+  > * { min-width: 0; }
+  .prose { overflow-wrap: anywhere; table { display: block; max-width: 100%; overflow-x: auto; } img { max-width: 100%; height: auto; } }
+  &--two { @include respond(lg) { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: $space-8; } }
+  &__title { margin: 0 0 $space-3; font-size: $fs-xl; }
+}
+.sh-checklist {
+  margin: 0; padding: 0; list-style: none; display: grid; gap: $space-3;
+  li { display: flex; gap: $space-3; align-items: flex-start; }
+  .icon { flex: none; margin-top: 0.2rem; color: $success; }
+}
+.sh-related__back { margin: $space-6 0 0; text-align: center; }
+
+// ---- cart ---------------------------------------------------------------------------------------------------------------------------------------------
+.sh-cart, .sh-checkout {
+  &__layout { display: grid; gap: $space-6; @include respond(lg) { grid-template-columns: minmax(0, 1fr) 24rem; gap: $space-7; align-items: start; } }
+}
+.sh-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: $space-3; }
+.sh-line {
+  position: relative;
+  display: grid;
+  // phone: the name and options span the two right-hand columns; the stepper and the line total share the second row
+  grid-template-columns: 5rem minmax(0, 1fr) auto;
+  grid-template-areas: 'media info info' 'qty qty total';
+  gap: $space-2 $space-3;
+  align-items: center;
+  padding: $space-3;
+  background: $white;
+  border: 1px solid $line;
+  border-radius: 20px;
+  @include respond(md) {
+    grid-template-columns: 6.5rem minmax(0, 1fr) auto 7.5rem auto;
+    grid-template-areas: 'media info qty total remove';
+    gap: $space-4;
+    padding: $space-4;
+  }
+  &__media { grid-area: media; display: block; aspect-ratio: 1 / 1; border-radius: 14px; overflow: hidden; background: $surface; picture { display: contents; } }
+  &__img { width: 100%; height: 100%; object-fit: cover; }
+  &__info { grid-area: info; display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; padding-right: 2.5rem; overflow-wrap: anywhere; @include respond(md) { padding-right: 0; } }
+  &__name { font-family: $font-display; font-weight: 600; font-size: 1.05rem; line-height: 1.25; color: $navy; text-decoration: none; &:hover { color: $orange-text; } }
+  &__opts, &__unit { font-size: $fs-sm; color: $ink-soft; }
+  &__note { display: flex; gap: 0.4rem; margin-top: 0.3rem; font-size: $fs-xs; color: $warning; font-weight: 600; .icon { flex: none; } }
+  &__qty { grid-area: qty; }
+  &__total { grid-area: total; margin: 0; text-align: right; font-family: $font-heading; font-weight: 600; color: $navy; @include respond(md) { font-size: 1.05rem; } }
+  &__remove {
+    // phone: the remove button sits in the corner of the card, so the name and options keep the whole width next to the picture
+    position: absolute; top: $space-2; right: $space-2; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: 50%; color: $ink-soft; background: transparent;
+    &:hover { background: $danger-bg; color: $danger; }
+    @include respond(md) { grid-area: remove; position: static; justify-self: end; align-self: center; }
+  }
+  &__remove-text { @include visually-hidden; }
+  &--problem { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; background: $warning-bg; border-color: rgba($gold-deep, 0.4); }
+  &__alert { display: inline-flex; color: $warning; }
+  &__msg { flex: 1 1 14rem; margin: 0; font-size: $fs-sm; color: $ink; }
+}
+.sh-cart__update { margin: $space-3 0 0; }
+.sh-cart__continue { margin: $space-5 0 0; }
+
+.sh-summary {
+  padding: $space-5;
+  background: $white;
+  border: 1px solid $line;
+  border-radius: $radius-card;
+  box-shadow: $shadow-card;
+  @include respond(lg) { position: sticky; top: calc(#{$header-h-shrunk} + 1.5rem); }
+  &__title { margin: 0 0 $space-4; font-size: $fs-lg; }
+  &__sub { padding: 0; margin-bottom: $space-2; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; color: $navy; }
+  &__hint { display: flex; gap: $space-2; align-items: flex-start; margin: $space-3 0; font-size: $fs-sm; color: $ink-soft; .icon { flex: none; margin-top: 0.2rem; color: $gold-text; } a { font-weight: 600; } &--warn { color: $warning; .icon { color: $warning; } } }
+  .btn--block { margin-top: $space-4; justify-content: center; }
+}
+.sh-delivery { margin-bottom: $space-4; padding-bottom: $space-4; border-bottom: 1px solid $line; fieldset { margin: 0; padding: 0; border: 0; min-width: 0; } .btn { margin-top: $space-2; } }
+.sh-choice { display: flex; align-items: center; gap: $space-3; min-height: 2.75rem; cursor: pointer; font-size: $fs-sm; input { width: 1.2rem; height: 1.2rem; accent-color: $navy; flex: none; } }
+.sh-totals {
+  margin: 0;
+  div { display: flex; justify-content: space-between; gap: $space-4; padding: 0.4rem 0; font-size: $fs-sm; }
+  dt { color: $ink-soft; }
+  dd { margin: 0; font-weight: 600; color: $ink; text-align: right; }
+  &__total { margin-top: $space-2; padding-top: $space-3 !important; border-top: 1px solid $line; dt, dd { font-family: $font-heading; font-size: 1.1rem; font-weight: 700; color: $navy; } dd { font-family: $font-display; font-size: 1.35rem; } }
+}
+
+// ---- checkout -------------------------------------------------------------------------------------------------------------------------------------------
+.sh-checkout__form { display: grid; gap: $space-5; }
+.sh-step {
+  margin: 0; padding: $space-5 $space-4; min-width: 0;
+  background: $white; border: 1px solid $line; border-radius: $radius-card;
+  @include respond(md) { padding: $space-6; }
+  legend { float: left; width: 100%; padding: 0; margin: 0 0 $space-4; }
+  legend + * { clear: both; }
+  &__title { display: flex; align-items: center; gap: $space-3; font-family: $font-display; font-size: $fs-lg; font-weight: 600; color: $navy; }
+  &__num { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: $navy; color: $gold; font-family: $font-heading; font-size: $fs-sm; font-weight: 700; flex: none; }
+  &__grid { display: grid; gap: $space-4; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  &__full { @include respond(md) { grid-column: 1 / -1; } }
+  &:focus { outline: 3px solid $orange-dark; outline-offset: 2px; }
+}
+.sh-choices { display: grid; gap: $space-3; }
+.sh-pick {
+  position: relative; display: grid; grid-template-columns: auto auto 1fr; gap: $space-3; align-items: center;
+  padding: $space-3 $space-4 $space-3 $space-3; border: 1.5px solid $border-strong; border-radius: 18px; background: $white; cursor: pointer;
+  &:hover { border-color: $navy; }
+  input { width: 1.3rem; height: 1.3rem; margin: 0; accent-color: $navy; flex: none; cursor: pointer; }
+  &__icon { display: grid; place-items: center; width: 2.9rem; height: 2.9rem; border-radius: 50%; background: $tint-cool; color: $navy; flex: none; }
+  &__text { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; strong { font-family: $font-heading; font-size: $fs-sm; color: $navy; } }
+  &__sub { font-size: $fs-sm; color: $ink-soft; overflow-wrap: anywhere; }
+  &.is-on { border-color: $navy; background: $tint-cool; box-shadow: 0 0 0 1px $navy; }
+  &.is-on &__icon { background: $navy; color: $gold; }
+  &:focus-within { outline: 3px solid $orange-dark; outline-offset: 2px; }
+}
+.sh-pay { &.is-on .sh-pick { border-color: $navy; background: $tint-cool; box-shadow: 0 0 0 1px $navy; } }
+.sh-paydetails--checkout { margin: $space-2 0 0 $space-4; div { background: $white; border: 1px solid $line; padding: $space-2 $space-3; } }
+.sh-address { margin-top: $space-4; }
+.sh-note-field { margin-top: $space-4; }
+.sh-consent { padding: 0 $space-2; a { font-weight: 600; } }
+.sh-checkout__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3; .btn--cta { flex: 1 1 16rem; justify-content: center; @include respond(md) { flex: 0 1 auto; } } }
+.sh-secure { display: flex; gap: $space-2; align-items: flex-start; margin: 0; font-size: $fs-sm; color: $ink-soft; .icon { flex: none; margin-top: 0.2rem; color: $success; } }
+.sh-mini {
+  margin: 0 0 $space-4; padding: 0; list-style: none; display: grid; gap: $space-3;
+  &__item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: $space-3; align-items: center; }
+  &__media { position: relative; display: block; width: 3.5rem; height: 3.5rem; border-radius: 12px; background: $surface; picture { display: contents; } }
+  &__img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+  &__qty { position: absolute; top: -0.4rem; right: -0.4rem; display: grid; place-items: center; min-width: 1.35rem; height: 1.35rem; padding: 0 0.3rem; border-radius: $radius-pill; background: $navy; color: $white; font-size: 0.7rem; font-weight: 700; }
+  &__info { display: flex; flex-direction: column; min-width: 0; font-size: $fs-sm; }
+  &__name { font-weight: 600; color: $navy; }
+  &__opts { color: $ink-soft; font-size: $fs-xs; }
+  &__price { font-family: $font-heading; font-weight: 600; font-size: $fs-sm; color: $ink; white-space: nowrap; }
+}
+
+// ---- order page ----------------------------------------------------------------------------------------------------------------------------------------
+.sh-order {
+  &__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3 $space-5; margin-bottom: $space-5; }
+  &__label { display: block; font-family: $font-heading-caps; font-size: 0.72rem; letter-spacing: 0.09em; text-transform: uppercase; color: $ink-soft; font-weight: 600; }
+  &__number { display: block; font-family: $font-display; font-size: fluid(1.7rem, '1.2rem + 2vw', 2.5rem); line-height: 1.1; color: $navy; overflow-wrap: anywhere; }
+  &__date { font-size: $fs-sm; color: $ink-soft; }
+  &__badges { display: flex; flex-wrap: wrap; gap: $space-2; }
+  &__layout { display: grid; gap: $space-5; @include respond(lg) { grid-template-columns: minmax(0, 1fr) 21rem; gap: $space-6; align-items: start; } }
+  &__main, &__side { display: grid; gap: $space-5; align-content: start; min-width: 0; }
+  &__links { display: grid; gap: $space-3; justify-items: start; }
+}
+.sh-keep { display: flex; gap: $space-2; align-items: flex-start; margin: 0 0 $space-5; padding: $space-3 $space-4; border-radius: $radius; background: rgba($gold, 0.2); color: $navy-dark; font-size: $fs-sm; .icon { flex: none; margin-top: 0.2rem; } }
+.sh-track {
+  display: flex; margin: 0 0 $space-5; padding: 0; list-style: none; gap: 0;
+  &__step { position: relative; flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: $space-2; text-align: center; min-width: 0;
+    &::before { content: ''; position: absolute; top: 0.9rem; left: -50%; width: 100%; height: 3px; background: $border-strong; z-index: 0; }
+    &:first-child::before { display: none; }
+    &.is-done::before, &.is-current::before { background: $navy; } }
+  &__dot { position: relative; z-index: 1; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; border: 3px solid $border-strong; background: $white; color: $white; }
+  .is-done &__dot { background: $navy; border-color: $navy; }
+  .is-current &__dot { border-color: $navy; background: $gold; box-shadow: 0 0 0 4px rgba($gold, 0.3); }
+  &__text { font-family: $font-heading; font-size: 0.74rem; font-weight: 500; color: $ink-soft; line-height: 1.25; @include respond(md) { font-size: $fs-sm; } }
+  .is-current &__text { color: $navy; font-weight: 700; }
+}
+.sh-card-box {
+  padding: $space-5; background: $white; border: 1px solid $line; border-radius: $radius-card; box-shadow: $shadow-sm; min-width: 0;
+  &__title { display: flex; align-items: center; gap: $space-2; margin: 0 0 $space-4; font-family: $font-display; font-size: $fs-lg; .icon { color: $orange-text; } }
+  &__sub { margin: $space-4 0 $space-2; font-family: $font-heading; font-size: $fs-sm; color: $navy; }
+}
+.sh-method { margin: 0 0 $space-2; font-size: $fs-md; color: $navy; }
+.sh-instructions { margin: 0 0 $space-4; color: $ink; }
+.sh-paydetails {
+  margin: 0 0 $space-4; display: grid; gap: $space-2;
+  div { display: grid; gap: 0.15rem; padding: $space-3 $space-4; border-radius: $radius; background: $tint-cool; @include respond(sm) { grid-template-columns: 11rem 1fr; align-items: center; gap: $space-3; } }
+  dt { font-size: $fs-sm; color: $ink-soft; span { color: $ink-soft; } }
+  dd { display: flex; align-items: center; gap: $space-2; margin: 0; font-family: $font-heading; font-weight: 600; color: $navy; overflow-wrap: anywhere; }
+}
+.sh-copyable { font-variant-numeric: tabular-nums; }
+.sh-copybtn { display: inline-grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; color: $navy; background: $white; border: 1px solid $border-strong; &:hover { background: $navy; color: $white; } }
+.sh-refline { display: flex; gap: $space-2; align-items: flex-start; margin: 0 0 $space-4; padding: $space-3 $space-4; border-radius: $radius; background: $warning-bg; color: $navy-dark; .icon { flex: none; margin-top: 0.2rem; color: $warning; } }
+.sh-payform .btn { width: 100%; justify-content: center; @include respond(sm) { width: auto; } }
+.sh-refform { margin-top: $space-5; padding-top: $space-5; border-top: 1px solid $line;
+  &__title { margin: 0 0 $space-3; font-family: $font-heading; font-size: $fs-md; color: $navy; }
+  &__row { display: grid; gap: $space-3; @include respond(sm) { grid-template-columns: 1fr auto; align-items: start; .btn { margin-top: 1.55rem; } } } }
+.sh-mini--order { margin-bottom: $space-4; }
+.sh-address-text { margin: 0; color: $ink; font-size: $fs-sm; overflow-wrap: anywhere; }
+.sh-help { padding: $space-4 $space-5; border-radius: $radius-card; background: $white; border: 1px dashed $border-strong; p { margin: 0 0 $space-3; color: $ink-soft; font-size: $fs-sm; } }
+
+// ---- terms ---------------------------------------------------------------------------------------------------------------------------------------------------
+.sh-terms {
+  &__nav { margin-bottom: $space-6; }
+  &__doc { margin-bottom: $space-7; scroll-margin-top: 6rem; h2 { margin-bottom: $space-3; } }
+}
+
+// ---- header cart link ----------------------------------------------------------------------------------------------------------------------------------
+.site-header__cart {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  color: $navy;
+  text-decoration: none;
+  &:hover { background: $tint-cool; color: $navy; }
+  &-count { position: absolute; top: 0.1rem; right: 0.05rem; display: grid; place-items: center; min-width: 1.25rem; height: 1.25rem; padding: 0 0.3rem; border-radius: $radius-pill; background: $cta; color: $white; font-size: 0.68rem; font-weight: 700; line-height: 1; }
+}
+
+// ---- printable receipt ---------------------------------------------------------------------------------------------------------------------------------
+.sh-receipt {
+  padding: $space-6; background: $white; border: 1px solid $line; border-radius: $radius-card; box-shadow: $shadow-sm;
+  &__head { display: flex; align-items: center; gap: $space-4; margin-bottom: $space-5; padding-bottom: $space-4; border-bottom: 2px solid $navy; }
+  &__logo { width: 4rem; height: 4rem; flex: none; }
+  &__site { margin: 0; font-family: $font-heading-caps; font-size: 0.74rem; letter-spacing: 0.09em; text-transform: uppercase; color: $ink-soft; }
+  &__title { margin: 0; font-size: $fs-xl; overflow-wrap: anywhere; }
+  &__meta { display: grid; gap: $space-3 $space-5; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 $space-5; @include respond(md) { grid-template-columns: repeat(4, minmax(0, 1fr)); } dt { font-size: $fs-xs; color: $ink-soft; text-transform: uppercase; letter-spacing: 0.06em; } dd { margin: 0; font-weight: 600; color: $navy; } }
+  // the numbers wrap under a phone width (UGX / 30,000), so the table never grows wider than its card
+  &__table { width: 100%; border-collapse: collapse; font-size: $fs-sm; th, td { padding: 0.6rem 0.4rem; text-align: left; border-bottom: 1px solid $line; vertical-align: top; overflow-wrap: anywhere; } th { font-family: $font-heading; font-size: $fs-xs; text-transform: uppercase; letter-spacing: 0.02em; color: $ink-soft; @include respond(sm) { letter-spacing: 0.06em; } } .num { text-align: right; @include respond(sm) { white-space: nowrap; } } small { color: $ink-soft; } tfoot td { border-bottom: 0; } .total td { font-weight: 700; font-size: $fs-md; color: $navy; border-top: 2px solid $navy; } }
+  &__cols { display: grid; gap: $space-5; margin-top: $space-5; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } h2 { font-size: $fs-md; margin-bottom: $space-2; } p { margin: 0; font-size: $fs-sm; overflow-wrap: anywhere; } }
+  &__foot { margin: $space-5 0 0; padding-top: $space-4; border-top: 1px solid $line; color: $ink-soft; font-size: $fs-sm; }
+  &__actions { display: flex; flex-wrap: wrap; gap: $space-3; margin: $space-5 0 0; }
+}
+
+// print: the receipt alone, black on white
+@media print {
+  .is-shop-receipt {
+    .site-header, .site-footer, .footer-pre, .newsletter-row, .topbar, .page-hero, .back-to-top, .breadcrumbs, .skip-link, .sh-receipt__actions, .flash, .alert { display: none !important; }
+    .site-main { padding: 0 !important; }
+    .section { padding: 0 !important; }
+    .sh-receipt { border: 0; box-shadow: none; padding: 0; }
+  }
+}
+
+@include reduced-motion { .sh-card__img { transition: none; } }
+
+// ---- moving to the hosted payment page (interstitial) ------------------------------------------------------------------------------------------------
+.sh-redirect {
+  &__box { padding-block: $space-8; text-align: center; }
+  &__icon { display: inline-grid; place-items: center; width: 4.5rem; height: 4.5rem; margin-bottom: $space-4; border-radius: 50%; background: $tint-cool; color: $navy; }
+  &__title { margin-bottom: $space-3; font-size: fluid(1.7rem, '1.2rem + 2vw', 2.5rem); }
+  &__note { margin-top: $space-5; color: $ink-soft; font-size: $fs-sm; }
+}
+
+// ---- Windows high contrast (forced-colors): backgrounds and shadows are dropped, so the chosen option, the current picture, the chosen payment / delivery
+// choice and the current order step must stay recognisable by an outline or a mark, not by colour alone -------------------------------------------------
+@media (forced-colors: active) {
+  .sh-opt__input:checked + .sh-opt__label { outline: 3px solid Highlight; outline-offset: -3px; font-weight: 700; &::before { content: '\2713'; } }
+  .sh-opt__input:focus-visible + .sh-opt__label { outline: 3px solid Highlight; outline-offset: 2px; }
+  .sh-opt__item.is-gone .sh-opt__label { text-decoration: line-through; border-style: dashed; }
+  .sh-opt.has-error .sh-opt__label { border-color: Mark; }
+  .sh-gallery__thumb.is-current { border: 4px solid Highlight; }
+  .sh-pick.is-on { border: 3px solid Highlight; box-shadow: none; }
+  .sh-pay.is-on .sh-pick { border: 3px solid Highlight; box-shadow: none; }
+  .sh-track__step.is-current .sh-track__dot { border: 4px solid Highlight; }
+  .sh-track__step.is-done .sh-track__dot { border-color: Highlight; }
+  .sh-alert { border: 2px solid CanvasText; }
+  .sh-qty__btn:disabled { opacity: 1; color: GrayText; }
+}

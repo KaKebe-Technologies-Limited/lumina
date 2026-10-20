@@ -36,6 +36,35 @@
     &__actions { display: flex; align-items: center; gap: $space-3; }
     // specificity > .btn (which loads later): the pill appears from md up; below that the drawer carries the Donate button
     & &__cta { display: none; @include respond(md) { display: inline-flex; } }
+
+    // a header button that has child pages (Shop under Donate): the small list opens on hover or keyboard focus (desktop widths; below them the drawer lists the pages)
+    &__cta-group { position: relative; display: none; @include respond(md) { display: inline-flex; } }
+    &__cta-sub {
+        display: none;
+        position: absolute;
+        top: calc(100% + 0.4rem);
+        right: 0;
+        z-index: 3;
+        min-width: 11rem;
+        margin: 0;
+        padding: $space-2;
+        list-style: none;
+        background: $white;
+        border: 1px solid $line;
+        border-radius: $radius-lg;
+        box-shadow: $shadow-lg;
+        &::before { content: ''; position: absolute; left: 0; right: 0; top: -0.5rem; height: 0.5rem; }   // hover bridge
+        a {
+            display: block;
+            padding: $space-2 $space-4;
+            border-radius: $radius;
+            font-size: 0.95rem;
+            color: $navy;
+            text-decoration: none;
+            &:hover, &:focus-visible { background: $tint-cool; color: $navy-dark; }
+        }
+    }
+    &__cta-group:hover &__cta-sub, &__cta-group:focus-within &__cta-sub { display: block; }
 }
 
 .brand {
@@ -256,6 +285,8 @@
     // drawer footer: Donate button + contact lines (below md the header has no Donate pill)
     &__foot { margin-top: auto; padding: $space-5 $space-5 0; display: grid; gap: $space-4; @include respond(nav) { display: none; } }
     & &__foot-cta { @include respond(md) { display: none; } }
+    // child pages of a header button (Shop under Donate), listed under the button in the drawer
+    &__foot-links { margin: 0; padding: 0; list-style: none; display: grid; gap: $space-1; a { display: block; padding: $space-2 $space-3; border-radius: $radius; color: $navy; font-weight: 600; text-decoration: none; &:hover { background: $tint-cool; color: $navy-dark; } } }
     &__contact { display: grid; gap: $space-2; font-size: $fs-sm; color: $ink-soft; a { color: $navy; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; word-break: break-word; &:hover { color: $orange-text; } } }
 }
 

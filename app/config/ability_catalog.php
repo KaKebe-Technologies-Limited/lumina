@@ -66,6 +66,16 @@ return [
             'forms.delete'      => ['Delete forms and answers', 'Delete a whole form or single and bulk submissions. Also needed to set or shorten the retention period of a form, because answers older than that are deleted for good.'],
         ],
     ],
+    'shop' => [
+        'label' => 'Shop',
+        'items' => [
+            'shop.manage'   => ['Manage shop products', 'Add and edit products, categories, prices, stock and pictures. Nothing here touches orders or payments.'],
+            'shop.orders'   => ['See and handle shop orders', 'Read orders, confirm bookings, record and verify payments, change the order status, add notes and print packing slips. Orders contain the names, phone numbers, e-mail addresses and delivery addresses of the people who bought.'],
+            'shop.settings' => ['Shop, delivery and payment settings', 'Opens and closes the shop, sets delivery, and holds the PAYMENT settings, including the secret keys for card and mobile-money payments. Give this to trusted administrators only.', 'secrets' => true],
+            'shop.export'   => ['Download shop orders as CSV', null],
+            'shop.delete'   => ['Delete products and orders', null],
+        ],
+    ],
     'site' => [
         'label' => 'Website administration',
         'items' => [

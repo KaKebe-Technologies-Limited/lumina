@@ -2,7 +2,7 @@
 /**
  * FAQ with a photo on one side and an accordion on the other (first item open). Vars: $faqs* (rows of the faqs table or
  * ['question','answer'] arrays), $image (content_img() result: shown only when it has a photo), $eyebrow, $title, $lead,
- * $prefix (unique id prefix when there are two FAQ blocks on a page), $first_open (default true), $reverse (photo on the right).
+ * $prefix (unique id prefix when there are two FAQ blocks on a page), $first_open (default true), $reverse (photo on the right), $id (id of the heading, for aria-labelledby).
  * Renders nothing when there are no questions. Answers may be plain text (newlines kept) or rich text; both are output safely.
  */
 if (empty($faqs)) {
@@ -19,7 +19,7 @@ $fqHasHead = trim((string) ($title ?? '')) !== '' || trim((string) ($eyebrow ?? 
         <figure class="faq-split__media" data-reveal><img src="<?= e($fqImg['src']) ?>" alt="<?= e($fqImg['alt'] ?? '') ?>" loading="lazy" decoding="async"></figure>
     <?php endif; ?>
     <div class="faq-split__body">
-        <?php if ($fqHasHead): ?><div class="faq-split__head"><?= partial('partials/section-head', ['eyebrow' => $eyebrow ?? '', 'title' => $title ?? '', 'lead' => $lead ?? '', 'class' => 'mb-0']) ?></div><?php endif; ?>
+        <?php if ($fqHasHead): ?><div class="faq-split__head"><?= partial('partials/section-head', ['eyebrow' => $eyebrow ?? '', 'title' => $title ?? '', 'lead' => $lead ?? '', 'class' => 'mb-0', 'id' => $id ?? '']) ?></div><?php endif; ?>
         <div class="accordion" data-accordion="single">
             <?php foreach (array_values((array) $faqs) as $i => $f):
                 $pid = $fqPrefix . '-' . ($i + 1);

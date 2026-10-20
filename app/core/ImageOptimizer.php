@@ -101,12 +101,13 @@ final class ImageOptimizer
     /**
      * Prove that a file really is a PNG / JPEG / WebP / GIF image of acceptable size. Does not decode it.
      *
-     * @param array{max_bytes?:int,max_side?:int} $opts
+     * @param array{max_bytes?:int,max_side?:int,noun?:string} $opts noun: what the file is called in the error messages ('logo' by default; the shop says 'picture')
      * @return array{mime:string,ext:string,width:int,height:int,bytes:int}
      * @throws UploadException
      */
     public static function inspect(string $file, array $opts = []): array
     {
+        $noun = ($opts['noun'] ?? 'logo') === 'picture' ? 'picture' : 'logo';
         if (!is_file($file) || !is_readable($file)) {
             throw new UploadException('The picture could not be read.');
         }
@@ -132,7 +133,7 @@ final class ImageOptimizer
             default                                                                       => '',
         };
         if ($magic === '') {
-            throw new UploadException('Only PNG, JPG, WebP or GIF pictures are allowed. (SVG, PDF and other formats are not accepted: save the logo as a PNG.)');
+            throw new UploadException('Only PNG, JPG, WebP or GIF pictures are allowed. (SVG, PDF and other formats are not accepted: save the ' . $noun . ' as a ' . ($noun === 'logo' ? 'PNG' : 'JPG or PNG') . '.)');
         }
         if (self::caps('finfo')) {
             $fi = finfo_open(FILEINFO_MIME_TYPE);
@@ -151,14 +152,14 @@ final class ImageOptimizer
             throw new UploadException('That picture has no size.');
         }
         if ($w > $maxSide || $hgt > $maxSide) {
-            throw new UploadException('That picture is too large in pixels (' . $w . ' x ' . $hgt . '). The limit is ' . $maxSide . ' x ' . $maxSide . '. A logo needs at most about 1500 px wide.');
+            throw new UploadException('That picture is too large in pixels (' . $w . ' x ' . $hgt . '). The limit is ' . $maxSide . ' x ' . $maxSide . '. ' . ($noun === 'logo' ? 'A logo needs at most about 1500 px wide.' : 'A picture for a web page needs at most about 2000 px wide.'));
         }
-        self::refuseHiddenCode($file);
+        self::refuseHiddenCode($file, $noun);
         return ['mime' => $magic, 'ext' => self::MIME_EXT[$magic], 'width' => $w, 'height' => $hgt, 'bytes' => $bytes];
     }
 
     /** Pictures that carry script or markup inside their bytes (polyglots) are refused outright, whatever the re-encoding would do. */
-    private static function refuseHiddenCode(string $file): void
+    private static function refuseHiddenCode(string $file, string $noun = 'logo'): void
     {
         $h = fopen($file, 'rb');
         if ($h === false) {
@@ -170,7 +171,7 @@ final class ImageOptimizer
             $buf = $tail . $chunk;
             if (preg_match('/<\?php|<script|<svg|<html|<!doctype/i', $buf) === 1) {
                 fclose($h);
-                throw new UploadException('That file contains hidden program code or markup and was refused. Export the logo again from your design program as a plain PNG.');
+                throw new UploadException('That file contains hidden program code or markup and was refused. Export the ' . $noun . ' again from your ' . ($noun === 'logo' ? 'design program as a plain PNG.' : 'photo or design program as a plain JPG or PNG.'));
             }
             $tail = substr($buf, -16);
         }

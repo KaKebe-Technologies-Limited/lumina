@@ -18,6 +18,8 @@ final class Log
             }
             $ctx = $context === [] ? '' : ' ' . json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR);
             $line = '[' . date('Y-m-d H:i:s') . '] ' . strtoupper($level) . ' ' . str_replace(["\r", "\n"], ' ', $message) . $ctx . PHP_EOL;
+            // a secret link is a credential (the private order page, the payment return key, a meeting or unsubscribe link): keep it out of the files
+            $line = (string) preg_replace('~(/(?:shop/(?:order|pay|pay/return)|meeting|unsubscribe)/)[A-Fa-f0-9]{20,}~', '$1[link]', $line);
             @file_put_contents($dir . '/app-' . date('Y-m-d') . '.log', $line, FILE_APPEND | LOCK_EX);
         } catch (\Throwable) {
             // logging must never break a request

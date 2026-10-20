@@ -51,6 +51,19 @@ final class DashboardController extends AdminController
                 $tiles[] = ['icon' => 'inbox', 'value' => number_format($fs['new']), 'label' => 'New form submissions', 'sub' => number_format($fs['week']) . ' in the last 7 days', 'url' => 'admin/form-answers', 'alert' => $fs['new'] > 0];
             }
         }
+        // Shop (docs/SHOP.md): orders that need a person (new, or a payment to check). Counts only, no customer data; shown once the shop is open or has had an order.
+        if (can('shop.orders')) {
+            try {
+                $shopTodo = \App\Services\Shop\OrderService::newCount();
+                $shopAll = (int) \App\Core\Database::value('SELECT COUNT(*) FROM shop_orders', [], 0);
+                if ($shopAll > 0 || \App\Services\Shop\ShopSettings::isOpen()) {
+                    $tiles[] = ['icon' => 'shopping-bag', 'value' => number_format($shopTodo), 'label' => 'Shop orders to handle', 'sub' => number_format($shopAll) . ' order' . ($shopAll === 1 ? '' : 's') . ' in total',
+                        'url' => 'admin/shop/orders?needs_action=1', 'alert' => $shopTodo > 0];
+                }
+            } catch (\Throwable) {
+                // the shop tables do not exist yet (schema not applied): no tile
+            }
+        }
         if ($content) {
             $p = $counts['posts'];
             $tiles[] = ['icon' => 'newspaper', 'value' => number_format($counts['posts_total']), 'label' => 'Published posts', 'sub' => $p['blog'] . ' blog, ' . $p['news'] . ' news, ' . $p['press'] . ' press', 'url' => 'admin/posts'];

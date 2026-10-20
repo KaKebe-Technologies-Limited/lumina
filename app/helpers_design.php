@@ -101,6 +101,7 @@ function icon_options(): array
         'briefcase' => 'Briefcase / jobs', 'target' => 'Target / goal', 'rocket' => 'Rocket / launch', 'trending-up' => 'Growth chart', 'award' => 'Award',
         'globe' => 'Globe', 'map-pin' => 'Location', 'calendar' => 'Calendar', 'mail' => 'Email', 'phone' => 'Phone', 'shield' => 'Shield / safety',
         'star' => 'Star', 'check-circle' => 'Check mark', 'banknote' => 'Money / income', 'home' => 'Home', 'compass' => 'Compass / direction', 'mic' => 'Microphone / voice',
+        'shopping-bag' => 'Shopping bag', 'package' => 'Package / delivery',
     ];
     $known = array_flip(Icons::names());
     return array_intersect_key($all, $known);

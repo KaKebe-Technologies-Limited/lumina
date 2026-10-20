@@ -27,7 +27,7 @@ $have = is_array($oldAbilities) ? $oldAbilities : (array) ($row['abilities'] ?? 
                     $on = $locked || in_array($ab, $have, true); ?>
                     <label class="check role-ability">
                         <input type="checkbox" name="abilities[]" value="<?= e($ab) ?>"<?= $on ? ' checked' : '' ?><?= $locked ? ' disabled' : '' ?>>
-                        <span><strong><?= e($def[0]) ?></strong><?php if (!empty($def[1])): ?><small><?= e($def[1]) ?></small><?php endif; ?></span>
+                        <span><strong><?= e($def[0]) ?></strong><?php if (!empty($def['secrets'])): ?> <span class="badge badge--warning">Holds payment secrets</span><?php endif; ?><?php if (!empty($def[1])): ?><small><?= e($def[1]) ?></small><?php endif; ?></span>
                     </label>
                     <?php if ($locked): ?><input type="hidden" name="abilities[]" value="<?= e($ab) ?>"><?php endif; ?>
                 <?php endforeach; ?>

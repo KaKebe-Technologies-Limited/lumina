@@ -120,5 +120,18 @@ return [
                     . '<p>To see, correct or delete your membership information, or to withdraw your consent, contact us at {email_link}.</p>'],
             ],
         ],
+        [
+            'key' => 'shop', 'label' => 'Shop orders (section added after the notice)', 'toggle' => true,
+            'help' => 'DRAFT: this section is shown as the last numbered section of the notice, after the membership section. It describes the personal data collected when someone buys from the shop. Confirm it, and the retention period it mentions, with the foundation and a legal adviser. Switch it off only if the shop is not used.',
+            'fields' => [
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Shop orders', 'maxlength' => 140],
+                ['key' => 'body', 'label' => 'Text', 'type' => 'richtext', 'default' => '<p><strong>Draft for the foundation and its legal adviser to confirm.</strong></p>'
+                    . '<p>If you buy something from our shop, we collect your name, email address and phone number, your delivery address if you ask for delivery, any note you write to us, the items you order and the amount, how you chose to pay, and any payment reference you give us. We also keep a scrambled, keyed hash of your IP address and the time you agreed to our terms, to prevent abuse.</p>'
+                    . '<p>Card and mobile-money payments made online are processed by our payment partner, Flutterwave, on its own secure page. We never see or store your card number: we only receive confirmation that a payment was made, its amount and its reference. When you pay online, your name, email address and phone number are passed to Flutterwave so that it can process the payment.</p>'
+                    . '<p>We use this information to prepare and deliver your order, to confirm and record your payment, to contact you about your order, and to keep our accounts. Only authorised staff who are signed in can see orders; they are never published on this website. Your order page can only be opened with the private link we send you.</p>'
+                    . '<p>We keep order records for as long as we need them for our accounts and the law requires. [The foundation will confirm the exact retention period here.]</p>'
+                    . '<p>To see, correct or delete your order information, contact us at {email_link}.</p>'],
+            ],
+        ],
     ],
 ];

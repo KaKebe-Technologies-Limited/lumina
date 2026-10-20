@@ -220,6 +220,7 @@ require __DIR__ . '/selftest-partners-ui.php';           // partner tile / grid 
 require __DIR__ . '/selftest-newsletter-live.php';      // admin change -> public site at once: real HTTP requests to http://localhost/<folder>/ (the HTTP part skips itself when the site does not answer), PDF e-mail, live status
 require __DIR__ . '/selftest-partners-newsletter.php';   // partner-logo pipeline, PDF newsletters, live status, public PDF routes, menu, schema (removes its own test data; GD checks need -d extension=gd)
 require __DIR__ . '/selftest-forms.php';               // forms: definition schema + fuzz, patterns, condition truth table, validator, files, templates, service, submissions, race, export, mail, retention, spam traps, abilities + the HTTP flow (removes its own test data)
+require __DIR__ . '/selftest-shop.php';                 // shop: money, seed / abilities, SecretStore, products, cart, orders (stock race), status + payment machines, Flutterwave against the LOCAL MOCK, CSV, e-mails, pictures (needs -d extension=gd), HTTP flow + admin abilities (removes its own test data, restores the shop settings)
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);

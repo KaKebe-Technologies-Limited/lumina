@@ -142,12 +142,17 @@ return [
         'forms.submissions' => ['admin', 'editor'], // view and handle the answers people sent through a form: status, notes, files (PERSONAL DATA)
         'forms.export'      => ['admin'],           // download the answers of a form as CSV
         'forms.delete'      => ['admin'],           // delete a form, or delete submissions (single or bulk)
+        'shop.manage'       => ['admin', 'editor'], // shop products, categories and pictures (docs/SHOP.md)
+        'shop.orders'       => ['admin', 'editor'], // shop orders: view, confirm, record payments, change status, notes, packing slips (PERSONAL DATA of buyers)
+        'shop.settings'     => ['admin'],           // shop settings, delivery and PAYMENT settings (holds the payment-gateway secrets): admin only by default
+        'shop.export'       => ['admin'],           // download shop orders as CSV
+        'shop.delete'       => ['admin'],           // delete products and orders
     ],
 
     /** Slugs a custom page may NOT use (they are real routes or folders). */
     'reserved_slugs' => [
         'admin', 'assets', 'uploads', 'api', 'login', 'logout', 'index', 'storage', 'app', 'bin', 'database', 'docs', 'scss', 'tools',
         'vendor', 'sitemap', 'sitemap-xml', 'robots', 'robots-txt', 'subscribe', 'unsubscribe', 'search', 'download', 'downloads',
-        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter', 'calendar', 'meeting', 'meetings', 'forms',
+        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter', 'calendar', 'meeting', 'meetings', 'forms', 'shop',
     ],
 ];

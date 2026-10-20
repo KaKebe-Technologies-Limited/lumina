@@ -572,7 +572,7 @@ ON DUPLICATE KEY UPDATE
 -- ---------------------------------------------------------------------------------------------------------------------------------------
 INSERT IGNORE INTO roles (slug, name, description, abilities, is_system) VALUES
   ('admin', 'Administrator', 'Can do everything, including users, roles, settings and menus.', '[]', 1),
-  ('editor', 'Editor', 'Edits pages and content, handles the inbox, members, newsletters, calendar and meetings.', '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions"]', 1),
+  ('editor', 'Editor', 'Edits pages and content, handles the inbox, members, newsletters, calendar and meetings.', '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders"]', 1),
   ('content-writer', 'Content Writer', 'Writes and edits website pages and content (blog, programmes, gallery, events). Cannot see messages, members or settings.', '["dashboard.view","pages.edit","content.manage"]', 0),
   ('communications', 'Communications Officer', 'Content, newsletters, calendar and meetings. Cannot email the whole list or see the inbox.', '["dashboard.view","content.manage","newsletter.manage","calendar.manage","meetings.manage"]', 0),
   ('membership-officer', 'Membership Officer', 'Handles membership applications, payments and receipts, with CSV export and meetings. No website editing.', '["dashboard.view","members.manage","export.csv","meetings.manage"]', 0),
@@ -618,3 +618,176 @@ WHERE slug = 'editor' AND is_system = 1
   AND abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage"]'
   AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_forms_editor_role_v1') m);
 INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_forms_editor_role_v1', '1');
+
+-- ------------------------------------------------------------------ shop (see docs/SHOP.md). ADDITIVE and IDEMPOTENT.
+-- Settings: every key of App\Services\Shop\ShopSettings::DEFS with its default (a selftest compares the two). They are refreshed from here ONLY while
+-- they are pristine (updated_at = created_at), like every other setting; a value the owner saved is never overwritten. The shop starts CLOSED
+-- (shop_open = 0): the owner reviews the sample products, sets delivery and the payment methods, then opens it in Admin > Shop > Settings.
+-- The payment-gateway secrets are NOT seeded and NOT in this file: they are typed in Admin > Shop > Payments (stored encrypted) or set in .env.
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('shop_open', '0'),
+  ('shop_closed_message', ''),
+  ('shop_currency', 'UGX'),
+  ('shop_order_prefix', 'LAF'),
+  ('shop_notify_emails', ''),
+  ('shop_max_qty', '10'),
+  ('shop_hold_days', '7'),
+  ('shop_manual_hold_days', '3'),
+  ('shop_gateway_hold_hours', '24'),
+  ('shop_restock_on_cancel', '1'),
+  ('shop_restock_on_refund', '0'),
+  ('shop_auto_confirm_paid', '1'),
+  ('shop_pickup_enabled', '1'),
+  ('shop_pickup_address', ''),
+  ('shop_pickup_hours', ''),
+  ('shop_delivery_enabled', '0'),
+  ('shop_delivery_fee', '0'),
+  ('shop_free_delivery_over', '0'),
+  ('shop_delivery_areas', ''),
+  ('shop_terms_text', ''),
+  ('shop_returns_text', ''),
+  ('shop_delivery_text', ''),
+  ('shop_pay_book_enabled', '1'),
+  ('shop_pay_book_label', ''),
+  ('shop_pay_book_instructions', ''),
+  ('shop_pay_book_sort', '50'),
+  ('shop_pay_cod_enabled', '1'),
+  ('shop_pay_cod_label', ''),
+  ('shop_pay_cod_instructions', ''),
+  ('shop_pay_cod_sort', '40'),
+  ('shop_pay_momo_enabled', '0'),
+  ('shop_pay_momo_label', ''),
+  ('shop_pay_momo_instructions', ''),
+  ('shop_pay_momo_sort', '20'),
+  ('shop_momo_mtn_name', ''),
+  ('shop_momo_mtn_number', ''),
+  ('shop_momo_airtel_name', ''),
+  ('shop_momo_airtel_number', ''),
+  ('shop_pay_bank_enabled', '0'),
+  ('shop_pay_bank_label', ''),
+  ('shop_pay_bank_instructions', ''),
+  ('shop_pay_bank_sort', '30'),
+  ('shop_bank_name', ''),
+  ('shop_bank_account_name', ''),
+  ('shop_bank_account_number', ''),
+  ('shop_bank_branch', ''),
+  ('shop_bank_swift', ''),
+  ('shop_pay_flutterwave_enabled', '0'),
+  ('shop_pay_flutterwave_label', ''),
+  ('shop_pay_flutterwave_instructions', ''),
+  ('shop_pay_flutterwave_sort', '10'),
+  ('shop_flw_public_key', ''),
+  ('shop_flw_mode', 'test'),
+  ('shop_flw_options', 'card,mobilemoneyuganda'),
+  ('shop_flw_title', '')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+
+-- Page: /shop. Header menu: a child of Donate (dropdown under the Donate button) plus the footer menu. All its copy comes from the page registry
+-- (app/config/pages/shop.php). The owner can move or hide it in Admin > Menus. parent_slug is looked up so the statement also works on a database
+-- whose `donate` row is not there yet (then it is NULL and the entry is a top-level item).
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug)
+SELECT 'shop', 'Shop', 'registry', 'default', 1, 1, 1, 'Shop', 96, (SELECT p.slug FROM pages p WHERE p.slug = 'donate')
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(title), pages.title),
+  type = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(type), pages.type),
+  template = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(template), pages.template),
+  is_published = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(is_published), pages.is_published),
+  show_in_nav = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(show_in_nav), pages.show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(show_in_footer), pages.show_in_footer),
+  nav_label = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(nav_label), pages.nav_label),
+  nav_order = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(nav_order), pages.nav_order),
+  parent_slug = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(parent_slug), pages.parent_slug),
+  updated_at = IF((@reseed = 1 OR pages.updated_at = pages.created_at), pages.created_at, pages.updated_at);
+
+-- ONE-TIME menu upgrade (guarded by the marker setting below): a `shop` row that exists without the Donate parent (for example one created by an
+-- earlier registry sync before this seed ran) is put under Donate, but ONLY while its three menu fields still hold the defaults of a row nobody has
+-- touched (top level, in the header, order 96). After the first run the marker stops this for good, so moving or hiding Shop later (Admin > Menus) sticks.
+UPDATE pages SET parent_slug = (SELECT d.slug FROM (SELECT slug FROM pages WHERE slug = 'donate') d), updated_at = updated_at
+WHERE slug = 'shop' AND parent_slug IS NULL AND nav_order = 96 AND show_in_nav = 1
+  AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_shop_nav_v1') m);
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_shop_nav_v1', '1');
+
+-- ONE-TIME role upgrade (guarded by the marker setting below): the built-in Editor role gets "Manage shop products" and "See and handle shop orders".
+-- It is changed ONLY while its stored ability list is still EXACTLY the list it had before the shop existed (the owner never edited the role); a list
+-- changed in Admin > Roles is left alone. shop.settings (payment secrets), shop.export and shop.delete stay with the administrator.
+UPDATE roles SET abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders"]',
+  updated_at = updated_at
+WHERE slug = 'editor' AND is_system = 1
+  AND abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions"]'
+  AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_shop_editor_role_v1') m);
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_shop_editor_role_v1', '1');
+
+-- Sample categories and SIX SAMPLE PRODUCTS (placeholders: names, prices in UGX, texts and pictures are for the owner to replace or delete). They are
+-- inserted ONCE (marker below), so deleting a sample or a whole category never brings it back on a later import; the pictures are the generated
+-- illustrations in assets/img/shop/ (bin/dev/make-shop-samples.py). No order, no customer and no payment is ever seeded.
+INSERT INTO shop_categories (slug, name, sort_order, is_active)
+SELECT seed.slug, seed.name, seed.sort_order, 1 FROM (
+  SELECT 'jumpers-hoodies' AS slug, 'Jumpers & hoodies' AS name, 10 AS sort_order
+  UNION ALL SELECT 'caps', 'Caps', 20
+  UNION ALL SELECT 't-shirts', 'T-shirts', 30
+  UNION ALL SELECT 'stickers', 'Stickers', 40
+  UNION ALL SELECT 'other', 'Other', 90
+) AS seed
+WHERE (@reseed = 1 OR NOT EXISTS (SELECT 1 FROM settings WHERE setting_key = 'migration_shop_samples_v1'))
+ON DUPLICATE KEY UPDATE
+  shop_categories.name = IF((@reseed = 1 OR shop_categories.updated_at = shop_categories.created_at), VALUES(name), shop_categories.name),
+  shop_categories.sort_order = IF((@reseed = 1 OR shop_categories.updated_at = shop_categories.created_at), VALUES(sort_order), shop_categories.sort_order),
+  shop_categories.updated_at = IF((@reseed = 1 OR shop_categories.updated_at = shop_categories.created_at), shop_categories.created_at, shop_categories.updated_at);
+
+INSERT INTO shop_products (slug, category_id, name, summary, description, details, price, track_stock, stock_qty, low_stock, options, allow_booking, is_featured, is_sample, status, sort_order)
+SELECT seed.slug, (SELECT c.id FROM shop_categories c WHERE c.slug = seed.cat), seed.name, seed.summary, seed.description, seed.details, seed.price, seed.track_stock, seed.stock_qty, seed.low_stock, seed.options, seed.allow_booking, seed.is_featured, 1, 'published', seed.sort_order FROM (
+  SELECT 'mission-hoodie' AS slug, 'jumpers-hoodies' AS cat, 'Mission Hoodie' AS name, 'A warm navy hoodie with the Lumina Africa Foundation patch on the chest. Sample product.' AS summary, '<p>A navy hooded jumper with a front pocket and the Lumina Africa Foundation patch on the chest. The tagline &ldquo;Igniting Light, Inspiring Change&rdquo; is on the back.</p><p><strong>This is a sample product.</strong> Replace the name, description, price and pictures with the real item in Admin &gt; Shop &gt; Products.</p>' AS description, 'Lumina Africa Foundation patch on the chest
+Tagline on the back
+Sizes S to XXL' AS details, 85000.00 AS price, 1 AS track_stock, 40 AS stock_qty, 5 AS low_stock, '[{"key":"size","label":"Size","required":true,"values":[{"value":"s","label":"S","stock":null,"swatch":null},{"value":"m","label":"M","stock":null,"swatch":null},{"value":"l","label":"L","stock":null,"swatch":null},{"value":"xl","label":"XL","stock":null,"swatch":null},{"value":"xxl","label":"XXL","stock":null,"swatch":null}]}]' AS options, 1 AS allow_booking, 1 AS is_featured, 10 AS sort_order
+  UNION ALL SELECT 'lumina-crew-jumper', 'jumpers-hoodies', 'Lumina Crew Jumper', 'A gold crew-neck jumper with the Lumina patch. Sample product.', '<p>A gold crew-neck jumper with the Lumina Africa Foundation patch on the chest and the organisation name on the back.</p><p><strong>This is a sample product.</strong> Replace the name, description, price and pictures with the real item in Admin &gt; Shop &gt; Products.</p>', 'Lumina Africa Foundation patch on the chest
+Organisation name on the back
+Sizes S to XXL', 70000.00, 1, 25, 5, '[{"key":"size","label":"Size","required":true,"values":[{"value":"s","label":"S","stock":null,"swatch":null},{"value":"m","label":"M","stock":null,"swatch":null},{"value":"l","label":"L","stock":null,"swatch":null},{"value":"xl","label":"XL","stock":null,"swatch":null},{"value":"xxl","label":"XXL","stock":null,"swatch":null}]}]', 1, 0, 20
+  UNION ALL SELECT 'lumina-cap', 'caps', 'Lumina Cap', 'A cap with the Lumina patch on the front, in navy or gold. Sample product.', '<p>A cap with the Lumina Africa Foundation patch on the front. Choose navy or gold.</p><p><strong>This is a sample product.</strong> Replace the name, description, price and pictures with the real item in Admin &gt; Shop &gt; Products.</p>', 'Lumina Africa Foundation patch on the front
+Colours: navy or gold', 25000.00, 1, 60, 8, '[{"key":"colour","label":"Colour","required":true,"values":[{"value":"navy","label":"Navy","stock":null,"swatch":"#2c3950"},{"value":"gold","label":"Gold","stock":null,"swatch":"#d6a151"}]}]', 0, 1, 30
+  UNION ALL SELECT 'lumina-tshirt-navy', 't-shirts', 'Lumina T-shirt (Navy)', 'A navy T-shirt with the Lumina patch on the chest. Sample product.', '<p>A navy T-shirt with the Lumina Africa Foundation patch on the chest and the organisation name on the back.</p><p><strong>This is a sample product.</strong> Replace the name, description, price and pictures with the real item in Admin &gt; Shop &gt; Products.</p>', 'Lumina Africa Foundation patch on the chest
+Organisation name on the back
+Sizes S to XXL', 35000.00, 1, 80, 10, '[{"key":"size","label":"Size","required":true,"values":[{"value":"s","label":"S","stock":null,"swatch":null},{"value":"m","label":"M","stock":null,"swatch":null},{"value":"l","label":"L","stock":null,"swatch":null},{"value":"xl","label":"XL","stock":null,"swatch":null},{"value":"xxl","label":"XXL","stock":null,"swatch":null}]}]', 0, 1, 40
+  UNION ALL SELECT 'lumina-tshirt-cream', 't-shirts', 'Lumina T-shirt (Cream)', 'A cream T-shirt with the Lumina patch on the chest. Sample product.', '<p>A cream T-shirt with the Lumina Africa Foundation patch on the chest and &ldquo;Wear the mission&rdquo; on the back.</p><p><strong>This is a sample product.</strong> Replace the name, description, price and pictures with the real item in Admin &gt; Shop &gt; Products. Only a few are in stock so you can see how the &ldquo;Few left&rdquo; label looks.</p>', 'Lumina Africa Foundation patch on the chest
+Wear the mission on the back
+Sizes S to XXL', 35000.00, 1, 4, 5, '[{"key":"size","label":"Size","required":true,"values":[{"value":"s","label":"S","stock":null,"swatch":null},{"value":"m","label":"M","stock":null,"swatch":null},{"value":"l","label":"L","stock":null,"swatch":null},{"value":"xl","label":"XL","stock":null,"swatch":null},{"value":"xxl","label":"XXL","stock":null,"swatch":null}]}]', 0, 0, 50
+  UNION ALL SELECT 'lumina-sticker-pack', 'stickers', 'Lumina Sticker Pack', 'A sheet of Lumina stickers: the patch, the flame and the tagline. Sample product.', '<p>A sheet of Lumina Africa Foundation stickers: the round patch, the flame, a star and the words &ldquo;Wear the mission&rdquo;.</p><p><strong>This is a sample product.</strong> Replace the name, description, price and pictures with the real item in Admin &gt; Shop &gt; Products.</p>', 'One sheet of stickers
+Includes the round Lumina patch sticker', 10000.00, 0, NULL, 5, NULL, 0, 0, 60
+) AS seed
+WHERE (@reseed = 1 OR NOT EXISTS (SELECT 1 FROM settings WHERE setting_key = 'migration_shop_samples_v1'))
+ON DUPLICATE KEY UPDATE
+  shop_products.name = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(name), shop_products.name),
+  shop_products.summary = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(summary), shop_products.summary),
+  shop_products.description = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(description), shop_products.description),
+  shop_products.details = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(details), shop_products.details),
+  shop_products.price = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(price), shop_products.price),
+  shop_products.track_stock = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(track_stock), shop_products.track_stock),
+  shop_products.stock_qty = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(stock_qty), shop_products.stock_qty),
+  shop_products.low_stock = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(low_stock), shop_products.low_stock),
+  shop_products.options = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(options), shop_products.options),
+  shop_products.allow_booking = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(allow_booking), shop_products.allow_booking),
+  shop_products.is_featured = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(is_featured), shop_products.is_featured),
+  shop_products.sort_order = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), VALUES(sort_order), shop_products.sort_order),
+  shop_products.updated_at = IF((@reseed = 1 OR shop_products.updated_at = shop_products.created_at), shop_products.created_at, shop_products.updated_at);
+
+INSERT INTO shop_product_images (product_id, path, path_webp, path_2x, path_webp_2x, width, height, alt, sort_order, is_cover)
+SELECT p.id, i.path, i.path_webp, i.path_2x, i.path_webp_2x, i.width, i.height, i.alt, i.sort_order, i.is_cover FROM shop_products p JOIN (
+  SELECT 'mission-hoodie' AS slug, 'assets/img/shop/hoodie-navy-front.jpg' AS path, 'assets/img/shop/hoodie-navy-front.webp' AS path_webp, 'assets/img/shop/hoodie-navy-front-2x.jpg' AS path_2x, 'assets/img/shop/hoodie-navy-front-2x.webp' AS path_webp_2x, 600 AS width, 600 AS height, 'Navy hoodie with the Lumina patch on the chest (illustration)' AS alt, 10 AS sort_order, 1 AS is_cover
+  UNION ALL SELECT 'mission-hoodie', 'assets/img/shop/hoodie-navy-back.jpg', 'assets/img/shop/hoodie-navy-back.webp', 'assets/img/shop/hoodie-navy-back-2x.jpg', 'assets/img/shop/hoodie-navy-back-2x.webp', 600, 600, 'Back of the navy hoodie with the tagline Igniting Light, Inspiring Change (illustration)', 20, 0
+  UNION ALL SELECT 'lumina-crew-jumper', 'assets/img/shop/jumper-gold-front.jpg', 'assets/img/shop/jumper-gold-front.webp', 'assets/img/shop/jumper-gold-front-2x.jpg', 'assets/img/shop/jumper-gold-front-2x.webp', 600, 600, 'Gold crew-neck jumper with the Lumina patch (illustration)', 10, 1
+  UNION ALL SELECT 'lumina-crew-jumper', 'assets/img/shop/jumper-gold-back.jpg', 'assets/img/shop/jumper-gold-back.webp', 'assets/img/shop/jumper-gold-back-2x.jpg', 'assets/img/shop/jumper-gold-back-2x.webp', 600, 600, 'Back of the gold jumper with the words Lumina Africa Foundation (illustration)', 20, 0
+  UNION ALL SELECT 'lumina-cap', 'assets/img/shop/cap-navy.jpg', 'assets/img/shop/cap-navy.webp', 'assets/img/shop/cap-navy-2x.jpg', 'assets/img/shop/cap-navy-2x.webp', 600, 600, 'Navy cap with the Lumina patch (illustration)', 10, 1
+  UNION ALL SELECT 'lumina-cap', 'assets/img/shop/cap-gold.jpg', 'assets/img/shop/cap-gold.webp', 'assets/img/shop/cap-gold-2x.jpg', 'assets/img/shop/cap-gold-2x.webp', 600, 600, 'Gold cap with the Lumina patch (illustration)', 20, 0
+  UNION ALL SELECT 'lumina-tshirt-navy', 'assets/img/shop/tshirt-navy-front.jpg', 'assets/img/shop/tshirt-navy-front.webp', 'assets/img/shop/tshirt-navy-front-2x.jpg', 'assets/img/shop/tshirt-navy-front-2x.webp', 600, 600, 'Navy T-shirt with the Lumina patch on the chest (illustration)', 10, 1
+  UNION ALL SELECT 'lumina-tshirt-navy', 'assets/img/shop/tshirt-navy-back.jpg', 'assets/img/shop/tshirt-navy-back.webp', 'assets/img/shop/tshirt-navy-back-2x.jpg', 'assets/img/shop/tshirt-navy-back-2x.webp', 600, 600, 'Back of the navy T-shirt with the words Lumina Africa Foundation (illustration)', 20, 0
+  UNION ALL SELECT 'lumina-tshirt-cream', 'assets/img/shop/tshirt-cream-front.jpg', 'assets/img/shop/tshirt-cream-front.webp', 'assets/img/shop/tshirt-cream-front-2x.jpg', 'assets/img/shop/tshirt-cream-front-2x.webp', 600, 600, 'Cream T-shirt with the Lumina patch on the chest (illustration)', 10, 1
+  UNION ALL SELECT 'lumina-tshirt-cream', 'assets/img/shop/tshirt-cream-back.jpg', 'assets/img/shop/tshirt-cream-back.webp', 'assets/img/shop/tshirt-cream-back-2x.jpg', 'assets/img/shop/tshirt-cream-back-2x.webp', 600, 600, 'Back of the cream T-shirt with the words Wear the mission (illustration)', 20, 0
+  UNION ALL SELECT 'lumina-sticker-pack', 'assets/img/shop/stickers-sheet.jpg', 'assets/img/shop/stickers-sheet.webp', 'assets/img/shop/stickers-sheet-2x.jpg', 'assets/img/shop/stickers-sheet-2x.webp', 600, 600, 'A sheet of Lumina stickers (illustration)', 10, 1
+  UNION ALL SELECT 'lumina-sticker-pack', 'assets/img/shop/stickers-single.jpg', 'assets/img/shop/stickers-single.webp', 'assets/img/shop/stickers-single-2x.jpg', 'assets/img/shop/stickers-single-2x.webp', 600, 600, 'The round Lumina patch sticker (illustration)', 20, 0
+) AS i ON i.slug = p.slug
+WHERE p.is_sample = 1 AND (@reseed = 1 OR NOT EXISTS (SELECT 1 FROM settings WHERE setting_key = 'migration_shop_samples_v1'))
+  AND NOT EXISTS (SELECT 1 FROM shop_product_images x WHERE x.product_id = p.id AND x.path = i.path);
+
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_shop_samples_v1', '1');

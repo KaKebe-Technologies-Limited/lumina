@@ -14,6 +14,9 @@ $hdPhone = trim((string) setting('phone_1', ''));
 $hdEmail = trim((string) setting('email_primary', ''));
 $hdMenu = (string) content('global', 'labels.menu_open');
 $hdClose = (string) content('global', 'labels.menu_close');
+// shop: a small cart link, shown only once something is in the cart (CartService::units() reads the session only if it already exists; it never creates one)
+$hdShopOn = \App\Core\SitePages::isPublished('shop');
+$hdCartUnits = $hdShopOn ? \App\Services\Shop\CartService::units() : 0;
 ?>
 <header class="site-header" data-site-header>
     <div class="site-header__bar">
@@ -48,6 +51,11 @@ $hdClose = (string) content('global', 'labels.menu_close');
             <div class="site-nav__foot">
                 <?php foreach ($hdButtons as $btn): ?>
                     <a class="btn btn--cta btn--caps btn--block site-nav__foot-cta" href="<?= e($btn['url']) ?>"><?= e($btn['label']) ?></a>
+                    <?php if (!empty($btn['children'])): ?>
+                        <ul class="site-nav__foot-links" aria-label="<?= e($btn['label']) ?>">
+                            <?php foreach ($btn['children'] as $kid): ?><li><a href="<?= e($kid['url']) ?>"<?= $kid['active'] ? ' aria-current="page"' : '' ?>><?= e($kid['label']) ?></a></li><?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
                 <?php endforeach; ?>
                 <?php if ($hdPhone !== '' || $hdEmail !== ''): ?>
                     <div class="site-nav__contact">
@@ -59,8 +67,21 @@ $hdClose = (string) content('global', 'labels.menu_close');
         </nav>
 
         <div class="site-header__actions">
+            <?php if ($hdShopOn): ?>
+                <a class="site-header__cart" href="<?= e(url('shop/cart')) ?>" data-shop-cart-link data-aria="<?= e(content('shop', 'cart.header_aria')) ?>" data-aria-one="<?= e(content('shop', 'cart.header_aria_one')) ?>" aria-label="<?= e(str_replace('{n}', (string) $hdCartUnits, (string) content('shop', $hdCartUnits === 1 ? 'cart.header_aria_one' : 'cart.header_aria'))) ?>"<?= $hdCartUnits > 0 ? '' : ' hidden' ?>><?= icon('shopping-bag') ?><span class="site-header__cart-count" data-shop-count><?= (int) $hdCartUnits ?></span></a>
+            <?php endif; ?>
             <?php foreach ($hdButtons as $btn): ?>
-                <a class="btn btn--primary btn--caps site-header__cta" href="<?= e($btn['url']) ?>"><?= e($btn['label']) ?></a>
+                <?php if (!empty($btn['children'])): ?>
+                    <?php /* a button entry that has child pages (e.g. Shop under Donate): the pill opens a small list on hover / keyboard focus; the drawer lists them too */ ?>
+                    <div class="site-header__cta-group">
+                        <a class="btn btn--primary btn--caps site-header__cta" href="<?= e($btn['url']) ?>"><?= e($btn['label']) ?></a>
+                        <ul class="site-header__cta-sub" aria-label="<?= e($btn['label']) ?>">
+                            <?php foreach ($btn['children'] as $kid): ?><li><a href="<?= e($kid['url']) ?>"<?= $kid['active'] ? ' aria-current="page"' : '' ?>><?= e($kid['label']) ?></a></li><?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php else: ?>
+                    <a class="btn btn--primary btn--caps site-header__cta" href="<?= e($btn['url']) ?>"><?= e($btn['label']) ?></a>
+                <?php endif; ?>
             <?php endforeach; ?>
             <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="<?= e($hdMenu) ?>">
                 <span class="nav-toggle__bars"></span>

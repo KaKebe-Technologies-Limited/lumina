@@ -1160,3 +1160,179 @@ SET @lumina_ddl = IF(@lumina_has_fk = 0, 'ALTER TABLE `jobs` ADD KEY `ix_jobs_fo
 PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
+
+-- ======================================================================================================================
+-- SHOP (see docs/SHOP.md). ADDITIVE and IDEMPOTENT: eight new tables, no change to an existing table.
+-- Money is DECIMAL(12,2) in the shop currency (setting shop_currency, default UGX); the application computes in integer minor units
+-- (App\Services\Shop\Money, 100 per unit) and PricingService is the ONLY place where an order total is calculated. Orders are PERSONAL DATA
+-- (name, e-mail, phone, address): admin-gated, never in logs / audit details / sitemap / JSON endpoints. NO card data is ever stored: card and
+-- mobile-money payments go through the Flutterwave hosted checkout; only the gateway reference, the status and the amount are kept.
+-- Orders keep a SNAPSHOT of every line (name, option text, unit price) so editing or deleting a product never changes history.
+-- ======================================================================================================================
+CREATE TABLE IF NOT EXISTS `shop_categories` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` VARCHAR(120) NOT NULL,
+  `name` VARCHAR(120) NOT NULL,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_shop_categories_slug` (`slug`),
+  KEY `ix_shop_categories_active` (`is_active`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `shop_products` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` VARCHAR(160) NOT NULL,
+  `category_id` INT UNSIGNED NULL,
+  `name` VARCHAR(190) NOT NULL,
+  `summary` VARCHAR(400) NULL,                                    -- short description (cards, search results, social sharing)
+  `description` MEDIUMTEXT NULL,                                  -- long description: sanitised rich text (Sanitizer::html), output with rich()
+  `details` TEXT NULL,                                            -- "details list" on the product page: one detail per line, plain text
+  `price` DECIMAL(12,2) NOT NULL DEFAULT 0.00,                    -- regular price in the shop currency
+  `sale_price` DECIMAL(12,2) NULL,                                -- NULL = no sale; must be lower than price to count
+  `sale_starts` DATETIME NULL,                                    -- EAT; NULL = from now
+  `sale_ends` DATETIME NULL,                                      -- EAT; NULL = until further notice
+  `sku` VARCHAR(60) NULL,
+  `track_stock` TINYINT(1) NOT NULL DEFAULT 0,                    -- 0 = unlimited (made to order)
+  `stock_qty` INT NULL,                                           -- units on hand when track_stock = 1 (reserved units are already subtracted)
+  `low_stock` INT UNSIGNED NOT NULL DEFAULT 5,                    -- "Few left" badge and admin alert at or below this
+  `options` MEDIUMTEXT NULL,                                      -- JSON option groups: [{"key","label","required","values":[{"value","label","stock"|null,"swatch"|null}]}] (ProductService::parseOptions)
+  `allow_booking` TINYINT(1) NOT NULL DEFAULT 0,                  -- "Book / reserve this item" next to "Add to cart"
+  `is_featured` TINYINT(1) NOT NULL DEFAULT 0,
+  `is_sample` TINYINT(1) NOT NULL DEFAULT 0,                      -- placeholder product shipped with the site: the admin shows "Sample product - edit or delete"
+  `status` ENUM('draft','published','archived') NOT NULL DEFAULT 'draft',
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `seo_title` VARCHAR(190) NULL,
+  `seo_description` VARCHAR(300) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_shop_products_slug` (`slug`),
+  KEY `ix_shop_products_list` (`status`, `is_featured`, `sort_order`),
+  KEY `ix_shop_products_category` (`category_id`, `status`),
+  KEY `ix_shop_products_created` (`created_at`),
+  CONSTRAINT `fk_shop_products_category` FOREIGN KEY (`category_id`) REFERENCES `shop_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `shop_product_images` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `product_id` INT UNSIGNED NOT NULL,
+  `path` VARCHAR(255) NOT NULL,                                   -- fallback picture (JPEG/PNG): "assets/img/shop/x.jpg" (bundled) or "shop/2026/10/x.jpg" (under uploads/)
+  `path_webp` VARCHAR(255) NULL,
+  `path_2x` VARCHAR(255) NULL,                                    -- exactly twice the size of `path`, or NULL
+  `path_webp_2x` VARCHAR(255) NULL,
+  `width` SMALLINT UNSIGNED NULL,                                 -- pixel size of `path` (width / height attributes: no layout shift)
+  `height` SMALLINT UNSIGNED NULL,
+  `alt` VARCHAR(190) NULL,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `is_cover` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_shop_product_images_product` (`product_id`, `sort_order`),
+  CONSTRAINT `fk_shop_product_images_product` FOREIGN KEY (`product_id`) REFERENCES `shop_products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `shop_orders` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `order_number` VARCHAR(40) NOT NULL,                            -- shown to people and quoted as the payment reference: PREFIX-YYMMDD-XXXX
+  `token` VARCHAR(64) NOT NULL,                                   -- the customer's credential for /shop/order/{token}: 40 hex = 160 bits from random_bytes
+  `status` ENUM('pending','confirmed','processing','ready','shipped','completed','cancelled','refunded') NOT NULL DEFAULT 'pending',
+  `payment_status` ENUM('unpaid','pending','paid','failed','refunded','review') NOT NULL DEFAULT 'unpaid',
+  `payment_method` VARCHAR(30) NOT NULL DEFAULT 'book',          -- book | cod | momo | bank | flutterwave
+  `customer_name` VARCHAR(150) NOT NULL,                          -- PERSONAL DATA from here to delivery_address
+  `customer_email` VARCHAR(190) NOT NULL,
+  `customer_phone` VARCHAR(40) NOT NULL,
+  `delivery_method` ENUM('pickup','delivery') NOT NULL DEFAULT 'pickup',
+  `delivery_address` TEXT NULL,
+  `delivery_fee` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  `subtotal` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  `total` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  `currency` CHAR(3) NOT NULL DEFAULT 'UGX',
+  `customer_note` TEXT NULL,
+  `staff_note` TEXT NULL,                                         -- internal notes (admin only)
+  `payment_reference` VARCHAR(120) NULL,                          -- what the customer typed (mobile-money transaction ID / bank transfer reference): to be VERIFIED by staff
+  `gateway_tx_ref` VARCHAR(120) NULL,                             -- latest Flutterwave tx_ref: <order_number>-<attempt>
+  `gateway_attempts` INT UNSIGNED NOT NULL DEFAULT 0,
+  `hold_until` DATETIME NULL,                                     -- stock reserved until then while the order is unpaid (NULL = held until staff acts / already paid)
+  `consent_at` DATETIME NULL,
+  `ip_hash` CHAR(64) NULL,                                        -- keyed hash of the buyer's IP (abuse tracking only)
+  `paid_at` DATETIME NULL,
+  `stock_released` TINYINT(1) NOT NULL DEFAULT 0,                 -- 1 once the reserved units went back on the shelf (never twice)
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_shop_orders_number` (`order_number`),
+  UNIQUE KEY `uq_shop_orders_token` (`token`),
+  KEY `ix_shop_orders_status` (`status`, `created_at`),
+  KEY `ix_shop_orders_payment` (`payment_status`, `created_at`),
+  KEY `ix_shop_orders_created` (`created_at`),
+  KEY `ix_shop_orders_email` (`customer_email`),
+  KEY `ix_shop_orders_hold` (`hold_until`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `shop_order_items` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `order_id` INT UNSIGNED NOT NULL,
+  `product_id` INT UNSIGNED NULL,                                 -- NULL once the product was deleted (the snapshot below stays)
+  `name` VARCHAR(190) NOT NULL,
+  `options_text` VARCHAR(255) NULL,                               -- "Size: M, Colour: Navy"
+  `selection` VARCHAR(500) NULL,                                  -- JSON {"size":"m","colour":"navy"}: needed to give option stock back
+  `unit_price` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  `qty` INT UNSIGNED NOT NULL DEFAULT 1,
+  `line_total` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  `sku` VARCHAR(60) NULL,
+  `image` VARCHAR(255) NULL,                                      -- cover picture path at order time (receipt, e-mail)
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_shop_order_items_order` (`order_id`),
+  KEY `ix_shop_order_items_product` (`product_id`),
+  CONSTRAINT `fk_shop_order_items_order` FOREIGN KEY (`order_id`) REFERENCES `shop_orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_shop_order_items_product` FOREIGN KEY (`product_id`) REFERENCES `shop_products` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `shop_payments` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `order_id` INT UNSIGNED NOT NULL,
+  `method` VARCHAR(30) NOT NULL,
+  `amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  `currency` CHAR(3) NOT NULL DEFAULT 'UGX',
+  `reference` VARCHAR(120) NULL,                                  -- tx_ref, mobile-money transaction ID, bank reference, receipt number
+  `status` VARCHAR(20) NOT NULL DEFAULT 'pending',               -- pending | success | failed | review | refunded | duplicate | superseded
+  `source` ENUM('customer','staff','gateway','webhook') NOT NULL DEFAULT 'staff',
+  `gateway_id` VARCHAR(40) NULL,                                  -- Flutterwave transaction id (digits)
+  `user_id` INT UNSIGNED NULL,                                    -- staff member who recorded it
+  `meta` VARCHAR(255) NULL,                                       -- short note (never card data, never personal data)
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_shop_payments_order` (`order_id`, `id`),
+  KEY `ix_shop_payments_reference` (`reference`),
+  CONSTRAINT `fk_shop_payments_order` FOREIGN KEY (`order_id`) REFERENCES `shop_orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `shop_order_log` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `order_id` INT UNSIGNED NOT NULL,
+  `kind` VARCHAR(30) NOT NULL,                                    -- created | status | payment | note | email | stock | gateway
+  `message` VARCHAR(255) NOT NULL DEFAULT '',                     -- the timeline line: no customer data
+  `user_id` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_shop_order_log_order` (`order_id`, `id`),
+  CONSTRAINT `fk_shop_order_log_order` FOREIGN KEY (`order_id`) REFERENCES `shop_orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `shop_events` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `kind` VARCHAR(40) NOT NULL,                                    -- payment_started | return_verified | webhook_ok | webhook_rejected | mismatch | duplicate | connection_test ...
+  `ref` VARCHAR(120) NULL,                                        -- tx_ref / order number: never a payload, never personal data
+  `order_id` INT UNSIGNED NULL,
+  `status` VARCHAR(30) NULL,                                      -- successful | failed | rejected | error ...
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_shop_events_created` (`created_at`),
+  KEY `ix_shop_events_ref` (`ref`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -26,6 +26,7 @@
         backdrop-filter: blur(6px);
         @include respond(lg) { margin-inline: 0; border-radius: 0 0 $radius-lg $radius-lg; }
     }
-    .input-group { display: flex; gap: $space-2; > .input { flex: 1; min-width: 0; } }
+    // wraps on a phone: the buttons drop under the field instead of squeezing it to a sliver (a 48-character hash must stay readable)
+    .input-group { display: flex; flex-wrap: wrap; gap: $space-2; > .input { flex: 1 1 12rem; min-width: 0; } }
     .required-note { font-size: $fs-xs; color: $ink-soft; }
 }
