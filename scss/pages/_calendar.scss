@@ -192,7 +192,7 @@
     line-height: 1.3;
     text-decoration: none;
     overflow-wrap: break-word;                  // only a word wider than the cell breaks ('anywhere' cut "Independence" in half)
-    hyphens: auto;
+    hyphens: manual;
     transition: filter $t-fast ease;
 
     &:hover { filter: brightness(0.95); .cal-pill__text { text-decoration: underline; } }

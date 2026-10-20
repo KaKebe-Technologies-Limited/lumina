@@ -46,13 +46,13 @@ $info:          #1F5F8B !default;
 $info-bg:       #E6F1F8 !default;
 
 // ---- Typography -------------------------------------------------------------------------
-$font-heading:  'Poppins', 'Poppins Fallback', 'Segoe UI', system-ui, -apple-system, sans-serif !default;
-$font-heading-caps: 'Poppins', 'Poppins Caps Fallback', 'Segoe UI', system-ui, -apple-system, sans-serif !default;   // Poppins set in capitals (eyebrows, .btn--caps): own fallback metrics
+$font-heading:  'DM Sans', 'DM Sans Fallback', 'Segoe UI', system-ui, -apple-system, sans-serif !default;
+$font-heading-caps: 'DM Sans', 'DM Sans Fallback', 'Segoe UI', system-ui, -apple-system, sans-serif !default;   // DM Sans in capitals (eyebrows, .btn--caps)
 $font-body:     'DM Sans', 'DM Sans Fallback', 'Segoe UI', system-ui, -apple-system, sans-serif !default;
 $font-display:  'Fraunces', 'Fraunces Fallback', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif !default;   // h1-h3, big numerals, quotes
 $font-mono:     ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !default;
 
-$fs-xs:   0.8125rem;
+$fs-xs:   0.875rem;
 $fs-sm:   0.9375rem;
 $fs-base: 1.0625rem;
 $fs-md:   1.1875rem;
@@ -64,7 +64,7 @@ $fs-4xl:  3.75rem;
 
 $lh-tight: 1.15;
 $lh-snug:  1.3;
-$lh-base:  1.65;
+$lh-base:  1.7;
 
 // ---- Spacing scale (4px base) -----------------------------------------------------------------
 $space-1: 0.25rem;

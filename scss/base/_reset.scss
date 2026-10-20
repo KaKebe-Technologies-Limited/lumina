@@ -18,9 +18,11 @@ body {
     margin: 0;
     min-height: 100vh;
     font-family: $font-body;
-    font-size: $fs-base;
+    font-size: fluid(1.0625rem, '1rem + 0.2vw', 1.125rem);          // 17px on phones, up to 18px on large screens
     line-height: $lh-base;
     color: $ink;
+    text-align: left;
+    hyphens: manual;
     background: $white;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

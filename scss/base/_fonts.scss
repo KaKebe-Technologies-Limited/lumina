@@ -27,18 +27,7 @@ $_georgia-bold: local('Georgia Bold'), local('Georgia-Bold'), local('Gelasio Bol
 @include font-fallback('DM Sans Fallback', 600, $_arial-bold, 100.2%, 98.8%, 30.9%);
 @include font-fallback('DM Sans Fallback', 700, $_arial-bold, 101.9%, 97.2%, 30.4%);
 
-// Poppins (UI labels, buttons, h4-h6) -> Arial
-@include font-fallback('Poppins Fallback', 500, $_arial,      113.7%, 92.4%, 30.8%, 8.8%);
-@include font-fallback('Poppins Fallback', 600, $_arial-bold, 106.3%, 98.8%, 32.9%, 9.4%);
-@include font-fallback('Poppins Fallback', 700, $_arial-bold, 107.4%, 97.8%, 32.6%, 9.3%);
-
 // Fraunces (display serif) -> Georgia
 @include font-fallback('Fraunces Fallback', 500, $_georgia,      107.1%, 91.5%,  24.3%);
 @include font-fallback('Fraunces Fallback', 600, $_georgia-bold, 93.6%,  104.7%, 27.8%);
 @include font-fallback('Fraunces Fallback', 700, $_georgia-bold, 96.6%,  101.4%, 26.9%);
-
-// Poppins set in CAPITALS (eyebrows, .btn--caps): capitals are ~4% NARROWER than Arial's, lower-case ~7-14% wider, so the
-// upper-case labels get their own fallback measured on a capitals sample.
-@include font-fallback('Poppins Caps Fallback', 500, $_arial,      95.8%, 109.6%, 36.5%, 10.4%);
-@include font-fallback('Poppins Caps Fallback', 600, $_arial-bold, 95.6%, 109.8%, 36.6%, 10.5%);
-@include font-fallback('Poppins Caps Fallback', 700, $_arial-bold, 96.6%, 108.7%, 36.2%, 10.4%);

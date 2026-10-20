@@ -2,7 +2,7 @@
 // the [form] embed, the optional /forms list and the print-a-blank-copy sheet.
 // Owner: PUBLIC agent (docs/FORMS.md section 8). Markup: views/web/forms/_form.php + _field.php; behaviour: assets/js/forms.js.
 // Rules: tokens only, mobile first, 44px+ targets, visible focus, no colour-only cues, reduced motion respected, labels / help left-aligned
-// (the justified-text rule applies to reading text only: forms carry data-no-justify).
+// (text is left-aligned site-wide).
 // The accent of a form (settings.theme.accent) arrives as a body / wrapper class: theme-orange | theme-navy | theme-teal | theme-gold.
 //   --lf-accent  fill of buttons       --lf-accent-ink  text on that fill     --lf-mark  borders / marks that must reach 3:1 on white
 //   --lf-soft    pale accent tint      --lf-ring        focus ring colour

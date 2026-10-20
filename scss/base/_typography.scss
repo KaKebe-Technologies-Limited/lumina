@@ -1,4 +1,5 @@
-// Typography (public site). Display serif (Fraunces 500-700) for h1-h3, UI/labels in Poppins, body in DM Sans.
+// Typography (public site). Two families: display serif (Fraunces 500-700) for h1-h3, DM Sans for body, labels and buttons.
+// Text is LEFT-aligned (ragged right) everywhere: even word spacing, no rivers, no automatic hyphenation. Centred only for short headings/intros set that way.
 h1, h2, h3, h4, h5, h6,
 .h1, .h2, .h3, .h4 {
     font-family: $font-heading;
@@ -192,18 +193,4 @@ small, .small {
 
 .prose--wide {
     max-width: none;
-}
-
-// Justified reading text: the class is set by assets/js/main.js only on long, left-aligned paragraphs / list items in wide-enough columns.
-.is-justified {
-    text-align: justify;
-    text-justify: inter-word;
-    hyphens: auto;
-    -webkit-hyphens: auto;
-    overflow-wrap: break-word;
-    word-break: normal;
-    hyphenate-limit-chars: 6 3 3;
-}
-@media print {
-    .is-justified { text-align: justify; }
 }
