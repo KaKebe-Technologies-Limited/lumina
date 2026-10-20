@@ -322,6 +322,89 @@ SELECT seed.slug, seed.name, seed.description, seed.fee_amount, seed.joining_fee
 ) AS seed
 WHERE NOT EXISTS (SELECT 1 FROM membership_types);
 
+-- Membership card (docs/MEMBERSHIP_CARD.md). Settings of Admin > Membership > Membership card: the defaults REPRODUCE the owner's reference card.
+-- Same keys and values as App\Services\Membership\Card\CardSettings::DEFS (a selftest compares them). Refreshed only while pristine.
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('membership_card_org_name', 'LUMINA AFRICA FOUNDATION'),
+  ('membership_card_tagline', 'Igniting Light. Inspiring Change.'),
+  ('membership_card_label', 'MEMBERSHIP CARD'),
+  ('membership_card_logo', ''),
+  ('membership_card_navy', '#0F1B33'),
+  ('membership_card_accent', '#E0642C'),
+  ('membership_card_gold', '#C9973F'),
+  ('membership_card_green', '#22A35A'),
+  ('membership_card_tile', '#F4F6FA'),
+  ('membership_card_label_color', '#6A7389'),
+  ('membership_card_muted', '#B9C2DA'),
+  ('membership_card_show_photo', '1'),
+  ('membership_card_show_qr', '1'),
+  ('membership_card_tile_1', 'member_since'),
+  ('membership_card_tile_2', 'payment'),
+  ('membership_card_tile_3', 'fee'),
+  ('membership_card_label_member', 'MEMBER'),
+  ('membership_card_label_from', 'FROM'),
+  ('membership_card_label_number', 'MEMBER NUMBER'),
+  ('membership_card_label_valid_until', 'VALID UNTIL'),
+  ('membership_card_label_member_since', 'MEMBER SINCE'),
+  ('membership_card_label_payment', 'PAYMENT'),
+  ('membership_card_label_fee', '{period} MEMBERSHIP'),
+  ('membership_card_label_type', 'MEMBERSHIP TYPE'),
+  ('membership_card_label_district', 'DISTRICT'),
+  ('membership_card_scan_text', 'Scan to verify membership'),
+  ('membership_card_renews_text', 'Renews {period}'),
+  ('membership_card_no_expiry_text', 'No expiry'),
+  ('membership_card_status_active', 'ACTIVE MEMBER'),
+  ('membership_card_status_expired', 'EXPIRED'),
+  ('membership_card_status_suspended', 'SUSPENDED'),
+  ('membership_card_status_revoked', 'NOT VALID'),
+  ('membership_card_pay_paid', 'Confirmed'),
+  ('membership_card_pay_waived', 'Waived'),
+  ('membership_card_pay_pending', 'Pending'),
+  ('membership_card_pay_free', 'No fee'),
+  ('membership_card_pay_partial', 'Part paid'),
+  ('membership_card_pay_tbd', 'Fee not set'),
+  ('membership_card_fee_free', 'Free'),
+  ('membership_card_fee_tbd', 'To be announced'),
+  ('membership_card_fee_per_year', '/ year'),
+  ('membership_card_fee_per_month', '/ month'),
+  ('membership_card_fee_per_quarter', '/ quarter'),
+  ('membership_card_fee_for_life', '(for life)'),
+  ('membership_card_fee_one_off', '(one-off)'),
+  ('membership_card_period_annual', 'ANNUAL'),
+  ('membership_card_period_monthly', 'MONTHLY'),
+  ('membership_card_period_quarterly', 'QUARTERLY'),
+  ('membership_card_period_lifetime', 'LIFETIME'),
+  ('membership_card_period_one_time', 'ONE-TIME'),
+  ('membership_card_adverb_annual', 'annually'),
+  ('membership_card_adverb_monthly', 'monthly'),
+  ('membership_card_adverb_quarterly', 'quarterly'),
+  ('membership_card_joining_paid', 'Joining fee {amount} paid'),
+  ('membership_card_joining_due', 'Joining fee {amount} due'),
+  ('membership_card_joining_waived', 'Joining fee {amount} waived'),
+  ('membership_card_location_format', '{city}, {country}'),
+  ('membership_card_panel_text', CONCAT('Present this card for member check-in', CHAR(10), 'Lumina Africa Foundation · Gulu, Uganda')),
+  ('membership_card_footer_1', '{joining} · Issued {issued}'),
+  ('membership_card_footer_2', 'Support: {phone} · {email}'),
+  ('membership_card_footer_3', ''),
+  ('membership_card_support_phone', ''),
+  ('membership_card_support_email', ''),
+  ('membership_card_number_format', '{PREFIX}-{TYPE}-{YY}-{SEQ}'),
+  ('membership_card_trigger', 'paid_approved'),
+  ('membership_card_reissue_renewal', '1'),
+  ('membership_card_require_photo', '0'),
+  ('membership_photo_required', '1'),
+  ('membership_proof_retention_days', '90'),
+  ('membership_card_email_subject', 'Your {site} membership card ({number})'),
+  ('membership_card_email_body', CONCAT('Hello {first_name},', CHAR(10), '', CHAR(10), 'Your membership is confirmed and your membership card is attached to this message as a PDF. Keep it on your phone or print it.', CHAR(10), '', CHAR(10), 'Name: {name}', CHAR(10), 'Member number: {number}', CHAR(10), 'Type: {type}', CHAR(10), 'Valid until: {valid_until}', CHAR(10), '', CHAR(10), 'How to use your card: show it (printed or on your phone) when you check in at our events and meetings. Anyone can scan the QR code on it to confirm that your membership is genuine and current.', CHAR(10), '', CHAR(10), '{photo_note}Your private membership page (download your card again, upload a photo): {dashboard_url}', CHAR(10), '', CHAR(10), 'Questions? Reply to this e-mail or write to {contact_email}.', CHAR(10), '', CHAR(10), 'Thank you for standing with {site}.'))
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Codes of the three starter membership types in the member number (LAF-IND-26-0001). Only a type that has no code yet is touched, so an owner's edit survives.
+UPDATE membership_types SET code = 'IND' WHERE slug = 'individual-member' AND code = '';
+UPDATE membership_types SET code = 'YTH' WHERE slug = 'youth-student-member' AND code = '';
+UPDATE membership_types SET code = 'ORG' WHERE slug = 'organisation-partner-member' AND code = '';
+
 -- ------------------------------------------------------------------ newsletter (see docs/NEWSLETTER.md). ADDITIVE and IDEMPOTENT.
 -- Settings: defaults of app/config/settings_schema.php (group "Newsletter"); refreshed only while pristine, like every other setting.
 -- The SMTP login is NOT a setting: it lives in .env (MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD ...).

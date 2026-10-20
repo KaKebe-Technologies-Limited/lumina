@@ -2,14 +2,20 @@
 /**
  * Admin > Members (applications and members). OWNER: ADMIN agent. Contract: docs/MEMBERSHIP.md.
  * Vars: $pagination (items = member rows + pay_balance / pay_paid / pay_status), $query (ListQuery), $f (filters), $counts (per status + all),
- * $summary (tiles), $types, $canExport, $canTypes, $canSettings, $isOpen.
+ * $summary (tiles + proofs to check + cards waiting / out of date), $types, $canExport, $canTypes, $canSettings, $isOpen.
  * PRIVACY: a list shows only what staff need to find and judge a record: name, reference, e-mail, type, status, payment, dates.
  */
 use App\Controllers\Admin\Members\ListQuery;
 use App\Models\Member;
+use App\Services\Membership\Card\CardSettings;
+use App\Services\Membership\CardService;
 use App\Services\Membership\MembershipService as MS;
 
 $rows = $pagination->items;
+// the automatic card rule, read once (the Card column says why a card is not issued yet)
+$cardTrigger = CardService::trigger();
+$cardNeedsPhoto = CardSettings::bool('membership_card_require_photo');
+$proofBadge = ['received' => ['Proof to check', 'warning'], 'verified' => ['Proof verified', 'success'], 'rejected' => ['Better proof asked', 'danger']];
 $filtered = $query->isFiltered();
 $keepNoStatus = $query->keep(false);
 $today = new DateTimeImmutable('today');
@@ -39,6 +45,7 @@ foreach (Member::STATUSES as $s) {
 
 $this->start('scripts'); ?>
 <script src="<?= e(asset('js/admin-members.js')) ?>" defer></script>
+<script src="<?= e(asset('js/admin-members-card.js')) ?>" defer></script>
 <?php $this->end(); ?>
 <div class="admin-members">
     <?= partial('partials/admin/page-header', [
@@ -78,6 +85,23 @@ $this->start('scripts'); ?>
         </a>
     </section>
 
+    <?php if ($summary['proofs'] > 0 || $summary['card_waiting'] > 0 || $summary['card_reissue'] > 0 || $summary['photo_missing'] > 0): ?>
+        <nav class="members-quick" aria-label="Proofs of payment, cards and photos">
+            <?php if ($summary['proofs'] > 0): ?>
+                <a class="members-quick__item members-quick__item--alert<?= $f['proof'] === 'received' ? ' is-active' : '' ?>" href="<?= e(url('admin/members', ['proof' => 'received', 'sort' => 'proof'])) ?>"><?= icon('check-circle', 'icon--sm') ?> <strong><?= (int) $summary['proofs'] ?></strong> proof<?= $summary['proofs'] === 1 ? '' : 's' ?> of payment to check</a>
+            <?php endif; ?>
+            <?php if ($summary['card_waiting'] > 0): ?>
+                <a class="members-quick__item<?= $f['card'] === 'none' && $f['status'] === 'approved' ? ' is-active' : '' ?>" href="<?= e(url('admin/members', ['status' => 'approved', 'card' => 'none'])) ?>"><?= icon('credit-card', 'icon--sm') ?> <strong><?= (int) $summary['card_waiting'] ?></strong> approved without a card</a>
+            <?php endif; ?>
+            <?php if ($summary['card_reissue'] > 0): ?>
+                <a class="members-quick__item members-quick__item--alert<?= $f['card'] === 'reissue' ? ' is-active' : '' ?>" href="<?= e(url('admin/members', ['card' => 'reissue'])) ?>"><?= icon('refresh', 'icon--sm') ?> <strong><?= (int) $summary['card_reissue'] ?></strong> card<?= $summary['card_reissue'] === 1 ? '' : 's' ?> to update</a>
+            <?php endif; ?>
+            <?php if ($summary['photo_missing'] > 0): ?>
+                <a class="members-quick__item<?= $f['photo'] === 'none' ? ' is-active' : '' ?>" href="<?= e(url('admin/members', ['photo' => 'none'])) ?>"><?= icon('camera', 'icon--sm') ?> <strong><?= (int) $summary['photo_missing'] ?></strong> without a photo</a>
+            <?php endif; ?>
+        </nav>
+    <?php endif; ?>
+
     <nav class="tabs members-tabs" aria-label="Filter by status">
         <?php foreach ($tabs as $t): $on = $t['key'] === $f['status']; ?>
             <a class="tabs__item<?= $on ? ' is-active' : '' ?>" href="<?= e(url('admin/members', $keepNoStatus + ($t['key'] === 'all' ? [] : ['status' => $t['key']]))) ?>"<?= $on ? ' aria-current="page"' : '' ?>>
@@ -110,6 +134,24 @@ $this->start('scripts'); ?>
                 <?php foreach (ListQuery::TERMS as $k => [$label]): ?><option value="<?= e($k) ?>"<?= $f['term'] === $k ? ' selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?>
             </select>
         </div>
+        <div class="field"><label class="field__label" for="f-proof">Proof of payment</label>
+            <select class="select" id="f-proof" name="proof" data-autosubmit>
+                <option value="">Any</option>
+                <?php foreach (ListQuery::PROOFS as $k => [$label]): ?><option value="<?= e($k) ?>"<?= $f['proof'] === $k ? ' selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?>
+            </select>
+        </div>
+        <div class="field"><label class="field__label" for="f-card">Membership card</label>
+            <select class="select" id="f-card" name="card" data-autosubmit>
+                <option value="">Any</option>
+                <?php foreach (ListQuery::CARDS as $k => [$label]): ?><option value="<?= e($k) ?>"<?= $f['card'] === $k ? ' selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?>
+            </select>
+        </div>
+        <div class="field"><label class="field__label" for="f-photo">Photo</label>
+            <select class="select" id="f-photo" name="photo" data-autosubmit>
+                <option value="">Any</option>
+                <?php foreach (ListQuery::PHOTOS as $k => [$label]): ?><option value="<?= e($k) ?>"<?= $f['photo'] === $k ? ' selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?>
+            </select>
+        </div>
         <div class="field"><label class="field__label" for="f-from">Applied from</label><input class="input" id="f-from" type="date" name="from" value="<?= e($f['from']) ?>"></div>
         <div class="field"><label class="field__label" for="f-to">Applied until</label><input class="input" id="f-to" type="date" name="to" value="<?= e($f['to']) ?>"></div>
         <div class="field"><label class="field__label" for="f-sort">Order</label>
@@ -128,10 +170,11 @@ $this->start('scripts'); ?>
     <?php endif; ?>
 
     <?php if ($rows === []): ?>
+        <?php $queueEmpty = $f['proof'] === 'received' && $f['q'] === '' && $f['status'] === 'all' && $f['type'] === 0 && $f['payment'] === '' && $f['card'] === '' && $f['photo'] === '' && $f['term'] === '' && $f['from'] === '' && $f['to'] === ''; ?>
         <?= partial('partials/empty-state', [
-            'icon'    => 'users',
-            'title'   => $filtered ? 'No members match these filters' : 'No applications yet',
-            'text'    => $filtered ? 'Try a different search or clear the filters.' : 'Applications sent from the Membership page on the website appear here for review.',
+            'icon'    => $queueEmpty ? 'check-circle' : 'users',
+            'title'   => $queueEmpty ? 'No proofs of payment are waiting for a check' : ($filtered ? 'No members match these filters' : 'No applications yet'),
+            'text'    => $queueEmpty ? 'When a member uploads a proof of payment it appears here until someone marks it as verified or asks for a better copy.' : ($filtered ? 'Try a different search or clear the filters.' : 'Applications sent from the Membership page on the website appear here for review.'),
             'actions' => $filtered ? [['label' => 'Clear filters', 'url' => url('admin/members'), 'class' => 'btn--outline']] : [['label' => 'View the Membership page', 'url' => url('membership'), 'class' => 'btn--outline']],
         ]) ?>
     <?php else: ?>
@@ -142,6 +185,7 @@ $this->start('scripts'); ?>
                 <option value="">With the selected members...</option>
                 <option value="approve">Approve</option>
                 <option value="reject">Reject (a reason is needed)</option>
+                <option value="card">Issue membership cards (approved members)</option>
                 <?php if ($canExport): ?><option value="export">Export selected (CSV)</option><?php endif; ?>
             </select>
             <label class="check members-bulk__notify" data-bulk-for="approve reject"><input type="checkbox" name="notify" value="1"><span>E-mail the members</span></label>
@@ -161,6 +205,7 @@ $this->start('scripts'); ?>
                     <th scope="col">Membership type</th>
                     <th scope="col">Status and term</th>
                     <th scope="col">Payment</th>
+                    <th scope="col">Card</th>
                     <th scope="col" class="col-actions"><span class="visually-hidden">Actions</span></th>
                 </tr>
                 </thead>
@@ -198,6 +243,41 @@ $this->start('scripts'); ?>
                         <td data-label="Payment">
                             <?= partial('partials/admin/status-badge', ['status' => $m['pay_status'], 'label' => $pb['label'], 'tone' => $pb['tone']]) ?>
                             <?php if ($balance > 0): ?><span class="cell-sub">Owes <?= e(MS::formatMoney($balance, (string) $m['fee_currency'])) ?></span><?php endif; ?>
+                            <?php $ps = (string) ($m['proof_status'] ?? 'none'); if (empty($m['anonymised_at']) && isset($proofBadge[$ps])): ?>
+                                <span class="members-tags"><a class="badge badge--<?= e($proofBadge[$ps][1]) ?>" href="<?= e(url('admin/members/' . $id . '#proof')) ?>"><?= e($proofBadge[$ps][0]) ?></a></span>
+                            <?php endif; ?>
+                        </td>
+                        <td data-label="Card">
+                            <?php
+                            $cs = (string) ($m['card_status'] ?? 'none');
+                            $stale = $cs === 'issued' && ((int) $m['card_needs_reissue'] === 1 || (!empty($m['expiry_date']) && (empty($m['card_valid_until']) || $m['expiry_date'] > $m['card_valid_until'])));
+                            if (!empty($m['anonymised_at'])) {
+                                echo '<span class="cell-sub">Erased</span>';
+                            } elseif ($cs === 'issued') {
+                                echo partial('partials/admin/status-badge', ['status' => 'issued', 'label' => $stale ? 'Update due' : 'Issued', 'tone' => $stale ? 'warning' : 'success']);
+                                echo '<span class="cell-sub">Version ' . (int) $m['card_version'] . ', ' . e(format_date((string) $m['card_issued_at'], 'j M Y')) . '</span>';
+                                $live = \App\Services\Membership\Card\CardData::state($m, 'issued');          // what the QR code shows today
+                                if ($live !== 'active') {
+                                    echo '<span class="cell-sub members-due">Shows as ' . e(['expired' => 'expired', 'suspended' => 'suspended', 'revoked' => 'not valid'][$live] ?? $live) . '</span>';
+                                }
+                                if ((int) $m['card_emailed_version'] < (int) $m['card_version']) {
+                                    echo '<span class="cell-sub members-due">Not e-mailed yet</span>';
+                                }
+                            } elseif ($cs === 'revoked') {
+                                echo partial('partials/admin/status-badge', ['status' => 'revoked', 'label' => 'Revoked', 'tone' => 'danger']);
+                            } elseif ($m['status'] !== 'approved') {
+                                echo '<span class="cell-sub">After approval</span>';
+                            } else {
+                                $why = $cardTrigger === 'manual' ? 'Issue it by hand'
+                                    : ($cardTrigger === 'paid_approved' && !in_array((string) $m['pay_status'], ['paid', 'free'], true) ? 'Waiting for payment'
+                                    : ($cardNeedsPhoto && empty($m['photo_path']) ? 'Waiting for a photo' : 'Ready to issue'));
+                                echo partial('partials/admin/status-badge', ['status' => 'none', 'label' => 'Not issued', 'tone' => $why === 'Ready to issue' ? 'warning' : 'neutral']);
+                                echo '<span class="cell-sub">' . e($why) . '</span>';
+                            }
+                            if (empty($m['anonymised_at']) && empty($m['photo_path']) && in_array($m['status'], ['pending', 'approved'], true)) {
+                                echo '<span class="members-tags"><span class="badge badge--outline">No photo</span></span>';
+                            }
+                            ?>
                         </td>
                         <td data-label="" class="col-actions">
                             <div class="table__actions">

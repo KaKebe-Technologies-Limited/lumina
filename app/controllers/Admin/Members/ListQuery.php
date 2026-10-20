@@ -31,6 +31,7 @@ final class ListQuery
         'name_desc' => ['Name, Z to A', 'm.full_name DESC, m.id DESC'],
         'expiry'    => ['Expiry date, soonest first', '(m.expiry_date IS NULL) ASC, m.expiry_date ASC, m.id ASC'],
         'balance'   => ['Largest balance owing', 'pay_balance DESC, m.id DESC'],
+        'proof'     => ['Proof of payment waiting longest first', '(m.proof_uploaded_at IS NULL) ASC, m.proof_uploaded_at ASC, m.id ASC'],
     ];
 
     /** term filter key => [label, SQL condition] */
@@ -39,12 +40,43 @@ final class ListQuery
         'no_expiry' => ['Approved, no expiry date', "m.status = 'approved' AND m.expiry_date IS NULL"],
     ];
 
-    /** @var array{q:string,status:string,type:int,payment:string,term:string,from:string,to:string,sort:string} */
+    /**
+     * Proof-of-payment filter (members.proof_status) => [label, SQL condition]. "received" is the NEEDS CHECK queue and is exactly the set the sidebar badge counts
+     * (MembershipService::proofCheckCount: pending or approved, personal data not erased), so the number in the menu always equals the rows of the list.
+     * Aliases accepted in the URL: check, needs-check, needs_check (= received), better, better-copy (= rejected).
+     */
+    public const PROOFS = [
+        'received' => ['Needs a check', "m.proof_status = 'received' AND m.status IN ('pending','approved') AND m.anonymised_at IS NULL"],
+        'verified' => ['Verified', "m.proof_status = 'verified'"],
+        'rejected' => ['Needs a better copy', "m.proof_status = 'rejected'"],
+        'none'     => ['No proof uploaded', "m.proof_status = 'none'"],
+    ];
+    private const PROOF_ALIASES = ['check' => 'received', 'needs-check' => 'received', 'needs_check' => 'received', 'better' => 'rejected', 'better-copy' => 'rejected'];
+
+    /**
+     * Membership-card filter (members.card_status / card_needs_reissue) => [label, SQL condition]. "reissue" = an issued card that is out of date: staff flagged it
+     * (new photo, name or place after issue) or the membership was renewed beyond the date printed on the card.
+     */
+    public const CARDS = [
+        'none'    => ['Card not issued', "m.card_status = 'none'"],
+        'issued'  => ['Card issued', "m.card_status = 'issued'"],
+        'reissue' => ['Card needs a new version', "m.card_status = 'issued' AND (m.card_needs_reissue = 1 OR (m.expiry_date IS NOT NULL AND (m.card_valid_until IS NULL OR m.expiry_date > m.card_valid_until)))"],
+        'revoked' => ['Card revoked', "m.card_status = 'revoked'"],
+    ];
+
+    /** Headshot filter => [label, SQL condition]. */
+    public const PHOTOS = [
+        // the same condition counts the "without a photo" chip and filters the list, so the number on the chip always equals the rows (a rejected or cancelled member needs no photo)
+        'none' => ['No photo (pending or approved)', "m.status IN ('pending','approved') AND m.photo_path IS NULL AND m.anonymised_at IS NULL"],
+        'yes'  => ['Has a photo', 'm.photo_path IS NOT NULL'],
+    ];
+
+    /** @var array{q:string,status:string,type:int,payment:string,term:string,proof:string,card:string,photo:string,from:string,to:string,sort:string} */
     public array $f;
     private Where $where;
     private Where $withoutStatus;
 
-    /** @param array{q:string,status:string,type:int,payment:string,term:string,from:string,to:string,sort:string} $f */
+    /** @param array{q:string,status:string,type:int,payment:string,term:string,proof:string,card:string,photo:string,from:string,to:string,sort:string} $f */
     private function __construct(array $f)
     {
         $this->f = $f;
@@ -58,6 +90,15 @@ final class ListQuery
         }
         if ($f['term'] !== '') {
             $w->add(self::TERMS[$f['term']][1]);
+        }
+        if ($f['proof'] !== '') {
+            $w->add(self::PROOFS[$f['proof']][1]);
+        }
+        if ($f['card'] !== '') {
+            $w->add(self::CARDS[$f['card']][1]);
+        }
+        if ($f['photo'] !== '') {
+            $w->add(self::PHOTOS[$f['photo']][1]);
         }
         if ($f['from'] !== '') {
             $w->add('m.created_at >= ?', [$f['from'] . ' 00:00:00']);
@@ -74,6 +115,10 @@ final class ListQuery
         $status = $r->string('status', 'all');
         $payment = $r->string('payment');
         $term = $r->string('term');
+        $proof = $r->string('proof');
+        $proof = self::PROOF_ALIASES[$proof] ?? $proof;
+        $card = $r->string('card');
+        $photo = $r->string('photo');
         $sort = $r->string('sort', 'newest');
         $from = Support::date($r->string('from')) ?? '';
         $to = Support::date($r->string('to')) ?? '';
@@ -86,6 +131,9 @@ final class ListQuery
             'type'    => max(0, $r->int('type')),
             'payment' => isset(MembershipService::PAYMENT_SUMMARY_LABELS[$payment]) ? $payment : '',
             'term'    => isset(self::TERMS[$term]) ? $term : '',
+            'proof'   => isset(self::PROOFS[$proof]) ? $proof : '',
+            'card'    => isset(self::CARDS[$card]) ? $card : '',
+            'photo'   => isset(self::PHOTOS[$photo]) ? $photo : '',
             'from'    => $from,
             'to'      => $to,
             'sort'    => isset(self::SORTS[$sort]) ? $sort : 'newest',
@@ -96,7 +144,7 @@ final class ListQuery
     public function isFiltered(): bool
     {
         return $this->f['q'] !== '' || $this->f['status'] !== 'all' || $this->f['type'] > 0 || $this->f['payment'] !== ''
-            || $this->f['term'] !== '' || $this->f['from'] !== '' || $this->f['to'] !== '';
+            || $this->f['term'] !== '' || $this->f['proof'] !== '' || $this->f['card'] !== '' || $this->f['photo'] !== '' || $this->f['from'] !== '' || $this->f['to'] !== '';
     }
 
     /** Query parameters to carry over in links and forms (defaults and empty values left out). @return array<string,string|int> */
@@ -104,7 +152,8 @@ final class ListQuery
     {
         $out = [
             'q' => $this->f['q'], 'type' => $this->f['type'] > 0 ? $this->f['type'] : '', 'payment' => $this->f['payment'],
-            'term' => $this->f['term'], 'from' => $this->f['from'], 'to' => $this->f['to'],
+            'term' => $this->f['term'], 'proof' => $this->f['proof'], 'card' => $this->f['card'], 'photo' => $this->f['photo'],
+            'from' => $this->f['from'], 'to' => $this->f['to'],
             'sort' => $this->f['sort'] === 'newest' ? '' : $this->f['sort'],
         ];
         if ($withStatus) {
@@ -117,7 +166,26 @@ final class ListQuery
     private static function select(): string
     {
         $pay = MembershipService::paymentSql('m');
-        return 'm.*, ' . $pay['balance'] . ' AS pay_balance, ' . $pay['paid'] . ' AS pay_paid, ' . $pay['status'] . ' AS pay_status';
+        return self::columns() . ', ' . $pay['balance'] . ' AS pay_balance, ' . $pay['paid'] . ' AS pay_paid, ' . $pay['status'] . ' AS pay_status';
+    }
+
+    /** Memoised column list of members WITHOUT the card snapshot (a few KB of JSON per issued card that no list or export needs). Falls back to m.*. */
+    private static ?string $columns = null;
+
+    private static function columns(): string
+    {
+        if (self::$columns === null) {
+            self::$columns = 'm.*';
+            try {
+                $names = array_values(array_diff(array_column(Database::all('SHOW COLUMNS FROM members'), 'Field'), ['card_snapshot']));
+                if ($names !== [] && count(array_filter($names, static fn($n): bool => preg_match('/^[a-z0-9_]+$/', (string) $n) !== 1)) === 0) {
+                    self::$columns = implode(', ', array_map(static fn(string $n): string => 'm.' . $n, $names));
+                }
+            } catch (\Throwable) {
+                // keep m.*
+            }
+        }
+        return self::$columns;
     }
 
     public function page(int $page, int $perPage): Pagination
@@ -172,13 +240,17 @@ final class ListQuery
 
     /**
      * Figures for the tiles above the list (whole database, not the current filter).
-     * @return array{pending:int,approved:int,expiring:int,total:int,owing_count:int,owing:array<string,float>}
+     * @return array{pending:int,approved:int,expiring:int,total:int,owing_count:int,owing:array<string,float>,proofs:int,card_waiting:int,card_reissue:int,photo_missing:int}
      */
     public static function summary(): array
     {
         $c = Database::one(
             "SELECT COUNT(*) AS total, COALESCE(SUM(m.status = 'pending'), 0) AS pending, COALESCE(SUM(m.status = 'approved'), 0) AS approved,
-                    COALESCE(SUM(m.status = 'approved' AND m.expiry_date IS NOT NULL AND m.expiry_date > CURDATE() AND m.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)), 0) AS expiring
+                    COALESCE(SUM(m.status = 'approved' AND m.expiry_date IS NOT NULL AND m.expiry_date > CURDATE() AND m.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)), 0) AS expiring,
+                    COALESCE(SUM(" . self::PROOFS['received'][1] . "), 0) AS proofs,
+                    COALESCE(SUM(m.status = 'approved' AND m.anonymised_at IS NULL AND m.card_status = 'none'), 0) AS card_waiting,
+                    COALESCE(SUM(" . self::CARDS['reissue'][1] . "), 0) AS card_reissue,
+                    COALESCE(SUM(" . self::PHOTOS['none'][1] . "), 0) AS photo_missing
              FROM members m"
         ) ?? [];
         $owing = [];
@@ -194,6 +266,8 @@ final class ListQuery
         return [
             'pending' => (int) ($c['pending'] ?? 0), 'approved' => (int) ($c['approved'] ?? 0), 'expiring' => (int) ($c['expiring'] ?? 0),
             'total' => (int) ($c['total'] ?? 0), 'owing_count' => $owingCount, 'owing' => $owing,
+            'proofs' => (int) ($c['proofs'] ?? 0), 'card_waiting' => (int) ($c['card_waiting'] ?? 0), 'card_reissue' => (int) ($c['card_reissue'] ?? 0),
+            'photo_missing' => (int) ($c['photo_missing'] ?? 0),
         ];
     }
 }

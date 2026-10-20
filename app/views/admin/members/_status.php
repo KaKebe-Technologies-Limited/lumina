@@ -26,6 +26,12 @@ $chosen = is_scalar($chosen) ? (string) $chosen : '';
 $firstApproval = $from === 'pending';
 $reasonStates = implode(' ', MS::REASON_REQUIRED);
 $periodMonths = MS::PERIOD_MONTHS[(string) $member['fee_period']] ?? 0;
+// what approving does to the membership card (setting membership_card_trigger; rules in CardService)
+$cardRule = match (\App\Services\Membership\CardService::trigger()) {
+    'paid_approved' => 'Membership card: it is issued and e-mailed automatically once the application is approved and the balance is paid or waived, whichever happens last. If the balance is already cleared, approving sends it now.',
+    'approved' => 'Membership card: it is issued and e-mailed automatically as soon as the application is approved.',
+    default => 'Membership card: cards are issued by hand on this site. Use "Issue card now" in the card panel after approving.',
+};
 ?>
 <section class="card members-status" id="status" aria-labelledby="status-title">
     <div class="card__header">
@@ -68,6 +74,7 @@ $periodMonths = MS::PERIOD_MONTHS[(string) $member['fee_period']] ?? 0;
                                     'attrs' => ['data-expiry-date' => true]]) ?>
                             </div>
                             <p class="members-expiry-preview" data-expiry-preview aria-live="polite"></p>
+                            <p class="members-note members-cardrule"><?= icon('credit-card', 'icon--sm') ?> <?= e($cardRule) ?></p>
                         </div>
                     <?php endif; ?>
 

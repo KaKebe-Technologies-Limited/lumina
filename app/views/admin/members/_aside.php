@@ -76,7 +76,7 @@ $verNote = static fn(?string $v): string => $v !== null && $v !== '' ? ' <span c
 <?php else: ?>
 <section class="card" id="notes" aria-labelledby="notes-title">
     <div class="card__header"><h2 class="card__title" id="notes-title">Personal data erased</h2></div>
-    <div class="card__body"><p class="text-muted">Contact details, notes and e-mails are gone with the personal data. Only the reference, the membership number, the fee and the receipts remain.</p></div>
+    <div class="card__body"><p class="text-muted">Contact details, notes, the photo, the proof of payment and the card are gone with the personal data, and the private page link and the card's QR code no longer work. Only the reference, the membership number, the fee and the receipts remain.</p></div>
 </section>
 <?php endif; ?>
 
@@ -101,8 +101,8 @@ $verNote = static fn(?string $v): string => $v !== null && $v !== '' ? ' <span c
         <div class="card__header"><h2 class="card__title" id="erase-title">Erase personal data</h2></div>
         <div class="card__body">
             <?php if ($erasable): ?>
-                <p class="small text-muted">For an erasure request from someone whose record cannot be deleted. Name, contact, date of birth, guardian, ID, answers and notes are blanked. The membership number, fee and receipts stay. This cannot be undone.</p>
-                <form method="post" action="<?= e(url('admin/members/' . $id . '/anonymise')) ?>" data-confirm="Erase the personal data of this record permanently? This cannot be undone.">
+                <p class="small text-muted">For an erasure request from someone whose record cannot be deleted. Name, contact, date of birth, guardian, ID, answers and notes are blanked. The <strong>photo, the proof of payment (and the copies attached to payments) and the card's picture are deleted</strong>, the membership card is revoked, and the private page link and the card's QR code stop working at once. The membership number, fee and receipts stay. This cannot be undone.</p>
+                <form method="post" action="<?= e(url('admin/members/' . $id . '/anonymise')) ?>" data-confirm="Erase the personal data, the photo, the proof of payment and the card of this record permanently? This cannot be undone.">
                     <?= csrf_field() ?>
                     <div class="field">
                         <label class="field__label" for="erase-ref">Type <strong class="members-ref"><?= e($member['application_ref']) ?></strong> to confirm</label>
@@ -127,7 +127,7 @@ $verNote = static fn(?string $v): string => $v !== null && $v !== '' ? ' <span c
                     Numbers and receipts must stay on record, so the record cannot be deleted. Use <em>Cancel the membership</em> in the status panel instead.
                 </p>
             <?php else: ?>
-                <p class="small text-muted">For spam, test entries, or when someone asks for an application that was never approved to be erased. This cannot be undone.</p>
+                <p class="small text-muted">For spam, test entries, or when someone asks for an application that was never approved to be erased. The photo and the proof of payment are deleted with it. This cannot be undone.</p>
                 <form method="post" action="<?= e(url('admin/members/' . $id . '/delete')) ?>" data-confirm="Delete this application permanently? This cannot be undone." data-members-delete="<?= e($member['application_ref']) ?>">
                     <?= csrf_field() ?>
                     <div class="field">

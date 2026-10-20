@@ -20,6 +20,13 @@ namespace App\Core;
  */
 final class Settings
 {
+    /**
+     * created_at of a row written by the application (the seed files write created_at = updated_at = now, and treat such a row as "never edited": they may refresh
+     * it). A row the application creates later, for example when the owner changes a value that was reset to its default (the row was deleted), must NOT look
+     * pristine, or the next import of database/lumina-live-import.sql would overwrite the owner's edit.
+     */
+    private const EDITED = '2000-01-01 00:00:00';
+
     /** @var array<string,string>|null */
     private static ?array $db = null;
     /** @var array<string,mixed>|null */
@@ -100,8 +107,8 @@ final class Settings
     public static function set(string $key, ?string $value): void
     {
         Database::execute(
-            'INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)',
-            [$key, $value ?? '']
+            'INSERT INTO settings (setting_key, setting_value, created_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)',
+            [$key, $value ?? '', self::EDITED]
         );
         self::flush();
     }
@@ -112,8 +119,8 @@ final class Settings
         Database::transaction(static function () use ($values): void {
             foreach ($values as $k => $v) {
                 Database::execute(
-                    'INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)',
-                    [(string) $k, $v ?? '']
+                    'INSERT INTO settings (setting_key, setting_value, created_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)',
+                    [(string) $k, $v ?? '', self::EDITED]
                 );
             }
         });

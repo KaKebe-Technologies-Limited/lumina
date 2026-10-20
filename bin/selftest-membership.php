@@ -166,11 +166,11 @@ try {
     check('illegal transition is refused', !$illegal['ok'] && $illegal['error'] === 'not_allowed');
     $appr = MS::changeStatus((int) $m1['id'], 'approved', ['user_id' => null]);
     $a1 = (array) ($appr['member'] ?? []);
-    check('approval assigns the membership number LAF-YYYY-NNNN', $appr['ok'] && preg_match('/^LAF-' . date('Y') . '-\d{4}$/', (string) ($a1['membership_number'] ?? '')) === 1, json_encode($appr));
+    check('approval assigns the membership number in the configured format (default LAF-<type code>-<YY>-NNNN, here LAF-SA-' . date('y') . '-NNNN)', $appr['ok'] && preg_match('/^LAF-SA-' . date('y') . '-\d{4}$/', (string) ($a1['membership_number'] ?? '')) === 1, json_encode($appr));
     check('approval sets start date today and expiry +1 year (annual)', ($a1['start_date'] ?? '') === date('Y-m-d') && ($a1['expiry_date'] ?? '') === MS::computeExpiry(date('Y-m-d'), 'annual'));
     $appr2 = MS::changeStatus((int) $m2['id'], 'approved');
     $a2 = (array) ($appr2['member'] ?? []);
-    check('membership numbers are unique and increase', $appr2['ok'] && $a2['membership_number'] !== $a1['membership_number'] && strcmp($a2['membership_number'], $a1['membership_number']) > 0);
+    check('membership numbers are unique and each type counts up in its own series (SA ...0001, SF ...0001)', $appr2['ok'] && $a2['membership_number'] !== $a1['membership_number'] && str_ends_with((string) $a2['membership_number'], '-SF-' . date('y') . '-0001') && str_ends_with((string) $a1['membership_number'], '-SA-' . date('y') . '-0001'));
     check('lifetime type: approved with no expiry date', $a2['expiry_date'] === null);
     check('assigning a number twice returns the same number', MS::assignMembershipNumber((int) $m1['id']) === $a1['membership_number']);
     $full = MS::changeStatus((int) $m3['id'], 'approved');

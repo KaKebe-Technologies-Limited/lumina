@@ -129,6 +129,7 @@ return [
         'members.manage'  => ['admin', 'editor'],   // membership applications: view, approve/reject, payments, receipts, notes (never public, never anonymous)
         'members.delete'  => ['admin'],             // delete a member record that has no payments
         'members.types'   => ['admin'],             // membership types = the FEE CONFIGURATION (create, change fees, deactivate)
+        'members.card'    => ['admin'],             // the MEMBERSHIP CARD DESIGNER (look, colours, wording, number format, e-mail, rules); issuing / re-sending a member's card needs members.manage (docs/MEMBERSHIP_CARD.md)
         'newsletter.manage' => ['admin', 'editor'], // newsletter issues: create, edit, duplicate, preview, publish, schedule, unpublish, archive, delete drafts (docs/NEWSLETTER.md)
         'newsletter.delete_published' => ['admin'], // delete an issue that is (or was) public
         'newsletter.send' => ['admin'],             // EVERYTHING about e-mailing an issue: settings, test sends, campaign, retries

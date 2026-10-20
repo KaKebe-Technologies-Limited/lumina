@@ -42,6 +42,11 @@ $this->start('scripts'); ?>
                 <div class="alert__body"><strong class="alert__title">Some details need attention.</strong> Please check the fields marked below.</div>
             </div>
         <?php endif; ?>
+        <?php if (($m['card_status'] ?? 'none') === 'issued'): ?>
+            <div class="card__body members-card-note">
+                <p class="members-note"><?= icon('credit-card', 'icon--sm') ?> This member has an issued membership card. Changing the <strong>name</strong> or the <strong>place</strong> marks the card as out of date: the printed card keeps the old words until you choose "Re-issue (new version)" in the card panel.</p>
+            </div>
+        <?php endif; ?>
         <div class="card__body">
             <section class="form-section" aria-labelledby="sec-personal">
                 <h2 class="form-section__title" id="sec-personal">Personal details</h2>
@@ -63,7 +68,7 @@ $this->start('scripts'); ?>
             <section class="form-section" aria-labelledby="sec-contact">
                 <h2 class="form-section__title" id="sec-contact">Contact</h2>
                 <div class="form-grid">
-                    <?= $f('email', 'E-mail address', ['type' => 'email', 'required' => true, 'maxlength' => 190, 'help' => 'Changing it does not re-check for another application with the same address.']) ?>
+                    <?= $f('email', 'E-mail address', ['type' => 'email', 'required' => true, 'maxlength' => 190, 'help' => 'Changing it does not re-check for another application with the same address. It also resets the private page link that was sent to the old address, so the old link stops working.']) ?>
                     <?= $f('phone', 'Phone', ['type' => 'tel', 'required' => true, 'maxlength' => 40]) ?>
                     <?= $f('whatsapp', 'WhatsApp (optional)', ['type' => 'tel', 'maxlength' => 40]) ?>
                     <?= $f('country', 'Country', ['required' => true, 'maxlength' => 80]) ?>

@@ -6,14 +6,20 @@
  * Every visible word comes from content('membership', ...) (Admin > Pages > Membership). The server validates everything
  * (MembershipApplication::process); assets/js/membership.js only adds comfort (age, guardian block, "other" answers, fee line,
  * counters, inline checks). WITHOUT JavaScript every conditional field stays visible and the page still works.
+ * Headshot + proof of payment (group "uploads", docs/MEMBERSHIP_CARD.md section 12): partial web/membership/_upload.php, preview and checks in
+ * assets/js/membership-dashboard.js. Extra vars: $photoRequired (setting), $filesLost (after a failed submission the browser cannot refill a file input,
+ * so the applicant is asked to choose the files again).
  */
 
+use App\Services\Membership\MemberFiles;
 use App\Services\Membership\MembershipService as MS;
 
 $c = static fn(string $key, string $fallback = ''): string => MS::copy($key, $fallback);
 $lab = static fn(string $key): string => MS::copy('fields.' . $key . '_label', ucfirst(str_replace('_', ' ', $key)));
 $hlp = static fn(string $key): string => trim((string) content('membership', 'fields.' . $key . '_help'));
 $F = static fn(string $name, array $o = []): string => partial('web/membership/_field', ['name' => $name] + $o);
+$u = static fn(string $key, string $fallback = ''): string => MS::copy('uploads.' . $key, $fallback);       // wording of the photo / proof group (registry section "uploads")
+$photoRequired = !empty($photoRequired);
 
 $closedBtn = content_btn('membership', 'closed.button');
 ?>
@@ -40,7 +46,7 @@ $closedBtn = content_btn('membership', 'closed.button');
 <?php return; endif; ?>
 
 <?php
-$this->start('scripts'); ?><script src="<?= e(asset('js/membership.js')) ?>" defer></script><?php $this->end();
+$this->start('scripts'); ?><script src="<?= e(asset('js/membership.js')) ?>" defer></script><script src="<?= e(asset('js/membership-dashboard.js')) ?>" defer></script><?php $this->end();
 
 $termsHref = url('membership/terms');
 $privacyHref = url('privacy');
@@ -78,7 +84,7 @@ $eligLabel = $c('types.eligibility_label', 'Who it is for');
 $groups = [
     ['type', 'form.legend_type', false], ['personal', 'form.legend_personal', false], ['guardian', 'form.legend_guardian', true],
     ['contact', 'form.legend_contact', false], ['livelihood', 'form.legend_livelihood', false], ['participation', 'form.legend_participation', false],
-    ['emergency', 'form.legend_emergency', false], ['payment', 'form.legend_payment', false], ['consent', 'form.legend_consent', false],
+    ['emergency', 'form.legend_emergency', false], ['payment', 'form.legend_payment', false], ['uploads', 'uploads.legend', false], ['consent', 'form.legend_consent', false],
 ];
 $legend = [];
 foreach ($groups as [$gid, $gkey]) {
@@ -96,6 +102,9 @@ $sumLabels = [
     'guardian_phone' => $lab('guardian_phone'), 'guardian_relationship' => $legend['guardian'] . ': ' . $lab('guardian_relationship'), 'emergency_name' => $lab('emergency_name'),
     'emergency_phone' => $lab('emergency_phone'), 'emergency_relationship' => $legend['emergency'] . ': ' . $lab('emergency_relationship'), 'payment_method' => $lab('payment_method'),
     'payment_reference' => $lab('payment_reference'),
+    'photo' => $u($photoRequired ? 'photo_label' : 'photo_label_optional', 'Your photo (headshot)'),
+    'photo_consent' => $plainConsent($u('photo_consent_label', 'I agree that my photo is printed on my membership card.'), []),
+    'proof' => $u('proof_label', 'Proof of payment (optional)'),
     'consent_terms' => $plainConsent($consentTerms, ['{terms_link}' => $termsText]),
     'consent_privacy' => $plainConsent($consentPrivacy, ['{privacy_link}' => $privacyText]),
     'declaration' => $plainConsent($c('consent.declaration_label'), []),
@@ -128,7 +137,7 @@ $minor = !empty($minor);
                 <p class="mb-aside__links"><a href="<?= e($termsHref) ?>" target="_blank" rel="noopener"><?= e(ucfirst($termsText)) ?></a> &middot; <a href="<?= e($privacyHref) ?>" target="_blank" rel="noopener"><?= e(ucfirst($privacyText)) ?></a></p>
             </aside>
 
-            <form class="mb-form form-card" method="post" action="<?= e(url('membership/register')) ?>" novalidate data-mb-form
+            <form class="mb-form form-card" method="post" action="<?= e(url('membership/register')) ?>" enctype="multipart/form-data" novalidate data-mb-form
                   data-adult-age="<?= (int) MS::ADULT_AGE ?>"
                   data-msg-required="<?= e($c('form.err_required')) ?>" data-msg-email="<?= e($c('form.err_email')) ?>" data-msg-phone="<?= e($c('form.err_phone')) ?>"
                   data-msg-min="<?= e($c('form.err_min')) ?>" data-msg-accept="<?= e($c('form.err_accept')) ?>" data-msg-dob="<?= e($c('form.err_dob')) ?>"
@@ -264,7 +273,43 @@ $minor = !empty($minor);
                     </div>
                 </fieldset>
 
-                <?php /* ------------------------------------------------------------------ 9. consent and declaration */ ?>
+                <?php /* ------------------------------------------------------------------ 9. headshot (printed on the card) and proof of payment (private, optional) */ ?>
+                <?php
+                $uploadMsgs = static fn(string $kind): array => [
+                    'none' => $u('err_' . $kind . '_none'), 'size' => $u('err_' . $kind . '_size'), 'type' => $u('err_' . $kind . '_type'), 'invalid' => $u('err_' . $kind . '_invalid'),
+                    'small' => $kind === 'photo' ? $u('err_photo_small') : '', 'missing' => $kind === 'photo' ? $u('err_photo_missing') : '',
+                ];
+                $remove = $u('remove_label', 'Remove');
+                $chosen = $u('chosen_label', 'Chosen file:');
+                ?>
+                <fieldset class="mb-group" id="g-uploads">
+                    <legend class="mb-group__legend"><span><?= e($legend['uploads']) ?></span></legend>
+                    <p class="mb-note" role="note"><?= icon('image') ?> <span><?= e($u('intro')) ?></span></p>
+                    <?php if (!empty($filesLost)): ?>
+                        <p class="mb-note mb-note--warn" role="note"><?= icon('alert-triangle') ?> <span><?= e($u('reselect_note', 'Your browser does not keep chosen files when a page reloads. Please choose your photo and your proof of payment again.')) ?></span></p>
+                    <?php endif; ?>
+                    <div class="form-grid mb-uploads">
+                        <?= partial('web/membership/_upload', [
+                            'kind' => 'photo', 'name' => 'photo', 'class' => 'field--full', 'required' => $photoRequired,
+                            'label' => $u($photoRequired ? 'photo_label' : 'photo_label_optional', 'Your photo (headshot)'),
+                            'pick' => MS::copy('dashboard.photo_upload_label', 'Choose a photo'), 'accept' => 'image/jpeg,image/png,image/webp',
+                            'help' => $u('photo_help'), 'camera' => $u('camera_hint'), 'remove' => $remove, 'chosen' => $chosen,
+                            'previewAlt' => $u('preview_alt'), 'msgs' => $uploadMsgs('photo'), 'minSide' => MemberFiles::PHOTO_MIN_SIDE, 'maxBytes' => MemberFiles::PHOTO_MAX_BYTES,
+                            'initialsFrom' => '#f-full_name',
+                        ]) ?>
+                        <?= partial('web/membership/_consent', ['name' => 'photo_consent', 'condRequired' => true, 'required' => false, 'labelHtml' => e($u('photo_consent_label'))]) ?>
+                        <?php if (trim($u('photo_consent_help')) !== ''): ?><p class="field__help field--full mb-consent-help"><?= e($u('photo_consent_help')) ?></p><?php endif; ?>
+                        <?= partial('web/membership/_upload', [
+                            'kind' => 'proof', 'name' => 'proof', 'class' => 'field--full', 'required' => false,
+                            'label' => $u('proof_label', 'Proof of payment (optional)'),
+                            'pick' => MS::copy('dashboard.proof_upload_label', 'Choose a file'), 'accept' => 'image/jpeg,image/png,image/webp,application/pdf',
+                            'help' => $u('proof_help'), 'remove' => $remove, 'chosen' => $chosen, 'previewAlt' => $u('preview_alt'),
+                            'msgs' => $uploadMsgs('proof'), 'maxBytes' => MemberFiles::PROOF_MAX_BYTES,
+                        ]) ?>
+                    </div>
+                </fieldset>
+
+                <?php /* ------------------------------------------------------------------ 10. consent and declaration */ ?>
                 <fieldset class="mb-group" id="g-consent">
                     <legend class="mb-group__legend"><span><?= e($legend['consent']) ?></span></legend>
                     <div class="form-grid mb-consents">

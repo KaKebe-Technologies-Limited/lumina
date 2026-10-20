@@ -1,0 +1,418 @@
+// pages/_membership-dashboard.scss - DASHBOARD agent. Imported by main.scss (after pages/membership).
+//   1. the photo / proof FILE FIELDS (.mb-upload) of the registration form and of the private page, and the link to the private page on the confirmation page
+//   2. the member's PRIVATE PAGE /membership/me/{token}  (.mb-me, .mb-pass)
+//   3. the VERIFICATION page /membership/verify/{token}  (.mb-verify)
+// The pages are rendered by the "membership" page slug, so the body carries .page-membership (+ .is-membership-me / .is-membership-verify). Tokens, mixins and the
+// shared components (forms, buttons, alerts) are used as they are (docs/DESIGN.md). Mobile first; 44 px targets; AA contrast (the card's own colours are only used
+// for the card-like blocks, with white text on a dark ground).
+
+$mbd-field-border: #8791A0;          // 3.2:1 on white (WCAG 1.4.11), same as the form fields
+$mbd-card-navy: #0F1B33;             // the card's navy panel (docs/design-reference/membership-card-reference.png)
+$mbd-card-orange: #E0642C;           // the card's accent bar
+$mbd-card-muted: #B9C2DA;            // small labels on the navy panel (9:1)
+$mbd-grey: #5B6472;                  // "expired": white text 6.0:1
+
+// ======================================================================================================================
+// 1. FILE FIELDS (registration form and private page)
+// ======================================================================================================================
+.page-membership {
+    // a warning note inside a form group (the browser cannot refill file inputs)
+    .mb-note--warn { background: $warning-bg; .icon { color: $warning; } }
+    .mb-consent-help { margin: (-$space-2) 0 0; padding-left: $space-4; }
+
+    .mb-upload {
+        &__box {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            justify-items: center;
+            gap: $space-4;
+            padding: $space-4;
+            border: 1.5px dashed $mbd-field-border;
+            border-radius: $radius-card;
+            background: $white;
+            transition: border-color $t-fast ease, background-color $t-fast ease;
+            @include respond(sm) { grid-template-columns: auto minmax(0, 1fr); justify-items: start; align-items: center; gap: $space-5; padding: $space-4 $space-5; }
+        }
+
+        // the square preview: the same crop the server applies (centred, a little above the middle), so the picture shown is the picture printed
+        &__thumb {
+            position: relative;
+            flex: none;
+            width: 7rem;
+            aspect-ratio: 1 / 1;
+            border-radius: $radius;
+            overflow: hidden;
+            background: $tint-cool;
+            border: 1px solid $line;
+            @include respond(sm) { width: 8rem; }
+        }
+        &__img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
+        &__img[hidden] { display: none; }
+        &__ph {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: $white;
+            font-family: $font-heading;
+            font-weight: 700;
+            &.is-covered { display: none; }
+        }
+        &__initials { font-size: 2.4rem; line-height: 1; letter-spacing: 0.02em; }
+        &__initials[hidden], &__icon[hidden] { display: none; }
+        &__icon .icon { width: 2.6rem; height: 2.6rem; opacity: 0.92; }
+
+        &__ctl { display: grid; gap: $space-2; justify-items: center; min-width: 0; @include respond(sm) { justify-items: start; } }
+        // no JavaScript: the native control is shown; with JavaScript it is visually hidden (still focusable) and its label is the button
+        &__input {
+            width: 100%;
+            max-width: 100%;
+            font-size: $fs-sm;
+            color: $ink;
+            &::file-selector-button { margin-right: $space-3; padding: 0.6rem 1.1rem; border: 1px solid $navy; border-radius: $radius-pill; background: $white; color: $navy; font: inherit; font-weight: 600; cursor: pointer; }
+        }
+        &__pick { display: none; }
+        &__file { margin: 0; font-size: $fs-xs; line-height: 1.45; color: $ink-soft; overflow-wrap: anywhere; &:empty { display: none; } }
+        &__remove, &__camera {
+            display: inline-flex;
+            align-items: center;
+            gap: $space-2;
+            min-height: 2.75rem;
+            padding: 0.4rem 0.9rem;
+            border-radius: $radius-pill;
+            font-family: $font-heading;
+            font-size: $fs-xs;
+            font-weight: 600;
+            line-height: 1.3;
+            text-align: left;
+            cursor: pointer;
+        }
+        &__remove { border: 0; background: transparent; color: $orange-text; text-decoration: underline; text-underline-offset: 3px; &:hover { color: $navy; } &[hidden] { display: none; } }
+        &__camera { border: 1px solid $mbd-field-border; background: $white; color: $navy; &:hover { background: $tint-cool; border-color: $navy; } &[hidden] { display: none; } }
+        &__help { max-width: 60ch; }
+    }
+    // state of the whole field (written out in full: inside a nested block two ampersands would repeat the page class)
+    .mb-upload:hover .mb-upload__box { border-color: $navy; }
+    .mb-upload.has-file .mb-upload__box { border-style: solid; border-color: $navy; background: $tint-cool; }
+    .mb-upload.field--error .mb-upload__box { border-color: $danger; background: $danger-bg; }
+    .mb-upload--photo .mb-upload__thumb { background: $cta; border-color: $cta; }
+    .mb-upload--proof .mb-upload__ph { color: $navy; }
+    .mb-upload--proof .mb-upload__img { object-fit: contain; object-position: 50% 50%; background: $white; }
+    .mb-upload__input:focus-visible + .mb-upload__pick { outline: 3px solid $orange-dark; outline-offset: 3px; }
+    .mb-form .mb-upload .field__label { margin-bottom: 0; }
+
+    // the link to the private page on the confirmation page
+    .mb-pay--me {
+        border-color: rgba($gold, 0.8);
+        box-shadow: $shadow-card;
+        .mb-pay__note { margin-top: $space-2; font-size: $fs-xs; color: $ink-soft; }
+        .mb-pay__cta { margin-top: $space-4; }
+    }
+}
+
+// ======================================================================================================================
+// 2. THE PRIVATE PAGE  /membership/me/{token}
+// ======================================================================================================================
+.mb-me {
+    [hidden] { display: none !important; }
+    > .container { display: grid; gap: $space-5; }
+    padding-top: $space-6;
+    @include respond(lg) { padding-top: $space-7; }
+
+    // the answer to the last action (the layout's flash stack, moved into the page)
+    .mb-me__flash {
+        scroll-margin-top: calc(#{$header-h-shrunk} + #{$space-4});
+        &:empty { display: none; }
+        &:focus { outline: none; }
+        .flash-stack { max-width: none; padding: 0; margin: 0; }
+        .alert { box-shadow: $shadow-sm; &:focus { outline: none; } }
+    }
+    .mb-me__private {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-3;
+        margin: 0;
+        padding: $space-3 $space-4;
+        border-radius: $radius;
+        background: $white;
+        border: 1px solid $line;
+        font-size: $fs-xs;
+        line-height: 1.55;
+        color: $ink-soft;
+        .icon { flex: none; margin-top: 0.1rem; color: $navy; }
+    }
+
+    // ---- panels ----------------------------------------------------------------------------------------------------
+    .mb-me__panel {
+        min-width: 0;
+        padding: $space-5 $space-4;
+        border: 1px solid $line;
+        border-radius: $radius-card;
+        background: $white;
+        box-shadow: $shadow-sm;
+        @include respond(md) { padding: $space-6; }
+        &.is-attention { border-color: $cta; box-shadow: 0 0 0 3px rgba($cta, 0.18), $shadow-sm; }
+        .btn { min-height: 2.75rem; }
+    }
+    .mb-me__h {
+        display: flex;
+        align-items: center;
+        gap: $space-3;
+        margin: 0 0 $space-4;
+        font-size: fluid(1.2rem, '1.05rem + 0.5vw', 1.45rem);
+        line-height: 1.25;
+        color: $navy;
+    }
+    .mb-me__hicon { flex: none; display: inline-grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 50%; background: $navy; color: $gold; .icon { width: 1.15rem; height: 1.15rem; } }
+    .mb-me__h3 { margin: $space-4 0 $space-2; font-size: 1rem; color: $navy; }
+    .mb-me__lead { margin: 0 0 $space-4; font-size: $fs-sm; line-height: 1.65; color: $ink; max-width: 62ch; }
+    .mb-me__prose { font-size: $fs-sm; line-height: 1.65; overflow-wrap: anywhere; > * + * { margin-top: $space-2; } }
+    .mb-me__empty { margin: 0 0 $space-3; color: $ink-soft; font-size: $fs-sm; }
+    .mb-me__meta { margin: 0 0 $space-3; font-size: $fs-xs; color: $ink-soft; a { color: $orange-text; font-weight: 600; } }
+    .mb-me__note {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-2;
+        margin: $space-3 0 0;
+        font-size: $fs-xs;
+        line-height: 1.55;
+        color: $ink-soft;
+        .icon { flex: none; margin-top: 0.1rem; }
+        &--warn { padding: $space-2 $space-3; border-radius: $radius; background: $warning-bg; color: $ink; .icon { color: $warning; } }
+    }
+    .mb-me__ok { display: flex; align-items: flex-start; gap: $space-2; margin: 0; padding: $space-3 $space-4; border-radius: $radius; background: $success-bg; color: darken($success, 6%); font-weight: 600; .icon { flex: none; margin-top: 0.1rem; } }
+    .mb-me__due { margin: 0 0 $space-3; font-family: $font-display; font-size: 1.5rem; line-height: 1.2; color: $navy; font-variant-numeric: lining-nums; }
+
+    // ---- progress --------------------------------------------------------------------------------------------------
+    .mb-me__statehead { display: grid; gap: $space-3; @include respond(md) { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: $space-5; } .mb-me__h { margin: 0; } }
+    .mb-me__state {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-3;
+        margin: 0;
+        padding: $space-3 $space-4;
+        border-radius: $radius;
+        background: $info-bg;
+        color: darken($info, 6%);
+        font-family: $font-heading;
+        font-size: $fs-sm;
+        font-weight: 600;
+        line-height: 1.45;
+        .icon { flex: none; margin-top: 0.1rem; }
+        &--ok { background: $success-bg; color: darken($success, 6%); }
+        &--warn { background: $warning-bg; color: $warning; }
+        &--bad { background: $danger-bg; color: $danger; }
+    }
+    .mb-me__steps {
+        display: grid;
+        margin: $space-5 0;
+        padding: 0;
+        list-style: none;
+        @include respond(md) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    .mb-me__step {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: $space-3;
+        padding: 0.5rem 0;
+        // the line to the next step: vertical on phones ...
+        &:not(:last-child)::after { content: ''; position: absolute; left: calc(1.2rem - 1px); top: calc(100% - 0.5rem); width: 2px; height: 1rem; background: $border-strong; }
+        &--done:not(:last-child)::after { background: $success; }
+        // ... horizontal from md (the dot above the words, the line runs to the next dot)
+        @include respond(md) {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: $space-2;
+            padding: 0 $space-3 0 0;
+            &:not(:last-child)::after { left: 3rem; right: 0.5rem; top: calc(1.2rem - 1px); width: auto; height: 2px; }
+        }
+    }
+    .mb-me__dot {
+        flex: none;
+        display: inline-grid;
+        place-items: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        border: 2px solid $border-strong;
+        border-radius: 50%;
+        background: $white;
+        font-family: $font-heading;
+        font-size: $fs-sm;
+        font-weight: 700;
+        color: $ink-soft;
+        position: relative;
+        z-index: 1;
+        .icon { width: 1.1rem; height: 1.1rem; stroke-width: 3; }
+    }
+    .mb-me__steptext { font-family: $font-heading; font-size: $fs-sm; font-weight: 600; line-height: 1.3; color: $ink-soft; }
+    .mb-me__step--done .mb-me__dot { border-color: $success; background: $success; color: $white; }
+    .mb-me__step--done .mb-me__steptext, .mb-me__step--current .mb-me__steptext { color: $navy; }
+    .mb-me__step--current .mb-me__dot { border-color: $cta; color: $cta; box-shadow: 0 0 0 4px rgba($cta, 0.16); }
+
+    // ---- facts (label over value) ----------------------------------------------------------------------------------------
+    .mb-me__facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: $space-4 $space-5;
+        margin: 0;
+        padding-top: $space-5;
+        border-top: 1px solid $line;
+        > div { min-width: 0; }
+        > div:first-child { grid-column: 1 / -1; }       // the reference number is the longest value: its own row on phones
+        @include respond(md) { grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr)); > div:first-child { grid-column: auto; } }
+        dt { font-family: $font-heading-caps; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: $ink-soft; }
+        dd { margin: 0.2rem 0 0; font-weight: 600; line-height: 1.4; color: $navy; overflow-wrap: anywhere; }
+        &--stack { grid-template-columns: minmax(0, 1fr); padding-top: 0; border-top: 0; }
+    }
+    .mb-me__ref { font-family: $font-display; font-size: 1.05rem; font-variant-numeric: lining-nums; white-space: nowrap; overflow-wrap: normal; }
+    .mb-me__sub { display: block; margin-top: 0.15rem; font-size: $fs-xs; font-weight: 500; color: $ink-soft; }
+    .mb-me__renewal {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-3;
+        margin: $space-5 0 0;
+        padding: $space-3 $space-4;
+        border-left: 4px solid $gold-deep;
+        border-radius: $radius;
+        background: $warning-bg;
+        font-size: $fs-sm;
+        line-height: 1.55;
+        color: $ink;
+        .icon { flex: none; margin-top: 0.15rem; color: $warning; }
+        &--expired { border-left-color: $danger; background: $danger-bg; .icon { color: $danger; } }
+    }
+
+    // ---- the card --------------------------------------------------------------------------------------------------------
+    .mb-me__panel--card:not(.is-issued) { border-style: dashed; border-color: $mbd-field-border; box-shadow: none; background: transparent; }
+    .mb-me__waiting { display: grid; gap: $space-2; margin: 0; padding: 0; list-style: none; li { display: flex; align-items: flex-start; gap: $space-2; font-size: $fs-sm; font-weight: 600; color: $navy; .icon { flex: none; margin-top: 0.15rem; color: $orange-text; } } }
+    .mb-me__panel--card.is-issued {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        border: 0;
+        color: $white;
+        background:
+            radial-gradient(28rem 16rem at 100% 0%, rgba($navy-light, 0.85), transparent 62%),
+            radial-gradient(20rem 12rem at 0% 100%, rgba($gold, 0.12), transparent 60%),
+            $navy;
+        :focus-visible { outline-color: $gold; }
+        .mb-me__h { color: $white; }
+        .mb-me__hicon { background: rgba($gold, 0.18); }
+        .mb-me__note { color: rgba($white, 0.9); }
+        .mb-me__note--warn { background: rgba($white, 0.12); color: $white; .icon { color: $gold; } }
+    }
+    .mb-me__cardgrid { display: grid; gap: $space-5; @include respond(md) { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: center; gap: $space-6; } }
+    .mb-me__cardvisual { min-width: 0; }
+    .mb-me__cardimg { display: block; width: 100%; height: auto; border-radius: $radius; box-shadow: 0 18px 44px rgba(0, 0, 0, 0.35); }
+    .mb-me__cardinfo { min-width: 0; .mb-me__h { margin-bottom: $space-2; } }
+    .mb-me__actions { display: flex; flex-wrap: wrap; gap: $space-3; margin-top: $space-4; .btn { flex: 1 1 auto; justify-content: center; } }
+    .mb-me__resend { margin-top: $space-3; .btn { width: 100%; justify-content: center; } }
+
+    // no picture library on the server: a small pass instead of the card image (the PDF is the real card)
+    .mb-pass {
+        position: relative;
+        max-width: 26rem;
+        margin-inline: auto;
+        padding: 2rem 1.5rem 1.6rem;
+        border-radius: $radius-card;
+        overflow: hidden;
+        background: $mbd-card-navy;
+        color: $white;
+        text-align: center;
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.35);
+        &__bar { position: absolute; inset: 0 0 auto 0; height: 0.65rem; background: $mbd-card-orange; }
+        &__label { margin: 1.1rem 0 0.25rem; font-family: $font-heading-caps; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: $mbd-card-muted; &:first-of-type { margin-top: 0.4rem; } }
+        &__number { margin: 0; font-family: $font-heading; font-size: fluid(1.35rem, '1.1rem + 1.1vw', 1.9rem); font-weight: 700; letter-spacing: 0.02em; overflow-wrap: anywhere; }
+        &__pill { display: inline-block; margin: 1rem 0 0; padding: 0.4rem 1.4rem; border-radius: $radius; background: $success; font-family: $font-heading; font-size: $fs-sm; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+        &__pill--expired { background: $mbd-grey; }
+        &__pill--suspended, &__pill--revoked { background: #C0392B; }
+        &__date { margin: 0; font-size: 1.35rem; font-weight: 700; }
+    }
+
+    // ---- uploads on the page -------------------------------------------------------------------------------------------------
+    .mb-me__form { display: grid; gap: $space-4; margin-top: $space-4; .form-actions { margin: 0; } }
+    .mb-me__form .mb-upload__help { font-size: $fs-xs; }
+    .mb-me__consent { padding: $space-3 $space-4; border-radius: $radius; background: $surface; &.field--error { background: $danger-bg; } .check { font-size: $fs-sm; line-height: 1.55; input { width: 1.35rem; height: 1.35rem; } } }
+    .mb-me__photo { display: block; width: 8rem; height: 8rem; margin-bottom: $space-3; border-radius: $radius; object-fit: cover; object-position: 50% 18%; background: $tint-cool; }
+    .mb-me__chip {
+        display: inline-flex;
+        align-items: center;
+        gap: $space-2;
+        margin: 0 0 $space-3;
+        padding: 0.4rem 1rem;
+        border-radius: $radius-pill;
+        background: $info-bg;
+        color: darken($info, 6%);
+        font-family: $font-heading;
+        font-size: $fs-sm;
+        font-weight: 600;
+        .icon { flex: none; }
+        &--verified { background: $success-bg; color: darken($success, 6%); }
+        &--rejected { background: $danger-bg; color: $danger; }
+    }
+    .mb-me__panel--proof.is-attention { border-color: $danger; box-shadow: 0 0 0 3px rgba($danger, 0.14), $shadow-sm; }
+
+    // ---- columns ---------------------------------------------------------------------------------------------------------------
+    .mb-me__grid { display: grid; gap: $space-5; @include respond(lg) { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; } }
+    .mb-me__grid--single { grid-template-columns: minmax(0, 1fr); .mb-me__side { position: static; } @include respond(lg) { grid-template-columns: minmax(0, 40rem); } }
+    .mb-me__main, .mb-me__side { display: grid; gap: $space-5; min-width: 0; }
+    .mb-me__side { @include respond(lg) { position: sticky; top: calc(#{$header-h-shrunk} + #{$space-5}); } }
+}
+
+// ======================================================================================================================
+// 3. THE VERIFICATION PAGE  /membership/verify/{token}  (what the QR code opens)
+// ======================================================================================================================
+.mb-verify {
+    padding-top: $space-6;
+    [hidden] { display: none !important; }
+
+    .mb-verify__intro { max-width: 36rem; margin: 0 auto $space-5; text-align: center; }
+    .mb-verify__title { margin: 0 0 $space-2; font-size: fluid(1.7rem, '1.3rem + 1.6vw', 2.5rem); line-height: 1.15; color: $navy; }
+    .mb-verify__lead { margin: 0; font-size: $fs-sm; color: $ink-soft; }
+
+    .mb-verify__card {
+        --mbv: #{$success};
+        --mbv-tint: #{$success-bg};
+        max-width: 36rem;
+        margin: 0 auto;
+        overflow: hidden;
+        border: 1px solid $line;
+        border-radius: $radius-xl;
+        background: $white;
+        box-shadow: $shadow-lg;
+        &::before { content: ''; display: block; height: 0.65rem; background: var(--mbv); }
+    }
+    .mb-verify__card--warn { --mbv: #{$mbd-grey}; --mbv-tint: #{$surface-alt}; }
+    .mb-verify__card--bad { --mbv: #{$danger}; --mbv-tint: #{$danger-bg}; }
+
+    .mb-verify__head { padding: $space-6 $space-5 $space-5; text-align: center; background: var(--mbv-tint); }
+    .mb-verify__icon { display: inline-grid; place-items: center; width: 4.5rem; height: 4.5rem; margin-bottom: $space-3; border-radius: 50%; background: $white; color: var(--mbv); box-shadow: $shadow-sm; .icon { width: 2.4rem; height: 2.4rem; } }
+    .mb-verify__result { margin: 0 0 $space-3; }
+    .mb-verify__label { display: inline-block; padding: 0.4rem 1.5rem; border-radius: $radius-pill; background: var(--mbv); color: $white; font-family: $font-heading; font-size: fluid(1.15rem, '1rem + 0.8vw', 1.5rem); font-weight: 700; letter-spacing: 0.08em; }
+    .mb-verify__text { margin: 0; font-size: $fs-sm; line-height: 1.6; color: $ink; max-width: 40ch; margin-inline: auto; }
+
+    .mb-verify__facts { display: grid; gap: $space-4; margin: 0; padding: $space-5; }
+    .mb-verify__fact { min-width: 0; padding-bottom: $space-3; border-bottom: 1px solid $line; &:last-child { padding-bottom: 0; border-bottom: 0; } }
+    .mb-verify__fact dt { font-family: $font-heading-caps; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: $ink-soft; }
+    .mb-verify__fact dd { margin: 0.2rem 0 0; font-size: $fs-md; font-weight: 600; line-height: 1.35; color: $navy; overflow-wrap: anywhere; }
+    .mb-verify__fact--name dd { font-family: $font-display; font-size: fluid(1.5rem, '1.2rem + 1.2vw', 2rem); line-height: 1.2; }
+    .mb-verify__number { font-family: $font-heading; letter-spacing: 0.03em; font-variant-numeric: tabular-nums; }
+
+    .mb-verify__foot { padding: $space-4 $space-5 $space-5; border-top: 1px solid $line; background: $surface; }
+    .mb-verify__note { display: flex; align-items: flex-start; gap: $space-2; margin: 0 0 $space-2; font-size: $fs-xs; line-height: 1.55; color: $ink-soft; .icon { flex: none; margin-top: 0.1rem; color: $navy; } }
+    .mb-verify__more { margin: $space-4 0 0; .btn { min-height: 2.75rem; } }
+}
+
+@media (max-width: 399px) {
+    .page-membership .mb-upload__box { padding: $space-3; }
+}
+
+// JavaScript on: the native file input is visually hidden (still focusable; the focus ring is drawn on its label) and the label is the button
+.js .page-membership .mb-upload__input { @include visually-hidden; }
+.js .page-membership .mb-upload__pick { display: inline-flex; }
+
+// Windows high-contrast (forced-colors): the colour and the ring shadow of the current progress step vanish, so it gets an outline
+@media (forced-colors: active) {
+    .mb-me__step--current .mb-me__dot { outline: 3px solid Highlight; outline-offset: 2px; }
+}

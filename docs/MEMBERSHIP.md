@@ -1,6 +1,6 @@
 # Membership registration - CONTRACT
 
-> Read `docs/ARCHITECTURE.md` and `docs/DESIGN.md` first; this file only adds the membership feature. Two agents build on it in parallel:
+> Read `docs/ARCHITECTURE.md` and `docs/DESIGN.md` first; this file only adds the membership feature. The membership CARD, headshot, proof of payment and private page are in `docs/MEMBERSHIP_CARD.md`. Two agents build on it in parallel:
 > the **WEB agent** (public pages) and the **ADMIN agent** (admin screens). The **architect** files (schema, models, services, registry, settings,
 > routes, nav fragment) are **frozen**: call them, do not copy or edit them. Missing something? Add your own file and list the gap in your report.
 
@@ -21,7 +21,7 @@ Everything is **additive and idempotent**: three new tables (plus three guarded 
 | Models | `app/models/MembershipType.php`, `Member.php`, `MemberPayment.php` (generic `Model` API + constants) |
 | Services | `app/services/Membership/MembershipService.php` (rules), `MembershipApplication.php` (validation + creation + staff edit), `MembershipMail.php` (e-mails) |
 | Settings | `app/config/settings_schema.php` group **Membership** (`membership_*`) |
-| Abilities | `app/config/app.php`: `members.manage` (admin, editor), `members.delete` (admin), `members.types` (admin) |
+| Abilities | `app/config/app.php`: `members.manage` (admin, editor), `members.delete` (admin), `members.types` (admin), `members.card` (admin: the card designer, see `docs/MEMBERSHIP_CARD.md`) |
 | Registry | `app/config/pages/membership.php` (all copy, form labels, option lists, confirmation, e-mail templates), `membership-terms.php` (terms text) |
 | Privacy | `app/config/pages/privacy.php`: block "Membership registration" (DRAFT, flagged for owner / legal review; its own toggle-able block appended after the notice list, not a row of the list) |
 | Routes | `app/routes/web_membership.php`, `app/routes/admin_members.php` |
@@ -58,7 +58,7 @@ Rebuild CSS after any `.scss` edit: `PYTHONUTF8=1 "/c/Users/SANTOS JR/AppData/Lo
 | Column | Notes |
 |---|---|
 | `application_ref` | unique, `LAF-APP-YYYY-NNNNN` (random 5 digits, collision-retried; the prefix is setting `membership_number_prefix`) |
-| `membership_number` | unique, NULL until the first approval, `LAF-YYYY-NNNN` (sequential per year) |
+| `membership_number` | unique, NULL until the first approval, in the configurable format `{PREFIX}-{TYPE}-{YY}-{SEQ}` (default, e.g. `LAF-IND-26-0001`: sequential per type and year; older `LAF-YYYY-NNNN` numbers stay unchanged; see `docs/MEMBERSHIP_CARD.md`) |
 | `type_id` | FK `membership_types` (RESTRICT) |
 | fee snapshot | `type_name, fee_amount, joining_fee, fee_currency, fee_period` copied from the type **at submit time** (`MembershipService::feeSnapshot()`); staff may set a fee that was NULL |
 | `status` | `pending, approved, rejected, suspended, expired, cancelled` |
@@ -68,7 +68,7 @@ Rebuild CSS after any `.scss` edit: `PYTHONUTF8=1 "/c/Users/SANTOS JR/AppData/Lo
 | participation | `interests` (JSON list of option keys), `skills NULL, availability, heard_about, heard_about_other NULL, motivation` |
 | guardian (under 18) | `guardian_name, guardian_phone, guardian_relationship, consent_guardian_at` (all NULL for adults) |
 | emergency | `emergency_name, emergency_phone, emergency_relationship` |
-| payment | `payment_method` (key of the editable list), `payment_reference NULL` (text only, no uploads) |
+| payment | `payment_method` (key of the editable list), `payment_reference NULL` (text), plus an optional proof-of-payment file (private, `members.proof_*`, see `docs/MEMBERSHIP_CARD.md`) |
 | consent | `consent_terms_at, consent_privacy_at, declaration_at, consent_updates (0/1), consent_ip, user_agent, consent_terms_ver, consent_privacy_ver` (12-character fingerprints of the terms and privacy texts as they read at submit time) |
 | admin | `internal_notes, status_reason (500), status_changed_at, status_changed_by, approved_by (FK users), approved_at, start_date, expiry_date, anonymised_at` |
 | indexes | `status+created_at`, `email`, `type_id+status`, `expiry_date`, unique `application_ref`, unique `membership_number` |
@@ -252,7 +252,7 @@ Controllers add `member.export`, `member.delete`, `member.resend`, `member.bulk`
 |---|---|---|---|
 | `membership_open` | boolean | **`0`** | accept applications; **off until the owner switches it on** (no personal data is collected while it is off); off = "closed" notice instead of the form |
 | `membership_currency` | text | `UGX` | default currency of new types |
-| `membership_number_prefix` | text | `LAF` | prefix of `LAF-YYYY-NNNN`, `LAF-APP-...`, `LAF-RCT-...` (letters/digits, upper-cased) |
+| `membership_number_prefix` | text | `LAF` | the `{PREFIX}` of the member number format (default `LAF-IND-26-0001`), `LAF-APP-...`, `LAF-RCT-...` (letters/digits, upper-cased) |
 | `membership_payment_instructions` | textarea | empty | how to pay; falls back to the donation bank/mobile-money details |
 | `membership_collect_id` | boolean | `0` | ask for a national ID / passport number (data minimisation: off) |
 | `membership_contact_email` | email | empty | shown to applicants, reply-to of membership e-mails; falls back to `email_primary` |
@@ -291,7 +291,7 @@ The applicant's name is reduced to a safe form (letters, digits, `' . -`; no lin
 * Personal data: date of birth, address, phone numbers, optional ID, minors' guardian details. **Never** public, never in the sitemap or JSON-LD, never in `storage/logs` or `audit_log.details` (ids and references only).
 * Admin access only for roles `admin` and `editor` (`members.manage`); fee configuration, settings and member deletion are admin only. No anonymous access to any member data; the confirmation page needs the signed token.
 * `/membership/register` and the confirmation page are `noindex`; `/membership` and `/membership/terms` are indexable.
-* Collect the ID number only when `membership_collect_id` = 1. No file uploads (payment is text only).
+* Collect the ID number only when `membership_collect_id` = 1. Headshot and proof of payment are PRIVATE files (`storage/private/members`, streamed only through controllers, consent timestamp, deleted on erasure): rules in `docs/MEMBERSHIP_CARD.md` section 11.
 * CSRF on every POST, `e()` on every output, prepared statements only (the service already does), CSV only through `CsvExport`.
 * Uganda's Data Protection and Privacy Act, 2019 may require the foundation to register with the Personal Data Protection Office and to give specific notices. **The owner must confirm this with counsel**; the privacy page text "Membership registration" and the terms page are DRAFTS flagged for owner / legal review, including the data-retention period placeholder. The public site makes no legal claim.
 

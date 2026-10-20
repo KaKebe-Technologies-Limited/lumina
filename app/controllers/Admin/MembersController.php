@@ -10,6 +10,7 @@ use App\Core\CsvExport;
 use App\Core\Database;
 use App\Core\Flash;
 use App\Core\HttpException;
+use App\Core\ImageOptimizer;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\ValidationException;
@@ -17,6 +18,8 @@ use App\Models\Member;
 use App\Models\MemberPayment;
 use App\Models\MembershipType;
 use App\Services\Inbox\Support;
+use App\Services\Membership\CardService;
+use App\Services\Membership\MemberFiles;
 use App\Services\Membership\MembershipApplication;
 use App\Services\Membership\MembershipMail;
 use App\Services\Membership\MembershipService;
@@ -36,9 +39,11 @@ use App\Services\Membership\OnceToken;
  */
 final class MembersController extends AdminController
 {
-    private const BULK_ACTIONS = ['approve', 'reject', 'export'];
+    private const BULK_ACTIONS = ['approve', 'reject', 'export', 'card'];
     /** Bulk approve / reject can send one e-mail per member, so a request is kept small. */
     private const BULK_LIMIT = 100;
+    /** Issuing a card renders a PDF and sends an e-mail, so a request is kept small. */
+    private const CARD_BULK_LIMIT = 50;
     private const PAYMENT_KEYS = ['amount', 'status', 'method', 'reference', 'paid_at', 'purpose', 'currency', 'term_start', 'term_end', 'notes'];
 
     // ------------------------------------------------------------------------------------------------ list, export, bulk
@@ -61,7 +66,7 @@ final class MembersController extends AdminController
             'canTypes'    => can('members.types'),
             'canSettings' => can('settings.manage'),
             'isOpen'      => MembershipService::isOpen(),
-        ], ['title' => 'Members', 'nav' => 'members', 'breadcrumbs' => [['Members', null]]]);
+        ], ['title' => 'Members', 'nav' => $query->f['proof'] === 'received' ? 'members_proofs' : 'members', 'breadcrumbs' => [['Members', null]]]);
     }
 
     /** CSV of the current list (all filters, no paging). The file contains personal data: see MemberCsv and the note on the list page. */
@@ -98,6 +103,9 @@ final class MembersController extends AdminController
             $this->audit('member.export', 'member', null, 'Exported ' . count($rows) . ' selected member record(s) to CSV', ['count' => count($rows), 'selected' => true]);
             return $this->csv($rows);
         }
+        if ($action === 'card') {
+            return $this->issueCards($ids, $trimmed);
+        }
 
         $reason = trim((string) preg_replace('/\s+/u', ' ', $request->string('reason')));
         if ($action === 'reject' && $reason === '') {
@@ -109,6 +117,7 @@ final class MembersController extends AdminController
         $done = [];
         $skipped = [];
         $mailFailed = 0;
+        $cards = 0;
         foreach ($ids as $id) {
             $m = Member::find($id);
             if ($m === null) {
@@ -120,17 +129,23 @@ final class MembersController extends AdminController
                 continue;
             }
             $done[] = $id;
+            if ($to === 'approved' && (int) (Member::find($id)['card_version'] ?? 0) > (int) $m['card_version']) {
+                $cards++;                                  // the automatic card rule (setting membership_card_trigger) issued and e-mailed a card
+            }
             if ($notify && $res['member'] !== null) {
                 $sent = $to === 'approved' ? MembershipMail::approved($res['member']) : MembershipMail::rejected($res['member']);
                 $mailFailed += $sent ? 0 : 1;
             }
         }
         $this->audit('member.bulk', 'member', null, ucfirst($action) . ': ' . count($done) . ' done, ' . array_sum($skipped) . ' skipped',
-            ['action' => $action, 'ids' => $done, 'skipped' => array_sum($skipped), 'notified' => $notify]);
+            ['action' => $action, 'ids' => $done, 'skipped' => array_sum($skipped), 'notified' => $notify, 'cards' => $cards]);
 
         $verb = $to === 'approved' ? 'Approved' : 'Rejected';
         if ($done !== []) {
             Flash::success($verb . ' ' . count($done) . ' application' . (count($done) === 1 ? '' : 's') . '.' . ($notify ? ($mailFailed > 0 ? ' ' . $mailFailed . ' e-mail(s) could not be sent.' : ' The members were e-mailed.') : ''));
+        }
+        if ($cards > 0) {
+            Flash::info($cards . ' membership card' . ($cards === 1 ? ' was' : 's were') . ' issued and e-mailed automatically.');
         }
         foreach ($skipped as $message => $n) {
             Flash::warning($n . ' skipped: ' . $message);
@@ -176,6 +191,10 @@ final class MembersController extends AdminController
             'erasable'    => in_array((string) $m['status'], MembershipApplication::ERASABLE_STATUSES, true),
             'canTypes'    => can('members.types'),
             'hasPayments' => $payments !== [],
+            'card'        => CardService::summary($m),            // photo, proof of payment and membership card panels (admin/members/_photo.php, _proof.php, _card.php)
+            'checks'      => $this->cardChecks($m),
+            'proofBy'     => $this->staffName(isset($m['proof_verified_by']) ? (int) $m['proof_verified_by'] : 0),
+            'gd'          => ImageOptimizer::capabilities()['gd'],
         ], [
             'title' => (string) $m['full_name'], 'nav' => 'members',
             'breadcrumbs' => [['Members', url('admin/members')], [(string) $m['application_ref'], null]],
@@ -234,6 +253,15 @@ final class MembersController extends AdminController
             $this->fail($res['errors'], $back . '?edit=1');
         }
         Flash::success($res['changed'] === [] ? 'Nothing was changed.' : 'The details were saved.');
+        if (in_array('email', $res['changed'], true) && !empty($res['member']) && empty($res['member']['anonymised_at'])) {
+            // The private page link was sent to the OLD address (a typing mistake could mean a stranger holds it): kill it, the new one goes to the new address.
+            MembershipService::regenerateDashboardToken($id);
+            $this->audit('member.link_reset', 'member', $id, 'Private page link reset for ' . $m['application_ref'] . ' (e-mail address changed)', ['ref' => $m['application_ref']]);
+            Flash::info('The e-mail address changed, so the private page link that was sent to the old address no longer works. Use "Send an e-mail again" to send the member the new link.');
+        }
+        if (array_intersect($res['changed'], ['full_name', 'city', 'region', 'country', 'fee_amount', 'joining_fee', 'fee_currency', 'fee_period']) !== [] && ($res['member']['card_needs_reissue'] ?? 0)) {
+            Flash::info('The issued membership card still shows the old details. Open the card panel and choose "Re-issue (new version)".');
+        }
         return $this->redirect($back);
     }
 
@@ -281,6 +309,9 @@ final class MembersController extends AdminController
         }
         $message = $res['message'] . ($res['number_assigned'] ? ' Membership number ' . ($res['member']['membership_number'] ?? '') . '.' : '');
         Flash::success($message);
+        if ($to === 'approved') {
+            $this->cardNotice($id, $m);                    // what the automatic card rule did (issued and e-mailed, or why it is waiting)
+        }
         $first = $to === 'approved' && $m['status'] === 'pending';
         if (!empty($st['notify']) && ($first || $to === 'rejected') && $res['member'] !== null && empty($res['member']['anonymised_at'])) {
             $sent = $to === 'approved' ? MembershipMail::approved($res['member']) : MembershipMail::rejected($res['member']);
@@ -376,6 +407,12 @@ final class MembersController extends AdminController
         $input = $this->paymentInput($pay);
         // validate first, so a typo does not use up the token; then accept the form only once (a double click must not issue two receipts)
         $check = MembershipService::checkPayment($id, $input);
+        // a proof file posted with the form is checked BEFORE anything is saved, so a bad file never leaves a payment half done
+        $posted = $request->file('pay_proof');
+        $fileCheck = MemberFiles::inspectUpload($posted, 'proof');
+        if (!$fileCheck['ok']) {
+            $check['proof'] = (string) $fileCheck['message'];
+        }
         if ($check !== []) {
             $this->failBucket('pay', $check, $pay, $back . '#payments');
         }
@@ -383,11 +420,18 @@ final class MembersController extends AdminController
             Flash::warning('That payment form was already sent (or has expired). Check the payments below, then record the payment again if it is not there.');
             return $this->redirect($back . '#payments');
         }
+        $before = Member::findOrFail($id);
         $res = MembershipService::recordPayment($id, $input + ['user_id' => $this->userId()]);
         if (!$res['ok']) {
             $this->failBucket('pay', $res['errors'], $pay, $back . '#payments');
         }
         Flash::success($res['message']);
+        // pay[attach_proof] = 1: a private COPY of the member's uploaded proof is attached to this payment and, when the money is received, the proof is marked
+        // verified (who and when are recorded on the member); a file posted as pay_proof is attached instead (a proof that reached staff outside the website)
+        if (!empty($pay['attach_proof']) || $posted !== null) {
+            $this->attachProof((int) $res['payment']['id'], $id, $posted, ($res['payment']['status'] ?? '') === 'received', 'record');
+        }
+        $this->cardNotice($id, $before);
         if (!empty($pay['notify']) && ($res['payment']['status'] ?? '') === 'received') {
             $m = Member::findOrFail($id);
             MembershipMail::paymentReceived($m, $res['payment']) ? Flash::info('The member was e-mailed a payment confirmation.') : Flash::warning('The payment was saved, but the e-mail could not be sent.');
@@ -413,11 +457,13 @@ final class MembersController extends AdminController
             'amount' => (string) $stored['amount'], 'status' => (string) $stored['status'], 'method' => (string) $stored['method'], 'reference' => (string) ($stored['reference'] ?? ''),
             'purpose' => (string) $stored['purpose'], 'currency' => (string) $stored['currency'], 'notes' => (string) ($stored['notes'] ?? ''),
         ];
+        $before = Member::findOrFail($id);
         $res = MembershipService::updatePayment($pid, $input + ['user_id' => $this->userId()]);
         if (!$res['ok']) {
             $this->failBucket($bucket, $res['errors'], $posted, $back . '#pay-' . $pid);
         }
         Flash::success($res['message']);
+        $this->cardNotice($id, $before);
         if (!empty($posted['notify']) && ($res['payment']['status'] ?? '') === 'received') {
             $m = Member::findOrFail($id);
             MembershipMail::paymentReceived($m, $res['payment']) ? Flash::info('The member was e-mailed a payment confirmation.') : Flash::warning('The payment was saved, but the e-mail could not be sent.');
@@ -477,7 +523,12 @@ final class MembersController extends AdminController
             Flash::error('This member has payment records, which must stay on record (receipts). Cancel the membership instead.');
             return $this->redirect($back);
         }
+        $files = \App\Services\Membership\MemberFiles::collectPaths($m);              // photo, proof, card photo copy: removed with the record (no payments, so no receipts to keep)
+        if (!empty($m['card_photo_path'])) {
+            $files[] = (string) $m['card_photo_path'];
+        }
         Member::delete($id);
+        \App\Services\Membership\MemberFiles::deletePaths($files);
         MembershipService::flush();
         $this->audit('member.delete', 'member', $id, 'Deleted application ' . $m['application_ref'], ['ref' => $m['application_ref'], 'status' => $m['status']]);
         Flash::success('Application ' . $m['application_ref'] . ' was deleted.');
@@ -551,6 +602,359 @@ final class MembersController extends AdminController
             }
         }
         return $out;
+    }
+
+    // ------------------------------------------------------------------------------------------------ member files and the membership card (docs/MEMBERSHIP_CARD.md)
+    // The STAFF agent owns this block (views: admin/members/_card.php and friends). Every rule is in MemberFiles / CardService; these actions only read the
+    // request, call the service and report. Everything needs members.manage; audit entries (written by the services) carry ids and references only.
+
+    /** Stream the member's photo (inline) to staff. */
+    public function photo(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        return MemberFiles::stream(Member::findOrFail((int) $id), 'photo');
+    }
+
+    /** Stream the proof of payment. Images are shown inline (zoom / rotate in the page); PDFs and ?download=1 are downloads. */
+    public function proofFile(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        return MemberFiles::stream(Member::findOrFail((int) $id), 'proof', $request->string('download') === '1');
+    }
+
+    /** Stream the proof attached to a payment row. */
+    public function paymentProof(Request $request, int|string $id, int|string $pid): Response
+    {
+        $this->authorize('members.manage');
+        return MemberFiles::streamPayment($this->paymentOf((int) $id, (int) $pid), $request->string('download') === '1');
+    }
+
+    public function replacePhoto(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        $id = (int) $id;
+        Member::findOrFail($id);
+        $res = MemberFiles::storePhoto($id, $request->file('photo'), ['by_staff' => true, 'source' => 'staff', 'user_id' => $this->userId()]);
+        $res['ok'] ? Flash::success('The photo was saved.' . ($res['notice'] ? ' ' . $res['notice'] : '')) : Flash::error($res['message']);
+        return $this->redirect('admin/members/' . $id . '#photo');
+    }
+
+    public function removePhoto(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        $id = (int) $id;
+        Member::findOrFail($id);
+        $res = MemberFiles::removePhoto($id, $this->userId());
+        $res['ok'] ? Flash::success($res['message']) : Flash::error($res['message']);
+        return $this->redirect('admin/members/' . $id . '#photo');
+    }
+
+    /** Staff upload a proof of payment for the member (for example one received on WhatsApp). */
+    public function uploadProof(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        $id = (int) $id;
+        Member::findOrFail($id);
+        $res = MemberFiles::storeProof($id, $request->file('proof'), ['by_staff' => true, 'source' => 'staff', 'user_id' => $this->userId()]);
+        $res['ok'] ? Flash::success('The proof of payment was saved.') : Flash::error($res['message']);
+        return $this->redirect('admin/members/' . $id . '#proof');
+    }
+
+    /** status = verified | rejected ("needs a better copy": the applicant is e-mailed a polite request with the private-page link) | received. */
+    public function proofStatus(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        $id = (int) $id;
+        Member::findOrFail($id);
+        $res = MemberFiles::setProofStatus($id, $request->string('status'), $this->userId());
+        $res['ok'] ? Flash::success($res['message']) : Flash::error($res['message']);
+        return $this->redirect('admin/members/' . $id . '#proof');
+    }
+
+    public function removeProof(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        $id = (int) $id;
+        Member::findOrFail($id);
+        $res = MemberFiles::removeProof($id, $this->userId());
+        $res['ok'] ? Flash::success($res['message']) : Flash::error($res['message']);
+        return $this->redirect('admin/members/' . $id . '#proof');
+    }
+
+    /** "Issue card now": staff may issue before the money arrives (the payment rule is skipped; approval and, if the setting says so, a photo are still needed). */
+    public function issueCard(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        $id = (int) $id;
+        Member::findOrFail($id);
+        $res = CardService::issue($id, ['user_id' => $this->userId(), 'source' => 'manual', 'force' => true]);
+        $res['ok'] ? ($res['already'] ? Flash::info($res['message']) : Flash::success($res['message'])) : Flash::error($res['message']);
+        return $this->redirect('admin/members/' . $id . '#card');
+    }
+
+    public function resendCard(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        $id = (int) $id;
+        Member::findOrFail($id);
+        $res = CardService::resend($id, ['by' => 'staff', 'user_id' => $this->userId()]);
+        $res['ok'] ? Flash::success($res['message']) : Flash::error($res['message']);
+        return $this->redirect('admin/members/' . $id . '#card');
+    }
+
+    /** Re-issue: a new version from the member's current data and a NEW verification token (the old card's QR code stops verifying). */
+    public function reissueCard(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        $id = (int) $id;
+        Member::findOrFail($id);
+        $res = CardService::reissue($id, ['user_id' => $this->userId(), 'source' => 'manual', 'force' => true, 'reason' => 'staff']);
+        $res['ok'] ? Flash::success($res['message']) : Flash::error($res['message']);
+        return $this->redirect('admin/members/' . $id . '#card');
+    }
+
+    public function revokeCard(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        $id = (int) $id;
+        Member::findOrFail($id);
+        $res = CardService::revoke($id, $request->string('reason'), $this->userId());
+        $res['ok'] ? Flash::success($res['message']) : Flash::error($res['message']);
+        return $this->redirect('admin/members/' . $id . '#card');
+    }
+
+    /**
+     * The issued card as a PDF: a download, or with ?inline=1 shown in the page's own viewer (an <iframe> on the member screen; the CSP allows frame-src 'self' and
+     * the response keeps X-Frame-Options SAMEORIGIN).
+     */
+    public function cardPdf(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        $m = Member::findOrFail((int) $id);
+        $pdf = CardService::pdf($m);
+        if ($pdf === null) {
+            throw new HttpException(404, 'Not found');
+        }
+        $inline = $request->string('inline') === '1';
+        return new Response($pdf, 200, ['Content-Type' => 'application/pdf', 'Content-Length' => (string) strlen($pdf), 'X-Content-Type-Options' => 'nosniff',
+            'Content-Disposition' => ($inline ? 'inline' : 'attachment') . '; filename="' . CardService::filename($m) . '"', 'Cache-Control' => 'private, no-store',
+            'Referrer-Policy' => 'no-referrer', 'X-Robots-Tag' => 'noindex, nofollow']);
+    }
+
+    public function cardPng(Request $request, int|string $id): Response
+    {
+        $this->authorize('members.manage');
+        $png = CardService::png(Member::findOrFail((int) $id));
+        if ($png === null) {
+            throw new HttpException(404, 'Not found');
+        }
+        return new Response($png, 200, ['Content-Type' => 'image/png', 'Content-Length' => (string) strlen($png), 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, no-store',
+            'Referrer-Policy' => 'no-referrer', 'X-Robots-Tag' => 'noindex, nofollow']);
+    }
+
+    /** Bulk "issue cards" for ids[] (at most 50 per request); the same as the "Issue membership cards" choice of the list's bulk bar. */
+    public function bulkCard(Request $request): Response
+    {
+        $this->authorize('members.manage');
+        $all = array_values(array_unique(array_filter(array_map('intval', (array) $request->post('ids', [])), static fn(int $i): bool => $i > 0)));
+        if ($all === []) {
+            Flash::warning('Tick at least one member first.');
+            return $this->redirect('admin/members');
+        }
+        return $this->issueCards($all, false);
+    }
+
+    /**
+     * Issue the cards of the ticked members under the NORMAL rules (approved; balance cleared when the trigger says so; a photo when the card settings require one):
+     * staff who want to skip the payment rule use "Issue card now" on the member. One result line per reason, not per member. Idempotent: members who already have a card are
+     * counted, not touched.
+     * @param int[] $ids
+     */
+    private function issueCards(array $ids, bool $trimmed): Response
+    {
+        $trimmed = $trimmed || count($ids) > self::CARD_BULK_LIMIT;
+        $ids = array_slice($ids, 0, self::CARD_BULK_LIMIT);
+        $issued = 0;
+        $already = 0;
+        $mailFailed = [];
+        $skipped = [];                                  // message => [refs]
+        foreach ($ids as $mid) {
+            $res = CardService::issue($mid, ['user_id' => $this->userId(), 'source' => 'bulk']);
+            $m = $res['member'] ?? Member::find($mid);
+            $ref = (string) ($m['application_ref'] ?? '#' . $mid);
+            if ($res['ok'] && $res['already']) {
+                $already++;
+            } elseif ($res['ok']) {
+                $issued++;
+                if ($res['emailed'] === false) {
+                    $mailFailed[] = $ref;
+                }
+            } else {
+                $skipped[(string) $res['message']][] = $ref;
+            }
+        }
+        $skippedCount = array_sum(array_map('count', $skipped));
+        $this->audit('member.card_bulk', 'member', null, 'Bulk card issue: ' . $issued . ' issued, ' . $skippedCount . ' skipped', ['issued' => $issued, 'skipped' => $skippedCount, 'already' => $already, 'ids' => $ids]);
+        if ($issued > 0) {
+            Flash::success($issued . ' card' . ($issued === 1 ? '' : 's') . ' issued' . ($mailFailed === [] ? ' and e-mailed to the member' . ($issued === 1 ? '.' : 's.') : '.'));
+        }
+        if ($mailFailed !== []) {
+            Flash::warning('The card e-mail could not be sent for ' . $this->refs($mailFailed) . '. Open the member and use "Re-send card e-mail".');
+        }
+        if ($already > 0) {
+            Flash::info($already . ' member' . ($already === 1 ? ' already has' : 's already have') . ' a card, so nothing was changed.');
+        }
+        foreach ($skipped as $message => $refs) {
+            Flash::warning(count($refs) . ' skipped (' . $message . ') ' . $this->refs($refs));
+        }
+        if ($issued === 0 && $already === 0 && $skipped === []) {
+            Flash::warning('Nothing was changed.');
+        }
+        if ($trimmed) {
+            Flash::info('Only the first ' . self::CARD_BULK_LIMIT . ' ticked members were processed. Run the action again for the rest.');
+        }
+        return $this->back('admin/members');
+    }
+
+    /** "LAF-APP-1, LAF-APP-2 and 4 more" */
+    private function refs(array $refs): string
+    {
+        $shown = array_slice($refs, 0, 4);
+        return implode(', ', $shown) . (count($refs) > 4 ? ' and ' . (count($refs) - 4) . ' more' : '');
+    }
+
+    // ------------------------------------------------------------------------------------------------ proof attached to a payment
+
+    /**
+     * Attach a proof to an EXISTING payment: a private copy of the member's proof (no file posted) or a posted file (pay_proof). The proof of a received payment is marked verified.
+     * Routes: app/routes/admin_members_staff.php.
+     */
+    public function attachPaymentProof(Request $request, int|string $id, int|string $pid): Response
+    {
+        $this->authorize('members.manage');
+        $id = (int) $id;
+        $pid = (int) $pid;
+        Member::findOrFail($id);
+        $payment = $this->paymentOf($id, $pid);
+        $file = $request->file('pay_proof');
+        $chk = MemberFiles::inspectUpload($file, 'proof');
+        if (!$chk['ok']) {
+            Flash::error((string) $chk['message']);
+        } else {
+            $this->attachProof($pid, $id, $file, (string) $payment['status'] === 'received', 'payment');
+        }
+        return $this->redirect('admin/members/' . $id . '#pay-' . $pid);
+    }
+
+    /** Remove the proof copy of one payment (the member's own proof is not touched). */
+    public function removePaymentProof(Request $request, int|string $id, int|string $pid): Response
+    {
+        $this->authorize('members.manage');
+        $id = (int) $id;
+        $pid = (int) $pid;
+        $m = Member::findOrFail($id);
+        $payment = $this->paymentOf($id, $pid);
+        if (empty($payment['proof_path'])) {
+            Flash::warning('This payment has no proof attached.');
+        } else {
+            $old = (string) $payment['proof_path'];
+            MemberPayment::update($pid, ['proof_path' => null, 'proof_name' => null, 'proof_mime' => null]);
+            MemberFiles::deletePaths([$old]);
+            $this->audit('member.payment_proof_remove', 'member', $id, 'Removed the proof from a payment on ' . $m['application_ref'], ['ref' => $m['application_ref'], 'payment_id' => $pid]);
+            Flash::success('The proof was removed from this payment.');
+        }
+        return $this->redirect('admin/members/' . $id . '#pay-' . $pid);
+    }
+
+    /**
+     * Give a payment a proof (the member's uploaded one, or $file) and report it. A proof attached to a RECEIVED payment is marked verified on the member (who and when are
+     * stored by MemberFiles::setProofStatus). Nothing is logged but ids and the source.
+     */
+    private function attachProof(int $paymentId, int $memberId, ?array $file, bool $received, string $source): void
+    {
+        $mine = Member::findOrFail($memberId);
+        if ($file === null && ($mine['proof_status'] ?? 'none') === 'rejected') {
+            Flash::warning('The member\'s proof is marked "needs a better copy", so it was not attached. Attach a file instead, or wait for the new upload.');
+            return;
+        }
+        if (!MemberFiles::attachProofToPayment($paymentId, $memberId, $file)) {
+            Flash::warning($file !== null ? 'The proof file could not be attached to the payment.' : 'There is no usable proof of payment from the member to attach. Upload one first, or choose a file.');
+            return;
+        }
+        $this->audit('member.payment_proof', 'member', $memberId, 'Attached a proof of payment to a payment on ' . $mine['application_ref'],
+            ['ref' => $mine['application_ref'], 'payment_id' => $paymentId, 'file' => $file !== null ? 'uploaded' : 'member_proof', 'verified' => $file === null && $received, 'source' => $source]);
+        if ($file === null && $received && ($mine['proof_status'] ?? 'none') !== 'verified') {
+            MemberFiles::setProofStatus($memberId, 'verified', $this->userId());
+            Flash::info('The proof of payment was attached to this payment and marked as verified.');
+        } elseif ($file === null && $received) {
+            Flash::info('The proof of payment was attached to this payment.');
+        } else {
+            Flash::info($received ? 'The proof file was attached to this payment.' : 'The proof file was attached to this payment (it is only marked as verified for a received payment).');
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------ what the automatic card rule did
+
+    /**
+     * After an approval or a payment: say what the automatic card rule (setting membership_card_trigger, evaluated inside MembershipService) did. $before = the member row
+     * as it was before the action.
+     * @param array<string,mixed> $before
+     */
+    private function cardNotice(int $id, array $before): void
+    {
+        $now = Member::find($id);
+        if ($now === null || !empty($now['anonymised_at'])) {
+            return;
+        }
+        if ((int) $now['card_version'] > (int) $before['card_version'] && $now['card_status'] === 'issued') {
+            $sent = (int) $now['card_emailed_version'] >= (int) $now['card_version'];
+            $sent ? Flash::success('Membership card version ' . (int) $now['card_version'] . ' was issued and e-mailed to the member.')
+                : Flash::warning('Membership card version ' . (int) $now['card_version'] . ' was issued, but the e-mail could not be sent. Use "Re-send card e-mail" in the card panel.');
+            return;
+        }
+        if ((string) $now['status'] !== 'approved' || $now['card_status'] !== 'none') {
+            return;
+        }
+        $reasons = CardService::eligibility($now)['reasons'];
+        if (CardService::trigger() === 'manual') {
+            Flash::info('Cards are issued by hand on this site (card settings). Use "Issue card now" when the member is ready.');
+        } elseif (in_array('unpaid', $reasons, true)) {
+            Flash::info('The membership card is issued and e-mailed automatically as soon as the balance is paid or waived.');
+        } elseif (in_array('photo_missing', $reasons, true)) {
+            Flash::info('The membership card waits for a photo (the card settings require one). It is issued and e-mailed as soon as a photo is added.');
+        }
+    }
+
+    /**
+     * What stands between this member and a card, as a checklist for the card panel: [key => [done, label, detail]]. "Issue card now" skips only the payment rule.
+     * @param array<string,mixed> $m @return array<string,array{ok:bool,label:string,detail:string,optional:bool}>
+     */
+    private function cardChecks(array $m): array
+    {
+        $paid = MembershipService::paymentSummary($m);
+        $cleared = in_array($paid['status'], ['paid', 'free'], true);
+        $photoRequired = \App\Services\Membership\Card\CardSettings::bool('membership_card_require_photo');
+        $hasPhoto = MemberFiles::hasPhoto($m);
+        $needsPayment = CardService::trigger() === 'paid_approved';
+        return [
+            'approved' => ['ok' => (string) $m['status'] === 'approved', 'optional' => false, 'label' => 'Application approved',
+                'detail' => (string) $m['status'] === 'approved' ? 'Membership number ' . ($m['membership_number'] ?? '') : 'The card is for approved members only.'],
+            'paid' => ['ok' => $cleared, 'optional' => !$needsPayment, 'label' => $needsPayment ? 'Balance paid or waived' : 'Payment',
+                'detail' => $cleared ? ($paid['status'] === 'free' ? 'No fee to pay.' : 'Nothing owing.') : ($paid['status'] === 'tbd' ? 'The fee is not set yet.' : 'Still owing ' . MembershipService::formatMoney((float) $paid['balance'], (string) $paid['currency']) . '.')
+                    . (!$needsPayment ? ' The card settings do not wait for it.' : '')],
+            'photo' => ['ok' => $hasPhoto, 'optional' => !$photoRequired, 'label' => $photoRequired ? 'Photo (required)' : 'Photo',
+                'detail' => $hasPhoto ? 'Printed on the card.' : ($photoRequired ? 'No card is issued without a photo.' : 'Without one the card shows the initials, like the sample.')],
+        ];
+    }
+
+    /** Name of a staff member for "verified by" lines; '' when unknown. */
+    private function staffName(int $userId): string
+    {
+        if ($userId <= 0) {
+            return '';
+        }
+        $u = \App\Models\User::find($userId);
+        return $u === null ? '' : trim((string) preg_replace('/\s*<[^>]*>\s*$/', '', (string) $u['name']));
     }
 
     /** The payment row, which must belong to this member (404 otherwise, so ids cannot be mixed up between members). @return array<string,mixed> */

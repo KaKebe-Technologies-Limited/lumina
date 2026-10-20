@@ -203,7 +203,7 @@ final class MembershipTypesController extends AdminController
             $this->feeMissing = true;
             $fee = '?';                 // not a valid amount: saveType() refuses the form and still reports every other problem as well
         }
-        return [
+        $row = [
             'name'        => $str('name'),
             'slug'        => $str('slug'),
             'description' => $str('description'),
@@ -216,5 +216,9 @@ final class MembershipTypesController extends AdminController
             'is_active'   => $str('is_active'),
             'max_members' => $str('max_members'),
         ];
+        if (array_key_exists('code', $p)) {
+            $row['code'] = $str('code');                 // short code in the member number (IND, YTH ...), validated by saveType(); empty = initials of the name
+        }
+        return $row;
     }
 }

@@ -162,11 +162,11 @@ final class MembershipApplication
         return $err;
     }
 
-    /** Collapse whitespace (incl. non-breaking spaces) and drop control and zero-width characters in a single-line value. */
+    /** Collapse whitespace (incl. non-breaking spaces) and drop control, zero-width and bidirectional-override characters (they could reorder a name on a card or a page) in a single-line value. */
     public static function line(mixed $v): string
     {
         $s = is_scalar($v) ? (string) $v : '';
-        $s = (string) preg_replace('/[\x{200B}-\x{200D}\x{2060}\x{FEFF}]+/u', '', $s);
+        $s = (string) preg_replace('/[\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2060}-\x{2064}\x{2066}-\x{2069}\x{FEFF}]+/u', '', $s);
         $s = (string) preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $s);
         return trim((string) preg_replace('/\s+/u', ' ', $s));
     }
@@ -175,7 +175,7 @@ final class MembershipApplication
     public static function text(mixed $v): string
     {
         $s = is_scalar($v) ? str_replace(["\r\n", "\r"], "\n", (string) $v) : '';
-        $s = (string) preg_replace('/[\x{200B}-\x{200D}\x{2060}\x{FEFF}]+/u', '', $s);
+        $s = (string) preg_replace('/[\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2060}-\x{2064}\x{2066}-\x{2069}\x{FEFF}]+/u', '', $s);
         $s = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/u', '', $s);
         $s = (string) preg_replace('/[^\S\n]+/u', ' ', $s);
         $s = (string) preg_replace('/ ?\n ?/', "\n", $s);
@@ -336,6 +336,7 @@ final class MembershipApplication
             'consent_updates'     => in_array(strtolower((string) ($in['consent_updates'] ?? '')), ['1', 'on', 'yes', 'true'], true) ? 1 : 0,
             'consent_ip'          => self::nullable(mb_substr((string) ($meta['ip'] ?? ''), 0, 45)),
             'user_agent'          => self::nullable(mb_substr((string) ($meta['user_agent'] ?? ''), 0, 255)),
+            'dashboard_token'     => MembershipService::newToken(32),            // the private "My membership" page (/membership/me/{token})
         ] + self::personRow($in);
     }
 
@@ -455,6 +456,10 @@ final class MembershipApplication
             }
         }
         if ($changed !== []) {
+            if ($m['card_status'] === 'issued' && array_intersect($changed, ['full_name', 'city', 'region', 'country', 'fee_amount', 'joining_fee', 'fee_currency', 'fee_period']) !== []) {
+                $row['card_needs_reissue'] = 1;                     // the issued card still shows the old details: staff issue a new version
+                $row['card_reissue_reason'] = 'details';
+            }
             Database::update('members', $row, 'id = ?', [$memberId]);
             $details = ['ref' => $m['application_ref'], 'fields' => $changed];
             foreach (array_merge(self::FEE_FIELDS, ['consent_guardian_at']) as $f) {
@@ -485,7 +490,8 @@ final class MembershipApplication
      */
     public static function anonymise(int $memberId, ?int $userId = null): array
     {
-        $result = Database::transaction(function () use ($memberId): array {
+        $paths = [];
+        $result = Database::transaction(function () use ($memberId, &$paths): array {
             $m = Database::one('SELECT * FROM members WHERE id = ? FOR UPDATE', [$memberId]);
             if ($m === null) {
                 return ['ok' => false, 'message' => 'Member not found.'];
@@ -505,9 +511,22 @@ final class MembershipApplication
                 'guardian_name' => null, 'guardian_phone' => null, 'guardian_relationship' => null,
                 'emergency_name' => '', 'emergency_phone' => '', 'emergency_relationship' => '',
                 'payment_method' => '', 'payment_reference' => null, 'consent_ip' => null, 'user_agent' => null, 'consent_updates' => 0,
-                'internal_notes' => null, 'anonymised_at' => date('Y-m-d H:i:s'),
+                'internal_notes' => null, 'status_reason' => null, 'anonymised_at' => date('Y-m-d H:i:s'),
             ], 'id = ?', [$memberId]);
             Database::execute('UPDATE member_payments SET notes = NULL WHERE member_id = ?', [$memberId]);
+            // the photo, the proof of payment (and the proofs attached to payments), the card's own photo copy: files are deleted after the commit; the columns and
+            // every token are blanked now, so the private page link and the card's QR code stop working at once
+            $paths = MemberFiles::collectPaths($m);
+            if (!empty($m['card_photo_path'])) {
+                $paths[] = (string) $m['card_photo_path'];
+            }
+            Database::update('members', [
+                'photo_path' => null, 'photo_updated_at' => null, 'photo_consent_at' => null, 'photo_original' => 0,
+                'proof_path' => null, 'proof_name' => null, 'proof_mime' => null, 'proof_uploaded_at' => null, 'proof_status' => 'none', 'proof_verified_by' => null, 'proof_verified_at' => null,
+                'dashboard_token' => null, 'card_verify_token' => null, 'card_snapshot' => null, 'card_photo_path' => null, 'card_needs_reissue' => 0, 'card_reissue_reason' => null,
+                'card_status' => $m['card_status'] === 'none' ? 'none' : 'revoked',
+            ], 'id = ?', [$memberId]);
+            Database::execute('UPDATE member_payments SET proof_path = NULL, proof_name = NULL, proof_mime = NULL WHERE member_id = ?', [$memberId]);
             // the newsletter row this form created holds the same address
             $subIds = array_column(Database::all("SELECT id FROM subscribers WHERE source = 'membership' AND email = ?", [(string) $m['email']]), 'id');
             if ($subIds !== []) {
@@ -518,6 +537,7 @@ final class MembershipApplication
             return ['ok' => true, 'message' => 'The personal data of ' . $m['application_ref'] . ' was erased. The number, fee and receipts were kept.', 'ref' => $m['application_ref']];
         });
         if ($result['ok']) {
+            MemberFiles::deletePaths($paths);
             AuditLog::record('member.anonymise', 'member', $memberId, 'Erased the personal data of ' . $result['ref'], ['ref' => $result['ref'], 'user_id' => $userId]);
             MembershipService::flush();
         }

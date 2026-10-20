@@ -115,8 +115,13 @@ final class PdfValidator
     }
 
     /**
-     * Strict mode: inflate every /ObjStm and scan the decoded objects. Returns true when something hostile is found OR a stream cannot be proven harmless
-     * (unknown filter, predictor, does not inflate, too large, too many).
+     * Strict mode: inflate EVERY stream that is zlib data (not only the ones that call themselves /ObjStm: without a parser a dictionary cannot be located
+     * reliably, since comments and names may contain any text) and run the same scan on the decoded bytes (also when the decoded bytes are zlib data again: a
+     * filter chain). Every "stream" keyword is examined, none is skipped because an earlier fake keyword "swallowed" it, and the dictionary text of a stream is
+     * everything since the end of the last stream that had already ENDED before it. Returns true when something hostile is found OR a stream cannot be proven
+     * harmless: an /ObjStm that decodes to more than the cap, more than 3000 streams, zlib data of which nothing decodes next to /ObjStm (or more than 10 times elsewhere), a predictor /
+     * /Crypt on an /ObjStm (the scan would see the bytes before the predictor is undone), and an /ObjStm that is not plain zlib data (an ASCII-hex / ASCII-85 /
+     * LZW chain that could hide the objects).
      */
     private static function objectStreamsHostile(string $file, int $size): bool
     {
@@ -125,26 +130,18 @@ final class PdfValidator
             return true;
         }
         $pos = 0;
+        $ends = [];                                  // where the streams examined so far end
         $count = 0;
+        $bad = 0;
         $total = 0;
         while (($p = strpos($all, 'stream', $pos)) !== false) {
             $pos = $p + 6;
             if ($p >= 3 && substr($all, $p - 3, 3) === 'end') {
                 continue;
             }
-            $win = substr($all, max(0, $p - 2000), min(2000, $p));
-            $o = strrpos($win, 'obj');
-            $dict = $o === false ? $win : substr($win, $o + 3);
-            if (str_contains($dict, '#')) {
-                $dict = (string) preg_replace_callback('/#([0-9A-Fa-f]{2})/', static fn(array $mm): string => chr((int) hexdec($mm[1])), $dict);
-            }
-            if (preg_match('~/Type\s*/ObjStm\b|/ObjStm\b~', $dict) !== 1) {
-                continue;
-            }
-            if (++$count > 500) {
+            if (++$count > 3000) {
                 return true;
             }
-            // the stream data starts after "stream" + EOL and ends at "endstream"
             $start = $p + 6;
             if (isset($all[$start]) && $all[$start] === "\r") {
                 $start++;
@@ -153,42 +150,120 @@ final class PdfValidator
                 $start++;
             }
             $end = strpos($all, 'endstream', $start);
-            if ($end === false) {
+            $raw = $end === false ? substr($all, $start) : substr($all, $start, $end - $start);
+            $prev = 0;
+            foreach ($ends as $e) {
+                if ($e <= $p && $e > $prev) {
+                    $prev = $e;
+                }
+            }
+            $region = substr($all, $prev, $p - $prev);
+            $ends[] = $end === false ? $size : $end + 9;
+            if (str_contains($region, '#')) {
+                $region = (string) preg_replace_callback('/#([0-9A-Fa-f]{2})/', static fn(array $mm): string => chr((int) hexdec($mm[1])), $region);
+            }
+            $isObjStm = str_contains($region, '/ObjStm');
+            if ($isObjStm && preg_match('~/(Predictor|Crypt)\b~', $region) === 1) {
                 return true;
             }
-            $raw = substr($all, $start, $end - $start);
-            $filter = preg_match('~/Filter\s*(\[[^\]]*\]|/[A-Za-z0-9]+)~', $dict, $fm) === 1 ? (string) $fm[1] : '';
-            if (str_contains($dict, '/Predictor') || str_contains($dict, '/Crypt')) {
-                return true;
-            }
-            if ($filter === '') {
-                $data = $raw;
-            } elseif (preg_match('~^\[?\s*/FlateDecode\s*\]?$~', $filter) === 1) {
-                $data = @gzuncompress($raw, self::OBJSTM_MAX);
-                if ($data === false) {
-                    $data = @gzuncompress(rtrim($raw, "\r\n"), self::OBJSTM_MAX);
-                }
-                if ($data === false) {
-                    $data = @gzinflate(substr($raw, 2), self::OBJSTM_MAX);
-                }
-                if ($data === false) {
+            if (!self::looksLikeZlib($raw)) {
+                // only an object stream can hold dictionaries (actions): one that is not plain zlib data (an ASCII-hex / ASCII-85 / LZW chain, which this scan does not decode)
+                // cannot be proven harmless. ASCII-85 + Flate is normal for IMAGES and page content (ReportLab, older generators) and is fine there.
+                if ($isObjStm || preg_match('~/Crypt\b~', $region) === 1) {
                     return true;
                 }
-            } else {
-                return true;
+                continue;
             }
-            $total += strlen($data);
-            if ($total > self::OBJSTM_TOTAL) {
-                return true;
+            if (!$isObjStm && $total >= self::OBJSTM_TOTAL) {
+                continue;                                         // the budget for scanning ordinary streams is spent; a stream that says /ObjStm is always scanned
             }
-            $plain = str_contains($data, '#')
-                ? (string) preg_replace_callback('/#([0-9A-Fa-f]{2})/', static fn(array $mm): string => chr((int) hexdec($mm[1])), $data)
-                : $data;
-            if (preg_match(self::DENY, $plain) === 1 || preg_match(self::DENY_STRICT, $plain) === 1) {
-                return true;
+            $over = false;
+            $data = self::inflate($raw, $over);
+            if ($data === false && $end !== false) {
+                $data = self::inflate(substr($all, $start), $over);      // a fake "endstream" inside the compressed bytes cut the data short
+            }
+            for ($level = 0; is_string($data) && $data !== '' && $level < 4; $level++) {
+                if ($over && $isObjStm) {
+                    return true;                                  // an object stream larger than the cap: a decompression bomb, or not provably harmless
+                }
+                $total += strlen($data);
+                if ($total > self::OBJSTM_TOTAL && $isObjStm) {
+                    return true;
+                }
+                $plain = str_contains($data, '#')
+                    ? (string) preg_replace_callback('/#([0-9A-Fa-f]{2})/', static fn(array $mm): string => chr((int) hexdec($mm[1])), $data)
+                    : $data;
+                if (preg_match(self::DENY, $plain) === 1 || preg_match(self::DENY_STRICT, $plain) === 1) {
+                    return true;
+                }
+                // (an object stream's own decoded bytes start with "<number> <number> ...", which can look like a zlib header by chance: not a filter chain)
+                if ($over || !self::looksLikeZlib($data) || preg_match('/^\s*\d+\s+\d+\s/', substr($data, 0, 64)) === 1) {
+                    break;
+                }
+                $inner = self::inflate($data, $over);             // a chain of filters: look inside again
+                if ($inner === false || $inner === '') {
+                    if ($isObjStm) {
+                        return true;                              // an object stream whose inner layer cannot be decoded: not provably harmless
+                    }
+                    break;                                        // pixel data that only looks like zlib
+                }
+                $data = $inner;
+            }
+            if ($data === false) {
+                // looks like zlib but nothing decodes: a stream of some other kind that starts with two lucky bytes (tolerated a few times), or damaged data that a lenient viewer might still read
+                if (++$bad > 10 || $isObjStm) {
+                    return true;
+                }
             }
         }
         return false;
+    }
+
+    /** Do these bytes start like a zlib stream (deflate, 32 KB window, valid header checksum)? */
+    private static function looksLikeZlib(string $b): bool
+    {
+        return strlen($b) >= 2 && ((ord($b[0]) & 0x0F) === 8) && ((ord($b[0]) * 256 + ord($b[1])) % 31 === 0);
+    }
+
+    /**
+     * Inflate zlib data in small steps and keep what was decoded even when the data is damaged further on (a lenient PDF viewer reads such a stream too, so what it
+     * would read must be scanned). At most OBJSTM_MAX bytes are decoded: $over tells the caller that there was more. @return string|false the decoded bytes (possibly
+     * partial; '' for a complete stream with no content), false when nothing decodes
+     */
+    private static function inflate(string $raw, bool &$over = false): string|false
+    {
+        if (function_exists('inflate_init') && function_exists('inflate_get_status')) {
+            $ctx = @inflate_init(ZLIB_ENCODING_DEFLATE);
+            if ($ctx !== false) {
+                $out = '';
+                $ended = false;
+                $n = strlen($raw);
+                for ($i = 0; $i < $n; $i += 512) {
+                    $part = @inflate_add($ctx, substr($raw, $i, 512), ZLIB_SYNC_FLUSH);
+                    if ($part === false) {
+                        break;
+                    }
+                    $out .= $part;
+                    if (strlen($out) > self::OBJSTM_MAX) {
+                        $over = true;
+                        break;
+                    }
+                    if (inflate_get_status($ctx) === ZLIB_STREAM_END) {
+                        $ended = true;
+                        break;
+                    }
+                }
+                return $out !== '' || $ended ? $out : false;          // an empty but complete stream (a blank page) is fine; nothing decoding at all is not
+            }
+        }
+        $data = @gzuncompress($raw, self::OBJSTM_MAX);
+        if ($data === false) {
+            $data = @gzuncompress(rtrim($raw, "\r\n"), self::OBJSTM_MAX);
+        }
+        if ($data === false) {
+            $data = @gzinflate(substr($raw, 2), self::OBJSTM_MAX);
+        }
+        return $data;
     }
 
     private static function human(int $bytes): string

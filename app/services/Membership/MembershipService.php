@@ -13,6 +13,7 @@ use App\Models\Member;
 use App\Models\MemberPayment;
 use App\Models\MembershipType;
 use App\Models\Program;
+use App\Services\Membership\Card\CardSettings;
 
 /**
  * MEMBERSHIP: the single place for the business rules, shared by the public site (MembershipController) and the admin
@@ -73,6 +74,7 @@ final class MembershipService
     private const ZERO_DECIMAL = ['UGX', 'RWF', 'BIF', 'XOF', 'XAF', 'JPY', 'KRW', 'TZS'];
 
     private static ?int $pending = null;
+    private static ?int $proofs = null;
 
     // ------------------------------------------------------------------------------------------------ settings
 
@@ -377,6 +379,19 @@ final class MembershipService
         return $first->setDate((int) $first->format('Y'), (int) $first->format('n'), min($day, $last))->format('Y-m-d');
     }
 
+    /**
+     * The LAST day a membership is valid, as printed on the card and shown as "Valid until": the day before `expiry_date` (the term counts as expired ON the expiry date),
+     * so a membership that starts on 20 Oct 2026 and lasts a year reads "valid until 19 Oct 2027", like the owner's reference card. null = no expiry. Returns 'Y-m-d'.
+     */
+    public static function lastValidDay(?string $expiry): ?string
+    {
+        if ($expiry === null || $expiry === '') {
+            return null;
+        }
+        $d = \DateTimeImmutable::createFromFormat('!Y-m-d', substr($expiry, 0, 10));
+        return $d === false ? null : $d->modify('-1 day')->format('Y-m-d');
+    }
+
     // ------------------------------------------------------------------------------------------------ numbers
 
     /**
@@ -389,13 +404,16 @@ final class MembershipService
     }
 
     /** Highest sequence number in use for a prefix (0 when none). */
-    private static function maxSequence(string $table, string $column, string $prefix): int
+    private static function maxSequence(string $table, string $column, string $prefix, bool $strict = false): int
     {
-        return (int) Database::value(
-            'SELECT MAX(CAST(SUBSTRING(' . Database::ident($column) . ', ?) AS UNSIGNED)) FROM ' . Database::ident($table) . ' WHERE ' . Database::ident($column) . ' LIKE ?',
-            [strlen($prefix) + 1, $prefix . '%'],
-            0
-        );
+        $sql = 'SELECT MAX(CAST(SUBSTRING(' . Database::ident($column) . ', ?) AS UNSIGNED)) FROM ' . Database::ident($table) . ' WHERE ' . Database::ident($column) . ' LIKE ?';
+        $params = [strlen($prefix) + 1, $prefix . '%'];
+        if ($strict && preg_match('/^[A-Z0-9-]+$/D', $prefix) === 1) {
+            // only numbers that are exactly <prefix><digits>: another series that merely starts with the same text (LAF-2026-0001 vs LAF-2026-IND-...) is ignored
+            $sql .= ' AND ' . Database::ident($column) . ' REGEXP ?';
+            $params[] = '^' . $prefix . '[0-9]+$';
+        }
+        return (int) Database::value($sql, $params, 0);
     }
 
     /** A random, currently unused application reference LAF-APP-YYYY-NNNNN (not guessable, reveals no volume). Insertion retries on a clash. */
@@ -411,12 +429,149 @@ final class MembershipService
         return self::nextSequence('members', 'application_ref', self::prefix() . '-APP-' . $year . '-', 6);   // practically unreachable
     }
 
-    /** Give the member a membership number if it has none (LAF-YYYY-NNNN, sequential per year); returns the number. Collision-safe. */
+    /**
+     * Give the member a membership number if it has none, in the configurable format of Admin > Membership > Membership card (setting
+     * membership_card_number_format; default {PREFIX}-{TYPE}-{YY}-{SEQ}, for example LAF-IND-26-0001). The running number counts up per series: per type and
+     * per year as far as the format contains {TYPE} / {YY} / {YYYY}. A number that was issued earlier never changes (the format only affects numbers handed
+     * out from now on). Returns the number. Collision-safe (named lock in changeStatus + UNIQUE index + retry).
+     */
     public static function assignMembershipNumber(int $memberId, ?int $year = null): string
     {
-        return self::assignNumber('members', 'membership_number', $memberId, self::prefix() . '-' . ($year ?? (int) date('Y')) . '-', 4);
+        $existing = Database::value('SELECT membership_number FROM members WHERE id = ?', [$memberId]);
+        if ($existing !== null && $existing !== '') {
+            return (string) $existing;
+        }
+        $type = Database::one('SELECT t.* FROM membership_types t JOIN members m ON m.type_id = t.id WHERE m.id = ?', [$memberId]) ?? [];
+        [$prefix, $pad] = self::numberSeriesFor($type, $year);
+        return self::assignNumber('members', 'membership_number', $memberId, $prefix, $pad, true);
     }
 
+    /**
+     * The fixed text before the running number and its digit width for a type and year: ['LAF-IND-26-', 4]. An invalid stored format falls back to the default.
+     * @param array<string,mixed> $type a membership_types row (an empty array = no type code)
+     * @return array{0:string,1:int}
+     */
+    public static function numberSeriesFor(array $type, ?int $year = null): array
+    {
+        $format = CardSettings::get('membership_card_number_format');
+        if (CardSettings::numberFormatError($format) !== null) {
+            $format = CardSettings::DEFAULT_NUMBER_FORMAT;
+        }
+        return CardSettings::numberSeries($format, self::prefix(), self::typeCode($type), $year ?? (int) date('Y'));
+    }
+
+    /** What the NEXT number of a type would look like, for the designer ("LAF-IND-26-0001": the running number shown is always 1 of an empty series, the real one continues). */
+    public static function numberPreview(array $type, ?int $year = null): string
+    {
+        [$prefix, $pad] = self::numberSeriesFor($type, $year);
+        return $prefix . str_pad('1', $pad, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * The short code of a membership type in the member number (2 to 8 capital letters or digits). The saved code (Admin > Membership types); without one the
+     * initials of the type's name (up to 3 letters, "Women's Group" gives WG, a single word its first 3 letters), else MEM.
+     * @param array<string,mixed> $type
+     */
+    public static function typeCode(array $type): string
+    {
+        $saved = strtoupper(trim((string) ($type['code'] ?? '')));
+        if (preg_match('/^[A-Z0-9]{2,8}$/D', $saved) === 1) {
+            return $saved;
+        }
+        $name = (string) ($type['name'] ?? '');
+        if (function_exists('iconv')) {
+            $t = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name);
+            $name = is_string($t) && $t !== '' ? $t : $name;
+        }
+        $name = str_replace(["'", "’"], '', $name);                       // Women's -> Womens, one word
+        $words = array_values(array_filter(preg_split('/[^A-Za-z]+/', $name) ?: [], static fn(string $w): bool => $w !== '' && !in_array(strtolower($w), ['and', 'of', 'the', 'member', 'members'], true)));
+        if (count($words) >= 2) {
+            return strtoupper(substr(implode('', array_map(static fn(string $w): string => $w[0], $words)), 0, 3));
+        }
+        if (count($words) === 1 && strlen($words[0]) >= 2) {
+            return strtoupper(substr($words[0], 0, 3));
+        }
+        return 'MEM';
+    }
+
+    // ------------------------------------------------------------------------------------------------ private links (tokens)
+
+    /** A random token: 2 x $bytes hexadecimal characters (default 64 = 256 bits). */
+    public static function newToken(int $bytes = 32): string
+    {
+        return bin2hex(random_bytes(max(16, $bytes)));
+    }
+
+    /**
+     * The token of the member's private "My membership" page (/membership/me/{token}), created the first time it is needed (existing members get one lazily;
+     * new applications get one at registration). '' when the member does not exist or their personal data was erased (the old link then stops working).
+     * Race-safe: the UNIQUE index decides and a second caller reads the token the first one stored.
+     * @param int|array<string,mixed> $member id or row
+     */
+    public static function dashboardToken(int|array $member): string
+    {
+        $id = is_array($member) ? (int) ($member['id'] ?? 0) : $member;
+        $row = Database::one('SELECT dashboard_token, anonymised_at FROM members WHERE id = ?', [$id]);
+        if ($row === null || !empty($row['anonymised_at'])) {
+            return '';
+        }
+        if (!empty($row['dashboard_token'])) {
+            return (string) $row['dashboard_token'];
+        }
+        for ($i = 0; $i < 5; $i++) {
+            try {
+                Database::execute('UPDATE members SET dashboard_token = ? WHERE id = ? AND dashboard_token IS NULL', [self::newToken(32), $id]);
+            } catch (\PDOException $e) {
+                if ((string) $e->getCode() === '23000') {
+                    continue;                                    // a token clash (practically impossible): draw another
+                }
+                throw $e;
+            }
+            $now = Database::value('SELECT dashboard_token FROM members WHERE id = ?', [$id]);
+            if (is_string($now) && $now !== '') {
+                return $now;
+            }
+        }
+        return '';
+    }
+
+    /** Replace the dashboard token (the old link stops working at once). Returns the new token, '' when the member is missing or erased. */
+    public static function regenerateDashboardToken(int $memberId): string
+    {
+        $row = Database::one('SELECT anonymised_at FROM members WHERE id = ?', [$memberId]);
+        if ($row === null || !empty($row['anonymised_at'])) {
+            return '';
+        }
+        Database::execute('UPDATE members SET dashboard_token = NULL WHERE id = ?', [$memberId]);
+        return self::dashboardToken($memberId);
+    }
+
+    /** Absolute link to the member's private page ('' when there is no token). */
+    public static function dashboardUrl(int|array $member): string
+    {
+        $t = self::dashboardToken($member);
+        return $t === '' ? '' : abs_url('membership/me/' . $t);
+    }
+
+    /** Site-relative link (for redirects). */
+    public static function dashboardPath(int|array $member): string
+    {
+        $t = self::dashboardToken($member);
+        return $t === '' ? '' : url('membership/me/' . $t);
+    }
+
+    /** The member behind a dashboard token, or null (bad format, unknown, erased). */
+    public static function memberByDashboardToken(string $token): ?array
+    {
+        if (preg_match('/^[a-f0-9]{64}$/D', $token) !== 1) {
+            return null;
+        }
+        $m = Member::findBy('dashboard_token', $token);
+        if ($m === null || !empty($m['anonymised_at']) || !hash_equals((string) $m['dashboard_token'], $token)) {
+            return null;
+        }
+        return $m;
+    }
     /** Give the payment a receipt number if it has none (LAF-RCT-YYYY-NNNN); returns the number. Collision-safe. */
     public static function assignReceiptNumber(int $paymentId, ?int $year = null): string
     {
@@ -428,7 +583,7 @@ final class MembershipService
      * decides, and after a clash the next candidate is always higher than the last one tried (a transaction that reads a frozen snapshot
      * would otherwise propose the same taken number again and again). Callers that approve members additionally hold withNumberLock().
      */
-    private static function assignNumber(string $table, string $column, int $id, string $prefix, int $pad): string
+    private static function assignNumber(string $table, string $column, int $id, string $prefix, int $pad, bool $strict = false): string
     {
         $t = Database::ident($table);
         $c = Database::ident($column);
@@ -438,7 +593,7 @@ final class MembershipService
             if ($existing !== null && $existing !== '') {
                 return (string) $existing;
             }
-            $fresh = self::maxSequence($table, $column, $prefix) + 1;
+            $fresh = self::maxSequence($table, $column, $prefix, $strict) + 1;
             $seq = $seq === null ? $fresh : max($fresh, $seq + 1);
             $number = $prefix . str_pad((string) $seq, $pad, '0', STR_PAD_LEFT);
             try {
@@ -690,6 +845,9 @@ final class MembershipService
             return $fail($error[0] ?? 'failed', $error[1] ?? 'The status could not be changed.');
         }
         self::flush();
+        if ($to === 'approved') {
+            CardService::event($memberId, 'approved', ['user_id' => $userId]);          // may issue and e-mail the membership card (setting membership_card_trigger)
+        }
         return ['ok' => true, 'error' => null, 'message' => 'Status set to ' . (self::STATUS_LABELS[$to] ?? $to) . '.', 'member' => $member, 'number_assigned' => $assigned];
     }
 
@@ -776,6 +934,7 @@ final class MembershipService
         if ($member === null) {
             return $fail($error[0] ?? 'failed', $error[1] ?? 'The membership could not be renewed.');
         }
+        CardService::event($memberId, 'renewal', ['user_id' => $opts['user_id'] ?? null]);   // a renewal with nothing to pay re-issues the card now; otherwise when the payment is recorded
         return ['ok' => true, 'error' => null, 'message' => 'Membership renewed until ' . format_date($member['expiry_date']) . '.', 'member' => $member, 'payment' => $payment];
     }
 
@@ -916,6 +1075,7 @@ final class MembershipService
         AuditLog::record('member.payment', 'member', $memberId, 'Recorded a ' . $row['status'] . ' payment on ' . $m['application_ref'],
             ['ref' => $m['application_ref'], 'payment_id' => $id, 'status' => $row['status'], 'receipt' => $payment['receipt_number'] ?? null,
              'amount' => $row['amount'], 'currency' => $row['currency'], 'purpose' => $row['purpose']]);
+        CardService::event($memberId, 'payment', ['user_id' => $input['user_id'] ?? null]);    // the balance may now be cleared: the card is issued / re-issued (setting membership_card_trigger)
         return ['ok' => true, 'errors' => [], 'payment' => $payment, 'message' => $row['status'] === 'received' ? 'Payment recorded. Receipt ' . ($payment['receipt_number'] ?? '') . '.' : 'Payment saved.'];
     }
 
@@ -960,6 +1120,7 @@ final class MembershipService
         AuditLog::record('member.payment', 'member', (int) $m['id'], 'Updated a payment on ' . $m['application_ref']
             . ($moneyChanged && $issued ? ' (receipt ' . $p['receipt_number'] . ': ' . $p['status'] . ' ' . $p['amount'] . ' ' . $p['currency'] . ' -> ' . $new['status'] . ' ' . $new['amount'] . ' ' . $new['currency'] . ')' : ''),
             $details);
+        CardService::event((int) $m['id'], 'payment', ['user_id' => $input['user_id'] ?? null]);
         return ['ok' => true, 'errors' => [], 'payment' => $new, 'message' => $moneyChanged && $issued ? 'Payment updated. Receipt ' . $p['receipt_number'] . ' was already issued: tell the member if they hold the old one.' : 'Payment updated.'];
     }
 
@@ -975,6 +1136,9 @@ final class MembershipService
         }
         $m = Member::find((int) $p['member_id']);
         MemberPayment::delete($paymentId);
+        if (!empty($p['proof_path'])) {
+            MemberFiles::deletePaths([(string) $p['proof_path']]);          // the private copy of the proof attached to this row goes with it
+        }
         AuditLog::record('member.payment_delete', 'member', (int) $p['member_id'], 'Deleted a payment row on ' . ($m['application_ref'] ?? ''),
             ['payment_id' => $paymentId, 'amount' => $p['amount'], 'currency' => $p['currency'], 'purpose' => $p['purpose'], 'status' => $p['status']]);
         return ['ok' => true, 'message' => 'Payment deleted.'];
@@ -1131,7 +1295,9 @@ final class MembershipService
             'period'      => 'required|in:' . implode(',', self::PERIODS),
             'sort_order'  => 'nullable|integer|between:-100000,100000',
             'max_members' => 'nullable|integer|between:1,10000000',
+            'code'        => 'nullable|regex:/^[A-Za-z0-9]{2,8}\z/',
         ], [
+            'code.regex' => 'Use 2 to 8 letters or digits for the code in the member number, for example IND.',
             'name.required' => 'Enter a name for the membership type.', 'period.required' => 'Choose a billing period.', 'period.in' => 'Choose a billing period.',
             'currency.regex' => 'Use a three-letter currency code such as UGX.', 'max_members.integer' => 'Enter a whole number, or leave it empty for no limit.',
             'max_members.between' => 'Enter a whole number of 1 or more, or leave it empty for no limit.',
@@ -1163,6 +1329,9 @@ final class MembershipService
             'is_active'   => !empty($input['is_active']) && (string) $input['is_active'] !== '0' ? 1 : 0,
             'max_members' => trim((string) ($input['max_members'] ?? '')) !== '' ? (int) $input['max_members'] : null,
         ];
+        if (array_key_exists('code', $input)) {
+            $row['code'] = strtoupper(trim((string) $input['code']));        // '' = derived from the initials of the name (typeCode())
+        }
         if ($id === null) {
             $id = MembershipType::create($row);
             $verb = 'created';
@@ -1209,6 +1378,19 @@ final class MembershipService
         return self::$pending;
     }
 
+    /** Members whose uploaded proof of payment waits for a staff check (sidebar badge, filter "Needs proof check"). Memoised per request. */
+    public static function proofCheckCount(): int
+    {
+        if (self::$proofs === null) {
+            try {
+                self::$proofs = (int) Database::value("SELECT COUNT(*) FROM members WHERE proof_status = 'received' AND status IN ('pending','approved') AND anonymised_at IS NULL", [], 0);
+            } catch (\Throwable) {
+                self::$proofs = 0;                         // columns not imported yet
+            }
+        }
+        return self::$proofs;
+    }
+
     /** Dashboard card (same shape as the tiles of DashboardController) or null when the user may not manage members. @return array<string,mixed>|null */
     public static function dashboardTile(): ?array
     {
@@ -1222,6 +1404,7 @@ final class MembershipService
     public static function flush(): void
     {
         self::$pending = null;
+        self::$proofs = null;
     }
 
     /** @param list<string> $values SQL list of quoted constants (internal constants only) */

@@ -1,9 +1,12 @@
 <?php
 /**
  * CONFIRMATION (/membership/confirmation/{ref}?t=...). OWNER: WEB agent. Reached only through the signed link of the redirect after submitting.
- * Vars: $member (row, or null = the link is not valid or has expired), $fee (fee snapshot label), $joining, $instructions (plain text).
- * PRIVACY: shows ONLY the first name, the reference, the type and the fee snapshot, the payment instructions and the next steps (noindex).
+ * Vars: $member (row, or null = the link is not valid or has expired), $fee (fee snapshot label), $joining, $instructions (plain text), $meUrl (link to the
+ * applicant's private "My membership" page: photo, proof of payment, progress, card).
+ * PRIVACY: shows ONLY the first name, the reference, the type and the fee snapshot, the payment instructions, the link to the private page and the next steps (noindex, never cached).
  */
+
+use App\Services\Membership\MembershipService;
 
 $homeLabel = (string) content('membership', 'confirmation.home_label');
 ?>
@@ -55,6 +58,19 @@ $keepNote = trim((string) content('membership', 'confirmation.keep_note'));
             </div>
 
             <div class="mb-confirm__main">
+                <?php if (!empty($meUrl)): ?>
+                    <?php /* the applicant's private page (token link): add the photo and the proof of payment, follow the application, later download the card */ ?>
+                    <div class="mb-pay mb-pay--card mb-pay--me" id="my-membership">
+                        <span class="mb-pay__icon"><?= icon('user', 'icon--lg') ?></span>
+                        <div class="mb-pay__body">
+                            <h2 class="mb-pay__title"><?= e(strip_highlight((string) content('membership', 'dashboard.title'))) ?></h2>
+                            <p><?= e(MembershipService::copy('uploads.intro', '')) ?></p>
+                            <p class="mb-pay__note"><?= e(MembershipService::copy('dashboard.private_note', '')) ?></p>
+                            <p class="mb-pay__cta"><a class="btn btn--cta btn--caps" href="<?= e($meUrl) ?>"><?= e(MembershipService::copy('emails.card_button', 'Open my membership page')) ?></a></p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <div class="mb-pay mb-pay--card">
                     <span class="mb-pay__icon"><?= icon('banknote', 'icon--lg') ?></span>
                     <div class="mb-pay__body">

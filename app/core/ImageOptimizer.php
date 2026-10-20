@@ -654,6 +654,153 @@ final class ImageOptimizer
         return ['x' => $left, 'y' => $top, 'w' => $right - $left + 1, 'h' => $bottom - $top + 1];
     }
 
+    // ------------------------------------------------------------------ private pictures of people (membership photos and proofs)
+
+    /**
+     * MEMBER HEADSHOT for the membership card. Validates the REAL type (PNG / JPEG / WebP only, no GIF, no polyglots), requires at least $opts['min_side']
+     * (default 300) pixels on the short side, applies the EXIF rotation, flattens transparency on white, crops a SQUARE with a face-friendly top bias
+     * (a tall portrait loses most of its crop from the bottom, a wide picture is cropped around the centre), scales it down to at most 800 x 800
+     * (never up) and writes a JPEG WITHOUT metadata (re-encoding drops EXIF and GPS) to $destAbs. The caller chooses the private destination file.
+     * Without GD the validated original is kept (location data removed by ImageScrubber) and `optimised` is false; WebP then cannot be used because
+     * the card PDF could not embed it.
+     *
+     * @param array{min_side?:int,max_bytes?:int,side?:int,bias?:float} $opts
+     * @return array{width:int,height:int,bytes:int,mime:string,ext:string,optimised:bool,notice:?string}
+     * @throws UploadException
+     */
+    public static function portrait(string $file, string $destAbs, array $opts = []): array
+    {
+        $info = self::inspect($file, ['noun' => 'picture', 'max_bytes' => (int) ($opts['max_bytes'] ?? self::MAX_BYTES)]);
+        if ($info['mime'] === 'image/gif') {
+            throw new UploadException('Please choose a JPG, PNG or WebP picture.');
+        }
+        $min = (int) ($opts['min_side'] ?? 300);
+        if (min($info['width'], $info['height']) < $min) {
+            throw new UploadException('That photo is too small (' . $info['width'] . ' x ' . $info['height'] . ' pixels). Please use one that is at least ' . $min . ' x ' . $min . ' pixels.');
+        }
+        $caps = self::capabilities();
+        $canDecode = $caps['gd'] && match ($info['mime']) {
+            'image/png'  => $caps['png'],
+            'image/jpeg' => $caps['jpeg'],
+            'image/webp' => $caps['webp'],
+            default      => false,
+        } && $caps['jpeg'];
+        if (!$canDecode) {
+            if ($info['mime'] === 'image/webp') {
+                throw new UploadException('This server cannot process WebP pictures. Please upload a JPG or PNG photo.');
+            }
+            $clean = ImageScrubber::scrub((string) file_get_contents($file), (string) $info['mime']);
+            if ($clean === null) {
+                throw new UploadException('That picture could not be cleaned of hidden data. Please save it again as a JPG and try once more.');
+            }
+            self::writeFile($destAbs, $clean);
+            return ['width' => $info['width'], 'height' => $info['height'], 'bytes' => strlen($clean), 'mime' => $info['mime'], 'ext' => $info['ext'], 'optimised' => false,
+                'notice' => 'The image library (GD) is not available, so the photo was stored as uploaded (location data removed) and could not be cropped.'];
+        }
+        if (!self::fitsInMemory($info['width'], $info['height'], 3.2)) {
+            throw new UploadException('That photo (' . $info['width'] . ' x ' . $info['height'] . ' pixels) is too large for this server to process. Please use a smaller copy.');
+        }
+        $img = match ($info['mime']) {
+            'image/png'  => @imagecreatefrompng($file),
+            'image/jpeg' => @imagecreatefromjpeg($file),
+            default      => @imagecreatefromwebp($file),
+        };
+        if (!$img instanceof \GdImage) {
+            throw new UploadException('That picture could not be read (it may be damaged). Please choose another one.');
+        }
+        $img = self::toTruecolor($img);
+        if ($info['mime'] === 'image/jpeg' && $caps['exif'] && $caps['rotate']) {
+            $img = self::applyOrientation($img, $file);
+        }
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $side = min($w, $h);
+        $bias = max(0.0, min(0.5, (float) ($opts['bias'] ?? 0.18)));
+        $x = (int) floor(($w - $side) / 2);
+        $y = (int) floor(($h - $side) * $bias);
+        $target = max(64, min((int) ($opts['side'] ?? 800), $side));          // never upscale
+        $out = imagecreatetruecolor($target, $target);
+        imagefill($out, 0, 0, (int) imagecolorallocate($out, 255, 255, 255));
+        imagealphablending($out, true);
+        imagecopyresampled($out, $img, 0, 0, $x, $y, $target, $target, $side, $side);
+        self::ensureDir(dirname($destAbs));
+        if (!@imagejpeg($out, $destAbs, 88)) {
+            throw new UploadException('The server could not save the photo.');
+        }
+        @chmod($destAbs, 0640);
+        return ['width' => $target, 'height' => $target, 'bytes' => (int) filesize($destAbs), 'mime' => 'image/jpeg', 'ext' => 'jpg', 'optimised' => true, 'notice' => null];
+    }
+
+    /**
+     * PROOF OF PAYMENT picture (a photo or screenshot of a receipt or mobile-money message): validated like a photo (PNG / JPEG / WebP, 5 MB), EXIF rotation
+     * applied, scaled down to at most 2400 px on the long side (never up, so the text stays readable), written as a JPEG without metadata to $destAbs.
+     * Without GD the validated original is stored with its metadata removed.
+     *
+     * @param array{max_bytes?:int,max_side?:int} $opts
+     * @return array{width:int,height:int,bytes:int,mime:string,ext:string,optimised:bool,notice:?string}
+     * @throws UploadException
+     */
+    public static function evidence(string $file, string $destAbs, array $opts = []): array
+    {
+        $info = self::inspect($file, ['noun' => 'picture', 'max_bytes' => (int) ($opts['max_bytes'] ?? self::MAX_BYTES)]);
+        if ($info['mime'] === 'image/gif') {
+            throw new UploadException('Please choose a JPG, PNG or WebP picture.');
+        }
+        $caps = self::capabilities();
+        $canDecode = $caps['gd'] && $caps['jpeg'] && match ($info['mime']) {
+            'image/png' => $caps['png'], 'image/jpeg' => true, 'image/webp' => $caps['webp'], default => false,
+        };
+        if (!$canDecode || !self::fitsInMemory($info['width'], $info['height'], 3.2)) {
+            $clean = ImageScrubber::scrub((string) file_get_contents($file), (string) $info['mime']);
+            if ($clean === null) {
+                throw new UploadException('That picture could not be cleaned of hidden data. Please save it again as a JPG and try once more.');
+            }
+            self::writeFile($destAbs, $clean);
+            return ['width' => $info['width'], 'height' => $info['height'], 'bytes' => strlen($clean), 'mime' => $info['mime'], 'ext' => $info['ext'], 'optimised' => false,
+                'notice' => 'The picture was stored as uploaded (location data removed).'];
+        }
+        $img = match ($info['mime']) {
+            'image/png'  => @imagecreatefrompng($file),
+            'image/jpeg' => @imagecreatefromjpeg($file),
+            default      => @imagecreatefromwebp($file),
+        };
+        if (!$img instanceof \GdImage) {
+            throw new UploadException('That picture could not be read (it may be damaged). Please choose another one.');
+        }
+        $img = self::toTruecolor($img);
+        if ($info['mime'] === 'image/jpeg' && $caps['exif'] && $caps['rotate']) {
+            $img = self::applyOrientation($img, $file);
+        }
+        $img = self::fitWithin($img, (int) ($opts['max_side'] ?? 2400), (int) ($opts['max_side'] ?? 2400));
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $out = imagecreatetruecolor($w, $h);
+        imagefill($out, 0, 0, (int) imagecolorallocate($out, 255, 255, 255));
+        imagealphablending($out, true);
+        imagecopy($out, $img, 0, 0, 0, 0, $w, $h);
+        self::ensureDir(dirname($destAbs));
+        if (!@imagejpeg($out, $destAbs, 88)) {
+            throw new UploadException('The server could not save the picture.');
+        }
+        @chmod($destAbs, 0640);
+        return ['width' => $w, 'height' => $h, 'bytes' => (int) filesize($destAbs), 'mime' => 'image/jpeg', 'ext' => 'jpg', 'optimised' => true, 'notice' => null];
+    }
+
+    private static function writeFile(string $dest, string $bytes): void
+    {
+        self::ensureDir(dirname($dest));
+        if (@file_put_contents($dest, $bytes) === false) {
+            throw new UploadException('The server could not save the picture.');
+        }
+        @chmod($dest, 0640);
+    }
+
+    private static function ensureDir(string $dir): void
+    {
+        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            throw new UploadException('The upload folder is not writable.');
+        }
+    }
     // ------------------------------------------------------------------ memory + misc
 
     /** Would a $w x $h picture, held $copies times at 4 bytes per pixel, fit into the free memory (8 MB head-room kept)? */

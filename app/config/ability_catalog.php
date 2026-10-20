@@ -36,6 +36,7 @@ return [
             'members.manage' => ['Manage members', 'View applications, approve or reject, record payments, receipts and notes.'],
             'members.delete' => ['Delete member records', null],
             'members.types'  => ['Set membership types and fees', 'Create types and change the fees.'],
+            'members.card'   => ['Design the membership card', 'Change how the membership card looks and reads (logo, colours, wording, number format, card e-mail) and when cards are issued. Issuing or re-sending one member\'s card only needs "Manage members".'],
         ],
     ],
     'newsletter' => [

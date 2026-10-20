@@ -605,12 +605,20 @@ CREATE TABLE IF NOT EXISTS `membership_types` (
   `sort_order` INT NOT NULL DEFAULT 0,
   `is_active` TINYINT(1) NOT NULL DEFAULT 1,
   `max_members` INT UNSIGNED NULL,                 -- NULL = unlimited
+  `code` VARCHAR(8) NOT NULL DEFAULT '',           -- short code in the member number (IND, YTH, ORG ...); '' = derived from the name's initials
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_membership_types_slug` (`slug`),
   KEY `ix_membership_types_list` (`is_active`, `sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- MEMBERSHIP CARD: the number code of a type (idempotent).
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'membership_types' AND column_name = 'code');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `membership_types` ADD COLUMN `code` VARCHAR(8) NOT NULL DEFAULT ''''', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
 
 CREATE TABLE IF NOT EXISTS `members` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -681,6 +689,34 @@ CREATE TABLE IF NOT EXISTS `members` (
   `start_date` DATE NULL,
   `expiry_date` DATE NULL,                         -- NULL = no expiry (one_time / lifetime)
   `anonymised_at` DATETIME NULL,                   -- set when the personal data was erased on request (the number, fee snapshot and receipts stay)
+  -- headshot: private file below storage/private/members/photos (random name), never public
+  `photo_path` VARCHAR(190) NULL,
+  `photo_updated_at` DATETIME NULL,
+  `photo_consent_at` DATETIME NULL,
+  `photo_original` TINYINT(1) NOT NULL DEFAULT 0,
+  -- proof of payment: private file below storage/private/members/proofs
+  `proof_path` VARCHAR(190) NULL,
+  `proof_name` VARCHAR(190) NULL,
+  `proof_mime` VARCHAR(60) NULL,
+  `proof_uploaded_at` DATETIME NULL,
+  `proof_status` ENUM('none','received','verified','rejected') NOT NULL DEFAULT 'none',
+  `proof_verified_by` INT UNSIGNED NULL,
+  `proof_verified_at` DATETIME NULL,
+  -- unguessable token of the private "My membership" page (64 hex characters); NULL until first needed, blanked on erasure
+  `dashboard_token` CHAR(64) NULL,
+  -- membership card: issued / revoked; the PDF is a snapshot, the verification page shows the live truth
+  `card_status` ENUM('none','issued','revoked') NOT NULL DEFAULT 'none',
+  `card_version` INT UNSIGNED NOT NULL DEFAULT 0,
+  `card_issued_at` DATETIME NULL,
+  `card_emailed_at` DATETIME NULL,
+  `card_emailed_version` INT UNSIGNED NOT NULL DEFAULT 0,
+  `card_valid_until` DATE NULL,
+  `card_verify_token` VARCHAR(64) NULL,
+  `card_needs_reissue` TINYINT(1) NOT NULL DEFAULT 0,
+  `card_reissue_reason` VARCHAR(40) NULL,
+  `card_revoked_at` DATETIME NULL,
+  `card_snapshot` MEDIUMTEXT NULL,                 -- JSON of what the issued card says (name, type, dates, fee ...): the card is a snapshot, later edits need a re-issue
+  `card_photo_path` VARCHAR(190) NULL,             -- private copy of the headshot printed on the issued card (deleted on erasure)
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -690,6 +726,10 @@ CREATE TABLE IF NOT EXISTS `members` (
   KEY `ix_members_email` (`email`),
   KEY `ix_members_type` (`type_id`, `status`),
   KEY `ix_members_expiry` (`expiry_date`),
+  UNIQUE KEY `uq_members_dashboard_token` (`dashboard_token`),
+  UNIQUE KEY `uq_members_card_token` (`card_verify_token`),
+  KEY `ix_members_card` (`card_status`, `status`),
+  KEY `ix_members_proof` (`proof_status`),
   CONSTRAINT `fk_members_type` FOREIGN KEY (`type_id`) REFERENCES `membership_types` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_members_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -711,6 +751,148 @@ PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
 
+-- MEMBERSHIP CARD (docs/MEMBERSHIP_CARD.md): headshot, proof of payment, dashboard token, card state. Idempotent: every column and index is added only when missing.
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'photo_path');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `photo_path` VARCHAR(190) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'photo_updated_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `photo_updated_at` DATETIME NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'photo_consent_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `photo_consent_at` DATETIME NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'photo_original');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `photo_original` TINYINT(1) NOT NULL DEFAULT 0', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'proof_path');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `proof_path` VARCHAR(190) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'proof_name');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `proof_name` VARCHAR(190) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'proof_mime');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `proof_mime` VARCHAR(60) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'proof_uploaded_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `proof_uploaded_at` DATETIME NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'proof_status');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `proof_status` ENUM(''none'',''received'',''verified'',''rejected'') NOT NULL DEFAULT ''none''', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'proof_verified_by');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `proof_verified_by` INT UNSIGNED NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'proof_verified_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `proof_verified_at` DATETIME NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'dashboard_token');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `dashboard_token` CHAR(64) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_status');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_status` ENUM(''none'',''issued'',''revoked'') NOT NULL DEFAULT ''none''', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_version');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_version` INT UNSIGNED NOT NULL DEFAULT 0', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_issued_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_issued_at` DATETIME NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_emailed_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_emailed_at` DATETIME NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_emailed_version');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_emailed_version` INT UNSIGNED NOT NULL DEFAULT 0', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_valid_until');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_valid_until` DATE NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_verify_token');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_verify_token` VARCHAR(64) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_needs_reissue');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_needs_reissue` TINYINT(1) NOT NULL DEFAULT 0', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_reissue_reason');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_reissue_reason` VARCHAR(40) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_revoked_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_revoked_at` DATETIME NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_snapshot');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_snapshot` MEDIUMTEXT NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'members' AND column_name = 'card_photo_path');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `members` ADD COLUMN `card_photo_path` VARCHAR(190) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_idx = (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'members' AND index_name = 'uq_members_dashboard_token');
+SET @lumina_ddl = IF(@lumina_has_idx = 0, 'ALTER TABLE `members` ADD UNIQUE KEY `uq_members_dashboard_token` (`dashboard_token`)', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_idx = (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'members' AND index_name = 'uq_members_card_token');
+SET @lumina_ddl = IF(@lumina_has_idx = 0, 'ALTER TABLE `members` ADD UNIQUE KEY `uq_members_card_token` (`card_verify_token`)', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_idx = (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'members' AND index_name = 'ix_members_card');
+SET @lumina_ddl = IF(@lumina_has_idx = 0, 'ALTER TABLE `members` ADD KEY `ix_members_card` (`card_status`, `status`)', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_idx = (SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'members' AND index_name = 'ix_members_proof');
+SET @lumina_ddl = IF(@lumina_has_idx = 0, 'ALTER TABLE `members` ADD KEY `ix_members_proof` (`proof_status`)', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 CREATE TABLE IF NOT EXISTS `member_payments` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `member_id` INT UNSIGNED NOT NULL,
@@ -726,6 +908,9 @@ CREATE TABLE IF NOT EXISTS `member_payments` (
   `term_end` DATE NULL,
   `recorded_by` INT UNSIGNED NULL,
   `notes` VARCHAR(500) NULL,
+  `proof_path` VARCHAR(190) NULL,                  -- proof of payment attached by staff (private copy below storage/private/members/proofs)
+  `proof_name` VARCHAR(190) NULL,
+  `proof_mime` VARCHAR(60) NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -735,6 +920,23 @@ CREATE TABLE IF NOT EXISTS `member_payments` (
   CONSTRAINT `fk_member_payments_member` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_member_payments_user` FOREIGN KEY (`recorded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- MEMBERSHIP CARD: proof of payment attached to a payment row (idempotent).
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'member_payments' AND column_name = 'proof_path');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `member_payments` ADD COLUMN `proof_path` VARCHAR(190) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'member_payments' AND column_name = 'proof_name');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `member_payments` ADD COLUMN `proof_name` VARCHAR(190) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'member_payments' AND column_name = 'proof_mime');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `member_payments` ADD COLUMN `proof_mime` VARCHAR(60) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
 
 -- ======================================================================================================================
 -- NEWSLETTER (see docs/NEWSLETTER.md). ADDITIVE and IDEMPOTENT: three new tables, no change to existing ones.

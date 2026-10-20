@@ -31,6 +31,9 @@ $newValues = [
     'reference' => '', 'paid_at' => '', 'term_start' => '', 'term_end' => '', 'notes' => '',
 ];
 $hasPayError = array_filter(array_keys(errors()), static fn(string $k): bool => str_starts_with($k, 'pay['));
+// proof of payment the member uploaded (docs/MEMBERSHIP_CARD.md): it can be attached to a payment as a private copy
+$memberHasProof = \App\Services\Membership\MemberFiles::hasProof($member);
+$proofStatus = (string) ($member['proof_status'] ?? 'none');
 ?>
 <section class="card members-payments" id="payments" aria-labelledby="payments-title">
     <div class="card__header">
@@ -98,6 +101,10 @@ $hasPayError = array_filter(array_keys(errors()), static fn(string $k): bool => 
                                     </p>
                                 <?php endif; ?>
                                 <?php if (!empty($p['notes'])): ?><p class="members-pay__meta members-pay__notes"><?= e($p['notes']) ?></p><?php endif; ?>
+                                <?php if (!empty($p['proof_path'])): ?>
+                                    <p class="members-pay__meta members-pay__proof"><?= icon('file-text', 'icon--sm') ?> Proof of payment attached:
+                                        <a href="<?= e(url('admin/members/' . $id . '/payments/' . $pid . '/proof')) ?>" target="_blank" rel="noopener">view<?= ($p['proof_mime'] ?? '') === 'application/pdf' ? ' (PDF download)' : '' ?></a></p>
+                                <?php endif; ?>
                             </div>
                             <div class="members-pay__actions">
                                 <?php if ($p['status'] === 'received' && !empty($p['receipt_number'])): ?>
@@ -124,6 +131,31 @@ $hasPayError = array_filter(array_keys(errors()), static fn(string $k): bool => 
                                 <?php endif; ?>
                                 <div class="form-actions"><button class="btn btn--primary btn--sm" type="submit"><?= icon('save', 'icon--sm') ?> Save payment</button></div>
                             </form>
+                            <div class="members-payproof" id="pay-proof-<?= $pid ?>">
+                                <h4 class="members-payproof__title">Proof of payment for this payment</h4>
+                                <?php if (!empty($p['proof_path'])): ?>
+                                    <p class="small">A copy is attached: <a href="<?= e(url('admin/members/' . $id . '/payments/' . $pid . '/proof')) ?>" target="_blank" rel="noopener">view it</a>.</p>
+                                <?php endif; ?>
+                                <div class="mfiles__actions">
+                                    <?php if ($memberHasProof && $proofStatus !== 'rejected'): ?>
+                                        <form method="post" action="<?= e(url('admin/members/' . $id . '/payments/' . $pid . '/proof')) ?>"><?= csrf_field() ?>
+                                            <button class="btn btn--outline btn--sm" type="submit"><?= icon('file-text', 'icon--sm') ?> <?= !empty($p['proof_path']) ? 'Replace with the member\'s proof' : 'Attach the member\'s proof' ?></button></form>
+                                    <?php endif; ?>
+                                    <?php if (!empty($p['proof_path'])): ?>
+                                        <form method="post" action="<?= e(url('admin/members/' . $id . '/payments/' . $pid . '/proof/remove')) ?>" data-confirm="Remove the proof from this payment? The member's own proof is not touched."><?= csrf_field() ?>
+                                            <button class="btn btn--ghost btn--sm" type="submit"><?= icon('trash', 'icon--sm') ?> Remove from this payment</button></form>
+                                    <?php endif; ?>
+                                </div>
+                                <form method="post" action="<?= e(url('admin/members/' . $id . '/payments/' . $pid . '/proof')) ?>" enctype="multipart/form-data" class="mfiles__row">
+                                    <?= csrf_field() ?>
+                                    <div class="field">
+                                        <label class="field__label" for="pay-proof-file-<?= $pid ?>">Or attach a file you received</label>
+                                        <input class="input" id="pay-proof-file-<?= $pid ?>" type="file" name="pay_proof" accept="image/jpeg,image/png,image/webp,application/pdf" required>
+                                    </div>
+                                    <button class="btn btn--outline btn--sm" type="submit"><?= icon('upload', 'icon--sm') ?> Attach file</button>
+                                </form>
+                                <p class="field__help">Attaching the member's proof to a <strong>received</strong> payment also marks it as verified (your name and the time are kept).</p>
+                            </div>
                         </details>
                     </article>
                 <?php endforeach; ?>
@@ -132,11 +164,28 @@ $hasPayError = array_filter(array_keys(errors()), static fn(string $k): bool => 
 
         <details class="members-add" id="add-payment"<?= $hasPayError ? ' open' : '' ?>>
             <summary class="btn btn--primary btn--sm"><?= icon('plus', 'icon--sm') ?> Record a payment</summary>
-            <form method="post" action="<?= e(url('admin/members/' . $id . '/payments')) ?>">
+            <form method="post" action="<?= e(url('admin/members/' . $id . '/payments')) ?>" enctype="multipart/form-data">
                 <?= csrf_field() ?>
                 <input type="hidden" name="pay[_once]" value="<?= e(OnceToken::issue('pay:' . $id)) ?>">
                 <p class="members-note"><?= icon('info', 'icon--sm') ?> Use <strong>Received</strong> when the money has arrived (a receipt number is issued), <strong>Pending</strong> for a payment you expect, and <strong>Waived</strong> to forgive an amount.</p>
                 <?= partial('admin/members/_payment-form', ['bucket' => 'pay', 'values' => $newValues, 'methods' => $methods, 'idp' => 'pay', 'notify' => true]) ?>
+                <?php if (empty($member['anonymised_at'])): ?>
+                    <fieldset class="members-payproof members-payproof--new" data-pay-proof>
+                        <legend class="members-payproof__title">Proof of payment</legend>
+                        <?php if ($memberHasProof && $proofStatus !== 'rejected'): ?>
+                            <?= partial('partials/form-field', ['name' => 'pay[attach_proof]', 'id' => 'pay-attach_proof', 'label' => 'Attach the member\'s proof to this payment' . ($proofStatus === 'verified' ? '' : ' and mark it as verified'), 'type' => 'checkbox',
+                                'value' => $hasPayError ? old('pay[attach_proof]', '') : ($proofStatus === 'received' ? '1' : ''), 'help' => 'A private copy is kept with the payment. Your name and the time are recorded when it is marked verified (received payments only).']) ?>
+                        <?php elseif ($memberHasProof): ?>
+                            <p class="small text-muted">The member's proof is marked "needs a better copy", so it cannot be attached. Attach a file below instead.</p>
+                        <?php endif; ?>
+                        <div class="field<?= has_error('pay[proof]') ? ' field--error' : '' ?>">
+                            <label class="field__label" for="pay-proof-file"><?= $memberHasProof ? 'Or a different file you received' : 'Attach a file you received (optional)' ?></label>
+                            <input class="input" id="pay-proof-file" type="file" name="pay_proof" accept="image/jpeg,image/png,image/webp,application/pdf"<?= has_error('pay[proof]') ? ' aria-invalid="true" aria-describedby="pay-proof-file-error"' : '' ?>>
+                            <div class="field__help">JPG, PNG, WebP or PDF, 5 MB at most. A file chosen here replaces the tick above.</div>
+                            <?php if (has_error('pay[proof]')): ?><div class="field__error" id="pay-proof-file-error" role="alert"><?= e((string) error('pay[proof]')) ?></div><?php endif; ?>
+                        </div>
+                    </fieldset>
+                <?php endif; ?>
                 <div class="form-actions"><button class="btn btn--primary" type="submit"><?= icon('save', 'icon--sm') ?> Save payment</button></div>
             </form>
         </details>

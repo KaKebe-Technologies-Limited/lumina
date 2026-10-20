@@ -1,0 +1,228 @@
+// admin/_membership-card.scss - CARD agent (Admin > Membership > Membership card: the designer, and the card code of the membership type form).
+// Imported by admin.scss. Scoped under .admin-membership-card / .admin-membership-types; reuses the shared admin components (.card, .form-grid, .field, .btn, .alert,
+// .tabs, .switch, .table). Mobile first: one column below 1200 px (the preview comes first, the form after it), form | sticky preview from 1200 px.
+// Nothing here is the card itself: the card is drawn by the PHP card engine (a PDF); this file only styles the screen around it.
+
+.admin-membership-card {
+    // ------------------------------------------------------------------------------------------------ layout
+    .mc-layout {
+        display: flex;
+        flex-direction: column;
+        gap: $space-4;
+        @include respond(xl) {
+            display: grid;
+            grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+            align-items: start;
+            gap: $space-5;
+        }
+    }
+    .mc-main { min-width: 0; }
+    // below 1200 px the preview card comes FIRST (the aside dissolves into the flex column: .mc-preview__card has order -1, the "try it" card stays after the form)
+    .mc-preview {
+        display: contents;
+        @include respond(xl) {
+            display: grid;
+            gap: $space-4;
+            min-width: 0;
+            position: sticky;
+            top: calc(#{$admin-topbar-h} + #{$space-4});
+            max-height: calc(100vh - #{$admin-topbar-h} - #{$space-5});
+            overflow-y: auto;
+            padding-bottom: 2px;
+        }
+    }
+    .mc-preview__card { order: -1; min-width: 0; @include respond(xl) { order: 0; } }
+    .mc-side { min-width: 0; }
+    .mc-errorlist { margin: $space-2 0 0; padding-left: 1.1rem; li + li { margin-top: $space-1; } a { font-weight: 600; } }
+
+    // ------------------------------------------------------------------------------------------------ tabs
+    .mc-tabbar {
+        position: sticky;
+        top: $admin-topbar-h;
+        z-index: 7;
+        margin: 0 (-$space-4) $space-4;
+        padding: $space-2 $space-4 0;
+        background: $admin-bg;
+        @include respond(lg) { margin-inline: (-$space-6); padding-inline: $space-6; }
+        @include respond(xl) { margin-inline: 0; padding-inline: 0; }
+    }
+    .mc-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        margin-bottom: 0;
+        gap: 0;
+        scrollbar-width: thin;
+        -webkit-overflow-scrolling: touch;
+        .tabs__item { flex: none; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; padding: 0.7rem $space-3; min-height: 44px; }
+    }
+    .mc-tab__flag { display: inline-flex; align-items: center; }
+    .mc-tab__flag--error { color: $danger; }
+    .mc-tab__flag--dirty { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: $orange-dark; &[hidden] { display: none; } }
+
+    // ------------------------------------------------------------------------------------------------ panels
+    .mc-panel { scroll-margin-top: calc(#{$admin-topbar-h} + 4rem); &[hidden] { display: none; } }
+    .mc-panel__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: $space-3; }
+    .mc-panel__titles { min-width: 0; flex: 1 1 16rem; .card__title { margin: 0; } }
+    .mc-panel__help { margin: 2px 0 0; color: $ink-soft; font-size: $fs-sm; }
+    .mc-panel__reset { flex: none; }
+    .mc-panel .form-section__help code, .mc-panel .field__help code { white-space: nowrap; }
+
+    // ------------------------------------------------------------------------------------------------ logo and colours
+    .mc-logo { display: grid; gap: $space-4; @include respond(md) { grid-template-columns: minmax(0, 1fr) 13rem; align-items: start; } }
+    .mc-logo__default {
+        margin: 0; padding: $space-3; display: flex; gap: $space-3; align-items: center;
+        border: 1px dashed $border-strong; border-radius: $radius; background: $surface;
+        img { flex: none; width: 4rem; height: 4rem; border-radius: $radius-sm; }
+        figcaption { font-size: $fs-xs; color: $ink-soft; }
+    }
+    .mc-themes { display: grid; gap: $space-2; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
+    .mc-theme {
+        display: flex; align-items: center; gap: $space-2; min-height: 44px; padding: $space-2 $space-3; text-align: left;
+        border: 1.5px solid $border-strong; border-radius: $radius; background: $white; color: $navy; cursor: pointer; font: inherit;
+        transition: border-color $t-fast $ease, background $t-fast $ease;
+        &:hover { border-color: $navy; background: rgba($gold, 0.12); }
+        &:focus-visible { @include focus-ring; }
+    }
+    .mc-theme__swatches { display: inline-flex; flex: none; i { width: 1.1rem; height: 1.6rem; &:first-child { border-radius: 4px 0 0 4px; } &:last-child { border-radius: 0 4px 4px 0; } } }
+    .mc-theme__name { font-size: 0.86rem; font-weight: 600; line-height: 1.25; }
+
+    .mc-colors { display: grid; gap: $space-4; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .mc-color { display: flex; align-items: center; gap: $space-2; }
+    .mc-color__swatch {
+        flex: none; width: 3rem; height: 2.75rem; padding: 2px; border: 1px solid $border-strong; border-radius: $radius-sm; background: $white; cursor: pointer;
+        &:focus-visible { @include focus-ring; }
+    }
+    .mc-color__hex { flex: 1 1 auto; min-width: 0; max-width: 11rem; font-family: $font-mono; text-transform: uppercase; }
+    .mc-color__reset { flex: none; min-width: 44px; min-height: 44px; padding: 0 0.6rem; }
+    .mc-color__state, .mc-checks__summary {
+        display: flex; align-items: flex-start; gap: 0.4rem; font-size: 0.8rem; font-weight: 600;
+        &.is-ok { color: $success; } &.is-warn { color: $warning; } &.is-fail { color: $danger; }
+        .icon { flex: none; margin-top: 0.1em; }
+    }
+    .mc-checks__summary { margin: 0 0 $space-3; padding: $space-2 $space-3; border-radius: $radius-sm; font-size: $fs-sm; &.is-ok { background: $success-bg; } &.is-warn { background: $warning-bg; } &.is-fail { background: $danger-bg; } }
+    .mc-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: $space-2; }
+    .mc-check {
+        display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 0.1rem $space-3; align-items: center; padding: $space-2 $space-3;
+        border: 1px solid $border; border-left-width: 4px; border-radius: $radius-sm; background: $white;
+        &.is-ok { border-left-color: $success; } &.is-warn { border-left-color: $warning; } &.is-fail { border-left-color: $danger; background: $danger-bg; }
+        @include respond(md) { grid-template-columns: 3rem minmax(0, 1fr) auto; }
+    }
+    .mc-check__sample { grid-row: 1 / span 2; display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 2.25rem; border-radius: 4px; border: 1px solid rgba($ink, 0.12); font: 700 1rem/1 $font-heading; @include respond(md) { grid-row: auto; } }
+    .mc-check__what { font-size: 0.86rem; color: $ink; }
+    .mc-check__ratio { font-size: 0.82rem; color: $ink-soft; white-space: nowrap; strong { color: $navy; font-variant-numeric: tabular-nums; } .mc-check__state { margin-left: 0.3rem; font-weight: 600; } }
+    .mc-check.is-warn .mc-check__state { color: $warning; }
+    .mc-check.is-fail .mc-check__state { color: $danger; }
+    .mc-check.is-ok .mc-check__state { color: $success; }
+
+    // ------------------------------------------------------------------------------------------------ placeholder chips and number format
+    .mc-chips { display: flex; flex-wrap: wrap; gap: $space-2; margin: $space-2 0 0; }
+    .mc-chip {
+        display: inline-flex; align-items: baseline; gap: 0.4rem; min-height: 36px; padding: 0.3rem 0.6rem; border: 1px solid $border-strong; border-radius: 999px; background: $white; color: $navy; cursor: pointer; font: inherit;
+        code { background: transparent; padding: 0; font-weight: 700; font-size: 0.82rem; }
+        &:hover { border-color: $navy; background: rgba($gold, 0.14); }
+        &:focus-visible { @include focus-ring; }
+    }
+    .mc-chip__desc { font-size: 0.74rem; color: $ink-soft; }
+    [data-mc-format] { font-family: $font-mono; letter-spacing: 0.02em; text-transform: uppercase; }
+    .mc-formatstatus { margin: $space-2 0 0; font-size: $fs-sm; font-weight: 600; &.is-ok { color: $success; } &.is-error { color: $danger; } &:empty { display: none; } }
+    .mc-presets { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; margin: $space-3 0 0; }
+    .mc-presets__title { font-size: 0.82rem; color: $ink-soft; }
+    .mc-preset {
+        display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem; min-height: 40px; padding: 0.35rem 0.7rem; border: 1px dashed $border-strong; border-radius: $radius; background: $surface; color: $navy; cursor: pointer; font: inherit; font-size: 0.82rem; text-align: left;
+        code { background: $white; }
+        &:hover { border-color: $navy; border-style: solid; }
+        &:focus-visible { @include focus-ring; }
+    }
+    .mc-numtable-wrap { margin-top: $space-4; overflow-x: auto; }
+    .mc-numtable { th[scope="row"] { font-weight: 600; } code { font-weight: 700; } tr.is-inactive th { color: $ink-soft; } }
+    .mc-notes { margin: 0; padding-left: 1.1rem; color: $ink; font-size: $fs-sm; li + li { margin-top: $space-2; } }
+
+    // ------------------------------------------------------------------------------------------------ blocks and tiles
+    .mc-switches { display: grid; gap: $space-4; }
+    .mc-tiles { display: grid; gap: $space-3; @include respond(md) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .mc-tileslot { padding: $space-3; border-radius: $radius; background: $surface; border: 1px solid $border; }
+    .mc-tilelabel { transition: opacity $t-fast $ease; &.is-unused { opacity: 0.55; &:focus-within, &:hover { opacity: 1; } } }
+    .mc-unused-note { margin: 2px 0 0; font-size: $fs-xs; color: $ink-soft; font-style: italic; }
+    .mc-footer-lines { display: grid; gap: $space-3; }
+
+    // ------------------------------------------------------------------------------------------------ rules
+    .mc-choice { margin: 0; padding: 0; border: 0; min-width: 0; }
+    .mc-choice__list { display: grid; gap: $space-2; margin-top: $space-2; @include respond(lg) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .mc-choice__item {
+        position: relative; display: grid; grid-template-columns: auto 1fr; column-gap: $space-3; row-gap: 2px; align-items: start; padding: $space-3 $space-4;
+        background: $white; border: 1.5px solid $border-strong; border-radius: $radius; cursor: pointer;
+        transition: border-color $t-fast $ease, background $t-fast $ease;
+        input { grid-row: 1 / span 2; width: 1.15rem; height: 1.15rem; margin-top: 0.15rem; accent-color: $navy; }
+        &:hover { border-color: $navy; }
+        &:has(input:checked) { border-color: $navy; background: rgba($gold, 0.14); box-shadow: 0 0 0 1px $navy; }
+        &:has(input:focus-visible) { @include focus-ring; }
+    }
+    .mc-choice__label { font-family: $font-heading; font-size: 0.92rem; font-weight: 600; color: $navy; }
+    .mc-choice__hint { grid-column: 2; font-size: $fs-xs; color: $ink-soft; }
+    .mc-choice--error .mc-choice__item { border-color: $danger; }
+    .mc-retention { margin-top: $space-4; max-width: 26rem; }
+    .mc-stats { display: flex; flex-wrap: wrap; gap: $space-3; margin: 0 0 $space-3; > div { flex: 1 1 8rem; padding: $space-3 $space-4; border-radius: $radius; background: $surface; border: 1px solid $border; } dt { font-size: $fs-xs; color: $ink-soft; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; } dd { margin: 2px 0 0; font: 700 1.5rem/1.1 $font-heading; color: $navy; font-variant-numeric: tabular-nums; } }
+    .mc-details {
+        margin-top: $space-5; border: 1px solid $border; border-radius: $radius; background: $white;
+        summary { cursor: pointer; padding: $space-3 $space-4; font-weight: 600; color: $navy; min-height: 44px; display: flex; align-items: center; &:focus-visible { @include focus-ring; } }
+        .mc-rules-table { margin: 0; display: block; overflow-x: auto; font-size: $fs-sm; }
+        th[scope="row"] { font-weight: 600; }
+    }
+
+    // ------------------------------------------------------------------------------------------------ e-mail preview
+    .mc-mail { margin-bottom: $space-4; }
+    .mc-mail__subject { margin: 0 0 $space-3; font-size: $fs-sm; overflow-wrap: anywhere; }
+    .mc-mail__label { display: inline-block; margin-right: 0.4rem; font-size: $fs-xs; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: $ink-soft; }
+    .mc-mail__frame { display: block; width: 100%; height: 34rem; border: 1px solid $border; border-radius: $radius; background: $white; &[hidden] { display: none; } }
+    .mc-mail__text { margin: 0; max-height: 34rem; overflow: auto; padding: $space-4; border: 1px solid $border; border-radius: $radius; background: $surface; white-space: pre-wrap; overflow-wrap: anywhere; font: 0.84rem/1.55 $font-mono; &[hidden] { display: none; } }
+
+    // ------------------------------------------------------------------------------------------------ the preview
+    .mc-live { display: inline-flex; align-items: center; gap: 0.4rem; font-size: $fs-xs; font-weight: 600; color: $success; &.is-unsaved { color: $warning; } }
+    .mc-live__dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: currentColor; }
+    .mc-viewswitch { display: inline-flex; gap: 2px; padding: 3px; margin: 0 0 $space-3; border-radius: $radius; background: $surface-alt; }
+    .mc-viewswitch__btn {
+        min-height: 38px; padding: 0 $space-3; border: 0; border-radius: $radius-sm; background: transparent; color: $ink-soft; font: 600 0.82rem $font-heading; cursor: pointer;
+        &.is-active { background: $white; color: $navy; box-shadow: $shadow-sm; }
+        &:focus-visible { @include focus-ring; }
+    }
+    .mc-stage { position: relative; border: 1px solid $border; border-radius: $radius; overflow: hidden; background: $white; box-shadow: $shadow-sm; }
+    .mc-stage__frame { display: block; width: 100%; aspect-ratio: 720 / 414; border: 0; background: $white; &[hidden] { display: none; } }
+    .mc-stage__img { display: block; width: 100%; height: auto; &[hidden] { display: none; } }
+    .mc-stage__busy {
+        position: absolute; top: $space-2; right: $space-2; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.6rem; border-radius: 999px;
+        background: rgba($navy-dark, 0.88); color: $white; font-size: $fs-xs; font-weight: 600; &[hidden] { display: none; }
+    }
+    .mc-spinner { width: 0.8rem; height: 0.8rem; border-radius: 50%; border: 2px solid rgba($white, 0.35); border-top-color: $white; animation: mc-spin 0.8s linear infinite; @include reduced-motion { animation: none; } }
+    .mc-preview__status { min-height: 1.3em; margin: $space-2 0 0; font-size: $fs-xs; color: $warning; font-weight: 600; &:empty { display: none; } }
+    .mc-preview__buttons { display: flex; flex-wrap: wrap; gap: $space-2; margin-top: $space-3; .btn[hidden] { display: none; } }
+    .mc-auto { margin-top: $space-3; }
+    .mc-more { margin-top: $space-3; summary { cursor: pointer; font-size: $fs-sm; font-weight: 600; color: $navy; min-height: 32px; &:focus-visible { @include focus-ring; } } p { margin: $space-2 0 0; } }
+    .mc-side form { margin: 0; }
+
+    .mc-dialog {
+        width: 94vw; max-width: 1100px; padding: 0; border: 0; border-radius: $radius-lg; box-shadow: $shadow-lg; background: $white; color: $ink;
+        &::backdrop { background: rgba($navy-dark, 0.7); }
+    }
+    .mc-dialog__bar { display: flex; align-items: center; justify-content: space-between; gap: $space-3; padding: $space-3 $space-4; border-bottom: 1px solid $border; }
+    .mc-dialog__title { margin: 0; font-size: 1.05rem; }
+    .mc-dialog__frame { display: block; width: 100%; height: 70vh; min-height: 18rem; border: 0; background: $white; }
+
+    // ------------------------------------------------------------------------------------------------ save bar
+    .mc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; }
+    .mc-actions__state { font-size: $fs-sm; color: $warning; font-weight: 600; &:empty { display: none; } }
+}
+
+@keyframes mc-spin { to { transform: rotate(360deg); } }
+
+// ---- the membership type form: the member number the code would give
+.admin-membership-types {
+    .mc-codeexample { margin-top: $space-2; padding: $space-2 $space-3; border-radius: $radius-sm; background: $surface; border: 1px solid $border; font-size: $fs-sm; code { font-weight: 700; } }
+    .mc-codeexample.is-invalid { border-color: $danger; background: $danger-bg; color: $danger; }
+    .mc-codeexample.is-unused { opacity: 0.75; }
+    .mc-codeexample__note { margin: 2px 0 0; font-size: $fs-xs; color: $ink-soft; &:empty { display: none; } }
+}
+
+// Windows high-contrast (forced-colors): the white "active" background and its shadow vanish, so the chosen PDF / Picture switch needs an outline
+@media (forced-colors: active) {
+    .admin-membership-card .mc-viewswitch__btn.is-active { outline: 3px solid Highlight; outline-offset: -3px; }
+}

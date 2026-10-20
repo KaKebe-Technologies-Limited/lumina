@@ -7,6 +7,7 @@
  * The preview below the fee reads exactly like the website (MembershipService::feeLabel); admin-members.js keeps it live while you type.
  */
 use App\Services\Membership\MembershipService as MS;
+use App\Services\Membership\Card\CardSettings;
 
 $t = $type;
 $plain = static fn($v): string => $v === null || $v === '' ? '' : rtrim(rtrim(number_format((float) $v, 2, '.', ''), '0'), '.');
@@ -39,6 +40,7 @@ foreach (array_keys($periods) as $p) {
 $action = $isNew ? url('admin/membership-types') : url('admin/membership-types/' . (int) $t['id']);
 $this->start('scripts'); ?>
 <script src="<?= e(asset('js/admin-members.js')) ?>" defer></script>
+<script src="<?= e(asset('js/admin-membership-card.js')) ?>" defer></script>
 <?php $this->end(); ?>
 <div class="admin-members admin-membership-types">
     <?= partial('partials/admin/page-header', [
@@ -142,6 +144,22 @@ $this->start('scripts'); ?>
                     <div class="form-grid">
                         <?= partial('partials/form-field', ['name' => 'max_members', 'label' => 'Maximum places (optional)', 'type' => 'number', 'value' => old('max_members', (string) ($t['max_members'] ?? '')), 'min' => 1, 'step' => 1,
                             'help' => $isNew ? 'Leave empty for no limit. Pending and approved members use a place.' : 'Leave empty for no limit. ' . (int) $taken['taken'] . ' place' . ($taken['taken'] === 1 ? ' is' : 's are') . ' used now (pending and approved members).']) ?>
+                        <?php
+                        $numberFormat = strtoupper(CardSettings::get('membership_card_number_format'));
+                        $numberFormat = CardSettings::numberFormatError($numberFormat) === null ? $numberFormat : CardSettings::DEFAULT_NUMBER_FORMAT;
+                        $codeFallback = MS::typeCode(['name' => $name !== '' ? $name : (string) $t['name'], 'code' => '']);
+                        $typedCode = (string) old('code', (string) ($t['code'] ?? ''));
+                        ?>
+                        <div class="mc-codefield">
+                            <?= partial('partials/form-field', ['name' => 'code', 'label' => 'Code in the member number', 'value' => $typedCode, 'maxlength' => 8, 'placeholder' => $codeFallback,
+                                'attrs' => ['data-mc-code' => true, 'autocapitalize' => 'characters', 'spellcheck' => 'false', 'autocomplete' => 'off'],
+                                'help' => '2 to 8 letters or digits, used where the membership card number format has {TYPE}. Empty = the initials of the name. Numbers already issued never change.']) ?>
+                            <div class="mc-codeexample" data-mc-codeexample data-format="<?= e($numberFormat) ?>" data-prefix="<?= e(MS::prefix()) ?>" data-fallback="<?= e($codeFallback) ?>" data-year="<?= e(date('Y')) ?>" aria-live="polite">
+                                An example number for this type (the real running number continues from the last one issued): <code data-mc-codeexample-value><?= e(CardSettings::expandNumber($numberFormat, MS::prefix(), MS::typeCode(['name' => $name, 'code' => $typedCode]), (int) date('Y'), 1)) ?></code>
+                                <?php if (!str_contains($numberFormat, '{TYPE}')): ?><span class="mc-codeexample__note">The current number format does not contain {TYPE}, so the code is not used yet.</span><?php endif; ?>
+                                <p class="mc-codeexample__note" data-mc-codeexample-note></p>
+                            </div>
+                        </div>
                         <?= partial('partials/form-field', ['name' => 'sort_order', 'label' => 'Order on the website', 'type' => 'number', 'value' => old('sort_order', (string) $t['sort_order']), 'step' => 1,
                             'help' => 'Smaller numbers come first.']) ?>
                         <div class="field--full">

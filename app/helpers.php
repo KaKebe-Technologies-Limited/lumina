@@ -350,8 +350,9 @@ function setting(string $key, mixed $default = null): mixed
 }
 
 /**
- * The Google Analytics measurement ID to use on THIS request: '' when none is set, and always '' on the personal meeting links (/meeting/{token}...): their
- * address holds the invitee's only credential and must never reach a third party. Decided by PATH on the server, so it also covers the error pages
+ * The Google Analytics measurement ID to use on THIS request: '' when none is set, and always '' on the personal meeting links (/meeting/{token}...) and on the
+ * membership pages whose address is a credential (/membership/me/{token}, /membership/verify/{token}, /membership/confirmation/{ref}?t=...): their
+ * address holds the only credential and must never reach a third party. Decided by PATH on the server, so it also covers the error pages
  * (404, 419, 429, 500) of such an address, and the layout, the CSP header and the page script all agree.
  */
 function analytics_id(): string
@@ -361,7 +362,7 @@ function analytics_id(): string
         return '';
     }
     $path = (string) (\App\Core\Request::current()?->path() ?? '');
-    return preg_match('~^/?meeting/~i', $path) === 1 ? '' : $id;
+    return preg_match('~^/?(?:meeting/|membership/(?:me|verify|confirmation)/)~i', $path) === 1 ? '' : $id;
 }
 
 function current_user(): ?array

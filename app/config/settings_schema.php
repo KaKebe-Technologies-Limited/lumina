@@ -66,14 +66,14 @@ return [
         'membership' => [
             'label' => 'Membership',
             'icon'  => 'user-plus',
-            'help'  => 'Controls the Membership page and its registration form. The FEES themselves are set per membership type in Admin > Membership types. The membership terms text is edited in Admin > Pages > Membership terms.',
+            'help'  => 'Controls the Membership page and its registration form. The FEES themselves are set per membership type in Admin > Membership types. The membership terms text is edited in Admin > Pages > Membership terms. The membership CARD (look, member number format, when it is issued, photo rules) is designed in Admin > Membership > Membership card.',
             'fields' => [
                 'membership_open'                 => ['label' => 'Accept new membership applications', 'type' => 'boolean', 'default' => '0',
                     'help' => 'OFF until you switch it on: while it is off the form is replaced by a "membership is closed" notice and no personal data is collected. Tick it once you have set the fees, replaced the placeholder membership terms and reviewed the privacy notice (wording of the notice: Admin > Pages > Membership).'],
                 'membership_currency'             => ['label' => 'Default currency', 'type' => 'text', 'default' => 'UGX', 'rules' => 'required|regex:/^[A-Za-z]{3}$/', 'placeholder' => 'UGX',
                     'help' => 'Three-letter code (UGX, USD, KES...). New membership types start with this currency; each type can use another one.'],
                 'membership_number_prefix'        => ['label' => 'Membership number prefix', 'type' => 'text', 'default' => 'LAF', 'rules' => 'required|regex:/^[A-Za-z0-9]{2,10}$/', 'placeholder' => 'LAF',
-                    'help' => 'Numbers look like LAF-2026-0001 (members), LAF-APP-2026-48213 (applications) and LAF-RCT-2026-0001 (receipts). Numbers already issued never change.'],
+                    'help' => 'The {PREFIX} of member numbers (default format LAF-IND-26-0001: change the format in Admin > Membership > Membership card), applications (LAF-APP-2026-48213) and receipts (LAF-RCT-2026-0001). Numbers already issued never change.'],
                 'membership_payment_instructions' => ['label' => 'How to pay the membership fee', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:2000',
                     'help' => 'Shown to applicants after they register (bank account, mobile-money number, office address...). While empty, the bank and mobile-money details from the Donations tab are used.'],
                 'membership_collect_id'           => ['label' => 'Ask for a national ID or passport number', 'type' => 'boolean', 'default' => '0',

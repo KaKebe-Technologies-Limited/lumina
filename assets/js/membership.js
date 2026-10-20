@@ -8,6 +8,8 @@
  *   select[data-other-trigger]    the answer "other" opens [data-cond="<field>"] (free text)
  *   [data-count-for]              "n / max" counter of a textarea
  *   [data-mb-summary]             error summary: filled by the checks below, or rendered by the server after a failed submission
+ *   input[type=file][data-upload-input]   headshot / proof of payment: the file checks live in membership-dashboard.js (it records data-upload-problem and fires
+ *                                 "upload:checked"); here: required photo, the photo consent box that is required only while a photo is chosen
  * Inline checks mirror the server rules (required, e-mail, phone, minimum length, date of birth, tick boxes) so a typo does not cost a round trip.
  */
 (function () {
@@ -174,6 +176,12 @@
 
     // the message for one control (or its radio group), or '' when it is fine
     var problem = function (el) {
+        if (el.type === 'file') {
+            // the photo / proof fields (assets/js/membership-dashboard.js records its own checks of the chosen file: type, size, pixels)
+            var own = el.getAttribute('data-upload-problem');
+            if (own) { return own; }
+            return el.required && !(el.files && el.files.length) ? (el.closest('[data-upload]') || el).getAttribute('data-msg-missing') || MSG.required : '';
+        }
         var v = el.value.trim();
         if (el.type === 'radio') {
             if (!el.required) { return ''; }
@@ -214,6 +222,9 @@
         $$('[aria-invalid]', field).forEach(function (c) { c.removeAttribute('aria-invalid'); });
     };
 
+    // set while a rejected file is reported BEFORE the first submit: no summary exists yet, so the message itself must be announced (role="alert")
+    var announceNext = false;
+
     var showError = function (el, message) {
         var field = fieldOf(el);
         if (!field) { return; }
@@ -222,7 +233,9 @@
         var box = document.createElement('div');
         box.className = 'field__error';
         box.id = (el.type === 'radio' ? 'f-' + el.name : el.id) + '-error';
-        // no role="alert" here: the summary (focused after a failed submit) is the one announcement; aria-describedby ties each message to its field
+        // no role="alert" here after a submit: the summary (focused after a failed submit) is the one announcement; aria-describedby ties each message to its field.
+        // A file rejected on choosing it (too small, wrong type, too big) has no summary yet, so that one message is announced as an alert
+        if (announceNext) { box.setAttribute('role', 'alert'); }
         box.textContent = message;
         field.appendChild(box);
         el.setAttribute('aria-invalid', 'true');
@@ -300,6 +313,14 @@
         if (!el || !el.matches || !el.matches('input, select, textarea') || el.closest('.hp-field')) { return; }
         var field = fieldOf(el);
         if (!field) { return; }
+        if (el.type === 'file' && !attempted && !field.classList.contains('field--error')) {
+            // a chosen picture that is too big / the wrong type / too small is reported at once, next to the field (the summary waits for the first submit)
+            if (problem(el)) {
+                announceNext = true;
+                try { validate(el); } finally { announceNext = false; }
+            }
+            return;
+        }
         if (attempted || field.classList.contains('field--error')) {
             if (el.type === 'checkbox' && !el.required) { return; }
             validate(el);
@@ -308,6 +329,25 @@
     };
     form.addEventListener('change', recheck);
     form.addEventListener('input', recheck);
+    form.addEventListener('upload:checked', recheck);                // fired by membership-dashboard.js when an asynchronous check of a picture is done
+
+    // the photo consent box is required only while a photo is chosen (the server applies the same rule); the star follows
+    var photoInput = $('#f-photo');
+    var photoConsent = $('#f-photo_consent');
+    var syncPhotoConsent = function () {
+        if (!photoConsent) { return; }
+        var has = !!(photoInput && photoInput.files && photoInput.files.length);
+        photoConsent.required = has;
+        var wrap = photoConsent.closest('.field');
+        if (wrap) {
+            setMark(wrap, has);
+            if (!has) { clearError(photoConsent); }
+        }
+    };
+    if (photoInput && photoConsent) {
+        photoInput.addEventListener('change', syncPhotoConsent);
+        syncPhotoConsent();
+    }
 
     // links of the summary focus the field itself (the first radio / check box of a group)
     document.addEventListener('click', function (e) {
@@ -326,6 +366,7 @@
         updateFee();
         updateAge();
         $$('[data-other-trigger]').forEach(function (sel) { sel.dispatchEvent(new Event('change')); });
+        syncPhotoConsent();
     });
 
     // a failed submission rendered by the server: put the focus on the summary once the page has settled

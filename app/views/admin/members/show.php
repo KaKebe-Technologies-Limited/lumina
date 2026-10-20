@@ -2,7 +2,8 @@
 /**
  * Admin > one member (application, status workflow, payments, renewal, e-mails, notes). OWNER: ADMIN agent. Contract: docs/MEMBERSHIP.md.
  * Vars: $member, $summary (MembershipService::paymentSummary), $payments (newest first), $received (received payments), $type (current type row | null),
- * $transitions (allowed next statuses), $methods (payment methods), $activity (audit rows), $canDelete, $canTypes, $hasPayments.
+ * $transitions (allowed next statuses), $methods (payment methods), $activity (audit rows), $canDelete, $canTypes, $hasPayments,
+ * $card (CardService::summary), $checks (what a card needs), $proofBy (name of the staff member who last checked the proof), $gd (image library present).
  * PRIVACY: this screen shows everything the member submitted, so it is behind members.manage (admin + editor). Nothing here is logged.
  */
 use App\Services\Membership\MembershipService as MS;
@@ -15,6 +16,34 @@ $today = new DateTimeImmutable('today');
 $expiry = !empty($member['expiry_date']) ? DateTimeImmutable::createFromFormat('!Y-m-d', (string) $member['expiry_date']) : false;
 $days = $expiry ? (int) $today->diff($expiry)->format('%r%a') : null;
 $balance = (float) $summary['balance'];
+
+// KPI: membership card + the things staff still have to do for this member
+$erased = !empty($member['anonymised_at']);
+$cardState = (string) $card['state'];
+$cardStale = $cardState === 'issued' && ($card['needs_reissue'] || $card['renewal_due']);
+$waitShort = ['erased' => 'Personal data erased', 'not_approved' => 'Waiting for approval', 'unpaid' => 'Waiting for payment', 'photo_missing' => 'Waiting for a photo', 'no_number' => 'No membership number yet'];
+if ($erased) {
+    [$cardValue, $cardSub] = [$cardState === 'none' ? 'No card' : 'Revoked', 'Personal data erased'];
+} elseif ($cardState === 'issued') {
+    [$cardValue, $cardSub] = ['Issued, version ' . (int) $card['version'], $cardStale ? 'A new version is due' : ($card['emailed'] ? 'E-mailed ' . format_date((string) $card['emailed_at'], 'j M Y') : 'Not e-mailed yet')];
+} elseif ($cardState === 'revoked') {
+    [$cardValue, $cardSub] = ['Revoked', 'The QR code shows not valid'];
+} else {
+    [$cardValue, $cardSub] = ['Not issued', (string) $member['status'] === 'approved' ? ($waitShort[$card['waiting'][0] ?? ''] ?? 'Ready to issue') : 'Issued after approval'];
+}
+$todo = [];
+if (!$erased && (string) ($member['proof_status'] ?? 'none') === 'received' && in_array((string) $member['status'], ['pending', 'approved'], true)) {
+    $todo[] = ['#proof', 'A proof of payment is waiting for your check.'];
+}
+if (!$erased && (string) ($member['proof_status'] ?? 'none') === 'rejected') {
+    $todo[] = ['#proof', 'You asked the member for a better copy of the proof of payment.'];
+}
+if ($cardStale) {
+    $todo[] = ['#card', 'The issued card is out of date. Re-issue it (new version) to update it.'];
+}
+if (!$erased && $cardState === 'issued' && !$card['emailed']) {
+    $todo[] = ['#card', 'The card was issued but not e-mailed to the member yet. Use "Re-send card e-mail".'];
+}
 
 // KPI: term
 if (!empty($member['start_date'])) {
@@ -49,6 +78,7 @@ if ($summary['status'] === 'tbd') {
 
 $this->start('scripts'); ?>
 <script src="<?= e(asset('js/admin-members.js')) ?>" defer></script>
+<script src="<?= e(asset('js/admin-members-card.js')) ?>" defer></script>
 <?php $this->end(); ?>
 <div class="admin-members">
     <?= partial('partials/admin/page-header', [
@@ -85,17 +115,40 @@ $this->start('scripts'); ?>
             <span class="members-stat__value members-stat__value--small"><?= e($moneyValue) ?></span>
             <span class="members-stat__sub"><?= e($moneySub) ?> <span class="visually-hidden">(go to the payments)</span></span>
         </a>
+        <a class="members-stat members-stat--link" href="#card">
+            <span class="members-stat__label">Membership card</span>
+            <span class="members-stat__value members-stat__value--small"><?= e($cardValue) ?></span>
+            <span class="members-stat__sub"><?= e($cardSub) ?> <span class="visually-hidden">(go to the card)</span></span>
+        </a>
     </section>
+
+    <?php if ($todo !== []): ?>
+        <ul class="members-todo" aria-label="Things to do for this member">
+            <?php foreach ($todo as [$href, $text]): ?><li><?= icon('alert-circle', 'icon--sm') ?> <a href="<?= e($href) ?>"><?= e($text) ?></a></li><?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+
+    <nav class="members-jump" aria-label="On this page">
+        <a href="#status">Review and status</a>
+        <a href="#details">Application</a>
+        <a href="#proof">Photo and proof of payment</a>
+        <a href="#payments">Fees and payments</a>
+        <a href="#card">Membership card</a>
+        <a href="#activity">Activity</a>
+    </nav>
 
     <?= partial('admin/members/_status', ['member' => $member, 'transitions' => $transitions, 'type' => $type]) ?>
 
     <div class="members-layout">
         <div class="members-main">
             <?= partial('admin/members/_details', ['member' => $member]) ?>
+            <?= partial('admin/members/_proof', ['member' => $member, 'summary' => $summary, 'proofBy' => $proofBy]) ?>
             <?= partial('admin/members/_payments', [
                 'member' => $member, 'summary' => $summary, 'payments' => $payments, 'methods' => $methods, 'type' => $type, 'canTypes' => $canTypes, 'pb' => $pb,
             ]) ?>
             <?= partial('admin/members/_renewal', ['member' => $member, 'summary' => $summary]) ?>
+            <?= partial('admin/members/_photo', ['member' => $member, 'card' => $card, 'gd' => $gd]) ?>
+            <?= partial('admin/members/_card', ['member' => $member, 'card' => $card, 'checks' => $checks, 'gd' => $gd]) ?>
             <section class="card" id="activity">
                 <div class="card__header"><h2 class="card__title">Activity</h2></div>
                 <div class="card__body">

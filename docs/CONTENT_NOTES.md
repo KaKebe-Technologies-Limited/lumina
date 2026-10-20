@@ -303,6 +303,22 @@ Real applications contain personal data (date of birth, address, phone numbers, 
 public, never in logs or in the activity log (ids and references only), and the CSV export carries a warning. Deleting a member is admin-only and refused for
 members who have a membership number or payments.
 
+### 9b. Membership card, headshot and proof of payment: what is placeholder and what the owner must do
+
+Technical contract: `docs/MEMBERSHIP_CARD.md`. The card copies the owner's reference design (`docs/design-reference/membership-card-reference.pdf`); nothing on it is invented.
+
+| Item | Ships as | Owner to-do | Where |
+|---|---|---|---|
+| **Card wording** | The reference's words ("LUMINA AFRICA FOUNDATION", "Igniting Light. Inspiring Change.", "MEMBERSHIP CARD", "Scan to verify membership", "Present this card for member check-in", "Lumina Africa Foundation - Gulu, Uganda"). | Confirm or change. Support phone and e-mail come from Site settings unless the card has its own. | Admin > Membership card |
+| **Logo and colours** | The bundled Lumina seal (`assets/img/brand/card-logo.jpg`) and the reference colours (navy, orange, gold, green). Unreadable colours are refused. Four small texts of the reference (gold tagline, orange type line, white on the green pill, grey tile labels) are below the 4.5:1 that WCAG advises for small print; the designer says so, and the card e-mail uses darker shades. | Upload a different logo or pick a colour theme if wanted. | Admin > Membership card |
+| **Member number** | `LAF-IND-26-0001` = prefix, type code, year, 4-digit counter. Codes: IND (Individual), YTH (Youth & Student), ORG (Organisation / Partner). Older `LAF-YYYY-NNNN` numbers are never changed. | Set a code for every type you add (otherwise the initials of its name are used) and the prefix under Site settings > Membership. | Membership types & fees, Admin > Membership card |
+| **When a card is issued** | Automatically when a member is approved AND the balance is paid or waived (a type with no fee set counts as not paid). Alternatives: as soon as approved, or manual. Staff can always press "Issue card now". | Choose the rule; set the fees first. | Admin > Membership card > When it is issued |
+| **Photo rules** | The registration form asks for a headshot (required) with a consent tick; a card without a photo shows the member's initials like the reference. | Decide whether the photo must be required on the form and before a card is issued (two separate switches). | Admin > Membership card |
+| **Photo consent wording and retention** | A neutral consent sentence; files are deleted when a member is erased and 90 days after a rejection or cancellation (placeholder). | **Have counsel confirm** the lawful basis, the wording, the retention period and the privacy text (Uganda Data Protection and Privacy Act, 2019: possible registration with the Personal Data Protection Office). The site makes no legal claim. | Admin > Pages > Membership (uploads), Admin > Pages > Privacy, Membership card > rules |
+| **E-mails** | Card e-mail (subject, message and PDF) and the "we need a clearer proof of payment" e-mail use polite default wording. E-mails the owner already edited do not contain the private-page link until `{dashboard_url}` is added by hand. | Test delivery on the live host (card e-mails carry a PDF of about 80 KB); add `{dashboard_url}` to edited templates. | Admin > Membership card > The e-mail, Admin > Pages > Membership > E-mails |
+| **Live host** | The QR code and e-mail links need `APP_URL`; the daily cron `bin/membership-maintenance.php` deletes expired files and marks lapsed memberships. | Set `APP_URL`, enable PHP GD, add the cron, import `database/lumina-live-import.sql` first. | `.env`, hosting panel |
+| **Samples** | The designer preview and test e-mail use a fictional member ("Amina Akello") and are watermarked "SAMPLE CARD - fictional member, not valid for verification". | None. No sample member is stored. | Admin > Membership card |
+
 ## 10. Newsletter: what is sample, what is placeholder, and what the owner must do
 
 Nothing on the newsletter pages is invented: no issue count, subscriber number, statistic or testimonial. Technical contract: `docs/NEWSLETTER.md`.
