@@ -407,6 +407,8 @@ final class MeetingService
         return [
             'title' => $m['title'], 'type_id' => self::calendarTypeId(), 'description' => '', 'location' => '', 'all_day' => '0',
             'start_date' => MeetingTime::date((string) $m['start_at']), 'start_time' => MeetingTime::time((string) $m['start_at']), 'end_time' => MeetingTime::time((string) $m['end_at']),
+            // a meeting that ends after midnight is one entry that runs into the next day (without this the calendar refuses it: "end before start")
+            'end_date' => MeetingTime::date((string) $m['end_at']) !== MeetingTime::date((string) $m['start_at']) ? MeetingTime::date((string) $m['end_at']) : '',
             'recurrence' => 'none', 'is_public' => $public ? '1' : '0', 'is_active' => $m['status'] === 'cancelled' ? '0' : '1',
             'link_url' => $link, 'link_label' => $link !== '' ? self::JOIN_LABEL_TOKEN : '',
         ];
