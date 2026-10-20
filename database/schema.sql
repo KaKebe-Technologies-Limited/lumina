@@ -1538,3 +1538,70 @@ CREATE TABLE IF NOT EXISTS `shop_events` (
   KEY `ix_shop_events_created` (`created_at`),
   KEY `ix_shop_events_ref` (`ref`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================================================================================================
+-- SOCIAL MEDIA: auto-share of published newsletters (docs/SOCIAL.md). ADDITIVE and IDEMPOTENT: two guarded ALTERs on `newsletters`, two new tables.
+-- =====================================================================================================================================
+
+-- The admin's share choices are saved WITH the issue and used when it goes public: JSON {"facebook":{"on":true,"caption":"..."}, ...}. NULL = never opened the panel
+-- (the defaults of Admin > Social media apply). share_version rises only when an admin explicitly chooses "Post again".
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'share_choices');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `share_choices` TEXT NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'share_version');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `share_version` INT UNSIGNED NOT NULL DEFAULT 1', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
+-- One row per (issue, channel, share_version): the UNIQUE key is what guarantees an issue is never posted twice to the same channel (unpublish and
+-- republish create nothing new; "Post again" raises share_version). The log keeps channel, status, the caption that was sent, the remote post id / URL
+-- the platform returned and a SHORT error text. Never a token, never a full API payload or response.
+CREATE TABLE IF NOT EXISTS `social_posts` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `newsletter_id` INT UNSIGNED NOT NULL,
+  `channel` VARCHAR(20) NOT NULL,                                 -- facebook | instagram | x | linkedin | telegram | webhook
+  `share_version` INT UNSIGNED NOT NULL DEFAULT 1,
+  `status` ENUM('queued','posting','posted','failed','skipped','review') NOT NULL DEFAULT 'queued',   -- review = the attempt may or may not have reached the platform: a person decides
+  `caption` TEXT NULL,                                            -- the final plain text that is (or was) sent
+  `attempts` INT UNSIGNED NOT NULL DEFAULT 0,
+  `next_attempt_at` DATETIME NULL,                                -- application time zone; NULL = due now
+  `last_attempt_at` DATETIME NULL,                                -- recorded BEFORE the platform is called (a crash leaves a `posting` row that becomes `review`)
+  `remote_id` VARCHAR(190) NULL,
+  `remote_url` VARCHAR(255) NULL,
+  `last_error` VARCHAR(255) NULL,                                 -- short text without credentials
+  `fail_code` VARCHAR(20) NULL,                                   -- why it failed: 'auth' = the access token / key was rejected (only these are re-queued after a new token is pasted); NULL = anything else
+  `posted_at` DATETIME NULL,
+  `created_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_social_posts_issue_channel` (`newsletter_id`, `channel`, `share_version`),
+  KEY `ix_social_posts_due` (`status`, `next_attempt_at`),
+  KEY `ix_social_posts_channel` (`channel`, `status`),
+  CONSTRAINT `fk_social_posts_issue` FOREIGN KEY (`newsletter_id`) REFERENCES `newsletters` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_social_posts_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Databases that already have social_posts (created before fail_code existed): guarded, idempotent ALTER.
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'social_posts' AND column_name = 'fail_code');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `social_posts` ADD COLUMN `fail_code` VARCHAR(20) NULL AFTER `last_error`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
+-- Branded share images (GD-rendered, stored OUTSIDE the web root) and the unguessable token that makes them reachable at /social/image/{token}.jpg
+-- (Instagram and Facebook must fetch a PUBLIC url). One token per (issue, variant): re-rendering keeps the token, so a url a platform already has stays valid.
+CREATE TABLE IF NOT EXISTS `social_images` (
+  `token` CHAR(64) NOT NULL,                                      -- 256 random bits as hex
+  `newsletter_id` INT UNSIGNED NOT NULL,
+  `variant` ENUM('square','portrait','landscape') NOT NULL,
+  `path` VARCHAR(255) NOT NULL,                                   -- relative to storage/private/social
+  `src_hash` VARCHAR(64) NULL,                                    -- hash of what the picture was drawn from (title, summary, cover, designer settings): a change re-renders it
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`token`),
+  UNIQUE KEY `uq_social_images_issue_variant` (`newsletter_id`, `variant`),
+  CONSTRAINT `fk_social_images_issue` FOREIGN KEY (`newsletter_id`) REFERENCES `newsletters` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -49,15 +49,14 @@ final class Maintenance
     {
         $back = self::returnTimestamp();
         $contactOn = (string) Settings::get('maintenance_show_contact', '1') !== '0';
-        $socialOn = (string) Settings::get('maintenance_show_social', '1') !== '0';
         $socials = [];
-        if ($socialOn) {
-            foreach (['facebook' => 'Facebook', 'instagram' => 'Instagram', 'linkedin' => 'LinkedIn', 'x' => 'X', 'tiktok' => 'TikTok', 'youtube' => 'YouTube'] as $k => $label) {
-                $u = trim((string) Settings::get('social_' . $k, ''));
-                if ($u !== '' && preg_match('#^https?://#i', $u)) {
-                    $socials[] = ['label' => $label, 'url' => $u];
-                }
+        try {
+            // the admin's links in the admin's order; the maintenance toggle (maintenance_show_social) is checked inside (docs/SOCIAL.md)
+            foreach (social_links('maintenance') as $l) {
+                $socials[] = ['label' => $l['label'], 'url' => $l['url']];
             }
+        } catch (\Throwable) {
+            $socials = [];
         }
         $wa = trim((string) Settings::get('whatsapp', ''));
         if ($wa !== '' && !preg_match('#^https?://#i', $wa)) {

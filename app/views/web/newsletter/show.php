@@ -70,14 +70,7 @@ $this->start('head'); ?>
                 </p>
 
                 <?php if (section_on('newsletter', 'share')): ?>
-                    <?= partial('web/blog/_share', [
-                        'share'       => $share,
-                        'absUrl'      => $absUrl,
-                        'heading'     => content('newsletter', 'share.title'),
-                        'shareOn'     => content('newsletter', 'share.on'),
-                        'copyLabel'   => content('newsletter', 'share.copy'),
-                        'copiedLabel' => content('newsletter', 'share.copied'),
-                    ]) ?>
+                    <?= partial('web/newsletter/_share', ['issue' => $issue, 'absUrl' => $absUrl]) ?>
                 <?php endif; ?>
             </div>
         </div>

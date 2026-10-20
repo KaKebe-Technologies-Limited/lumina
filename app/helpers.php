@@ -383,21 +383,14 @@ function can(string $ability): bool
     return \App\Core\Roles::can(Auth::role(), $ability);      // roles table (custom roles) with the built-in map as fallback
 }
 
-/** [['key','label','url','icon'], ...] of the social profiles that have a URL in settings (footer, JSON-LD sameAs). */
-function social_links(): array
+/**
+ * [['key','label','url','icon'], ...] of the social profiles that have an address, in the order chosen in Admin > Social media.
+ * $context says WHERE they are shown, so the admin's "show in footer / contact page / newsletter e-mails / maintenance page" switches apply:
+ * 'footer' | 'contact' | 'newsletter' | 'maintenance'; the default 'all' ignores the switches (JSON-LD sameAs). docs/SOCIAL.md section 2.
+ */
+function social_links(string $context = 'all'): array
 {
-    $defs = [
-        'facebook' => ['Facebook', 'facebook'], 'instagram' => ['Instagram', 'instagram'], 'linkedin' => ['LinkedIn', 'linkedin'],
-        'x' => ['X', 'twitter'], 'tiktok' => ['TikTok', 'tiktok'], 'youtube' => ['YouTube', 'youtube'],
-    ];
-    $out = [];
-    foreach ($defs as $key => [$label, $icon]) {
-        $u = trim((string) setting('social_' . $key, ''));
-        if ($u !== '') {
-            $out[] = ['key' => $key, 'label' => $label, 'url' => $u, 'icon' => $icon];
-        }
-    }
-    return $out;
+    return \App\Services\Social\SocialProfiles::links($context);
 }
 
 /** 'tel:' href from a phone number: phone_href('+256-779-712-990') -> 'tel:+256779712990'. */

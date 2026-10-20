@@ -74,6 +74,23 @@ return (static function (): array {
                     $text('on', 'Name of each share link for screen readers', 'Share on {network}', ['help' => '{network} is filled in with Facebook, X, LinkedIn or WhatsApp.']),
                     $text('copy', 'Copy-link button', 'Copy link'),
                     $text('copied', 'Message after copying', 'Link copied'),
+                    // docs/SOCIAL.md: the public "Share this issue" row of an issue page (plain links, no third-party scripts)
+                    $text('label_facebook', 'Name of the Facebook link', 'Facebook', ['maxlength' => 30]),
+                    $text('label_x', 'Name of the X link', 'X', ['maxlength' => 30]),
+                    $text('label_linkedin', 'Name of the LinkedIn link', 'LinkedIn', ['maxlength' => 30]),
+                    $text('label_whatsapp', 'Name of the WhatsApp link', 'WhatsApp', ['maxlength' => 30]),
+                    $text('label_telegram', 'Name of the Telegram link', 'Telegram', ['maxlength' => 30]),
+                    $text('label_email', 'Name of the e-mail link', 'E-mail', ['maxlength' => 30]),
+                    $text('email_subject', 'Subject of the e-mail a visitor sends', 'Newsletter: {title}', ['maxlength' => 120, 'help' => '{title} is the issue title.']),
+                    $area('email_body', 'Text of the e-mail a visitor sends', "I thought you would like this newsletter from {site}:\n\n{title}\n{url}", 4, ['help' => '{title} is the issue title, {url} its address, {site} the organisation name.']),
+                ],
+            ],
+            [
+                'key' => 'sharecard', 'label' => 'Social media pictures',
+                'help' => 'Words drawn on the pictures that go to social media and the Share kit (Admin > Social media). The colours and the tagline are in Admin > Social media > Post templates > Share picture design. A changed word is drawn again the next time a picture is made.',
+                'fields' => [
+                    $text('issue', 'Issue number line on the picture', 'ISSUE No. {number}', ['maxlength' => 40, 'help' => '{number} is the issue number. Drawn in the capitals you type here. Not drawn when the issue has no number.']),
+                    $text('pdf', 'Word added after "Newsletter" for a PDF issue', 'PDF', ['maxlength' => 20]),
                 ],
             ],
             [
@@ -125,6 +142,7 @@ return (static function (): array {
                     $area('reason', 'Why they get the e-mail', 'You are receiving this e-mail because you subscribed to updates from {site}.', 3, ['required' => true]),
                     $text('unsubscribe', 'Link: unsubscribe', 'Unsubscribe', ['required' => true]),
                     $text('download_pdf', 'Button: download the PDF (PDF issues)', 'Download PDF'),
+                    $text('follow', 'Words before your social media links (leave empty to show the links without a heading)', 'Follow us:', ['maxlength' => 40, 'help' => 'The links come from Admin > Social media. Shown only while at least one link is added and "show in newsletter e-mails" is on.']),
                     $text('test_notice', 'Notice shown only in test e-mails', 'This is a test e-mail. It was not sent to the subscribers.'),
                 ],
             ],

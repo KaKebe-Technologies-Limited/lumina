@@ -15,6 +15,7 @@ $pdfIssue = $kind === 'pdf';
 $this->start('scripts'); ?>
 <script src="<?= e(asset('js/admin-editor.js')) ?>" defer></script>
 <script src="<?= e(asset('js/admin-newsletter.js')) ?>" defer></script>
+<?php if (can('social.share')): ?><script src="<?= e(asset('js/admin-social.js')) ?>" defer></script><?php endif; ?>
 <?php $this->end(); ?>
 
 <div class="nl-admin nl-editor" data-nl-editor data-status="<?= e($item['status']) ?>" data-kind="<?= e($kind) ?>">
@@ -241,6 +242,19 @@ $this->start('scripts'); ?>
                     </div>
                 </div>
             </section>
+
+            <?php if (can('social.share')): ?>
+            <!-- ------------------------------------------------------------- share on social media (docs/SOCIAL.md; the panel is built by assets/js/admin-social.js from GET <?= e('admin/api/newsletters/{id}/share') ?>) -->
+            <section class="nl-card is-open" data-card="share" id="nl-card-share" aria-labelledby="nl-share-title" data-social-panel data-issue-id="<?= $id ?>"
+                     data-api="<?= e(url('admin/api/newsletters/' . $id . '/share')) ?>" data-kit-url="<?= e(url('admin/social/kit/' . $id)) ?>" data-log-url="<?= e(url('admin/social/log?issue=' . $id)) ?>"
+                     data-channels-url="<?= can('social.manage') ? e(url('admin/social/channels')) : '' ?>">
+                <header class="nl-card__head nl-card__head--plain"><h2 class="nl-card__h" id="nl-share-title"><span class="nl-card__title">Share on social media</span></h2></header>
+                <div class="nl-card__body" data-social-panel-body>
+                    <p data-social-panel-loading>Loading...</p>
+                    <noscript><p>The share panel needs JavaScript. You can still use the <a href="<?= e(url('admin/social/kit/' . $id)) ?>">Share kit</a>.</p></noscript>
+                </div>
+            </section>
+            <?php endif; ?>
 
             <!-- ------------------------------------------------------------- issue actions -->
             <section class="nl-card" data-card="actions" aria-labelledby="nl-actions-title">

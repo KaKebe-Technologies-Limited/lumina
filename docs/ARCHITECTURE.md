@@ -699,6 +699,16 @@ A fundraising shop (branded jumpers, caps, T-shirts, stickers) at `/shop` with p
 
 ---------
 
+## 30. Social media (profile links, automatic posting of published newsletters, share images and kit) - READ `docs/SOCIAL.md`
+
+Admin can add the organisation's social profile links and have every newsletter issue posted to Facebook, Instagram, X, LinkedIn and a Telegram channel (TikTok and anything else through a webhook and a downloadable Share kit) the moment it is published on the website. Documented in **`docs/SOCIAL.md`** (honesty rules, schema, settings and secrets, channel field specs and set-up steps per platform, the queue state machine, the ONE hardened HTTP client with its SSRF guard, caption rules, the image / kit / public-row contract, routes with JSON shapes, abilities, the mock server, exact services API, ownership of the three agents). Contract changes it introduced:
+* Two guarded `ALTER`s on `newsletters` (`share_choices`, `share_version`), one on `social_posts` (`fail_code`) and new tables `social_posts` (the queue and the share log, UNIQUE `newsletter_id + channel + share_version`) and `social_images`; models `SocialPost`, `SocialImage`; services in `app/services/Social/`.
+* New abilities `social.manage` (admin only: holds API keys and tokens, flagged in the roles screen) and `social.share` (admin, editor), catalogue group "Social media"; the built-in Editor role is upgraded once by the seed only while its list is still the pre-social default; settings `social_*` (NOT in `settings_schema.php` except the profile URLs: `SocialConfig::defs()`); secrets `social_secret_<channel>_<field>` encrypted by `SecretStore` (`enc:v1:`), `.env` overrides `SOCIAL_*` win; admin sidebar group "Social media" (`admin_nav/social.php`, badge = failed + review + needs-token); route files `admin_social.php` and `web_social.php` (`GET /social/image/{token}.jpg`).
+* Shared-file additions: `App::afterResponse()` (work after the response is sent: `fastcgi_finish_request` / `litespeed_finish_request`; the CLI runs it at once), `AdminController::render()` calls `SocialDispatcher::lazyRetry()`, `NewsletterService` calls `ShareHook::onWentLive()` after a publish and after a lazy scheduled go-live (never throws), `NewsletterApiController::itemFor` adds `social`, the editor view mounts the share panel and `admin-newsletter.js` fires `lumina:newsletter-item` / `lumina:newsletter-publish-dialog`, `social_links($context)` (footer / contact / newsletter / maintenance / all) reads `SocialProfiles`, `ShareLinks::extended()`, icons `telegram` and `threads`, `Log::write` redacts bot tokens / `access_token=` / Bearer / OAuth values, the dashboard tile "Social media needs attention", `scss/main.scss` and `scss/admin.scss` import the social partials, `bin/selftest.php` runs `bin/selftest-social.php`; cron script `bin/social-dispatch.php`; dev tool `bin/dev/mock-social.php`.
+* No real platform was contacted: the integrations are tested only against the local mock; every platform needs the owner's own developer app and a real test post before it is trusted. Every outbound request goes through `SocialHttp` (fixed hosts, TLS verified, no redirects for platform APIs, SSRF guard + pinned connection + re-checked redirects for the admin-supplied webhook address).
+
+---------
+
 ---------
 
 ## API reference (generated)

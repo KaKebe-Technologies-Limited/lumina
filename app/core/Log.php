@@ -20,6 +20,10 @@ final class Log
             $line = '[' . date('Y-m-d H:i:s') . '] ' . strtoupper($level) . ' ' . str_replace(["\r", "\n"], ' ', $message) . $ctx . PHP_EOL;
             // a secret link is a credential (the private order page, the payment return key, a meeting or unsubscribe link): keep it out of the files
             $line = (string) preg_replace('~(/(?:shop/(?:order|pay|pay/return)|meeting|unsubscribe)/)[A-Fa-f0-9]{20,}~', '$1[link]', $line);
+            // social-media credentials: a Telegram bot token is part of its URL path, the others travel as parameters or headers
+            $line = (string) preg_replace('~bot\d{5,}:[A-Za-z0-9_-]{10,}~i', 'bot[hidden]', $line);
+            $line = (string) preg_replace('~(access_token|oauth_token|oauth_signature|bearer_token|client_secret)=[^&\s"\']+~i', '$1=[hidden]', $line);
+            $line = (string) preg_replace('~(Bearer|OAuth)\s+[A-Za-z0-9._~+/=-]{12,}~', '$1 [hidden]', $line);
             @file_put_contents($dir . '/app-' . date('Y-m-d') . '.log', $line, FILE_APPEND | LOCK_EX);
         } catch (\Throwable) {
             // logging must never break a request

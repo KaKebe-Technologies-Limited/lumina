@@ -311,6 +311,8 @@ final class NewsletterApiController extends AdminController
                 'seo_description' => (string) ($r['seo_description'] ?? ''),
                 'content'         => NewsletterContent::decode((string) $r['content']),
                 'readiness'       => self::readiness($r),
+                // social media (docs/SOCIAL.md): which channels exist and what happened to the posts of this issue; the full panel is GET /admin/api/newsletters/{id}/share
+                'social'          => \App\Services\Social\ShareHook::summary((int) $r['id']),
             ];
         }
         return $item;

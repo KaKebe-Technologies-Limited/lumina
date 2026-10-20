@@ -26,6 +26,58 @@ final class App
             $response = ErrorHandler::response($e, $request);
         }
         $response->send();
+        self::runAfterResponse();
+    }
+
+    /** @var list<callable> work to do once the response has been sent (see afterResponse()) */
+    private static array $after = [];
+
+    /**
+     * Run $fn AFTER the HTTP response has been sent (and the connection released where the host allows it: PHP-FPM / LiteSpeed). Used for work that must never delay
+     * or break the request that asked for it, for example posting a published newsletter to social media (App\Services\Social\SocialDispatcher). In the CLI the
+     * callback runs at once. A throwing callback is logged and ignored.
+     */
+    public static function afterResponse(callable $fn): void
+    {
+        if (PHP_SAPI === 'cli') {
+            try {
+                $fn();
+            } catch (\Throwable $e) {
+                Log::warning('After-response task failed: ' . $e->getMessage());
+            }
+            return;
+        }
+        self::$after[] = $fn;
+    }
+
+    private static function runAfterResponse(): void
+    {
+        if (self::$after === []) {
+            return;
+        }
+        $tasks = self::$after;
+        self::$after = [];
+        ignore_user_abort(true);
+        if (function_exists('fastcgi_finish_request')) {
+            @fastcgi_finish_request();
+        } elseif (function_exists('litespeed_finish_request')) {
+            @litespeed_finish_request();
+        } else {
+            while (ob_get_level() > 0) {
+                @ob_end_flush();
+            }
+            @flush();
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            @session_write_close();                 // the next request of the same browser must not wait for this work
+        }
+        foreach ($tasks as $fn) {
+            try {
+                $fn();
+            } catch (\Throwable $e) {
+                Log::warning('After-response task failed: ' . $e->getMessage());
+            }
+        }
     }
 
     /**

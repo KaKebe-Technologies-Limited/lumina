@@ -225,6 +225,7 @@ require __DIR__ . '/selftest-membership-staff.php';          // membership card,
 require __DIR__ . '/selftest-membership-card-designer.php';  // membership card DESIGNER: tabs, themes, contrast, preview scenarios, e-mail, HTTP flow (throw-away administrator; restores every setting it touches)
 require __DIR__ . '/selftest-membership-card-fixes.php';    // membership card, regression checks for the review findings: strict PDF scan, PNG bomb, retention and erasure, renewal race, letters, wording, number format, e-mail colours (removes its own test data)
 require __DIR__ . '/selftest-shop.php';                 // shop: money, seed / abilities, SecretStore, products, cart, orders (stock race), status + payment machines, Flutterwave against the LOCAL MOCK, CSV, e-mails, pictures (needs -d extension=gd), HTTP flow + admin abilities (removes its own test data, restores the shop settings)
+require __DIR__ . '/selftest-social.php';               // social media: SSRF-guarded HTTP client, caption builder, secrets, post queue, dispatcher + ShareHook (fake channels), the LOCAL MOCK (Telegram, webhook, Graph, X OAuth1, LinkedIn), HTTP abilities (removes its own test data, restores the social settings)
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);

@@ -1040,6 +1040,8 @@
             kind: item.kind || S.item.kind, pdf: item.pdf || S.item.pdf, live: item.live || S.item.live,
         });
         if (item.readiness) S.readiness = item.readiness;
+        // docs/SOCIAL.md: tell the share panel (assets/js/admin-social.js) that the status of the issue may have changed (it refreshes and follows the posts)
+        try { document.dispatchEvent(new CustomEvent('lumina:newsletter-item', { detail: { id: S.id, status: S.item.status, is_live: S.item.is_live, item: S.item, social: item.social || null } })); } catch (_) { /* old browser: the panel refreshes itself on focus */ }
     }
 
     function saveNow(mode) {
@@ -1564,6 +1566,13 @@
             body.append(el('p', { class: 'nl-dialog__lead', text: 'You can publish now, or fix these suggestions first:' }));
             body.append(el('ul', { class: 'nl-dialog__list' }, tips.map(([p, m]) => el('li', { text: (locate(p).where ? locate(p).where + ': ' : '') + m }))));
         }
+        // docs/SOCIAL.md: the share panel adds "it will also be posted to ..." to this dialog (a listener appends elements to detail.body)
+        // listeners may push promises onto detail.ready (the share panel saves the choices and re-counts the captions): the dialog opens once they are done (6 s at most)
+        try {
+            const detail = { id: S.id, body, ready: [] };
+            document.dispatchEvent(new CustomEvent('lumina:newsletter-publish-dialog', { detail }));
+            await Promise.all(detail.ready.map((p) => Promise.resolve(p).catch(() => null)));
+        } catch (_) { /* nothing to add */ }
         const ok = await confirmDialog({ title: 'Publish this issue now?', body, okLabel: 'Publish now', tone: 'cta' });
         if (!ok) return;
         const sv = await saveNow('manual');

@@ -21,4 +21,24 @@ final class ShareLinks
             ['key' => 'whatsapp', 'label' => 'WhatsApp', 'icon' => 'whatsapp', 'url' => 'https://wa.me/?text=' . rawurlencode($title . ' ' . $absoluteUrl)],
         ];
     }
+
+    /**
+     * The extended row of the public newsletter page (docs/SOCIAL.md section 8): Facebook, X, LinkedIn, WhatsApp, Telegram and e-mail, all plain links.
+     * $labels overrides the visible names (the page registry `newsletter` > `share` > label_*), $mailSubject / $mailBody the e-mail text (already expanded).
+     * @param array<string,string> $labels key => label
+     * @return list<array{key:string,label:string,url:string,icon:string}>
+     */
+    public static function extended(string $absoluteUrl, string $title, array $labels = [], string $mailSubject = '', string $mailBody = ''): array
+    {
+        $rows = self::for($absoluteUrl, $title);
+        $rows[] = ['key' => 'telegram', 'label' => 'Telegram', 'icon' => 'telegram', 'url' => 'https://t.me/share/url?url=' . rawurlencode($absoluteUrl) . '&text=' . rawurlencode($title)];
+        $rows[] = ['key' => 'email', 'label' => 'E-mail', 'icon' => 'mail', 'url' => 'mailto:?subject=' . rawurlencode($mailSubject !== '' ? $mailSubject : $title) . '&body=' . rawurlencode($mailBody !== '' ? $mailBody : $title . "\n" . $absoluteUrl)];
+        foreach ($rows as &$r) {
+            if (isset($labels[$r['key']]) && trim($labels[$r['key']]) !== '') {
+                $r['label'] = trim($labels[$r['key']]);
+            }
+        }
+        unset($r);
+        return $rows;
+    }
 }

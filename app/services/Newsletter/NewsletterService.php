@@ -13,6 +13,7 @@ use App\Core\Slug;
 use App\Models\Newsletter;
 use App\Models\NewsletterRevision;
 use App\Services\ImageCleanup;
+use App\Services\Social\ShareHook;
 
 /**
  * Newsletter business rules. Everything that touches `newsletters.status`, `.version`, `.content`, the revisions or the slug goes through here.
@@ -121,7 +122,7 @@ final class NewsletterService
         $flipped = 0;
         try {
             $now = self::now();
-            foreach (Database::all("SELECT id FROM newsletters WHERE status = 'scheduled' AND publish_at IS NOT NULL AND publish_at <= ?", [$now]) as $r) {
+            foreach (Database::all("SELECT id, published_at FROM newsletters WHERE status = 'scheduled' AND publish_at IS NOT NULL AND publish_at <= ?", [$now]) as $r) {
                 $n = Database::execute(
                     "UPDATE newsletters SET status = 'published', published_at = COALESCE(published_at, publish_at) WHERE id = ? AND status = 'scheduled' AND publish_at <= ?",
                     [(int) $r['id'], $now]
@@ -129,6 +130,8 @@ final class NewsletterService
                 if ($n > 0) {
                     $flipped++;
                     AuditLog::record('newsletter.publish', 'newsletter', (int) $r['id'], 'Scheduled issue went live', ['scheduled' => true]);
+                    // social media (docs/SOCIAL.md): queue the posts of the issue that just went live; the hook never throws and never delays this request
+                    ShareHook::onWentLive((int) $r['id'], 'schedule', null, empty($r['published_at']));
                 }
             }
         } catch (\Throwable $e) {
@@ -680,6 +683,10 @@ final class NewsletterService
         }
         $audit = ['published' => 'newsletter.publish', 'scheduled' => 'newsletter.schedule', 'draft' => 'newsletter.unpublish', 'archived' => 'newsletter.archive'][$to];
         AuditLog::record($audit, 'newsletter', $id, ucfirst(self::STATUS_LABELS[$to] ?? $to) . ' newsletter issue', ['from' => $from, 'to' => $to]);
+        if ($to === 'published') {
+            // social media (docs/SOCIAL.md): queue the posts now, post them right after this response; the hook never throws and never delays publishing
+            ShareHook::onWentLive($id, 'publish', $userId, empty($row['published_at']));
+        }
         return ['ok' => true, 'newsletter' => Newsletter::find($id) ?? [], 'warnings' => $warnings];
     }
 

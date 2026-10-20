@@ -1,0 +1,278 @@
+// admin/_social.scss - ADMIN SOCIAL MEDIA: profile links, auto-share channels, post templates, share log, and the "Share on social media" panel of the newsletter editor.
+// OWNER: ADMIN agent. (The Share kit page, .skit-, is the IMAGES agent's: scss/admin/_share-kit.scss.)
+// Rules: tokens only, the existing admin components (.card .table .badge .form-grid .filters .switch .alert ...), prefix .asoc- (screens and panel), mobile first, visible focus.
+
+// ------------------------------------------------------------------ shared bits
+.asoc {
+  .card + .card, form + .card, .alert + .card, .card + form, form + form, .asoc-intro + form { margin-top: $space-4; }
+  .alert { margin-bottom: $space-4; }
+  .required-note { font-size: $fs-xs; color: $ink-soft; }
+  code { font-size: 0.86em; background: $surface; padding: 0.05rem 0.3rem; border-radius: $radius-sm; overflow-wrap: anywhere; }
+  .field__help small, .check small { color: $ink-soft; font-size: $fs-xs; }
+  .check small { display: block; }
+}
+.asoc-count { font-size: $fs-xs; font-weight: 600; color: $ink-soft; background: $surface; border-radius: $radius-pill; padding: 0.2rem 0.7rem; white-space: nowrap; }
+.asoc-intro { display: flex; gap: $space-3; align-items: flex-start; padding: $space-3 $space-4; margin-bottom: $space-4; background: $info-bg; border-radius: $radius; color: $ink; font-size: $fs-sm;
+  svg { flex: none; width: 1.25rem; height: 1.25rem; margin-top: 0.15rem; color: $info; }
+  p { margin: 0; }
+}
+.asoc-iconbtn { padding: 0.35rem; line-height: 0; min-width: 2.25rem; min-height: 2.25rem; display: inline-flex; align-items: center; justify-content: center; }
+.asoc-chicon { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; background: $navy; color: $white; vertical-align: middle; flex: none;
+  svg { width: 1.05rem; height: 1.05rem; }
+}
+
+// ------------------------------------------------------------------ 1. profile links
+.asoc-prof {
+  &__tip { margin: 0 0 $space-4; color: $ink-soft; font-size: $fs-sm; }
+  &__list { list-style: none; margin: 0; padding: 0; display: grid; gap: $space-3; }
+  &__row { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "icon main" "order order"; gap: $space-2 $space-3; align-items: start; padding: $space-3; border: 1px solid $border; border-radius: $radius; background: $white;
+    transition: border-color $t-fast ease, box-shadow $t-fast ease;
+    &.is-bad { border-color: $danger; background: $danger-bg; }
+    &.is-dragging { opacity: 0.45; }
+    &.is-over { border-color: $navy; box-shadow: 0 0 0 2px rgba($navy, 0.2); }
+    &.is-moved { animation: asoc-flash 0.9s ease; }
+    @include respond(md) { grid-template-columns: auto auto 1fr auto; grid-template-areas: "grip icon main order"; align-items: center; }
+  }
+  &__grip { grid-area: grip; display: none; color: $ink-soft; cursor: grab; padding: $space-1; touch-action: none;
+    @include respond(md) { display: inline-flex; }
+    &[hidden] { display: none; }
+  }
+  &__icon { grid-area: icon; display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: $navy; color: $white;
+    svg { width: 1.3rem; height: 1.3rem; }
+  }
+  &__main { grid-area: main; min-width: 0;
+    .field__label { display: block; margin-bottom: $space-1; font-weight: 600; }
+    .input { width: 100%; }
+  }
+  &__order { grid-area: order; display: flex; align-items: center; gap: $space-2; justify-content: flex-end; }
+  &__posbox { display: block; .input { width: 4.5rem; text-align: center; } }
+  &__arrows { display: flex; gap: $space-1; &[hidden] { display: none; } }
+  &__check { min-height: 1.25rem; margin-top: $space-1; font-size: $fs-xs; color: $ink-soft;
+    &--ok { color: $success; }
+    &--warn { color: $warning; }
+    &--bad { color: $danger; font-weight: 600; }
+    &--info { color: $info; }
+  }
+  &__preview { display: flex; flex-wrap: wrap; gap: $space-3; align-items: center; padding: $space-4; background: $navy-dark; border-radius: $radius; min-height: 4rem;
+    a, span.asoc-prof__pv { display: inline-flex; width: 2.5rem; height: 2.5rem; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba($white, 0.3); color: $white; }
+    svg { width: 1.2rem; height: 1.2rem; }
+  }
+  &__empty { color: rgba($white, 0.75); font-size: $fs-sm; }
+  // JS on: the number boxes give way to the arrows
+  &--js &__posbox { @include visually-hidden; }
+}
+@keyframes asoc-flash { 0% { background: $warning-bg; } 100% { background: $white; } }
+@include reduced-motion { .asoc-prof__row.is-moved { animation: none; } }
+
+.asoc-where { list-style: none; margin: 0 0 $space-3; padding: 0; display: grid; gap: $space-3; @include respond(md) { grid-template-columns: 1fr 1fr; }
+  &__item { display: grid; gap: $space-1; padding: $space-3; border: 1px solid $border; border-radius: $radius; }
+  &__hint { font-size: $fs-xs; color: $ink-soft; padding-left: 3.6rem; }
+}
+
+// ------------------------------------------------------------------ 2. channels
+.asoc-master { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-4; margin-bottom: $space-4; &__hint { font-size: $fs-sm; color: $ink-soft; flex: 1 1 16rem; } }
+.asoc-chips { display: flex; flex-wrap: wrap; gap: $space-2; margin: 0 0 $space-4; }
+.asoc-chip { display: inline-flex; align-items: center; gap: $space-2; padding: 0.35rem 0.8rem; border-radius: $radius-pill; border: 1px solid $border; background: $white; color: $ink; font-size: $fs-sm; text-decoration: none;
+  svg { width: 1rem; height: 1rem; }
+  &:hover { border-color: $navy; }
+  &:focus-visible { @include focus-ring; }
+  &__state { font-size: $fs-xs; font-weight: 700; padding: 0.05rem 0.5rem; border-radius: $radius-pill; background: $surface; color: $ink-soft; }
+  &--ok &__state { background: $success-bg; color: $success; }
+  &--warn &__state { background: $warning-bg; color: $warning; }
+  &--bad &__state { background: $danger-bg; color: $danger; }
+}
+.asoc-channel { scroll-margin-top: 5rem;
+  &__head { flex-wrap: wrap; gap: $space-2 $space-3; .card__title { display: flex; align-items: center; gap: $space-2; flex: 1 1 12rem; margin: 0; } }
+  &__switch { margin-left: auto; }
+  &__short { margin: 0 0 $space-2; font-size: $fs-base; overflow-wrap: anywhere; }
+  &__needs, &__note { display: flex; gap: $space-2; align-items: flex-start; margin: 0 0 $space-2; font-size: $fs-sm; color: $ink-soft; svg { flex: none; margin-top: 0.2rem; } }
+  &__opts { margin: $space-4 0 $space-3; }
+  &__queued { margin-left: $space-3; font-size: $fs-sm; align-self: center; }
+}
+.asoc-steps { overflow-wrap: anywhere; min-width: 0; margin: $space-3 0; border: 1px solid $border; border-radius: $radius; background: $surface;
+  summary { padding: $space-3 $space-4; font-weight: 700; cursor: pointer; min-height: 2.75rem; display: flex; align-items: center; &:focus-visible { @include focus-ring; } }
+  ol { margin: 0; padding: 0 $space-4 0 2.4rem; display: grid; gap: $space-2; font-size: $fs-sm; list-style: decimal; li { padding-left: $space-1; min-width: 0; } }
+  p { margin: $space-3 $space-4; font-size: $fs-sm; }
+  &__perm { color: $ink-soft; }
+}
+.asoc-health { margin: 0 0 $space-4; padding: $space-2 $space-3; border-radius: $radius; font-size: $fs-sm; background: $surface; border-left: 4px solid $border-strong;
+  &--ok { border-left-color: $success; background: $success-bg; }
+  &--error { border-left-color: $warning; background: $warning-bg; }
+  &--needs_token { border-left-color: $danger; background: $danger-bg; }
+}
+.asoc-secret { &__state { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-3; margin-bottom: $space-2; .badge { text-transform: none; } }
+  &__remove { font-size: $fs-sm; margin: 0; }
+  .input[hidden] { display: none; }
+}
+.asoc-multi { border: 0; padding: 0; margin: 0; min-width: 0; &__list { display: flex; flex-wrap: wrap; gap: $space-2 $space-5; } }
+.asoc-expiry { display: flex; align-items: center; gap: $space-2; margin-top: $space-2; font-size: $fs-sm; font-weight: 600;
+  &--ok { color: $success; } &--warn { color: $warning; } &--bad { color: $danger; }
+}
+[data-when][hidden] { display: none !important; }
+.asoc-tests { margin-top: $space-5; padding-top: $space-4; border-top: 1px dashed $border-strong;
+  &__row { display: flex; flex-wrap: wrap; gap: $space-3; }
+  &__help { margin: $space-3 0 0; font-size: $fs-xs; color: $ink-soft; }
+}
+.asoc-result { margin: $space-3 0 0; padding: $space-2 $space-3; border-radius: $radius; font-size: $fs-sm; width: 100%; background: $surface; overflow-wrap: anywhere;
+  &[hidden] { display: none; }
+  &--ok { color: $success; background: $success-bg; }
+  &--bad { color: $danger; background: $danger-bg; }
+  &--wait { color: $ink-soft; }
+}
+
+// ------------------------------------------------------------------ 3. templates
+.asoc-ph { display: grid; gap: $space-2 $space-5; margin: 0 0 $space-3; @include respond(md) { grid-template-columns: 1fr 1fr; }
+  div { display: flex; gap: $space-2; align-items: baseline; flex-wrap: wrap; }
+  dt { margin: 0; } dd { margin: 0; font-size: $fs-sm; color: $ink-soft; }
+}
+.asoc-tpl { &__rule { margin: 0 0 $space-3; font-size: $fs-sm; color: $ink-soft; }
+  &__tools { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; margin: $space-2 0 $space-3; &[hidden] { display: none; } &-label { font-size: $fs-sm; font-weight: 600; } }
+  &__default { margin: $space-3 0; }
+  &__sample-label { margin: $space-3 0 $space-1; }
+  &__warn { margin: $space-2 0 0; &[hidden] { display: none; } }
+  .card__title small { font-weight: 400; color: $ink-soft; }
+}
+.asoc-ph-btn { font: inherit; font-size: $fs-xs; font-family: $font-mono; padding: 0.3rem 0.6rem; border: 1px solid $border-strong; border-radius: $radius-sm; background: $white; color: $navy; cursor: pointer; min-height: 2rem;
+  &:hover { background: $tint-cool; border-color: $navy; }
+  &:focus-visible { @include focus-ring; }
+}
+.asoc-sample { margin: 0; padding: $space-3; background: $surface; border-radius: $radius; white-space: pre-wrap; overflow-wrap: anywhere; font-family: $font-body; font-size: $fs-sm; max-height: 16rem; overflow: auto; }
+.asoc-meter { display: inline-flex; align-items: center; gap: $space-2; font-size: $fs-xs; font-weight: 600; color: $ink-soft;
+  &__bar { display: inline-block; width: 6rem; height: 0.5rem; border-radius: $radius-pill; background: $surface-alt; overflow: hidden; }
+  &__fill { display: block; height: 100%; width: calc(var(--w, 0) * 1%); max-width: 100%; background: $success; transition: width $t-fast ease; }
+  &.is-soft &__fill { background: $gold-deep; }
+  &.is-over &__fill { background: $danger; }
+  &.is-over { color: $danger; }
+  &.is-soft { color: $warning; }
+  &.is-over &__text::after { content: ' - over the limit'; }
+}
+
+// ------------------------------------------------------------------ 4. share log
+.asoc-tabs { display: flex; flex-wrap: wrap; gap: $space-2; margin: 0 0 $space-4; }
+.asoc-tab { display: inline-flex; align-items: center; gap: $space-2; padding: 0.35rem 0.85rem; border-radius: $radius-pill; border: 1px solid $border; background: $white; color: $ink; font-size: $fs-sm; text-decoration: none; min-height: 2.25rem;
+  span { font-size: $fs-xs; font-weight: 700; background: $surface; border-radius: $radius-pill; padding: 0 0.5rem; }
+  &:hover { border-color: $navy; }
+  &:focus-visible { @include focus-ring; }
+  &.is-active { background: $navy; color: $white; border-color: $navy; span { background: rgba($white, 0.2); color: $white; } }
+  &--danger:not(.is-active) span { background: $danger-bg; color: $danger; }
+  &--warning:not(.is-active) span { background: $warning-bg; color: $warning; }
+}
+.admin .asoc table.asoc-log { @include respond-down(md) { min-width: 0; td.col-actions { width: 100%; text-align: left; white-space: normal; &:not(:has(form)) { display: none; } } } }
+.asoc-log-wrap { @include respond-down(md) { overflow: visible; border: 0; background: none; box-shadow: none; } }
+.asoc-filter-note { font-size: $fs-sm; color: $ink-soft; margin: 0 0 $space-3; }
+.asoc-foot { margin-top: $space-4; font-size: $fs-xs; color: $ink-soft; }
+.asoc-log { .cell-sub { display: block; font-size: $fs-xs; color: $ink-soft; }
+  &__ch { display: inline-flex; align-items: center; gap: $space-2; }
+  &__err { color: $danger; overflow-wrap: anywhere; }
+  &__v { min-width: 0; }
+  .table__actions { display: flex; flex-wrap: wrap; gap: $space-2; form { margin: 0; } }
+  @include respond-down(md) {                       // phones: each row becomes a card
+    thead { @include visually-hidden; }
+    &, tbody, tr, td { display: block; width: 100%; min-width: 0; }
+    tr { border: 1px solid $border; border-radius: $radius; margin-bottom: $space-3; padding: $space-2 $space-3; background: $white; }
+    td { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); overflow-wrap: anywhere; gap: $space-2; padding: $space-2 0; border: 0; border-bottom: 1px solid $border;
+      &:last-child { border-bottom: 0; }
+      &.col-actions .table__actions { position: static; justify-content: flex-start; }
+      &::before { content: attr(data-label); font-size: $fs-xs; font-weight: 700; color: $ink-soft; }
+    }
+  }
+}
+
+// ------------------------------------------------------------------ 5. the "Share on social media" panel (assets/js/admin-social.js)
+.asoc-share {
+  &__intro { margin: 0 0 $space-3; color: $ink-soft; font-size: $fs-sm; }
+  &__flow { display: flex; gap: $space-3; align-items: flex-start; margin: 0 0 $space-4; padding: $space-3; border-radius: $radius; background: $info-bg; font-size: $fs-sm;
+    svg { flex: none; width: 1.2rem; height: 1.2rem; margin-top: 0.1rem; color: $info; }
+    p { margin: 0; }
+    &--live { background: $success-bg; svg { color: $success; } }
+    &--sched { background: $warning-bg; svg { color: $warning; } }
+  }
+  &__warn { margin: 0 0 $space-2; padding: $space-2 $space-3; border-left: 4px solid $warning; background: $warning-bg; border-radius: $radius; font-size: $fs-sm; }
+  &__hint { margin: $space-2 0 0; color: $ink-soft; font-size: $fs-xs; }
+  &__empty { padding: $space-4; border: 1px dashed $border-strong; border-radius: $radius; background: $surface; font-size: $fs-sm; p { margin: 0 0 $space-2; } }
+  &__layout { display: grid; gap: $space-4; }
+  &__channels { display: grid; gap: $space-3; min-width: 0; }
+  &__channel { margin: 0; padding: $space-3 $space-4; border: 1px solid $border; border-radius: $radius; min-width: 0; background: $white;
+    &.is-on { border-color: $navy; }
+    &.is-off .asoc-share__body { display: none; }
+    &.is-na { background: $surface; }
+  }
+  &__head { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-3; }
+  &__tick { display: inline-flex; align-items: center; gap: $space-2; font-weight: 700; cursor: pointer; min-height: 2.5rem; flex: 1 1 10rem;
+    input { flex: none; width: 1.2rem; height: 1.2rem; accent-color: $navy; }
+    svg { width: 1.1rem; height: 1.1rem; color: $navy; }
+  }
+  &__post { display: inline-flex; align-items: center; gap: $space-1; font-size: $fs-xs; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: $radius-pill; background: $surface; color: $ink-soft;
+    a { color: inherit; text-decoration: underline; }
+    &--posted { background: $success-bg; color: $success; }
+    &--failed { background: $danger-bg; color: $danger; }
+    &--review { background: $warning-bg; color: $warning; }
+    &--queued, &--posting { background: $info-bg; color: $info; }
+    &--skipped { background: $surface-alt; }
+  }
+  &__err { margin: $space-2 0 0; color: $danger; font-size: $fs-sm; overflow-wrap: anywhere; }
+  &__body { margin-top: $space-2; }
+  &__na { margin: $space-2 0 0; font-size: $fs-sm; color: $ink-soft; }
+  &__cap { width: 100%; min-height: 6rem; resize: vertical; }
+  &__meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: $space-2; margin-top: $space-1; font-size: $fs-xs; color: $ink-soft; }
+  &__count { font-weight: 600; &--soft { color: $warning; } &--over { color: $danger; font-weight: 700; } }
+  &__reset { padding: 0; border: 0; background: none; color: $navy; text-decoration: underline; cursor: pointer; font: inherit; font-size: $fs-xs; &:focus-visible { @include focus-ring; } &[hidden] { display: none; } }
+  &__error { margin: $space-1 0 0; min-height: 0; color: $danger; font-size: $fs-sm; &:empty { display: none; } }
+  &__acts { display: flex; flex-wrap: wrap; gap: $space-2; margin-top: $space-3; }
+  &__side { display: flex; gap: $space-3; align-items: center; &[hidden] { display: none; } }
+  &__thumb { display: block; flex: none; width: 5.5rem; height: 5.5rem; object-fit: cover; border-radius: $radius; border: 1px solid $border; background: $surface; }
+  &__thumb-cap { margin: 0; font-size: $fs-xs; color: $ink-soft; }
+  &__status { margin: $space-3 0 0; font-size: $fs-sm; color: $ink-soft; min-height: 1.3em; &--bad { color: $danger; } &--ok { color: $success; } }
+  &__links { margin: $space-3 0 0; display: flex; flex-wrap: wrap; gap: $space-2 $space-4; font-size: $fs-sm; }
+  &__publish { margin: $space-3 0 0; padding: $space-3; border-radius: $radius; background: $surface; font-size: $fs-sm; font-weight: 600;
+    ul { margin: $space-2 0 0; padding-left: 1.2rem; font-weight: 400; list-style: disc; }
+    a { font-weight: 600; }
+  }
+}
+
+// Share picture design (Post templates page)
+.asoc-design { margin-top: $space-5;
+  &__grid { display: grid; gap: $space-5; grid-template-columns: minmax(0, 1fr); @media (min-width: 900px) { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: start; } }
+  &__colours { display: grid; gap: $space-3 $space-4; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); margin-bottom: $space-3; }
+  &__pick { display: flex; align-items: center; gap: $space-3; }
+  &__swatch { width: 3.25rem; height: 2.5rem; padding: 0.15rem; border: 1px solid $border; border-radius: $radius; background: $surface; cursor: pointer; }
+  &__switches { display: flex; flex-wrap: wrap; gap: $space-3 $space-5; margin: $space-3 0; }
+  &__preview img { display: block; width: 100%; max-width: 30rem; height: auto; border-radius: $radius; border: 1px solid $border; }
+  .form-actions { display: flex; flex-wrap: wrap; gap: $space-3; }
+}
+
+// ------------------------------------------------------------------ touch targets, link colours, forced colours (audit fixes)
+// 44 px high hit areas for the small controls of the screens and the panel (the look of the pills and links is unchanged)
+.asoc-iconbtn { min-width: 2.75rem; min-height: 2.75rem; }
+.asoc-ph-btn { min-height: 2.75rem; padding-inline: 0.85rem; display: inline-flex; align-items: center; }
+.asoc-secret__state .btn, .asoc-share__acts .btn, .asoc-tpl__tools .btn, .asoc-tests .btn, .asoc-steps .btn { min-height: 2.75rem; }
+.asoc-secret__remove, .asoc-multi__list .check, .asoc-channel__opts .check { min-height: 2.75rem; display: inline-flex; align-items: center; }
+.asoc-share__links a, .asoc-channel__queued, .asoc-log .cell-sub a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.asoc-share__reset { min-height: 2.75rem; padding-inline: $space-2; }
+.asoc-share__post a { position: relative;
+  &::after { content: ''; position: absolute; inset: -0.85rem -0.5rem; }                // a 44 px hit area around the small link inside the pill
+}
+.asoc-log td a:not(.btn) { display: inline-block; padding-block: 0.7rem; margin-block: -0.7rem; }
+
+// links on tinted surfaces need 4.5:1 (the global orange link colour gives 4.3 to 4.4 there)
+.admin .asoc .asoc-intro a:not([class]), .admin .asoc .alert a:not([class]), .admin .skit .alert a:not([class]) { color: $orange-text; }
+.admin .asoc-share__post a:not([class]) { color: $success; font-weight: 700; }
+
+// states stay readable without background colours: status words keep their capitals as written, never Title Case
+.admin .asoc .badge, .admin .skit .badge { text-transform: none; }
+.asoc-share__publish-bad { color: $danger; font-weight: 600; }
+
+// Windows high-contrast (forced-colors): backgrounds vanish, so the bar, the cards that are on and the pills need borders and system colours
+@media (forced-colors: active) {
+  .asoc-meter__bar { border: 1px solid CanvasText; background: Canvas; }
+  .asoc-meter__fill { forced-color-adjust: none; background: Highlight; }
+  .asoc-meter.is-over .asoc-meter__fill { background: LinkText; }
+  .asoc-share__channel { border: 1px solid CanvasText; }
+  .asoc-share__channel.is-on { border: 3px solid Highlight; }
+  .asoc-share__channel.is-na { border-style: dashed; }
+  .asoc-share__post, .asoc-chip__state, .asoc-count, .asoc-tab span { border: 1px solid CanvasText; }
+  .asoc-chip--ok, .asoc-chip--bad { border-width: 2px; }
+  .asoc-health, .asoc-result, .asoc-share__flow, .asoc-share__warn { border: 1px solid CanvasText; }
+  .asoc-share__count--over, .asoc-share__status--bad { text-decoration: underline; }
+  .asoc-prof__row.is-bad { border: 3px solid Highlight; }
+}

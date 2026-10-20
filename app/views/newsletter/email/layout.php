@@ -5,7 +5,7 @@
  * explicit width, a hidden preheader, a "view in browser" link and a per-recipient unsubscribe link in the footer.
  *
  * Vars: $issue (row + content_data), $content, $subject, $preheader, $browser_url, $unsubscribe_url ('' = no link), $is_test, $label,
- * $org_name, $org_address, $footer_text, $reason, $logo_url, $labels (view_in_browser, read_online, unsubscribe, test_notice),
+ * $org_name, $org_address, $footer_text, $reason, $logo_url, $labels (follow, view_in_browser, read_online, unsubscribe, test_notice),
  * $featuredHtml, $blocksHtml, $pdf (null, or for a PDF issue: download_url, view_url, size_text, label - two buttons, the file is NOT attached). Brand colours: navy #2C3950, gold #D6A151, cta #B85A14, ink #1D1E20, soft ink #5A6470, cream #F7F3EC.
  */
 use App\Services\Newsletter\NewsletterRenderer as R;
@@ -80,6 +80,13 @@ $summary = trim((string) ($issue['summary'] ?? ''));
                 <?php endif; ?>
             </table>
         </td></tr>
+        <?php $nlSocial = function_exists('social_links') ? social_links('newsletter') : []; ?>
+        <?php if ($nlSocial): ?>
+        <tr><td align="center" style="padding:20px 24px 0 24px;font-family:<?= $sans ?>;font-size:13px;line-height:1.8;color:#5A6470;<?= $wrap ?>">
+            <?php if (trim((string) ($labels['follow'] ?? '')) !== ''): ?><span style="color:#2C3950;font-weight:bold;"><?= e($labels['follow']) ?></span><?php endif; ?>
+            <?php foreach ($nlSocial as $i => $s): ?><?= $i > 0 ? ' &middot; ' : ' ' ?><a href="<?= e($s['url']) ?>" style="color:#2C3950;text-decoration:underline;"><?= e($s['label']) ?></a><?php endforeach; ?>
+        </td></tr>
+        <?php endif; ?>
         <tr><td align="center" style="padding:20px 24px 8px 24px;font-family:<?= $sans ?>;font-size:12px;line-height:1.6;color:#5A6470;<?= $wrap ?>">
             <?php if ($footer_text !== ''): ?><p style="margin:0 0 10px 0;"><?= nl2br(e($footer_text)) ?></p><?php endif; ?>
             <p style="margin:0 0 10px 0;"><?= e($reason) ?></p>

@@ -136,6 +136,10 @@ final class NewsletterRenderer
             $out[] = $v['labels']['read_online'] . ': ' . $v['browser_url'];
         }
         $out[] = str_repeat('-', 40);
+        $follow = function_exists('social_links') ? social_links('newsletter') : [];      // the admin's profile links (Admin > Social media), same order as the HTML e-mail
+        if ($follow !== []) {
+            $out[] = ($v['labels']['follow'] !== '' ? $v['labels']['follow'] . "\n" : '') . implode("\n", array_map(static fn(array $s): string => $s['label'] . ': ' . $s['url'], $follow));
+        }
         if ($v['footer_text'] !== '') {
             $out[] = $v['footer_text'];
         }
@@ -210,6 +214,7 @@ final class NewsletterRenderer
             'logo_url'        => self::absoluteUrl($logo),
             'pdf'             => $pdf,
             'labels'          => [
+                'follow'          => trim((string) content('newsletter', 'email.follow', 'Follow us:')),       // may be empty on purpose: the links are then shown without a heading
                 'view_in_browser' => $label('view_in_browser'),
                 'read_online'     => $label('read_online'),
                 'unsubscribe'     => $label('unsubscribe'),

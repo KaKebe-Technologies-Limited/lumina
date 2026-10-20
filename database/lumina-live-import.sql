@@ -1548,6 +1548,73 @@ CREATE TABLE IF NOT EXISTS `shop_events` (
   KEY `ix_shop_events_ref` (`ref`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- =====================================================================================================================================
+-- SOCIAL MEDIA: auto-share of published newsletters (docs/SOCIAL.md). ADDITIVE and IDEMPOTENT: two guarded ALTERs on `newsletters`, two new tables.
+-- =====================================================================================================================================
+
+-- The admin's share choices are saved WITH the issue and used when it goes public: JSON {"facebook":{"on":true,"caption":"..."}, ...}. NULL = never opened the panel
+-- (the defaults of Admin > Social media apply). share_version rises only when an admin explicitly chooses "Post again".
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'share_choices');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `share_choices` TEXT NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'newsletters' AND column_name = 'share_version');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `newsletters` ADD COLUMN `share_version` INT UNSIGNED NOT NULL DEFAULT 1', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
+-- One row per (issue, channel, share_version): the UNIQUE key is what guarantees an issue is never posted twice to the same channel (unpublish and
+-- republish create nothing new; "Post again" raises share_version). The log keeps channel, status, the caption that was sent, the remote post id / URL
+-- the platform returned and a SHORT error text. Never a token, never a full API payload or response.
+CREATE TABLE IF NOT EXISTS `social_posts` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `newsletter_id` INT UNSIGNED NOT NULL,
+  `channel` VARCHAR(20) NOT NULL,                                 -- facebook | instagram | x | linkedin | telegram | webhook
+  `share_version` INT UNSIGNED NOT NULL DEFAULT 1,
+  `status` ENUM('queued','posting','posted','failed','skipped','review') NOT NULL DEFAULT 'queued',   -- review = the attempt may or may not have reached the platform: a person decides
+  `caption` TEXT NULL,                                            -- the final plain text that is (or was) sent
+  `attempts` INT UNSIGNED NOT NULL DEFAULT 0,
+  `next_attempt_at` DATETIME NULL,                                -- application time zone; NULL = due now
+  `last_attempt_at` DATETIME NULL,                                -- recorded BEFORE the platform is called (a crash leaves a `posting` row that becomes `review`)
+  `remote_id` VARCHAR(190) NULL,
+  `remote_url` VARCHAR(255) NULL,
+  `last_error` VARCHAR(255) NULL,                                 -- short text without credentials
+  `fail_code` VARCHAR(20) NULL,                                   -- why it failed: 'auth' = the access token / key was rejected (only these are re-queued after a new token is pasted); NULL = anything else
+  `posted_at` DATETIME NULL,
+  `created_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_social_posts_issue_channel` (`newsletter_id`, `channel`, `share_version`),
+  KEY `ix_social_posts_due` (`status`, `next_attempt_at`),
+  KEY `ix_social_posts_channel` (`channel`, `status`),
+  CONSTRAINT `fk_social_posts_issue` FOREIGN KEY (`newsletter_id`) REFERENCES `newsletters` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_social_posts_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Databases that already have social_posts (created before fail_code existed): guarded, idempotent ALTER.
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'social_posts' AND column_name = 'fail_code');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `social_posts` ADD COLUMN `fail_code` VARCHAR(20) NULL AFTER `last_error`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
+-- Branded share images (GD-rendered, stored OUTSIDE the web root) and the unguessable token that makes them reachable at /social/image/{token}.jpg
+-- (Instagram and Facebook must fetch a PUBLIC url). One token per (issue, variant): re-rendering keeps the token, so a url a platform already has stays valid.
+CREATE TABLE IF NOT EXISTS `social_images` (
+  `token` CHAR(64) NOT NULL,                                      -- 256 random bits as hex
+  `newsletter_id` INT UNSIGNED NOT NULL,
+  `variant` ENUM('square','portrait','landscape') NOT NULL,
+  `path` VARCHAR(255) NOT NULL,                                   -- relative to storage/private/social
+  `src_hash` VARCHAR(64) NULL,                                    -- hash of what the picture was drawn from (title, summary, cover, designer settings): a change re-renders it
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`token`),
+  UNIQUE KEY `uq_social_images_issue_variant` (`newsletter_id`, `variant`),
+  CONSTRAINT `fk_social_images_issue` FOREIGN KEY (`newsletter_id`) REFERENCES `newsletters` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- ======================================================================
 -- PART: seed.sql
@@ -2210,7 +2277,7 @@ ON DUPLICATE KEY UPDATE
 -- ---------------------------------------------------------------------------------------------------------------------------------------
 INSERT IGNORE INTO roles (slug, name, description, abilities, is_system) VALUES
   ('admin', 'Administrator', 'Can do everything, including users, roles, settings and menus.', '[]', 1),
-  ('editor', 'Editor', 'Edits pages and content, handles the inbox, members, newsletters, calendar and meetings.', '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders"]', 1),
+  ('editor', 'Editor', 'Edits pages and content, handles the inbox, members, newsletters, calendar and meetings.', '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders","social.share"]', 1),
   ('content-writer', 'Content Writer', 'Writes and edits website pages and content (blog, programmes, gallery, events). Cannot see messages, members or settings.', '["dashboard.view","pages.edit","content.manage"]', 0),
   ('communications', 'Communications Officer', 'Content, newsletters, calendar and meetings. Cannot email the whole list or see the inbox.', '["dashboard.view","content.manage","newsletter.manage","calendar.manage","meetings.manage"]', 0),
   ('membership-officer', 'Membership Officer', 'Handles membership applications, payments and receipts, with CSV export and meetings. No website editing.', '["dashboard.view","members.manage","export.csv","meetings.manage"]', 0),
@@ -2429,4 +2496,71 @@ WHERE p.is_sample = 1 AND (@reseed = 1 OR NOT EXISTS (SELECT 1 FROM settings WHE
   AND NOT EXISTS (SELECT 1 FROM shop_product_images x WHERE x.product_id = p.id AND x.path = i.path);
 
 INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_shop_samples_v1', '1');
+
+-- ------------------------------------------------------------------ social media (see docs/SOCIAL.md). ADDITIVE and IDEMPOTENT.
+-- Settings: every key of App\Services\Social\SocialConfig::defs() plus the three new profile links of settings_schema.php (a selftest compares them). Refreshed from here
+-- ONLY while pristine (updated_at = created_at); a value the owner saved is never overwritten. Every channel starts SWITCHED OFF and unconfigured: nothing is posted anywhere
+-- until the owner has created the platform keys, pasted them in Admin > Social media > Channels, tested them and switched the channel on. NO token, key or secret is seeded
+-- (they are typed in the admin and stored encrypted, or set in .env).
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('social_whatsapp_channel', ''),
+  ('social_telegram', ''),
+  ('social_threads', ''),
+  ('social_enabled', '1'),
+  ('social_hashtags', '#LuminaAfricaFoundation #Uganda #CommunityDevelopment'),
+  ('social_utm', '1'),
+  ('social_graph_version', 'v23.0'),
+  ('social_li_version', '202510'),
+  ('social_order', 'facebook,instagram,linkedin,x,tiktok,youtube,whatsapp,telegram,threads'),
+  ('social_show_footer', '1'),
+  ('social_show_contact', '1'),
+  ('social_show_newsletter', '1'),
+  ('social_ch_facebook_enabled', '0'),
+  ('social_ch_facebook_default', '1'),
+  ('social_ch_facebook_page_id', ''),
+  ('social_ch_instagram_enabled', '0'),
+  ('social_ch_instagram_default', '1'),
+  ('social_ch_instagram_account_id', ''),
+  ('social_ch_x_enabled', '0'),
+  ('social_ch_x_default', '1'),
+  ('social_ch_x_mode', 'oauth1'),
+  ('social_ch_linkedin_enabled', '0'),
+  ('social_ch_linkedin_default', '1'),
+  ('social_ch_linkedin_org_urn', ''),
+  ('social_ch_linkedin_expires', ''),
+  ('social_ch_telegram_enabled', '0'),
+  ('social_ch_telegram_default', '1'),
+  ('social_ch_telegram_chat', ''),
+  ('social_ch_telegram_test_chat', ''),
+  ('social_ch_webhook_enabled', '0'),
+  ('social_ch_webhook_default', '1'),
+  ('social_ch_webhook_fields', ''),
+  ('social_tpl_facebook', ''),
+  ('social_tpl_instagram', ''),
+  ('social_tpl_x', ''),
+  ('social_tpl_linkedin', ''),
+  ('social_tpl_telegram', ''),
+  ('social_tpl_webhook', ''),
+  ('social_tpl_tiktok', ''),
+  ('social_card_bg', '#2C3950'),
+  ('social_card_bg_dark', '#172036'),
+  ('social_card_accent', '#D6A151'),
+  ('social_card_accent2', '#CC651A'),
+  ('social_card_text', '#FFFFFF'),
+  ('social_card_tagline', ''),
+  ('social_card_show_logo', '1'),
+  ('social_card_show_url', '1')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- ONE-TIME role upgrade (guarded by the marker setting below): the built-in Editor role gets "Share newsletters on social media" (social.share). It is changed ONLY while its
+-- stored ability list is still EXACTLY the list it had before the social module (the owner never edited the role); a list changed in Admin > Roles is left alone.
+-- social.manage (API keys and tokens) stays with the administrator.
+UPDATE roles SET abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders","social.share"]',
+  updated_at = updated_at
+WHERE slug = 'editor' AND is_system = 1
+  AND abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders"]'
+  AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_social_editor_role_v1') m);
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_social_editor_role_v1', '1');
 

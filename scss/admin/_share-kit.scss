@@ -1,0 +1,104 @@
+// admin/_share-kit.scss - ADMIN > SOCIAL MEDIA > SHARE KIT (docs/SOCIAL.md section 8). OWNER: IMAGES agent.
+// Rules: tokens only, the existing admin components, prefix .skit- , mobile first, visible focus.
+
+.skit {
+  .card + .card { margin-top: $space-4; }
+  .alert { margin-bottom: $space-4; }
+  .card__title { display: flex; align-items: center; gap: $space-2; }
+
+  &__intro { max-width: 70ch; margin: 0 0 $space-4; color: $ink-soft; }
+  &__hint { margin: $space-3 0 0; color: $ink-soft; font-size: $fs-xs; max-width: 75ch; }
+  &__tracked {
+    margin-top: $space-4;
+    summary { cursor: pointer; font-weight: 600; font-size: $fs-sm; padding: $space-2 0; min-height: 2.75rem; display: flex; align-items: center; &:focus-visible { @include focus-ring; } }
+  }
+}
+
+// the three pictures: one column on a phone, three from tablet width; each keeps its own proportions
+.skit-pics {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: $space-5;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  @include respond(md) { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+}
+.skit-pic {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  min-width: 0;
+  // every picture sits in the same square frame (the three formats stay comparable); the picture keeps its own proportions inside it
+  &__frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1 / 1;
+    border-radius: $radius;
+    overflow: hidden;
+    border: 1px solid $border;
+    background: $surface;
+    &:focus-visible { @include focus-ring; }
+    img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; box-shadow: $shadow-sm; }
+  }
+  &__title { margin: 0; font-size: $fs-base; span { font-weight: 400; color: $ink-soft; font-size: $fs-sm; } }
+  &__use { margin: $space-1 0 0; color: $ink-soft; font-size: $fs-sm; }
+  &__acts { display: flex; flex-wrap: wrap; gap: $space-2; margin: $space-2 0 0; }
+}
+
+.skit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-3;
+  align-items: center;
+  .input { flex: 1 1 16rem; min-width: 0; }
+}
+.skit-links {
+  display: grid;
+  gap: $space-3;
+  margin: $space-3 0 0;
+  padding: 0;
+  list-style: none;
+  li { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-2; align-items: center; @include respond(md) { grid-template-columns: 7rem minmax(0, 1fr) auto; } }
+  label { font-weight: 600; font-size: $fs-sm; }
+  .input { min-width: 0; width: 100%; }
+}
+
+.skit-cap {
+  padding: $space-4 0;
+  & + & { border-top: 1px solid $border; }
+  &:first-of-type { padding-top: 0; }
+  &__head { display: flex; align-items: center; justify-content: space-between; gap: $space-3; margin-bottom: $space-2; }
+  &__title { margin: 0; font-size: $fs-base; display: flex; align-items: center; gap: $space-2; }
+  .textarea { width: 100%; font-size: $fs-sm; line-height: 1.5; }
+  &__acts { display: flex; flex-wrap: wrap; gap: $space-2; margin-top: $space-3; }
+  &__hint { margin: $space-2 0 0; font-size: $fs-xs; color: $ink-soft; }
+}
+
+.skit-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin: 0 0 $space-3;
+  padding: 0;
+  list-style: none;
+  li { padding: $space-1 $space-3; border-radius: $radius-pill; background: $surface; border: 1px solid $border; font-size: $fs-sm; overflow-wrap: anywhere; }
+}
+
+.skit .btn.is-copied { background: $success-bg; border-color: $success; color: $success; }
+
+// the single picture offered when the server cannot draw the branded ones
+.skit-pics--single { @include respond(md) { grid-template-columns: minmax(0, 22rem); } }
+
+.skit .btn--sm { min-height: 2.75rem; }
+.skit-pic__acts .btn, .skit-cap__acts .btn, .skit-row .btn, .skit-links .btn { min-height: 2.75rem; }
+@media (pointer: coarse) {
+  .skit .btn--sm { min-height: 2.75rem; padding-inline: $space-4; }
+}
+.skit .char-count.is-over::after { content: ' - over the limit'; }
+
+@media (forced-colors: active) {
+  .skit .char-count { border: 1px solid CanvasText; }
+  .skit .btn.is-copied { border: 3px solid Highlight; }
+}

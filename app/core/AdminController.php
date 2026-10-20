@@ -34,6 +34,7 @@ abstract class AdminController extends Controller
         $opts += ['meta' => []];
         $opts['meta'] = ['title' => (string) ($opts['title'] ?? 'Admin'), 'robots' => 'noindex,nofollow'] + (array) $opts['meta'];
         $response = parent::render($view, $data, $opts);
+        \App\Services\Social\SocialDispatcher::lazyRetry();       // social media: retry due posts at most once a minute, after the page was sent (docs/SOCIAL.md)
         return $response->withHeaders([
             'Cache-Control' => 'no-store, max-age=0',
             'X-Robots-Tag'  => 'noindex, nofollow',

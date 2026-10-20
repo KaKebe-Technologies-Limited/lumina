@@ -133,6 +133,8 @@ return [
         'newsletter.manage' => ['admin', 'editor'], // newsletter issues: create, edit, duplicate, preview, publish, schedule, unpublish, archive, delete drafts (docs/NEWSLETTER.md)
         'newsletter.delete_published' => ['admin'], // delete an issue that is (or was) public
         'newsletter.send' => ['admin'],             // EVERYTHING about e-mailing an issue: settings, test sends, campaign, retries
+        'social.manage'     => ['admin'],           // SOCIAL MEDIA settings: profile links, auto-share channels (API keys and tokens), post templates, share images (docs/SOCIAL.md): admin only by default, holds secrets
+        'social.share'      => ['admin', 'editor'], // choose the channels and captions of an issue, the Share kit, the share log, retry a failed post
         'calendar.manage'   => ['admin', 'editor'], // calendar entries, quick add, per-occurrence changes, confirming holiday dates, types, CSV import / export (docs/CALENDAR.md)
         'calendar.advanced' => ['admin'],           // the advanced repeat rules (nth weekday, Easter offset, Islamic holidays)
         'calendar.delete'   => ['admin'],           // BULK delete of calendar entries

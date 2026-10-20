@@ -29,7 +29,7 @@ if ($extra !== '') {
 }
 $hours = trim((string) content('contact', 'details.hours'));
 $wa = whatsapp_url();
-$socials = social_links();
+$socials = social_links('contact');
 $mapQuery = rawurlencode(implode(', ', array_filter([$siteName, ...$addressLines])));
 $heroImg = content_img('contact', 'hero.image');
 

@@ -64,6 +64,25 @@ final class DashboardController extends AdminController
                 // the shop tables do not exist yet (schema not applied): no tile
             }
         }
+        // Social media (docs/SOCIAL.md): posts that failed or need a decision, a channel that needs a new token, a token about to expire. Counts only; shown only while something needs a person.
+        if (can('social.share') || can('social.manage')) {
+            try {
+                $soc = \App\Services\Social\SocialConfig::attention();
+                if ($soc['total'] > 0) {
+                    $bits = array_filter([
+                        $soc['failed'] > 0 ? $soc['failed'] . ' failed post' . ($soc['failed'] === 1 ? '' : 's') : '',
+                        $soc['review'] > 0 ? $soc['review'] . ' to check' : '',
+                        $soc['needs_token'] !== [] ? 'a channel needs a new token' : '',
+                        $soc['expiring'] !== [] ? 'a token expires soon' : '',
+                    ]);
+                    $tiles[] = ['icon' => 'send', 'value' => number_format($soc['total']), 'label' => 'Social media needs attention', 'sub' => implode(', ', $bits),
+                        // each person gets a link they may open: the log needs social.share, the channels screen social.manage
+                        'url' => can('social.manage') && (!can('social.share') || $soc['needs_token'] !== [] || $soc['expiring'] !== []) ? 'admin/social/channels' : 'admin/social/log', 'alert' => true];
+                }
+            } catch (\Throwable) {
+                // the social tables do not exist yet (schema not applied): no tile
+            }
+        }
         if ($content) {
             $p = $counts['posts'];
             $tiles[] = ['icon' => 'newspaper', 'value' => number_format($counts['posts_total']), 'label' => 'Published posts', 'sub' => $p['blog'] . ' blog, ' . $p['news'] . ' news, ' . $p['press'] . ' press', 'url' => 'admin/posts'];

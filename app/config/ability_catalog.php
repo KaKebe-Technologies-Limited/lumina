@@ -47,6 +47,13 @@ return [
             'newsletter.send'             => ['Email newsletters to subscribers', 'Test sends and sending to the whole list.'],
         ],
     ],
+    'social' => [
+        'label' => 'Social media',
+        'items' => [
+            'social.share'  => ['Share newsletters on social media', 'Choose the channels and edit the captions when an issue is published, use the Share kit (images and ready captions), see the share log and retry a failed post.'],
+            'social.manage' => ['Social media settings and accounts', 'Profile links, the automatic posting channels (Facebook, Instagram, X, LinkedIn, Telegram, webhook) with their API keys and access tokens, post templates and the share image design. Give this to trusted administrators only.', 'secrets' => true, 'secrets_label' => 'Holds API keys and tokens'],
+        ],
+    ],
     'calendar' => [
         'label' => 'Calendar and meetings',
         'items' => [
@@ -72,7 +79,7 @@ return [
         'items' => [
             'shop.manage'   => ['Manage shop products', 'Add and edit products, categories, prices, stock and pictures. Nothing here touches orders or payments.'],
             'shop.orders'   => ['See and handle shop orders', 'Read orders, confirm bookings, record and verify payments, change the order status, add notes and print packing slips. Orders contain the names, phone numbers, e-mail addresses and delivery addresses of the people who bought.'],
-            'shop.settings' => ['Shop, delivery and payment settings', 'Opens and closes the shop, sets delivery, and holds the PAYMENT settings, including the secret keys for card and mobile-money payments. Give this to trusted administrators only.', 'secrets' => true],
+            'shop.settings' => ['Shop, delivery and payment settings', 'Opens and closes the shop, sets delivery, and holds the PAYMENT settings, including the secret keys for card and mobile-money payments. Give this to trusted administrators only.', 'secrets' => true, 'secrets_label' => 'Holds payment secrets'],
             'shop.export'   => ['Download shop orders as CSV', null],
             'shop.delete'   => ['Delete products and orders', null],
         ],

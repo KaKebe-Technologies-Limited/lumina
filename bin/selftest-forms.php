@@ -873,7 +873,7 @@ check('forms.* abilities are assignable to custom roles (not admin-only)', array
 check('"forms" is a reserved page slug; the admin sidebar fragment carries a badge closure', in_array('forms', (array) Config::get('reserved_slugs'), true) && is_callable((require APP_PATH . '/config/admin_nav/forms.php')['items'][0]['badge']));
 $seed = (string) file_get_contents(BASE_PATH . '/database/seed.sql');
 $old = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage"]';
-check('seed: fresh editor role includes the forms abilities; the upgrade UPDATE only matches the ORIGINAL list and is guarded by a marker', str_contains($seed, "'editor', 'Editor'") && str_contains($seed, 'forms.manage","forms.submissions","shop.manage","shop.orders"]\', 1)') && str_contains($seed, "AND abilities = '" . $old . "'") && str_contains($seed, 'migration_forms_editor_role_v1'));
+check('seed: fresh editor role includes the forms abilities; the upgrade UPDATE only matches the ORIGINAL list and is guarded by a marker', str_contains($seed, "'editor', 'Editor'") && str_contains($seed, 'forms.manage","forms.submissions","shop.manage","shop.orders","social.share"]\', 1)') && str_contains($seed, "AND abilities = '" . $old . "'") && str_contains($seed, 'migration_forms_editor_role_v1'));
 // run the upgrade statement against a copy to prove the guard
 Database::execute("INSERT INTO roles (slug, name, description, abilities, is_system) VALUES ('zz-forms-a', 'ZZ A', '', ?, 1), ('zz-forms-b', 'ZZ B', '', ?, 1)", [$old, '["dashboard.view","pages.edit"]']);
 $stmt = "UPDATE roles SET abilities = 'NEW' WHERE slug LIKE 'zz-forms-%' AND is_system = 1 AND abilities = '" . $old . "'";

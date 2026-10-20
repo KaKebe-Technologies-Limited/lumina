@@ -49,6 +49,9 @@ return [
                 'social_x'         => ['label' => 'X (Twitter)', 'type' => 'url', 'default' => 'https://x.com/luminaafricafdn', 'rules' => 'nullable|url'],
                 'social_tiktok'    => ['label' => 'TikTok', 'type' => 'url', 'default' => 'https://www.tiktok.com/@lumina.africa.fou', 'rules' => 'nullable|url'],
                 'social_youtube'   => ['label' => 'YouTube', 'type' => 'url', 'default' => '', 'rules' => 'nullable|url'],
+                'social_whatsapp_channel' => ['label' => 'WhatsApp channel or chat link', 'type' => 'url', 'default' => '', 'rules' => 'nullable|url', 'help' => 'A WhatsApp channel link or a https://wa.me/ link. (The WhatsApp number of the Contact tab is separate.)'],
+                'social_telegram'  => ['label' => 'Telegram', 'type' => 'url', 'default' => '', 'rules' => 'nullable|url'],
+                'social_threads'   => ['label' => 'Threads', 'type' => 'url', 'default' => '', 'rules' => 'nullable|url', 'help' => 'These links are managed with more options (order, where they show, automatic posting of newsletters) in Admin > Social media.'],
             ],
         ],
         'donations' => [

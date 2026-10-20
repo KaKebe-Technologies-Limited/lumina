@@ -1,0 +1,55 @@
+// pages/_newsletter-share.scss - the public "Share this issue" row of a newsletter issue page (docs/SOCIAL.md section 8). OWNER: IMAGES agent.
+// Rules: tokens only, scoped under .page-newsletter, prefix .nl-share- , plain links (no third-party scripts), 44 px touch targets, visible focus, mobile first.
+// Markup: app/views/web/newsletter/_share.php. The copy button is wired by assets/js/pages/blog.js (it shows the button only when the Clipboard API exists).
+
+.page-newsletter {
+    .nl-share {
+        display: flex;
+        flex-direction: column;
+        gap: $space-3;
+        margin-top: $space-6;
+        padding-top: $space-5;
+        border-top: 1px solid $line;
+
+        &__title {
+            margin: 0;
+            font-family: $font-heading;
+            font-size: $fs-xs;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: $navy;
+        }
+        &__list { display: flex; flex-wrap: wrap; gap: $space-2; margin: 0; padding: 0; list-style: none; }
+        &__link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            min-height: 2.75rem;
+            min-width: 2.75rem;
+            padding: 0 1rem;
+            border: 1px solid $border-strong;
+            border-radius: $radius-pill;
+            background: $white;
+            color: $navy;
+            font-family: inherit;
+            font-size: $fs-sm;
+            font-weight: 600;
+            line-height: 1.2;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color $t-fast ease, color $t-fast ease, border-color $t-fast ease;
+            &:hover { background: $navy; border-color: $navy; color: $white; }
+            &:focus-visible { @include focus-ring; }
+            &.is-copied { background: $success-bg; border-color: $success; color: $success; }
+            &[hidden] { display: none; }
+        }
+        // on a very narrow screen the names would wrap the row into many lines: keep icons only below 360 px (the aria-label still names each link)
+        @media (max-width: 22.5em) {
+            &__link { padding: 0; width: 2.75rem; }
+            &__text { @include visually-hidden; }
+        }
+    }
+}
+@media print { .page-newsletter .nl-share { display: none !important; } }

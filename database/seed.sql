@@ -655,7 +655,7 @@ ON DUPLICATE KEY UPDATE
 -- ---------------------------------------------------------------------------------------------------------------------------------------
 INSERT IGNORE INTO roles (slug, name, description, abilities, is_system) VALUES
   ('admin', 'Administrator', 'Can do everything, including users, roles, settings and menus.', '[]', 1),
-  ('editor', 'Editor', 'Edits pages and content, handles the inbox, members, newsletters, calendar and meetings.', '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders"]', 1),
+  ('editor', 'Editor', 'Edits pages and content, handles the inbox, members, newsletters, calendar and meetings.', '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders","social.share"]', 1),
   ('content-writer', 'Content Writer', 'Writes and edits website pages and content (blog, programmes, gallery, events). Cannot see messages, members or settings.', '["dashboard.view","pages.edit","content.manage"]', 0),
   ('communications', 'Communications Officer', 'Content, newsletters, calendar and meetings. Cannot email the whole list or see the inbox.', '["dashboard.view","content.manage","newsletter.manage","calendar.manage","meetings.manage"]', 0),
   ('membership-officer', 'Membership Officer', 'Handles membership applications, payments and receipts, with CSV export and meetings. No website editing.', '["dashboard.view","members.manage","export.csv","meetings.manage"]', 0),
@@ -874,3 +874,70 @@ WHERE p.is_sample = 1 AND (@reseed = 1 OR NOT EXISTS (SELECT 1 FROM settings WHE
   AND NOT EXISTS (SELECT 1 FROM shop_product_images x WHERE x.product_id = p.id AND x.path = i.path);
 
 INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_shop_samples_v1', '1');
+
+-- ------------------------------------------------------------------ social media (see docs/SOCIAL.md). ADDITIVE and IDEMPOTENT.
+-- Settings: every key of App\Services\Social\SocialConfig::defs() plus the three new profile links of settings_schema.php (a selftest compares them). Refreshed from here
+-- ONLY while pristine (updated_at = created_at); a value the owner saved is never overwritten. Every channel starts SWITCHED OFF and unconfigured: nothing is posted anywhere
+-- until the owner has created the platform keys, pasted them in Admin > Social media > Channels, tested them and switched the channel on. NO token, key or secret is seeded
+-- (they are typed in the admin and stored encrypted, or set in .env).
+INSERT INTO settings (setting_key, setting_value) VALUES
+  ('social_whatsapp_channel', ''),
+  ('social_telegram', ''),
+  ('social_threads', ''),
+  ('social_enabled', '1'),
+  ('social_hashtags', '#LuminaAfricaFoundation #Uganda #CommunityDevelopment'),
+  ('social_utm', '1'),
+  ('social_graph_version', 'v23.0'),
+  ('social_li_version', '202510'),
+  ('social_order', 'facebook,instagram,linkedin,x,tiktok,youtube,whatsapp,telegram,threads'),
+  ('social_show_footer', '1'),
+  ('social_show_contact', '1'),
+  ('social_show_newsletter', '1'),
+  ('social_ch_facebook_enabled', '0'),
+  ('social_ch_facebook_default', '1'),
+  ('social_ch_facebook_page_id', ''),
+  ('social_ch_instagram_enabled', '0'),
+  ('social_ch_instagram_default', '1'),
+  ('social_ch_instagram_account_id', ''),
+  ('social_ch_x_enabled', '0'),
+  ('social_ch_x_default', '1'),
+  ('social_ch_x_mode', 'oauth1'),
+  ('social_ch_linkedin_enabled', '0'),
+  ('social_ch_linkedin_default', '1'),
+  ('social_ch_linkedin_org_urn', ''),
+  ('social_ch_linkedin_expires', ''),
+  ('social_ch_telegram_enabled', '0'),
+  ('social_ch_telegram_default', '1'),
+  ('social_ch_telegram_chat', ''),
+  ('social_ch_telegram_test_chat', ''),
+  ('social_ch_webhook_enabled', '0'),
+  ('social_ch_webhook_default', '1'),
+  ('social_ch_webhook_fields', ''),
+  ('social_tpl_facebook', ''),
+  ('social_tpl_instagram', ''),
+  ('social_tpl_x', ''),
+  ('social_tpl_linkedin', ''),
+  ('social_tpl_telegram', ''),
+  ('social_tpl_webhook', ''),
+  ('social_tpl_tiktok', ''),
+  ('social_card_bg', '#2C3950'),
+  ('social_card_bg_dark', '#172036'),
+  ('social_card_accent', '#D6A151'),
+  ('social_card_accent2', '#CC651A'),
+  ('social_card_text', '#FFFFFF'),
+  ('social_card_tagline', ''),
+  ('social_card_show_logo', '1'),
+  ('social_card_show_url', '1')
+ON DUPLICATE KEY UPDATE
+  setting_value = IF((@reseed = 1 OR updated_at = created_at), VALUES(setting_value), setting_value),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- ONE-TIME role upgrade (guarded by the marker setting below): the built-in Editor role gets "Share newsletters on social media" (social.share). It is changed ONLY while its
+-- stored ability list is still EXACTLY the list it had before the social module (the owner never edited the role); a list changed in Admin > Roles is left alone.
+-- social.manage (API keys and tokens) stays with the administrator.
+UPDATE roles SET abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders","social.share"]',
+  updated_at = updated_at
+WHERE slug = 'editor' AND is_system = 1
+  AND abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders"]'
+  AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_social_editor_role_v1') m);
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_social_editor_role_v1', '1');
