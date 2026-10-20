@@ -18,7 +18,7 @@ $hpVideoHtml = !empty($hpVideo['url']) ? partial('partials/video-button', ['url'
 $hpButtons = array_values(array_filter((array) ($buttons ?? []), static fn($b): bool => !empty($b['label']) && !empty($b['url'])));
 ?>
 <section class="hero-photo" aria-labelledby="hero-title"<?= $hpFocus !== '' ? ' style="--focus:' . e($hpFocus) . '"' : '' ?>>
-    <?php if ($hpHasImg): ?><img class="hero-photo__bg" src="<?= e($hpImg['src']) ?>" alt="<?= e($hpImg['alt'] ?? '') ?>" fetchpriority="high" decoding="async"><?php endif; ?>
+    <?php if ($hpHasImg): ?><?= partial('partials/hero-img', ['src' => $hpImg['src'], 'alt' => $hpImg['alt'] ?? '', 'class' => 'hero-photo__bg']) ?><?php endif; ?>
     <div class="hero-photo__inner">
         <div class="hero-photo__copy">
             <?php if (trim((string) ($eyebrow ?? '')) !== ''): ?><span class="eyebrow"><?= e($eyebrow) ?></span><?php endif; ?>

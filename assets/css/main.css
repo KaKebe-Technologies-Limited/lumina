@@ -3116,6 +3116,116 @@ body.nav-open {
   margin-bottom: 1.5rem;
 }
 
+.page-hero picture, .hero-photo picture, .band picture {
+  display: contents;
+}
+
+.page-hero--long .page-hero__title {
+  max-width: 30ch;
+  font-size: clamp(1.75rem, 1.25rem + 2vw, 2.9rem);
+  line-height: 1.16;
+}
+
+.page-hero--xlong .page-hero__title {
+  max-width: 36ch;
+  font-size: clamp(1.55rem, 1.15rem + 1.5vw, 2.35rem);
+  line-height: 1.2;
+}
+
+.page-hero--long .page-hero__lead, .page-hero--xlong .page-hero__lead {
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
+}
+
+.page-hero__title, .hero-photo__title {
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.page-hero__lead, .hero-photo__lead {
+  text-wrap: pretty;
+}
+
+.page-hero .breadcrumbs {
+  max-width: 100%;
+}
+
+.page-hero .breadcrumbs li:last-child {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.page-hero .breadcrumbs li:last-child [aria-current='page'] {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 639px) {
+  .page-hero {
+    padding-block: 1.5rem calc(var(--radius-sheet) + 1rem);
+  }
+  .page-hero .breadcrumbs {
+    margin-bottom: 1rem;
+  }
+  .page-hero__actions .btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  .hero-photo {
+    min-height: min(34rem, 88vh);
+    min-height: min(34rem, 88svh);
+    padding-block: 3rem calc(var(--radius-sheet) + 2rem);
+  }
+  .hero-photo__actions .btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .page-hero__inner > *, .hero-photo__copy > * {
+    animation: hero-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .page-hero__inner > *:nth-child(2), .hero-photo__copy > *:nth-child(2) {
+    animation-delay: .06s;
+  }
+  .page-hero__inner > *:nth-child(3), .hero-photo__copy > *:nth-child(3) {
+    animation-delay: .12s;
+  }
+  .page-hero__inner > *:nth-child(n+4), .hero-photo__copy > *:nth-child(n+4) {
+    animation-delay: .18s;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .page-hero__title, .hero-photo__title {
+    animation-name: hero-slide;
+  }
+}
+
+@keyframes hero-slide {
+  from {
+    transform: translateY(10px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

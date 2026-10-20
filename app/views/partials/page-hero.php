@@ -12,8 +12,9 @@ $phHasImg = !empty($image['src']);
 $phFocus = preg_match('/^[0-9%. a-z-]{1,30}$/i', (string) ($image['focus'] ?? '')) ? (string) $image['focus'] : '';
 $phSheet = in_array($sheet ?? 'white', ['tint', 'cool'], true) ? ' page-hero--sheet-' . $sheet : '';
 ?>
-<header class="page-hero<?= $phHasImg ? ' page-hero--image' : '' ?><?= $phSheet ?>">
-    <?php if ($phHasImg): ?><img class="page-hero__bg" src="<?= e($image['src']) ?>" alt="<?= e($image['alt'] ?? '') ?>" fetchpriority="high" decoding="async"<?= $phFocus !== '' ? ' style="object-position:' . e($phFocus) . '"' : '' ?>><?php endif; ?>
+<?php $phLen = mb_strlen(strip_highlight((string) $title)); $phSize = $phLen > 90 ? ' page-hero--xlong' : ($phLen > 52 ? ' page-hero--long' : ''); ?>
+<header class="page-hero<?= $phHasImg ? ' page-hero--image' : '' ?><?= $phSheet ?><?= $phSize ?>">
+    <?php if ($phHasImg): ?><?= partial('partials/hero-img', ['src' => $image['src'], 'alt' => $image['alt'] ?? '', 'class' => 'page-hero__bg', 'focus' => $phFocus]) ?><?php endif; ?>
     <div class="page-hero__inner">
         <?= partial('partials/breadcrumbs', ['breadcrumbs' => $crumbs]) ?>
         <?php if (!empty($eyebrow)): ?><span class="eyebrow"><?= e($eyebrow) ?></span><br><?php endif; ?>

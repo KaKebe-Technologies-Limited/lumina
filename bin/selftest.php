@@ -227,6 +227,7 @@ require __DIR__ . '/selftest-membership-card-fixes.php';    // membership card, 
 require __DIR__ . '/selftest-shop.php';                 // shop: money, seed / abilities, SecretStore, products, cart, orders (stock race), status + payment machines, Flutterwave against the LOCAL MOCK, CSV, e-mails, pictures (needs -d extension=gd), HTTP flow + admin abilities (removes its own test data, restores the shop settings)
 require __DIR__ . '/selftest-social.php';               // social media: SSRF-guarded HTTP client, caption builder, secrets, post queue, dispatcher + ShareHook (fake channels), the LOCAL MOCK (Telegram, webhook, Graph, X OAuth1, LinkedIn), HTTP abilities (removes its own test data, restores the social settings)
 require __DIR__ . '/selftest-opportunities.php';        // opportunities: feed parser, deadline / category / summary helpers, SSRF-guarded feed client, importer (duplicates, closed, review mode, prune), public pages, sitemap (removes its own test data)
+require __DIR__ . '/selftest-hero.php';                 // hero / banner images: responsive WebP copies, <picture> partial, one well-formed hero image on every banner page
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);

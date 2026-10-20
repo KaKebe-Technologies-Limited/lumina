@@ -18,7 +18,7 @@ $bdVideo = (array) ($video ?? []);
 $bdFocus = preg_match('/^[0-9%. a-z-]{1,30}$/i', (string) ($focus ?? '')) ? (string) $focus : '';
 ?>
 <div class="band<?= !empty($overlap) || $bdAfter !== '' ? ' band--overlap' : '' ?>"<?= $bdFocus !== '' ? ' style="--focus:' . e($bdFocus) . '"' : '' ?>>
-    <?php if ($bdHasImg): ?><img class="band__bg" src="<?= e($bdImg['src']) ?>" alt="<?= e($bdImg['alt'] ?? '') ?>" loading="lazy" decoding="async"><?php endif; ?>
+    <?php if ($bdHasImg): ?><?= partial('partials/hero-img', ['src' => $bdImg['src'], 'alt' => $bdImg['alt'] ?? '', 'class' => 'band__bg', 'priority' => 'lazy']) ?><?php endif; ?>
     <div class="band__inner">
         <?php if (trim((string) ($eyebrow ?? '')) !== ''): ?><span class="eyebrow eyebrow--center"><?= e($eyebrow) ?></span><?php endif; ?>
         <h2 class="band__title"><?= highlight($bdTitle) ?></h2>

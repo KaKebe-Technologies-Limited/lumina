@@ -32,7 +32,7 @@ $phActions = array_values(array_filter((array) ($actions ?? []), static fn($a): 
 $phMeta = (string) ($kicker ?? '');
 ?>
 <header class="page-hero programs-hero<?= $phHasImg ? ' page-hero--image' : '' ?><?= $phSheet ?><?= $phHasPanel ? ' programs-hero--panel' : '' ?>">
-    <?php if ($phHasImg): ?><img class="page-hero__bg" src="<?= e($image['src']) ?>" alt="<?= e($image['alt'] ?? '') ?>" fetchpriority="high" decoding="async"<?= $phFocus !== '' ? ' style="object-position:' . e($phFocus) . '"' : '' ?>><?php endif; ?>
+    <?php if ($phHasImg): ?><?= partial('partials/hero-img', ['src' => $image['src'], 'alt' => $image['alt'] ?? '', 'class' => 'page-hero__bg', 'focus' => $phFocus]) ?><?php endif; ?>
     <div class="page-hero__inner">
         <?= partial('partials/breadcrumbs', ['breadcrumbs' => $breadcrumbs ?? []]) ?>
         <?php if ($phMeta !== ''): ?><div class="programs-hero__meta"><?= $phMeta ?></div><?php endif; ?>

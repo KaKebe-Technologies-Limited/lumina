@@ -564,3 +564,36 @@ function label_from(?string $value): string
 
 // Design-system helpers (highlight(), youtube_id(), photo_tag(), icon_options() ...): docs/DESIGN.md
 require_once __DIR__ . '/helpers_design.php';
+
+/**
+ * Smaller WebP copies of a site photo made by bin/build-hero-images.py (assets/img/hero/<folder>-<name>-<width>.webp).
+ * Returns ['srcset' => '... 480w, ... 800w', 'max' => widest width] or null when the image has no copies (an upload from the admin, a new photo
+ * the script has not seen yet): the caller then sends the plain <img> exactly as before.
+ * @return array{srcset:string,max:int}|null
+ */
+function responsive_sources(string $src): ?array
+{
+    static $cache = [];
+    if (preg_match('~assets/img/((?:site|shop)/[A-Za-z0-9_\-/]+)\.(?:jpe?g|png)(?:\?|$)~', $src, $m) !== 1) {
+        return null;
+    }
+    $key = str_replace('/', '-', $m[1]);
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+    $found = [];
+    foreach (glob(ASSET_PATH . '/img/hero/' . $key . '-*.webp') ?: [] as $file) {
+        if (preg_match('~-(\d{3,4})\.webp$~', $file, $w) === 1) {
+            $found[(int) $w[1]] = $file;
+        }
+    }
+    ksort($found);
+    if ($found === []) {
+        return $cache[$key] = null;
+    }
+    $parts = [];
+    foreach ($found as $w => $file) {
+        $parts[] = asset('img/hero/' . basename($file)) . ' ' . $w . 'w';
+    }
+    return $cache[$key] = ['srcset' => implode(', ', $parts), 'max' => (int) array_key_last($found)];
+}

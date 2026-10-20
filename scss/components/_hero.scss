@@ -43,3 +43,40 @@
     .eyebrow { margin-bottom: $space-3; }
     .breadcrumbs { margin-bottom: $space-5; }
 }
+
+// ---- Hero polish (all banners) ------------------------------------------------------------------------------------------
+// <picture> only carries the WebP sources: it must not create a box of its own (the photo stays absolutely positioned).
+.page-hero picture, .hero-photo picture, .band picture { display: contents; }
+
+// Long titles (an opportunity, a news article, a job) must not become a wall of giant text: step the size down and allow a wider line.
+.page-hero--long .page-hero__title { max-width: 30ch; font-size: fluid(1.75rem, '1.25rem + 2vw', 2.9rem); line-height: 1.16; }
+.page-hero--xlong .page-hero__title { max-width: 36ch; font-size: fluid(1.55rem, '1.15rem + 1.5vw', 2.35rem); line-height: 1.2; }
+.page-hero--long .page-hero__lead, .page-hero--xlong .page-hero__lead { font-size: fluid(1rem, '0.95rem + 0.3vw', 1.15rem); }
+.page-hero__title, .hero-photo__title { text-wrap: balance; overflow-wrap: anywhere; }
+.page-hero__lead, .hero-photo__lead { text-wrap: pretty; }
+
+// A long breadcrumb (article title) is cut after two lines instead of pushing the title down.
+.page-hero .breadcrumbs { max-width: 100%; }
+.page-hero .breadcrumbs li:last-child { min-width: 0; max-width: 100%; }
+.page-hero .breadcrumbs li:last-child [aria-current='page'] { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+@media (max-width: 639px) {
+    .page-hero { padding-block: $space-5 calc(var(--radius-sheet) + #{$space-4}); }
+    .page-hero .breadcrumbs { margin-bottom: $space-4; }
+    .page-hero__actions .btn { flex: 1 1 100%; justify-content: center; }
+    .hero-photo { min-height: #{'min(34rem, 88vh)'}; min-height: #{'min(34rem, 88svh)'}; padding-block: $space-7 calc(var(--radius-sheet) + #{$space-6}); }
+    .hero-photo__actions .btn { flex: 1 1 100%; justify-content: center; }
+}
+
+// Calm entrance for the words on a banner (CSS only; nothing moves for people who ask for less motion).
+@media (prefers-reduced-motion: no-preference) {
+    .page-hero__inner > *, .hero-photo__copy > * { animation: hero-rise .6s cubic-bezier(.2, .7, .2, 1) both; }
+    .page-hero__inner > *:nth-child(2), .hero-photo__copy > *:nth-child(2) { animation-delay: .06s; }
+    .page-hero__inner > *:nth-child(3), .hero-photo__copy > *:nth-child(3) { animation-delay: .12s; }
+    .page-hero__inner > *:nth-child(n+4), .hero-photo__copy > *:nth-child(n+4) { animation-delay: .18s; }
+}
+// the headline is what the browser measures as the page's main content: it only slides (never starts invisible) so it is painted at once
+@media (prefers-reduced-motion: no-preference) {
+    .page-hero__title, .hero-photo__title { animation-name: hero-slide; }
+}
+@keyframes hero-slide { from { transform: translateY(10px); } to { transform: none; } }
+@keyframes hero-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
