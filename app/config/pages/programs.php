@@ -47,10 +47,10 @@ return [
             ],
         ],
         [
-            'key' => 'pillars', 'label' => 'Our three planned program pillars', 'help' => 'Heading above the three pillar cards (the pillars come from Admin > Programs).',
+            'key' => 'pillars', 'label' => 'Our planned program pillars', 'help' => 'Heading above the pillar cards (the pillars come from Admin > Programs).',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our three planned program [[pillars]]', 'help' => $hlHelp],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our planned program [[pillars]]', 'help' => $hlHelp],
                 ['key' => 'intro', 'label' => 'Intro under the heading (optional)', 'type' => 'textarea', 'rows' => 3, 'default' => ''],
                 ['key' => 'card_cta', 'label' => 'Pillar card button text', 'type' => 'text', 'default' => 'View pillar'],
                 ['key' => 'empty_title', 'label' => 'Message when there are no programs yet: heading', 'type' => 'text', 'default' => 'Our planned programs are being published'],
@@ -189,7 +189,7 @@ return [
                 ['key' => 'back_label', 'label' => 'Link back to the list', 'type' => 'text', 'default' => 'Our planned programs'],
                 ['key' => 'related_title', 'label' => 'Heading above the pillar\'s projects', 'type' => 'text', 'default' => 'Proposed areas of intervention'],
                 ['key' => 'related_cta', 'label' => 'Related project link text', 'type' => 'text', 'default' => 'View project'],
-                ['key' => 'more_title', 'label' => 'Heading above other programs', 'type' => 'text', 'default' => 'Our three planned program pillars'],
+                ['key' => 'more_title', 'label' => 'Heading above other programs', 'type' => 'text', 'default' => 'Our planned program pillars'],
                 ['key' => 'join_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Partner With Us'],
                 ['key' => 'join_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/involvement'],
             ],
