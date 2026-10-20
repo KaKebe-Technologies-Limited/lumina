@@ -156,6 +156,6 @@ return [
     'reserved_slugs' => [
         'admin', 'assets', 'uploads', 'api', 'login', 'logout', 'index', 'storage', 'app', 'bin', 'database', 'docs', 'scss', 'tools',
         'vendor', 'sitemap', 'sitemap-xml', 'robots', 'robots-txt', 'subscribe', 'unsubscribe', 'search', 'download', 'downloads',
-        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter', 'calendar', 'meeting', 'meetings', 'forms', 'shop',
+        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter', 'calendar', 'meeting', 'meetings', 'forms', 'shop', 'offline', 'manifest-webmanifest', 'sw-js',
     ],
 ];

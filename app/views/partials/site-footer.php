@@ -90,6 +90,7 @@ try {
             <span><?= e($ftCopyright) ?></span>
             <?php $ftRight = array_filter([$ftRegNo !== '' && $ftRegLabel !== '' ? $ftRegLabel . ' ' . $ftRegNo : '', $ftCredit]); ?>
             <?php if ($ftRight): ?><span><?= e(implode(' · ', $ftRight)) ?></span><?php endif; ?>
+            <?= partial('partials/pwa-install', ['part' => 'button']) ?>
         </div>
     </div>
 </footer>

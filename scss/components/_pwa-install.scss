@@ -1,0 +1,22 @@
+// "Install the app" button (footer), banner and iPhone help dialog. Shown only by assets/js/pwa.js when installing is possible.
+.pwa-install-btn {
+  display: inline-flex; align-items: center; gap: .5rem; margin-top: .75rem; padding: .55rem 1.1rem; min-height: 2.75rem;
+  border: 1px solid rgba(255, 255, 255, .35); border-radius: 99px; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer;
+  &:hover, &:focus-visible { background: rgba(255, 255, 255, .12); border-color: #d6a151; }
+  &[hidden] { display: none; }
+}
+.pwa-banner {
+  position: fixed; z-index: 80; left: 1rem; right: 1rem; bottom: 1rem; display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; max-width: 34rem; margin: 0 auto;
+  padding: .85rem 1rem; border-radius: 1rem; background: #1f2a44; color: #fff; box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+  &[hidden] { display: none; }
+  &__text { flex: 1 1 12rem; margin: 0; font-size: .9375rem; }
+  &__go { padding: .55rem 1.1rem; border: 0; border-radius: 99px; background: #d6a151; color: #1b2540; font: inherit; font-weight: 700; cursor: pointer; }
+  &__x { padding: .55rem .8rem; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; text-decoration: underline; }
+}
+.pwa-dialog {
+  max-width: 26rem; padding: 1.5rem; border: 0; border-radius: 1rem; box-shadow: 0 20px 60px rgba(0, 0, 0, .4);
+  &::backdrop { background: rgba(10, 15, 30, .6); }
+  p { margin: 0 0 1rem; }
+  button { padding: .6rem 1.2rem; border: 0; border-radius: 99px; background: #1f2a44; color: #fff; font: inherit; cursor: pointer; }
+}
+@media print { .pwa-install-btn, .pwa-banner { display: none !important; } }

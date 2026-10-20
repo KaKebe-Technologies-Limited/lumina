@@ -78,7 +78,14 @@ if (!empty($breadcrumbs) && is_array($breadcrumbs)) {
     <?php if ($meta['og_image'] !== ''): ?><meta name="twitter:image" content="<?= e($meta['og_image']) ?>"><?php endif; ?>
 
     <?php if ($faviconUrl !== ''): ?><link rel="icon" href="<?= e($faviconUrl) ?>" sizes="32x32"><?php endif; ?>
-    <link rel="apple-touch-icon" href="<?= e(asset('img/brand/logo-192.png')) ?>">
+    <link rel="apple-touch-icon" href="<?= e(asset('img/pwa/apple-touch-icon.png')) ?>">
+<?php if ((string) setting('pwa_enabled', '1') === '1'): ?>
+    <link rel="manifest" href="<?= e(url('manifest.webmanifest')) ?>">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="<?= e((string) setting('pwa_short_name', 'Lumina')) ?>">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<?php endif; ?>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -106,7 +113,9 @@ if (!empty($breadcrumbs) && is_array($breadcrumbs)) {
 
 <button class="back-to-top" type="button" data-back-to-top aria-label="<?= e(content('global', 'footer.back_to_top')) ?>"><?= icon('arrow-up') ?></button>
 
+<?= partial('partials/pwa-install') ?>
 <script src="<?= e(asset('js/main.js')) ?>" defer></script>
+<script src="<?= e(asset('js/pwa.js')) ?>" defer></script>
 <?= $this->section('scripts') ?>
 </body>
 </html>
