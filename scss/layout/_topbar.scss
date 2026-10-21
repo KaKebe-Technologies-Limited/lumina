@@ -1,33 +1,63 @@
+@mixin topbar-rule { padding-inline-start: $space-4; border-inline-start: 1px solid rgba($navy-dark, 0.25); }
+
 // Thin gold strip above the header (partials/topbar.php). navy-dark text on gold = 7.0:1. Scrolls away (the header is the sticky part).
+// Layout: one tidy row on desktop. Left: address and the live clock; right: e-mail, phone and the quick link as a navy pill.
+// Items are separated by hairlines. When the strip is too narrow the address shortens with an ellipsis (never wraps over a neighbour);
+// on small screens it becomes a compact centred row (phone + quick link, then the clock).
 .topbar {
     background: $gold;
     color: $navy-dark;
-    font-size: $fs-xs;
+    font-size: 0.8125rem;
     line-height: 1.3;
+    border-bottom: 1px solid rgba($navy-dark, 0.14);
+    letter-spacing: 0.005em;
 
     &__inner {
         @include container($container-wide);
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: $space-2 $space-5;
+        justify-content: center;
+        gap: 0.3rem $space-5;
         min-height: $topbar-h;
-        padding-block: 0.35rem;
-        flex-wrap: wrap;                                // when the left and right groups do not fit side by side the right one drops to a second row (never overlaps)
+        padding-block: 0.3rem;
+        flex-wrap: wrap;
     }
-    @include respond(sm) { &__group + &__group { margin-inline-start: auto; } }
-    &__group { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem $space-5; min-width: 0; }
-    &__item { display: inline-flex; align-items: center; gap: 0.45rem; min-width: 0; color: inherit; text-decoration: none; font-weight: 500; .icon { width: 0.95rem; height: 0.95rem; flex: none; } }
-    a.topbar__item:hover { color: $navy-dark; text-decoration: underline; }
-    a.topbar__item:focus-visible { outline-color: $navy-dark; outline-offset: 2px; }
-    &__item--link { font-weight: 700; }
+    &__group { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.2rem $space-4; min-width: 0; }
+    &__item { display: inline-flex; align-items: center; gap: 0.45rem; min-width: 0; color: inherit; text-decoration: none; font-weight: 500; white-space: nowrap; .icon { width: 0.95rem; height: 0.95rem; flex: none; opacity: 0.85; } }
+    a.topbar__item:hover { color: $navy-dark; text-decoration: underline; text-underline-offset: 3px; }
+    a.topbar__item:focus-visible { outline: 2px solid $navy-dark; outline-offset: 3px; border-radius: 4px; }
 
-    // phones: only the phone number and the quick link; the address and e-mail return as the strip widens
+    // hairlines between neighbours, added only at widths where the neighbour before is visible (see the breakpoints below)
+    
+
+    // the quick link (WhatsApp / Donate) is a navy pill
+    &__item--link {
+        padding: 0.3rem 0.9rem;
+        border-radius: 999px;
+        background: $navy-dark;
+        color: $gold;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        transition: background-color 0.15s ease, transform 0.15s ease;
+        .icon { opacity: 1; }
+    }
+    a.topbar__item--link:hover { background: $navy; color: $white; text-decoration: none; }
+    @media (prefers-reduced-motion: no-preference) { a.topbar__item--link:hover { transform: translateY(-1px); } }
+
+    // phones: the phone number and the quick link; e-mail from 576px, the single row from 992px, the address only from 1400px (it needs the room)
     &__item--address, &__item--email { display: none; }
-    @include respond(sm) { &__item--email { display: inline-flex; } }
-    @include respond(lg) { &__item--address { display: inline-flex; } }
-    &__inner { justify-content: space-between; }
-    @include respond-down(sm) { &__inner { justify-content: center; } }
+    @include respond(sm) { &__item--email { display: inline-flex; } &__item--phone { @include topbar-rule; } }
+    @include respond(md) { &__inner { justify-content: space-between; } }
+    @include respond(lg) {
+        &__inner { flex-wrap: nowrap; }
+        &__group { flex-wrap: nowrap; justify-content: flex-start; }
+        &__group + &__group { flex: 0 0 auto; justify-content: flex-end; }
+    }
+    @include respond('2xl') {
+        &__item--address { display: inline-flex; min-width: 0; > span { overflow: hidden; text-overflow: ellipsis; } }
+        &__group:first-child > .clock { @include topbar-rule; }
+        &__group:first-child { flex: 1 1 auto; }
+    }
 }
 
 // ---- Live clock (partials/topbar.php, ticker in assets/js/main.js). Sits in the left group next to the address.
