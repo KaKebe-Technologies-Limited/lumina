@@ -25,6 +25,9 @@ final class CourseService
         'coding'    => ['Programming', 'code'],
         'ai'        => ['Artificial intelligence', 'star'],
         'hardware'  => ['Maintenance and networks', 'settings'],
+        'data'      => ['Data and databases', 'layers'],
+        'cloud'     => ['Cloud and systems', 'globe'],
+        'business'  => ['Business and e-commerce', 'briefcase'],
     ];
     public const LEVELS = ['beginner' => 'Beginner', 'intermediate' => 'Intermediate', 'advanced' => 'Advanced'];
 

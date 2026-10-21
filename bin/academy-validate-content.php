@@ -21,7 +21,7 @@ if ($files === []) {
     $files = glob(APP_PATH . '/config/academy/courses/*.php') ?: [];
     sort($files);
 }
-$cats = ['basics', 'office', 'internet', 'marketing', 'design', 'security', 'careers', 'web', 'coding', 'ai', 'hardware'];
+$cats = ['basics', 'office', 'internet', 'marketing', 'design', 'security', 'careers', 'web', 'coding', 'ai', 'hardware', 'data', 'cloud', 'business'];
 $levels = ['beginner', 'intermediate', 'advanced'];
 $icons = ['laptop', 'file-text', 'mail', 'globe', 'megaphone', 'shield', 'briefcase', 'code', 'layers', 'book', 'award', 'users', 'target', 'sprout', 'star', 'settings'];
 $allowed = ['h3', 'h4', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'code', 'pre', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'a', 'br'];

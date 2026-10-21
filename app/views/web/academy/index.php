@@ -90,6 +90,14 @@ $cta = content_btn('academy', 'cta.button');
     <?php endif; ?>
 <?php section_end(); ?>
 
+<?php if ($partners): section_begin('academy', 'partners', ['labelledby' => 'ac-partners-title']); ?>
+    <?= partial('partials/section-head', ['eyebrow' => (string) content('academy', 'partners.eyebrow'), 'title' => (string) content('academy', 'partners.title'), 'lead' => (string) content('academy', 'partners.intro'), 'align' => 'center', 'id' => 'ac-partners-title']) ?>
+    <div class="grid grid--3 grid--gap-lg post-grid ac-grid">
+        <?php foreach ($partners as $p): ?><?= partial('web/academy/_partner_card', ['p' => $p]) ?><?php endforeach; ?>
+    </div>
+    <p class="ac-center"><a class="btn btn--outline btn--caps" href="<?= e(url('academy/partner-courses')) ?>"><?= e(content('academy', 'partners.button')) ?> (<?= (int) $partnerTotal ?>)</a></p>
+<?php section_end(); endif; ?>
+
 <?php section_begin('academy', 'why', ['class' => 'section--tint', 'labelledby' => 'ac-why-title']); ?>
     <?= partial('partials/section-head', ['title' => (string) content('academy', 'why.title'), 'align' => 'center', 'id' => 'ac-why-title']) ?>
     <?php if ($why): ?>

@@ -12,6 +12,8 @@ use App\Core\Response;
 use App\Services\Academy\AcademyAccess;
 use App\Services\Academy\CertificateService;
 use App\Services\Academy\ClassService;
+use App\Services\Academy\ContentInstaller;
+use App\Services\Academy\PartnerCourses;
 use App\Services\Academy\CourseService;
 use App\Services\Academy\LearnerAuth;
 
@@ -37,7 +39,10 @@ final class AcademyController extends AcademyBaseController
         $counts = [];
         $stats = ['courses' => 0, 'lessons' => 0, 'learners' => 0, 'certificates' => 0];
         $upcoming = [];
+        $partners = [];
+        $partnerTotal = 0;
         try {
+            ContentInstaller::autoInstall();                 // first visit ever: fill the empty catalogue once (docs/ACADEMY.md)
             $courses = CourseService::published($filters);
             $counts = CourseService::categoryCounts();
             $stats = [
@@ -47,17 +52,47 @@ final class AcademyController extends AcademyBaseController
                 'certificates' => (int) Database::value('SELECT COUNT(*) FROM academy_certificates WHERE revoked_at IS NULL', [], 0),
             ];
             $upcoming = array_slice(ClassService::listing()['upcoming'], 0, 3);
+            $partnerAll = Database::tableExists('academy_partner_courses') ? PartnerCourses::visible() : [];
+            $partnerTotal = count($partnerAll);
+            $partners = array_slice($partnerAll, 0, 6);
         } catch (\Throwable) {
             // the Academy tables are not imported yet: show the empty home page
         }
         $filtered = $filters['q'] !== '' || $filters['category'] !== '' || $filters['level'] !== '';
         return $this->renderAcademy('web/academy/index', [
-            'courses' => $courses, 'counts' => $counts, 'filters' => $filters, 'filtered' => $filtered, 'stats' => $stats, 'upcoming' => $upcoming,
+            'courses' => $courses, 'counts' => $counts, 'filters' => $filters, 'filtered' => $filtered, 'stats' => $stats, 'upcoming' => $upcoming, 'partners' => $partners, 'partnerTotal' => $partnerTotal,
             'categories' => CourseService::categoryLabels(), 'levels' => CourseService::LEVELS,
         ], [
             'bodyClass' => 'is-academy is-academy-home',
             'breadcrumbs' => [[$this->academyLabel(), null]],
             'meta' => $filtered ? ['robots' => 'noindex,follow', 'canonical' => '/academy'] : [],
+        ]);
+    }
+
+    public function partners(Request $request): Response
+    {
+        $this->gate();
+        $filters = ['q' => mb_substr(trim($request->string('q')), 0, 80), 'category' => $request->string('category'), 'level' => $request->string('level'), 'provider' => mb_substr(trim($request->string('provider')), 0, 80)];
+        $rows = [];
+        $providers = [];
+        $counts = [];
+        try {
+            if (Database::tableExists('academy_partner_courses')) {
+                $rows = PartnerCourses::visible($filters);
+                $providers = PartnerCourses::providers();
+                $counts = PartnerCourses::categoryCounts();
+            }
+        } catch (\Throwable) {
+        }
+        $filtered = $filters['q'] !== '' || $filters['category'] !== '' || $filters['level'] !== '' || $filters['provider'] !== '';
+        return $this->renderAcademy('web/academy/partners', [
+            'rows' => $rows, 'filters' => $filters, 'filtered' => $filtered, 'categories' => CourseService::categoryLabels(), 'levels' => CourseService::LEVELS,
+            'providers' => $providers, 'counts' => $counts, 'total' => count($rows),
+        ], [
+            'bodyClass' => 'is-academy is-academy-partners',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Partner courses', null]],
+            'meta' => ['title' => 'Free courses from other platforms', 'description' => 'A curated list of free courses from Coursera, edX, Google, Microsoft Learn, Harvard CS50, freeCodeCamp, Khan Academy and more, by topic and level.']
+                + ($filtered ? ['robots' => 'noindex,follow', 'canonical' => '/academy/partner-courses'] : []),
         ]);
     }
 

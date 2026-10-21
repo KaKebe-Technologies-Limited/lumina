@@ -14,7 +14,7 @@ Fix every ERROR it prints; read every WARNING and fix it unless you have a good 
 return [
     'slug'        => 'ms-word',                       // lower-case letters, digits, hyphens; unique; same as the file name without the number prefix
     'title'       => 'Microsoft Word: Documents from Zero',
-    'category'    => 'office',                        // one of: basics | office | internet | marketing | design | security | careers | web | coding | ai | hardware
+    'category'    => 'office',                        // one of: basics | office | internet | marketing | design | security | careers | web | coding | ai | hardware | data | cloud | business
     'level'       => 'beginner',                      // beginner | intermediate | advanced
     'icon'        => 'file-text',                     // one of: laptop, file-text, mail, globe, megaphone, shield, briefcase, code, layers, book, award, users, target, sprout, star, settings
     'sort'        => 30,                              // order in the catalogue (smaller first): see the table in "Courses and numbers" below
@@ -106,5 +106,23 @@ File names: `NN-slug.php` where NN is the order number below. Targets per course
 | 140 | python-programming-intro | Introduction to Programming with Python | coding | intermediate |
 | 150 | ai-tools-literacy | Practical AI Tools: Using AI Assistants Wisely | ai | beginner |
 | 160 | computer-maintenance-networking | Computer Maintenance, Troubleshooting and Networking Basics | hardware | beginner |
+
+| 170 | excel-data-analysis | Excel for Data Analysis: PivotTables, Charts and Dashboards | data | intermediate |
+| 180 | excel-advanced-automation | Advanced Excel: Power Query, Power Pivot and Automation | data | advanced |
+| 190 | sql-databases | Databases and SQL for Beginners | data | intermediate |
+| 200 | python-data-analysis | Data Analysis with Python: pandas and Charts | data | advanced |
+| 210 | javascript-basics | JavaScript for Beginners: Make Web Pages Interactive | web | intermediate |
+| 220 | web-development-advanced | Modern Web Development: JavaScript, APIs and Deployment | web | advanced |
+| 230 | wordpress-websites | Build a Website with WordPress | web | intermediate |
+| 240 | ecommerce-online-business | E-commerce and Selling Online | business | intermediate |
+| 250 | digital-marketing-advanced | Advanced Digital Marketing: SEO, Analytics and Paid Ads | marketing | advanced |
+| 260 | cloud-computing-fundamentals | Cloud Computing Fundamentals | cloud | intermediate |
+| 270 | linux-command-line | Linux and the Command Line | cloud | intermediate |
+| 280 | networking-fundamentals | Networking Fundamentals: IP Addressing, Routers and Wi-Fi | hardware | intermediate |
+| 290 | cybersecurity-essentials | Cybersecurity Essentials for Organisations | security | intermediate |
+| 300 | project-management-basics | Project Management Basics | business | beginner |
+| 310 | video-editing-content-creation | Video Editing and Content Creation | design | beginner |
+
+Level guide: **beginner** assumes nothing; **intermediate** assumes the learner can use a computer and has done the relevant beginner course (say which one in `requirements`); **advanced** assumes comfortable intermediate skills (name them in `requirements`) and works on realistic projects, trade-offs and good practice. Intermediate and advanced lessons may run to 700-900 words and may use more code, formulas and screenshots-in-words, but keep the same lesson shape and the same quiz rules.
 
 `sort` = the NN of the file.

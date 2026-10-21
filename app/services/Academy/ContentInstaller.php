@@ -153,6 +153,36 @@ final class ContentInstaller
         return ['installed' => $n, 'skipped' => $skipped, 'messages' => $msgs];
     }
 
+    /**
+     * FIRST RUN: when the Academy has no course at all (a fresh install, or the starter courses were never installed) the starter courses and the partner course list are
+     * installed once, so visitors never meet an empty catalogue. Done after the response was sent. A marker (setting academy_starter_done) stops it for good, so courses an
+     * administrator deletes later do not come back by themselves. Returns true when it installed something.
+     */
+    public static function autoInstall(): bool
+    {
+        if ((string) setting('academy_starter_done', '0') === '1') {
+            return false;
+        }
+        try {
+            if (!Database::tableExists('academy_courses') || !\App\Core\RateLimit::attempt('academy-auto-install', 1, 600)) {
+                return false;
+            }
+            @set_time_limit(180);
+            $did = false;
+            if ((int) Database::value('SELECT COUNT(*) FROM academy_courses', [], 0) === 0) {
+                $did = self::installAll(null, true)['installed'] > 0;
+            }
+            if (Database::tableExists('academy_partner_courses') && PartnerCourses::count() === 0) {
+                $did = PartnerCourses::installStarter() > 0 || $did;
+            }
+            \App\Core\Settings::set('academy_starter_done', '1');
+            return $did;
+        } catch (\Throwable $e) {
+            \App\Core\Log::error('Academy first-run install failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     /** Remove and install again, ONLY while nobody is enrolled. @return array{ok:bool,message:string} */
     public static function reinstall(string $slug, ?int $userId = null): array
     {

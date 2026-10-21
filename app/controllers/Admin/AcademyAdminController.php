@@ -42,6 +42,7 @@ class AcademyAdminController extends AdminController
     public function index(Request $request): Response
     {
         $this->authorize('academy.teach');
+        ContentInstaller::autoInstall();
         [$scopeSql, $scopeParams] = AcademyAccess::courseScope('c');
         $ids = AcademyAccess::courseIds();
         $in = $ids === null ? null : ($ids === [] ? '0' : implode(',', $ids));

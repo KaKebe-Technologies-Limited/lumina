@@ -2,7 +2,7 @@
 
 A free ICT learning portal at `/academy`: courses made of modules, lessons and quizzes; learner accounts with e-mail confirmation; progress tracking; a final exam and a
 certificate with a public number and a PDF; live virtual classes (Google Meet, Zoom, Microsoft Teams, free Jitsi or any https link); facilitator (teacher) accounts; full
-administrator control. 16 starter courses (303 lessons, over 1,000 quiz questions) ship with the site.
+administrator control. 31 starter courses at three levels (over 570 lessons and 2,000 quiz questions) plus a catalogue of free partner courses ship with the site.
 
 ## For learners (public)
 
@@ -56,12 +56,24 @@ learner deletion, exports, settings. Every controller checks ownership (`Academy
 
 ## Starter courses
 
-`app/config/academy/courses/NN-slug.php` (16 files; format and writing rules in `docs/ACADEMY-CONTENT.md`; check with `php bin/academy-validate-content.php`). Install from
+`app/config/academy/courses/NN-slug.php` (31 files; format and writing rules in `docs/ACADEMY-CONTENT.md`; check with `php bin/academy-validate-content.php`). Install from
 Admin > LAF Academy > Starter courses, or `php bin/academy-install-content.php [--draft] [--only=slug]`. A course already installed is never changed; a starter course nobody has
 enrolled in can be reset to the starter version. After installing, courses are ordinary courses: edit, hide or delete them.
 
 Topics: computer basics, Windows and files, typing, Word, Excel, PowerPoint, internet and e-mail, Google Workspace, digital marketing, social media and Canva, online safety, job-ready
 digital skills, HTML and CSS, Python, AI tools, computer maintenance and networking.
+
+**Automatic first install.** The first time anyone opens `/academy` or the admin overview on a site with no courses, the starter courses (and the partner list) are installed once and
+published (marker setting `academy_starter_done`, rate-limited, errors go to the application log). So an empty catalogue after the database import fixes itself on the first visit.
+Levels: beginner, intermediate and advanced courses exist in every area (levels and prerequisites are described in `docs/ACADEMY-CONTENT.md`).
+
+## Partner courses
+
+Free courses on other platforms (Coursera, edX, Google, Microsoft Learn, Harvard CS50, freeCodeCamp, Khan Academy, Kaggle, Cisco Networking Academy, HubSpot, AWS, IBM SkillsBuild and
+more) are listed at `/academy/partner-courses`, grouped by level, with a teaser on the Academy home page. The Academy only links out: summaries are written in our own words, nothing
+is copied, links open in a new tab with `nofollow`, and a disclaimer says free access and certificate rules belong to each provider. Starter list: `app/config/academy/partners.php`
+(installed by address, never twice). Admin > LAF Academy > Partner courses (administrators): add, edit, hide, delete, feature, load the starter list, and **Check links** (25 at a
+time; the checker only accepts public hosts; an address that answers 404/410 is hidden from visitors until fixed). Table `academy_partner_courses`.
 
 ## Quiz format
 
@@ -86,7 +98,7 @@ Q: What does CPU stand for?
 ## Data (additive tables, `database/schema.sql`)
 
 `academy_courses`, `academy_modules`, `academy_lessons`, `academy_quizzes` (module_id NULL = the final exam), `academy_questions`, `academy_options`, `academy_learners`,
-`academy_enrollments`, `academy_progress`, `academy_attempts`, `academy_certificates` (keeps a snapshot of the name and the course title), `academy_classes`.
+`academy_enrollments`, `academy_progress`, `academy_attempts`, `academy_certificates` (keeps a snapshot of the name and the course title), `academy_classes`, `academy_partner_courses`.
 Deleting a course removes its lessons, quizzes and the learners' progress in it; certificates stay valid. Deleting a learner removes their progress; their certificates stay valid.
 
 ## Code map

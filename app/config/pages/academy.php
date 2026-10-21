@@ -66,6 +66,22 @@ return [
             ],
         ],
         [
+            'key' => 'partners', 'label' => 'Courses from other platforms',
+            'help' => 'A curated list of free courses on other learning platforms (Coursera, edX, Google, Microsoft Learn, Harvard CS50 ...). The list itself is managed under LAF Academy > Partner courses.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Home page: small heading', 'type' => 'text', 'default' => 'Keep going'],
+                ['key' => 'title', 'label' => 'Home page: heading', 'type' => 'text', 'default' => 'More free courses from [[trusted platforms]]', 'help' => $hl],
+                ['key' => 'intro', 'label' => 'Home page: intro', 'type' => 'textarea', 'rows' => 2, 'default' => 'Beyond our own courses, we gathered free learning from universities, Google, Microsoft and other platforms, from beginner to advanced.'],
+                ['key' => 'button', 'label' => 'Home page: button', 'type' => 'text', 'default' => 'See all partner courses'],
+                ['key' => 'page_title', 'label' => 'Partner courses page: heading', 'type' => 'text', 'default' => 'Free courses from [[other platforms]]', 'help' => $hl],
+                ['key' => 'page_lead', 'label' => 'Partner courses page: intro', 'type' => 'textarea', 'rows' => 3, 'default' => 'A hand-picked list of free courses from well-known learning platforms, grouped by topic and level. Start with a beginner course, then move up.'],
+                ['key' => 'disclaimer', 'label' => 'Partner courses page: note', 'type' => 'textarea', 'rows' => 3, 'default' => 'These courses are run by their own providers on their own websites. Lumina Africa Foundation does not run them and cannot promise their content, prices or certificates: free access and certificate rules are set by each provider and can change. Never pay anyone to give you access to a free course.'],
+                ['key' => 'open_button', 'label' => 'Course card: button', 'type' => 'text', 'default' => 'Open the course'],
+                ['key' => 'empty_title', 'label' => 'When nothing matches: headline', 'type' => 'text', 'default' => 'No course found'],
+                ['key' => 'empty_text', 'label' => 'When nothing matches: text', 'type' => 'textarea', 'rows' => 2, 'default' => 'Try a different word, topic or level.'],
+            ],
+        ],
+        [
             'key' => 'why', 'label' => 'Why learn here', 'toggle' => true,
             'fields' => [
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Skills that open [[doors]]', 'help' => $hl],

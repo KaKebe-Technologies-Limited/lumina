@@ -1,7 +1,8 @@
 // LAF Academy (public): catalogue, course page, sign-in screens, dashboard, lesson player, quizzes, classes, certificate. Views: web/academy/*
 $ac-tones: (
   basics: #2c3950, office: #1f5f8b, internet: #3a7d6b, marketing: #c8641b, design: #8a4f9e,
-  security: #b42318, careers: #8a5a06, web: #1e7b45, coding: #3c4e6e, ai: #5b3fa0, hardware: #5a6470
+  security: #b42318, careers: #8a5a06, web: #1e7b45, coding: #3c4e6e, ai: #5b3fa0, hardware: #5a6470,
+  data: #0f766e, cloud: #1d4ed8, business: #a16207
 );
 @each $name, $color in $ac-tones {
   .ac-tone-#{$name} { background: rgba($color, .12); color: $color; }
@@ -204,3 +205,8 @@ fieldset.ac-q { padding: 0 $space-4 $space-4;
   .ac-lesson__nav > * { flex: 1 1 100%; } .ac-lesson__nav .btn { width: 100%; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) { .ac-progress span { transition: none; } }
+
+.ac-note-box { max-width: none; margin: 0 0 $space-5; }
+.ac-level-title { margin: $space-7 0 $space-4; small { display: block; margin-top: .25rem; font-family: $font-body; font-size: $fs-sm; font-weight: 400; color: $ink-soft; } }
+.ac-badge--free { background: $success-bg; color: $success; border-color: rgba($success, .3); }
+.ac-card--partner .ac-card__icon { height: 4.5rem; }

@@ -11,6 +11,7 @@ use App\Controllers\Admin\AcademyCoursesController;
 use App\Controllers\Admin\AcademyCurriculumController;
 use App\Controllers\Admin\AcademyFacilitatorsController;
 use App\Controllers\Admin\AcademyLearnersController;
+use App\Controllers\Admin\AcademyPartnersController;
 
 $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:academy.teach']], function ($router) {
     $router->get('', [AcademyAdminController::class, 'index'])->name('admin.academy.index');
@@ -81,6 +82,17 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->get('/certificates-export', [AcademyCertificatesController::class, 'export'])->middleware('throttle:10,60')->name('admin.academy.certificates.export');
     $router->post('/certificates/{id}/revoke', [AcademyCertificatesController::class, 'revoke'])->name('admin.academy.certificates.revoke');
     $router->post('/certificates/{id}/reinstate', [AcademyCertificatesController::class, 'reinstate'])->name('admin.academy.certificates.reinstate');
+
+    $router->get('/partner-courses', [AcademyPartnersController::class, 'index'])->name('admin.academy.partners');
+    $router->get('/partner-courses/create', [AcademyPartnersController::class, 'create'])->name('admin.academy.partners.create');
+    $router->post('/partner-courses', [AcademyPartnersController::class, 'store'])->name('admin.academy.partners.store');
+    $router->post('/partner-courses/check', [AcademyPartnersController::class, 'checkAll'])->middleware('throttle:10,60')->name('admin.academy.partners.check_all');
+    $router->post('/partner-courses/starter', [AcademyPartnersController::class, 'loadStarter'])->name('admin.academy.partners.starter');
+    $router->get('/partner-courses/{id}/edit', [AcademyPartnersController::class, 'edit'])->name('admin.academy.partners.edit');
+    $router->post('/partner-courses/{id}', [AcademyPartnersController::class, 'update'])->name('admin.academy.partners.update');
+    $router->post('/partner-courses/{id}/check', [AcademyPartnersController::class, 'check'])->middleware('throttle:30,60')->name('admin.academy.partners.check');
+    $router->post('/partner-courses/{id}/toggle', [AcademyPartnersController::class, 'toggle'])->name('admin.academy.partners.toggle');
+    $router->post('/partner-courses/{id}/delete', [AcademyPartnersController::class, 'delete'])->name('admin.academy.partners.delete');
 
     $router->get('/facilitators', [AcademyFacilitatorsController::class, 'index'])->name('admin.academy.facilitators');
     $router->post('/facilitators', [AcademyFacilitatorsController::class, 'store'])->name('admin.academy.facilitators.store');

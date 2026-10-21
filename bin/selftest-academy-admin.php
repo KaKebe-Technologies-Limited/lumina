@@ -258,6 +258,35 @@ check('facilitators: an account can be switched off, and an administrator accoun
 $jN = null;
 check('facilitators: a switched-off account cannot sign in', $login('zz-aca-new@example.test', 'whatever', $jN) === false || $req('GET', '/admin/academy', [], $jN)['code'] !== 200);
 
+// ---- partner courses --------------------------------------------------------------------------------------------------------
+$pc = $req('GET', '/admin/academy/partner-courses', [], $jA);
+check('partners: the administrator list opens and the starter list is installed', $pc['code'] === 200 && str_contains($pc['body'], 'Partner courses') && \App\Services\Academy\PartnerCourses::count() >= 50);
+check('partners: a facilitator cannot open the partner course admin', $req('GET', '/admin/academy/partner-courses', [], $jF)['code'] === 403);
+$pAdd = ['title' => 'zz-aca Partner course', 'provider' => 'ZZ Provider', 'url' => 'https://example.com/zz-aca-course', 'category' => 'coding', 'level' => 'intermediate', 'cost' => 'free_audit', 'summary' => 'A test course.', 'is_active' => '1', 'sort_order' => '5'];
+$post('/admin/academy/partner-courses', $pAdd, $jA, '/admin/academy/partner-courses');
+$prow = Database::one("SELECT * FROM academy_partner_courses WHERE title = 'zz-aca Partner course'");
+check('partners: a course is added (source manual, link not checked)', $prow !== null && $prow['source'] === 'manual' && $prow['link_status'] === null && $prow['level'] === 'intermediate');
+$post('/admin/academy/partner-courses', $pAdd, $jA, '/admin/academy/partner-courses/create');
+check('partners: the same address cannot be added twice', (int) Database::value("SELECT COUNT(*) FROM academy_partner_courses WHERE title = 'zz-aca Partner course'", [], 0) === 1);
+$post('/admin/academy/partner-courses', ['url' => 'http://example.com/x'] + $pAdd + [], $jA, '/admin/academy/partner-courses/create');
+check('partners: only https addresses are accepted', (int) Database::value("SELECT COUNT(*) FROM academy_partner_courses WHERE url LIKE 'http://%'", [], 0) === 0);
+$pub = $req('GET', '/academy/partner-courses?q=zz-aca');
+check('partners: the public page lists it, grouped by level, with the outside-link note', $pub['code'] === 200 && str_contains($pub['body'], 'zz-aca Partner course') && str_contains($pub['body'], 'rel="noopener noreferrer nofollow"') && str_contains($pub['body'], 'Intermediate'));
+Database::update('academy_partner_courses', ['link_status' => 404], 'id = ?', [(int) $prow['id']]);
+check('partners: a link that answers 404 is hidden from visitors', !str_contains($req('GET', '/academy/partner-courses?q=zz-aca')['body'], 'zz-aca Partner course'));
+$post('/admin/academy/partner-courses/' . $prow['id'], ['url' => 'https://example.com/zz-aca-course-2'] + $pAdd, $jA, '/admin/academy/partner-courses');
+check('partners: changing the address clears the link status', Database::value('SELECT link_status FROM academy_partner_courses WHERE id = ?', [(int) $prow['id']]) === null);
+$post('/admin/academy/partner-courses/' . $prow['id'] . '/toggle', [], $jA, '/admin/academy/partner-courses');
+check('partners: a course can be hidden', !str_contains($req('GET', '/academy/partner-courses?q=zz-aca')['body'], 'zz-aca Partner course'));
+$t = static fn(int $s, string $loc = ''): \Closure => static fn(array $g): array => ['status' => $s, 'location' => $loc];
+check('partners: probe reports the status, treats a refusal for robots as alive, and refuses non-public hosts', \App\Services\Academy\PartnerCourses::probe('https://example.com/', $t(200)) === 200 && \App\Services\Academy\PartnerCourses::probe('https://example.com/', $t(404)) === 404 && \App\Services\Academy\PartnerCourses::probe('http://127.0.0.1/', $t(200)) === 0);
+check('partners: probe follows a redirect to a final answer, and gives up on a redirect loop', \App\Services\Academy\PartnerCourses::probe('https://example.com/a', static fn(array $g): array => str_ends_with($g['url'], '/a') ? ['status' => 301, 'location' => '/b'] : ['status' => 200]) === 200 && \App\Services\Academy\PartnerCourses::probe('https://example.com/a', $t(302, 'https://example.com/a')) === 0);
+$post('/admin/academy/partner-courses/' . $prow['id'] . '/delete', [], $jA, '/admin/academy/partner-courses');
+check('partners: a course can be deleted', Database::value('SELECT COUNT(*) FROM academy_partner_courses WHERE id = ?', [(int) $prow['id']], 0) === 0);
+check('partners: loading the starter list again adds nothing twice', \App\Services\Academy\PartnerCourses::installStarter() === 0);
+$home = $req('GET', '/academy');
+check('partners: the Academy home shows courses and a partner courses teaser', $home['code'] === 200 && str_contains($home['body'], 'academy/partner-courses') && str_contains($home['body'], 'ac-card'));
+
 // ---- delete -----------------------------------------------------------------------------------------------------------------
 $fdel = $post('/admin/academy/courses/' . $cid . '/delete', [], $jF, '/admin/academy/courses');
 check('delete: a facilitator cannot delete a course that has learners', Database::value('SELECT COUNT(*) FROM academy_courses WHERE id = ?', [$cid], 0) === 1);
@@ -269,6 +298,7 @@ foreach (array_diff(glob(STORAGE_PATH . '/mail/*.eml') ?: [], $mailsBefore) as $
 }
 @unlink($pdf);
 @unlink($badFile);
+Database::execute("DELETE FROM academy_partner_courses WHERE title LIKE '%zz-aca%'");
 $clean();
 check('cleanup: no zz-aca rows are left', Database::value("SELECT COUNT(*) FROM users WHERE email LIKE 'zz-aca-%'", [], 0) === 0 && Database::value("SELECT COUNT(*) FROM academy_courses WHERE title LIKE '%zz-aca%'", [], 0) === 0);
 

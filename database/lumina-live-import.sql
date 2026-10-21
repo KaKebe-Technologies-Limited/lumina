@@ -1918,6 +1918,36 @@ CREATE TABLE IF NOT EXISTS `academy_classes` (
   CONSTRAINT `fk_academy_classes_facilitator` FOREIGN KEY (`facilitator_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- LAF Academy PARTNER COURSES: a curated catalogue of FREE courses on other learning platforms (Coursera, edX, Google, Microsoft Learn, Harvard CS50, freeCodeCamp, Khan Academy,
+-- Cisco Networking Academy ...). The Academy only links to them (title, a summary in our own words, level, cost note); the courses run on the provider site.
+-- ADDITIVE and IDEMPOTENT. link_status = the last HTTP status the "Check links" button saw (404 / 410 hide the course from visitors).
+CREATE TABLE IF NOT EXISTS `academy_partner_courses` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(190) NOT NULL,
+  `provider` VARCHAR(80) NOT NULL,
+  `url` VARCHAR(500) NOT NULL,
+  `url_hash` CHAR(40) NOT NULL,
+  `category` VARCHAR(20) NOT NULL DEFAULT 'basics',
+  `level` VARCHAR(20) NOT NULL DEFAULT 'beginner',
+  `duration` VARCHAR(60) NULL,                                    -- free text: "Self-paced", "6 weeks"
+  `summary` VARCHAR(320) NULL,
+  `language` VARCHAR(40) NOT NULL DEFAULT 'English',
+  `cost` VARCHAR(16) NOT NULL DEFAULT 'free',                     -- free | free_audit (free to learn, a certificate may cost) | free_account (free with a free account)
+  `certificate` VARCHAR(80) NULL,                                 -- free text: "Paid certificate", "Free badge" ...
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `is_featured` TINYINT(1) NOT NULL DEFAULT 0,
+  `sort_order` INT NOT NULL DEFAULT 100,
+  `source` VARCHAR(10) NOT NULL DEFAULT 'manual',                 -- starter = from app/config/academy/partners.php
+  `link_status` SMALLINT UNSIGNED NULL,
+  `link_checked_at` DATETIME NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_academy_partner_url` (`url_hash`),
+  KEY `ix_academy_partner_list` (`is_active`, `category`, `level`),
+  KEY `ix_academy_partner_provider` (`provider`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- ======================================================================
 -- PART: seed.sql

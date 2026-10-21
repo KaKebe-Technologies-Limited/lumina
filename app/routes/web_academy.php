@@ -12,6 +12,7 @@ use App\Controllers\Web\AcademyLearnController;
 // ---- public ---------------------------------------------------------------------------------------------------------------
 $router->get('/academy', [AcademyController::class, 'index'])->name('academy.index');
 $router->get('/academy/courses/{slug}', [AcademyController::class, 'course'])->name('academy.course');
+$router->get('/academy/partner-courses', [AcademyController::class, 'partners'])->name('academy.partners');
 $router->get('/academy/classes', [AcademyController::class, 'classes'])->name('academy.classes');
 $router->get('/academy/classes/{id}/calendar.ics', [AcademyController::class, 'calendar'])->middleware('throttle:60,60')->name('academy.class.ics');
 $router->get('/academy/certificate/{code}', [AcademyController::class, 'certificate'])->middleware('throttle:120,60')->name('academy.certificate');

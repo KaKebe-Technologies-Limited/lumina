@@ -21704,6 +21704,21 @@ html.cal-lock {
   color: #5a6470;
 }
 
+.ac-tone-data {
+  background: rgba(15, 118, 110, 0.12);
+  color: #0f766e;
+}
+
+.ac-tone-cloud {
+  background: rgba(29, 78, 216, 0.12);
+  color: #1d4ed8;
+}
+
+.ac-tone-business {
+  background: rgba(161, 98, 7, 0.12);
+  color: #a16207;
+}
+
 .ac-center {
   text-align: center;
   margin-top: 1.5rem;
@@ -23037,4 +23052,32 @@ fieldset.ac-q legend + * {
   .ac-progress span {
     transition: none;
   }
+}
+
+.ac-note-box {
+  max-width: none;
+  margin: 0 0 1.5rem;
+}
+
+.ac-level-title {
+  margin: 3rem 0 1rem;
+}
+
+.ac-level-title small {
+  display: block;
+  margin-top: .25rem;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: #5A6470;
+}
+
+.ac-badge--free {
+  background: #E7F5EC;
+  color: #1E7B45;
+  border-color: rgba(30, 123, 69, 0.3);
+}
+
+.ac-card--partner .ac-card__icon {
+  height: 4.5rem;
 }
