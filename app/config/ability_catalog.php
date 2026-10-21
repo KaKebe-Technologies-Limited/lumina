@@ -84,6 +84,13 @@ return [
             'shop.delete'   => ['Delete products and orders', null],
         ],
     ],
+    'academy' => [
+        'label' => 'LAF Academy',
+        'items' => [
+            'academy.teach'  => ['Teach in the LAF Academy', 'The facilitator role. Create and edit their own courses (lessons, handouts, quizzes), schedule virtual classes, and see the progress of the learners in those courses.'],
+            'academy.manage' => ['Run the LAF Academy', 'Everything in the Academy: every course, learners (verify, deactivate, reset passwords, export), certificates (issue, revoke), facilitators, Academy settings and the starter courses. Give this to trusted administrators only.'],
+        ],
+    ],
     'site' => [
         'label' => 'Website administration',
         'items' => [

@@ -150,12 +150,14 @@ return [
         'shop.settings'     => ['admin'],           // shop settings, delivery and PAYMENT settings (holds the payment-gateway secrets): admin only by default
         'shop.export'       => ['admin'],           // download shop orders as CSV
         'shop.delete'       => ['admin'],           // delete products and orders
+        'academy.manage'    => ['admin'],           // LAF ACADEMY, everything: all courses, learners, certificates, facilitators, settings, starter courses (docs/ACADEMY.md)
+        'academy.teach'     => ['admin'],           // LAF ACADEMY, teaching: the facilitator role. Own courses (lessons, quizzes), virtual classes, the learners of those courses
     ],
 
     /** Slugs a custom page may NOT use (they are real routes or folders). */
     'reserved_slugs' => [
         'admin', 'assets', 'uploads', 'api', 'login', 'logout', 'index', 'storage', 'app', 'bin', 'database', 'docs', 'scss', 'tools',
         'vendor', 'sitemap', 'sitemap-xml', 'robots', 'robots-txt', 'subscribe', 'unsubscribe', 'search', 'download', 'downloads',
-        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter', 'calendar', 'meeting', 'meetings', 'forms', 'shop', 'offline', 'opportunities', 'manifest-webmanifest', 'sw-js',
+        'favicon', 'feed', 'rss', 'new', 'edit', 'delete', 'create', 'press', 'tests', 'public', 'node-modules', 'install', 'newsletter', 'calendar', 'meeting', 'meetings', 'forms', 'shop', 'offline', 'opportunities', 'academy', 'manifest-webmanifest', 'sw-js',
     ],
 ];

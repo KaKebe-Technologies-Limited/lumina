@@ -1,0 +1,50 @@
+<?php
+/**
+ * PUBLIC routes - LAF ACADEMY (free ICT learning portal). Learners have their own accounts (not admin users). docs/ACADEMY.md.
+ * Every public POST carries the 'honeypot' + 'throttle' middleware (CSRF is automatic). Learner screens check the learner themselves (AcademyBaseController).
+ * Static paths beat dynamic ones whatever the order.
+ */
+
+use App\Controllers\Web\AcademyAccountController;
+use App\Controllers\Web\AcademyController;
+use App\Controllers\Web\AcademyLearnController;
+
+// ---- public ---------------------------------------------------------------------------------------------------------------
+$router->get('/academy', [AcademyController::class, 'index'])->name('academy.index');
+$router->get('/academy/courses/{slug}', [AcademyController::class, 'course'])->name('academy.course');
+$router->get('/academy/classes', [AcademyController::class, 'classes'])->name('academy.classes');
+$router->get('/academy/classes/{id}/calendar.ics', [AcademyController::class, 'calendar'])->middleware('throttle:60,60')->name('academy.class.ics');
+$router->get('/academy/certificate/{code}', [AcademyController::class, 'certificate'])->middleware('throttle:120,60')->name('academy.certificate');
+$router->get('/academy/certificate/{code}/pdf', [AcademyController::class, 'certificatePdf'])->middleware('throttle:60,60')->name('academy.certificate.pdf');
+
+// ---- accounts -------------------------------------------------------------------------------------------------------------
+$router->get('/academy/register', [AcademyAccountController::class, 'registerForm'])->name('academy.register');
+$router->post('/academy/register', [AcademyAccountController::class, 'register'])->middleware(['honeypot', 'throttle:10,600'])->name('academy.register.post');
+$router->get('/academy/check-email', [AcademyAccountController::class, 'checkEmail'])->name('academy.check_email');
+$router->post('/academy/verify/resend', [AcademyAccountController::class, 'resend'])->middleware(['honeypot', 'throttle:6,600'])->name('academy.verify.resend');
+$router->get('/academy/verify/{token}', [AcademyAccountController::class, 'verify'])->middleware('throttle:30,600')->name('academy.verify');
+$router->get('/academy/login', [AcademyAccountController::class, 'loginForm'])->name('academy.login');
+$router->post('/academy/login', [AcademyAccountController::class, 'login'])->middleware(['honeypot', 'throttle:20,600'])->name('academy.login.post');
+$router->post('/academy/logout', [AcademyAccountController::class, 'logout'])->name('academy.logout');
+$router->get('/academy/forgot', [AcademyAccountController::class, 'forgotForm'])->name('academy.forgot');
+$router->post('/academy/forgot', [AcademyAccountController::class, 'forgot'])->middleware(['honeypot', 'throttle:6,600'])->name('academy.forgot.post');
+$router->get('/academy/reset/{token}', [AcademyAccountController::class, 'resetForm'])->name('academy.reset');
+$router->post('/academy/reset/{token}', [AcademyAccountController::class, 'reset'])->middleware(['honeypot', 'throttle:10,600'])->name('academy.reset.post');
+$router->get('/academy/account', [AcademyAccountController::class, 'account'])->name('academy.account');
+$router->post('/academy/account/profile', [AcademyAccountController::class, 'updateProfile'])->middleware('throttle:20,600')->name('academy.account.profile');
+$router->post('/academy/account/password', [AcademyAccountController::class, 'changePassword'])->middleware('throttle:10,600')->name('academy.account.password');
+$router->post('/academy/account/delete', [AcademyAccountController::class, 'deleteAccount'])->middleware('throttle:5,600')->name('academy.account.delete');
+
+// ---- learning -------------------------------------------------------------------------------------------------------------
+$router->get('/academy/dashboard', [AcademyLearnController::class, 'dashboard'])->name('academy.dashboard');
+$router->post('/academy/courses/{slug}/enroll', [AcademyLearnController::class, 'enroll'])->middleware('throttle:30,600')->name('academy.enroll');
+$router->post('/academy/courses/{slug}/leave', [AcademyLearnController::class, 'unenroll'])->middleware('throttle:10,600')->name('academy.leave');
+$router->get('/academy/learn/{slug}', [AcademyLearnController::class, 'resume'])->name('academy.learn');
+$router->get('/academy/learn/{slug}/lesson/{id}', [AcademyLearnController::class, 'lesson'])->name('academy.lesson');
+$router->post('/academy/learn/{slug}/lesson/{id}/complete', [AcademyLearnController::class, 'complete'])->middleware('throttle:200,600')->name('academy.lesson.complete');
+$router->post('/academy/learn/{slug}/lesson/{id}/reopen', [AcademyLearnController::class, 'reopen'])->middleware('throttle:60,600')->name('academy.lesson.reopen');
+$router->get('/academy/learn/{slug}/lesson/{id}/file', [AcademyLearnController::class, 'file'])->middleware('throttle:60,60')->name('academy.lesson.file');
+$router->get('/academy/learn/{slug}/quiz/{id}', [AcademyLearnController::class, 'quiz'])->name('academy.quiz');
+$router->post('/academy/learn/{slug}/quiz/{id}/start', [AcademyLearnController::class, 'startQuiz'])->middleware('throttle:60,600')->name('academy.quiz.start');
+$router->get('/academy/learn/{slug}/attempt/{id}', [AcademyLearnController::class, 'attempt'])->name('academy.attempt');
+$router->post('/academy/learn/{slug}/attempt/{id}', [AcademyLearnController::class, 'submit'])->middleware('throttle:60,600')->name('academy.attempt.submit');

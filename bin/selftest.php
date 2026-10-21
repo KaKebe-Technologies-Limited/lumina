@@ -228,6 +228,8 @@ require __DIR__ . '/selftest-shop.php';                 // shop: money, seed / a
 require __DIR__ . '/selftest-social.php';               // social media: SSRF-guarded HTTP client, caption builder, secrets, post queue, dispatcher + ShareHook (fake channels), the LOCAL MOCK (Telegram, webhook, Graph, X OAuth1, LinkedIn), HTTP abilities (removes its own test data, restores the social settings)
 require __DIR__ . '/selftest-opportunities.php';        // opportunities: feed parser, deadline / category / summary helpers, SSRF-guarded feed client, importer (duplicates, closed, review mode, prune), public pages, sitemap (removes its own test data)
 require __DIR__ . '/selftest-hero.php';                 // hero / banner images: responsive WebP copies, <picture> partial, one well-formed hero image on every banner page
+require __DIR__ . '/selftest-academy.php';               // LAF Academy: quiz text format, starter courses + installer, learner accounts (sign-up, e-mailed confirmation, sign-in, reset), enrolling, lessons, quizzes and grading, final exam, certificates (PDF, check page), virtual classes, access control (removes its own test data)
+require __DIR__ . '/selftest-academy-admin.php';         // LAF Academy admin: courses, curriculum, lessons + handouts, quiz editor, classes, learners, certificates, facilitator accounts and the facilitator limits (removes its own test data)
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);

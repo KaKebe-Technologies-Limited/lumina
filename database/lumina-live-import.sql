@@ -1692,6 +1692,232 @@ SELECT x.`name`, x.`url`, SHA1(x.`url`), x.`cat` FROM (
   UNION ALL SELECT 'Funds for NGOs', 'https://www.fundsforngos.org/feed/', 'grant'
 ) x WHERE NOT EXISTS (SELECT 1 FROM `opportunity_feeds`);
 
+-- =====================================================================================================================
+-- LAF ACADEMY (free ICT learning portal: courses, lessons, quizzes, learners, virtual classes, certificates). ADDITIVE and IDEMPOTENT: new tables only.
+-- Learners have their OWN accounts (academy_learners: e-mail + password); facilitators and administrators are ordinary users (role "facilitator").
+-- See docs/ACADEMY.md.
+-- =====================================================================================================================
+CREATE TABLE IF NOT EXISTS `academy_courses` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` VARCHAR(120) NOT NULL,
+  `title` VARCHAR(190) NOT NULL,
+  `category` VARCHAR(20) NOT NULL DEFAULT 'basics',
+  `level` VARCHAR(20) NOT NULL DEFAULT 'beginner',
+  `icon` VARCHAR(40) NULL,
+  `summary` VARCHAR(255) NULL,
+  `description` MEDIUMTEXT NULL,
+  `outcomes` TEXT NULL,                                           -- JSON list of strings ("You can ...")
+  `requirements` TEXT NULL,                                       -- JSON list of strings
+  `resources` TEXT NULL,                                          -- JSON list of {title,url}
+  `image` VARCHAR(255) NULL,
+  `image_alt` VARCHAR(255) NULL,
+  `pass_mark` TINYINT UNSIGNED NOT NULL DEFAULT 70,               -- % needed in the final exam
+  `certificate_enabled` TINYINT(1) NOT NULL DEFAULT 1,
+  `status` ENUM('draft','published','archived') NOT NULL DEFAULT 'draft',
+  `is_featured` TINYINT(1) NOT NULL DEFAULT 0,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `facilitator_id` INT UNSIGNED NULL,                             -- the facilitator who owns / teaches the course
+  `source` VARCHAR(20) NULL,                                      -- 'starter' = installed from app/config/academy/courses
+  `created_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_academy_courses_slug` (`slug`),
+  KEY `ix_academy_courses_list` (`status`, `sort_order`),
+  KEY `ix_academy_courses_facilitator` (`facilitator_id`),
+  CONSTRAINT `fk_academy_courses_facilitator` FOREIGN KEY (`facilitator_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `academy_modules` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `course_id` INT UNSIGNED NOT NULL,
+  `title` VARCHAR(190) NOT NULL,
+  `summary` VARCHAR(255) NULL,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_modules_course` (`course_id`, `sort_order`),
+  CONSTRAINT `fk_academy_modules_course` FOREIGN KEY (`course_id`) REFERENCES `academy_courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `academy_lessons` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `course_id` INT UNSIGNED NOT NULL,
+  `module_id` INT UNSIGNED NOT NULL,
+  `title` VARCHAR(190) NOT NULL,
+  `kind` ENUM('text','video','file','link') NOT NULL DEFAULT 'text',
+  `body` MEDIUMTEXT NULL,                                         -- sanitised HTML
+  `video_url` VARCHAR(255) NULL,                                  -- a YouTube link (shown as a player)
+  `link_url` VARCHAR(500) NULL,                                   -- an outside page (kind = link)
+  `file_path` VARCHAR(255) NULL,                                  -- an uploaded handout, stored privately (storage/private/academy)
+  `file_name` VARCHAR(190) NULL,
+  `file_size` INT UNSIGNED NULL,
+  `minutes` SMALLINT UNSIGNED NOT NULL DEFAULT 10,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `is_published` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_lessons_module` (`module_id`, `sort_order`),
+  KEY `ix_academy_lessons_course` (`course_id`),
+  CONSTRAINT `fk_academy_lessons_course` FOREIGN KEY (`course_id`) REFERENCES `academy_courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_academy_lessons_module` FOREIGN KEY (`module_id`) REFERENCES `academy_modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- A quiz belongs to a module (practice quiz) or, with module_id NULL, is the course FINAL EXAM (at most one per course: enforced by the application).
+CREATE TABLE IF NOT EXISTS `academy_quizzes` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `course_id` INT UNSIGNED NOT NULL,
+  `module_id` INT UNSIGNED NULL,
+  `title` VARCHAR(190) NOT NULL,
+  `pass_mark` TINYINT UNSIGNED NOT NULL DEFAULT 70,
+  `time_limit_min` SMALLINT UNSIGNED NULL,
+  `max_attempts` SMALLINT UNSIGNED NOT NULL DEFAULT 0,            -- 0 = unlimited
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_quizzes_course` (`course_id`),
+  KEY `ix_academy_quizzes_module` (`module_id`),
+  CONSTRAINT `fk_academy_quizzes_course` FOREIGN KEY (`course_id`) REFERENCES `academy_courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_academy_quizzes_module` FOREIGN KEY (`module_id`) REFERENCES `academy_modules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `academy_questions` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `quiz_id` INT UNSIGNED NOT NULL,
+  `prompt` VARCHAR(600) NOT NULL,
+  `type` ENUM('single','multiple') NOT NULL DEFAULT 'single',
+  `explanation` TEXT NULL,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_questions_quiz` (`quiz_id`, `sort_order`),
+  CONSTRAINT `fk_academy_questions_quiz` FOREIGN KEY (`quiz_id`) REFERENCES `academy_quizzes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `academy_options` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `question_id` INT UNSIGNED NOT NULL,
+  `label` VARCHAR(255) NOT NULL,
+  `is_correct` TINYINT(1) NOT NULL DEFAULT 0,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_options_question` (`question_id`, `sort_order`),
+  CONSTRAINT `fk_academy_options_question` FOREIGN KEY (`question_id`) REFERENCES `academy_questions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `academy_learners` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(120) NOT NULL,
+  `email` VARCHAR(190) NOT NULL,
+  `password_hash` VARCHAR(255) NOT NULL,
+  `phone` VARCHAR(40) NULL,
+  `country` VARCHAR(80) NULL,
+  `email_verified_at` DATETIME NULL,
+  `token_hash` CHAR(64) NULL,                                     -- sha256 of the one-time link sent by e-mail (verify the address / reset the password)
+  `token_kind` VARCHAR(10) NULL,
+  `token_expires_at` DATETIME NULL,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `last_login_at` DATETIME NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_academy_learners_email` (`email`),
+  KEY `ix_academy_learners_token` (`token_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `academy_enrollments` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `learner_id` INT UNSIGNED NOT NULL,
+  `course_id` INT UNSIGNED NOT NULL,
+  `enrolled_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `completed_at` DATETIME NULL,
+  `last_lesson_id` INT UNSIGNED NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_academy_enrollments` (`learner_id`, `course_id`),
+  KEY `ix_academy_enrollments_course` (`course_id`),
+  CONSTRAINT `fk_academy_enrollments_learner` FOREIGN KEY (`learner_id`) REFERENCES `academy_learners` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_academy_enrollments_course` FOREIGN KEY (`course_id`) REFERENCES `academy_courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `academy_progress` (
+  `learner_id` INT UNSIGNED NOT NULL,
+  `lesson_id` INT UNSIGNED NOT NULL,
+  `course_id` INT UNSIGNED NOT NULL,
+  `completed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`learner_id`, `lesson_id`),
+  KEY `ix_academy_progress_course` (`learner_id`, `course_id`),
+  CONSTRAINT `fk_academy_progress_learner` FOREIGN KEY (`learner_id`) REFERENCES `academy_learners` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_academy_progress_lesson` FOREIGN KEY (`lesson_id`) REFERENCES `academy_lessons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `academy_attempts` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `learner_id` INT UNSIGNED NOT NULL,
+  `quiz_id` INT UNSIGNED NOT NULL,
+  `course_id` INT UNSIGNED NOT NULL,
+  `started_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `submitted_at` DATETIME NULL,
+  `layout` MEDIUMTEXT NULL,                                       -- JSON: the question and answer order this learner was shown
+  `answers` MEDIUMTEXT NULL,                                      -- JSON: question id => chosen option ids
+  `correct` SMALLINT UNSIGNED NULL,
+  `total` SMALLINT UNSIGNED NULL,
+  `score_pct` DECIMAL(5,2) NULL,
+  `passed` TINYINT(1) NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_attempts_learner` (`learner_id`, `quiz_id`),
+  KEY `ix_academy_attempts_quiz` (`quiz_id`),
+  CONSTRAINT `fk_academy_attempts_learner` FOREIGN KEY (`learner_id`) REFERENCES `academy_learners` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_academy_attempts_quiz` FOREIGN KEY (`quiz_id`) REFERENCES `academy_quizzes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- A certificate keeps a snapshot of the learner name and the course title, so it stays valid and verifiable if the account or the course is changed.
+CREATE TABLE IF NOT EXISTS `academy_certificates` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code` VARCHAR(24) NOT NULL,
+  `learner_id` INT UNSIGNED NULL,
+  `course_id` INT UNSIGNED NULL,
+  `learner_name` VARCHAR(120) NOT NULL,
+  `course_title` VARCHAR(190) NOT NULL,
+  `score_pct` DECIMAL(5,2) NULL,
+  `hours` DECIMAL(5,1) NULL,
+  `issued_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `revoked_at` DATETIME NULL,
+  `revoked_reason` VARCHAR(255) NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_academy_certificates_code` (`code`),
+  KEY `ix_academy_certificates_learner` (`learner_id`),
+  KEY `ix_academy_certificates_course` (`course_id`),
+  CONSTRAINT `fk_academy_certificates_learner` FOREIGN KEY (`learner_id`) REFERENCES `academy_learners` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_academy_certificates_course` FOREIGN KEY (`course_id`) REFERENCES `academy_courses` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `academy_classes` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(190) NOT NULL,
+  `description` TEXT NULL,
+  `course_id` INT UNSIGNED NULL,
+  `facilitator_id` INT UNSIGNED NULL,
+  `platform` VARCHAR(20) NOT NULL DEFAULT 'meet',                 -- meet | zoom | teams | jitsi | other
+  `join_url` VARCHAR(500) NULL,
+  `passcode` VARCHAR(60) NULL,
+  `start_at` DATETIME NOT NULL,
+  `end_at` DATETIME NOT NULL,
+  `status` ENUM('scheduled','cancelled','completed') NOT NULL DEFAULT 'scheduled',
+  `audience` VARCHAR(10) NOT NULL DEFAULT 'course',               -- course = learners enrolled in the course; all = every signed-in learner
+  `recording_url` VARCHAR(500) NULL,
+  `reminder_sent_at` DATETIME NULL,
+  `created_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_classes_when` (`status`, `start_at`),
+  KEY `ix_academy_classes_course` (`course_id`),
+  KEY `ix_academy_classes_facilitator` (`facilitator_id`),
+  CONSTRAINT `fk_academy_classes_course` FOREIGN KEY (`course_id`) REFERENCES `academy_courses` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_academy_classes_facilitator` FOREIGN KEY (`facilitator_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- ======================================================================
 -- PART: seed.sql
@@ -2652,4 +2878,24 @@ WHERE slug = 'editor' AND is_system = 1
   AND abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders"]'
   AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_social_editor_role_v1') m);
 INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_social_editor_role_v1', '1');
+
+-- ------------------------------------------------------------------ LAF Academy (see docs/ACADEMY.md). ADDITIVE and IDEMPOTENT.
+-- Role "Facilitator": teaches in the Academy (own courses, quizzes, virtual classes, the learners of those courses). INSERT IGNORE: a role the owner edited is never overwritten.
+INSERT IGNORE INTO roles (slug, name, description, abilities, is_system) VALUES
+  ('facilitator', 'Facilitator', 'Teaches in the LAF Academy: writes their own courses and quizzes, schedules virtual classes and follows their learners. Cannot see anything else.', '["dashboard.view","academy.teach"]', 0);
+
+-- Page: /academy (the Academy home and every Academy screen use its wording: app/config/pages/academy.php). Needed as a row because content_blocks.page_slug is a foreign key to pages.slug.
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
+  ('academy', 'LAF Academy', 'registry', 'default', 1, 1, 1, 'LAF Academy', 45, NULL)
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
+  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
+  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
+  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
+  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
+  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
+  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
+  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
 

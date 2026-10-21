@@ -1,0 +1,248 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Controllers\Web;
+
+use App\Core\Database;
+use App\Core\Flash;
+use App\Core\Request;
+use App\Core\Response;
+use App\Services\Academy\LearnerAuth;
+
+/**
+ * LAF Academy learner accounts: sign up, confirm the e-mail address, sign in / out, forgotten password, and "my account" (details, password, delete).
+ * Every public POST carries the honeypot + throttle middleware (routes/web_academy.php); CSRF is automatic. Answers never reveal whether an address has an account.
+ */
+final class AcademyAccountController extends AcademyBaseController
+{
+    // ------------------------------------------------------------------------------------------------------------- sign up
+
+    public function registerForm(Request $request): Response
+    {
+        $this->rememberNext($request->string('next'));
+        if ($this->learner() !== null) {
+            return $this->redirect('academy/dashboard');
+        }
+        return $this->renderAcademy('web/academy/register', ['open' => LearnerAuth::registrationOpen()], [
+            'bodyClass' => 'is-academy is-academy-auth',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Create an account', null]],
+            'meta' => ['title' => 'Create your free account', 'description' => 'Join the LAF Academy for free ICT courses, virtual classes and certificates.'],
+        ]);
+    }
+
+    public function register(Request $request): Response
+    {
+        $this->gate();
+        if (!LearnerAuth::registrationOpen()) {
+            Flash::error((string) content('academy', 'auth.register_closed'));
+            return $this->redirect('academy/register');
+        }
+        if (!$request->bool('agree')) {
+            $this->fail(['agree' => 'Please tick the box to continue.'], 'academy/register');
+        }
+        $res = LearnerAuth::register([
+            'name' => $request->string('name'), 'email' => $request->string('email'), 'password' => $request->string('password'),
+            'phone' => $request->string('phone'), 'country' => $request->string('country'),
+        ], $request->ip());
+        if (!$res['ok']) {
+            $this->fail($res['errors'], 'academy/register');
+        }
+        if ($res['verify']) {
+            \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail($request->string('email')));
+            return $this->redirect('academy/check-email');
+        }
+        // no confirmation needed: sign the new learner in at once (an address that already has an account gets no session)
+        if (isset($res['learner'])) {
+            LearnerAuth::signIn($res['learner']);
+            Flash::success('Welcome to the LAF Academy! Choose a course to start.');
+            return $this->redirect('academy/dashboard');
+        }
+        Flash::info('If this address is new, your account is ready. Otherwise sign in or reset your password.');
+        return $this->redirect('academy/login');
+    }
+
+    public function checkEmail(Request $request): Response
+    {
+        return $this->renderAcademy('web/academy/check-email', ['email' => (string) \App\Core\Session::get('academy_check_email', '')], [
+            'bodyClass' => 'is-academy is-academy-auth',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Check your e-mail', null]],
+            'meta' => ['title' => 'Check your e-mail'],
+        ], true);
+    }
+
+    public function resend(Request $request): Response
+    {
+        $this->gate();
+        $email = $request->string('email') !== '' ? $request->string('email') : (string) \App\Core\Session::get('academy_check_email', '');
+        if ($email !== '') {
+            LearnerAuth::resendVerification($email);
+        }
+        Flash::success('If that address has an account waiting to be confirmed, we sent the link again.');
+        return $this->redirect('academy/check-email');
+    }
+
+    public function verify(Request $request, string $token): Response
+    {
+        $this->gate();
+        $l = LearnerAuth::verify($token);
+        if ($l === null) {
+            return $this->renderAcademy('web/academy/message', [
+                'heading' => 'This link does not work',
+                'text' => 'The confirmation link has expired or was already used. If you have not confirmed your address yet, ask for a new link below; if you have, just sign in.',
+                'actions' => [['label' => 'Sign in', 'url' => url('academy/login')], ['label' => 'Send me a new link', 'url' => url('academy/check-email')]],
+            ], ['bodyClass' => 'is-academy is-academy-auth', 'meta' => ['title' => 'Confirmation link'], 'status' => 410], true);
+        }
+        LearnerAuth::signIn($l);
+        Flash::success('Your e-mail address is confirmed. Welcome to the LAF Academy!');
+        return $this->redirect('academy/dashboard');
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- sign in / out
+
+    public function loginForm(Request $request): Response
+    {
+        $this->rememberNext($request->string('next'));
+        if ($this->learner() !== null) {
+            return $this->redirect('academy/dashboard');
+        }
+        return $this->renderAcademy('web/academy/login', [], [
+            'bodyClass' => 'is-academy is-academy-auth',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Sign in', null]],
+            'meta' => ['title' => 'Sign in to the LAF Academy', 'description' => 'Sign in to continue your courses.'],
+        ]);
+    }
+
+    public function login(Request $request): Response
+    {
+        $this->gate();
+        $res = LearnerAuth::login($request->string('email'), $request->string('password'), $request->ip());
+        if (!$res['ok']) {
+            if ($res['unverified']) {
+                \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail($request->string('email')));
+                Flash::warning((string) $res['error']);
+                return $this->redirect('academy/check-email');
+            }
+            $this->fail(['password' => (string) $res['error']], 'academy/login');
+        }
+        return $this->redirect($this->nextAfterLogin());
+    }
+
+    public function logout(Request $request): Response
+    {
+        LearnerAuth::logout();
+        Flash::success('You are signed out.');
+        return $this->redirect('academy');
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- forgotten password
+
+    public function forgotForm(Request $request): Response
+    {
+        return $this->renderAcademy('web/academy/forgot', [], [
+            'bodyClass' => 'is-academy is-academy-auth',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Forgotten password', null]],
+            'meta' => ['title' => 'Forgotten password'],
+        ], true);
+    }
+
+    public function forgot(Request $request): Response
+    {
+        $this->gate();
+        LearnerAuth::requestReset($request->string('email'), $request->ip());
+        Flash::success('If that address has an account, we sent a link to choose a new password. It works for one hour.');
+        return $this->redirect('academy/forgot');
+    }
+
+    public function resetForm(Request $request, string $token): Response
+    {
+        $this->gate();
+        $ok = LearnerAuth::resetTokenValid($token);
+        return $this->renderAcademy('web/academy/reset', ['token' => $token, 'valid' => $ok], [
+            'bodyClass' => 'is-academy is-academy-auth',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['New password', null]],
+            'meta' => ['title' => 'Choose a new password'], 'status' => $ok ? 200 : 410,
+        ], true);
+    }
+
+    public function reset(Request $request, string $token): Response
+    {
+        $this->gate();
+        $pw = $request->string('password');
+        if ($pw !== $request->string('password_confirm')) {
+            $this->fail(['password_confirm' => 'The two passwords are not the same.'], 'academy/reset/' . $token);
+        }
+        $res = LearnerAuth::resetPassword($token, $pw);
+        if (!$res['ok']) {
+            $this->fail(['password' => (string) $res['error']], 'academy/reset/' . $token);
+        }
+        Flash::success('Your password was changed. You can sign in now.');
+        return $this->redirect('academy/login');
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- my account
+
+    public function account(Request $request): Response
+    {
+        $l = $this->learner();
+        if ($l === null) {
+            return $this->loginRedirect();
+        }
+        return $this->renderAcademy('web/academy/account', ['me' => $l], [
+            'bodyClass' => 'is-academy is-academy-account',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['My account', null]],
+            'meta' => ['title' => 'My account'],
+        ], true);
+    }
+
+    public function updateProfile(Request $request): Response
+    {
+        $l = $this->learner();
+        if ($l === null) {
+            return $this->loginRedirect();
+        }
+        $name = trim((string) preg_replace('/\s+/u', ' ', strip_tags($request->string('name'))));
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 120) {
+            $this->fail(['name' => 'Please enter your full name.'], 'academy/account');
+        }
+        $phone = trim((string) preg_replace('/[^0-9+()\- ]/', '', $request->string('phone')));
+        $country = trim(strip_tags($request->string('country')));
+        Database::update('academy_learners', [
+            'name' => $name, 'phone' => $phone !== '' ? mb_substr($phone, 0, 40) : null, 'country' => $country !== '' ? mb_substr($country, 0, 80) : null,
+        ], 'id = ?', [(int) $l['id']]);
+        LearnerAuth::flush();
+        Flash::success('Your details were saved. Certificates you already earned keep the name they were issued with.');
+        return $this->redirect('academy/account');
+    }
+
+    public function changePassword(Request $request): Response
+    {
+        $l = $this->learner();
+        if ($l === null) {
+            return $this->loginRedirect();
+        }
+        if ($request->string('new_password') !== $request->string('new_password_confirm')) {
+            $this->fail(['new_password_confirm' => 'The two passwords are not the same.'], 'academy/account');
+        }
+        $res = \App\Services\Academy\LearnerAuth::changePassword((int) $l['id'], $request->string('current_password'), $request->string('new_password'));
+        if (!$res['ok']) {
+            $this->fail(['current_password' => (string) $res['error']], 'academy/account');
+        }
+        Flash::success('Your password was changed.');
+        return $this->redirect('academy/account');
+    }
+
+    public function deleteAccount(Request $request): Response
+    {
+        $l = $this->learner();
+        if ($l === null) {
+            return $this->loginRedirect();
+        }
+        $row = Database::one('SELECT password_hash FROM academy_learners WHERE id = ?', [(int) $l['id']]);
+        if ($row === null || !\App\Core\Auth::verifyPassword($request->string('password'), (string) $row['password_hash']) || strtoupper(trim($request->string('confirm'))) !== 'DELETE') {
+            $this->fail(['confirm' => 'Type DELETE and enter your password to delete the account.'], 'academy/account');
+        }
+        LearnerAuth::deleteAccount((int) $l['id']);
+        Flash::success('Your account and your learning records were deleted.');
+        return $this->redirect('academy');
+    }
+}

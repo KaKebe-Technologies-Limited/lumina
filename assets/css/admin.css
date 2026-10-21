@@ -23124,3 +23124,218 @@ body.admin.fs-printpage .fs-stars__off {
     border: 3px solid Highlight;
   }
 }
+
+.aac-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.aac-stat {
+  padding: 1rem;
+  border-radius: 12px;
+  background: #FFFFFF;
+  border: 1px solid #E3DDD2;
+}
+
+.aac-stat b {
+  display: block;
+  font-size: 2.25rem;
+  line-height: 1.1;
+  color: #2C3950;
+}
+
+.aac-stat span {
+  color: #5A6470;
+  font-size: 0.9375rem;
+}
+
+.aac-stat span small {
+  display: block;
+  font-size: 0.875rem;
+}
+
+.aac-grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 992px) {
+  .aac-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.aac-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aac-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.15rem 0.75rem;
+  padding: .5rem 0;
+  border-bottom: 1px solid #E3DDD2;
+}
+
+.aac-list li:last-child {
+  border-bottom: 0;
+}
+
+.aac-list li > span {
+  color: #5A6470;
+  font-size: 0.9375rem;
+}
+
+.aac-list--links li {
+  justify-content: flex-start;
+}
+
+.aac-facts {
+  margin: 0;
+}
+
+.aac-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: .4rem 0;
+  border-bottom: 1px solid #E3DDD2;
+}
+
+.aac-facts dt {
+  color: #5A6470;
+}
+
+.aac-facts dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.aac-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.aac-inline .field {
+  margin: 0;
+}
+
+.aac-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.aac-statusbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: #F7F3EC;
+}
+
+.aac-num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  margin-right: .35rem;
+  border-radius: 50%;
+  background: #2C3950;
+  color: #FFFFFF;
+  font-size: 0.9375rem;
+}
+
+.aac-lessons {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: lesson;
+}
+
+.aac-lessons li {
+  counter-increment: lesson;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  padding: .55rem 0;
+  border-bottom: 1px solid #E3DDD2;
+}
+
+.aac-lessons li::before {
+  content: counter(lesson) ".";
+  color: #5A6470;
+  min-width: 1.6rem;
+}
+
+.aac-lessons li.is-hidden {
+  opacity: .6;
+}
+
+.aac-lessons__title {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.aac-lessons__title small {
+  display: block;
+  color: #5A6470;
+}
+
+.aac-edit > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.aac-edit > summary::-webkit-details-marker {
+  display: none;
+}
+
+.aac-edit__form {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 26rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #E3DDD2;
+  border-radius: 12px;
+  background: #FFFFFF;
+}
+
+.aac-script {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .9rem;
+  line-height: 1.55;
+  min-height: 24rem;
+  tab-size: 2;
+}
+
+.aac-example {
+  padding: 0.75rem;
+  border-radius: 6px;
+  background: #F7F3EC;
+  overflow: auto;
+  font-size: .85rem;
+}
+
+.aac-inline form {
+  margin: 0;
+}

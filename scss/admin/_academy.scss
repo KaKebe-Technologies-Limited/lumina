@@ -1,0 +1,25 @@
+// Admin > LAF Academy: overview tiles, lists, curriculum, quiz editor
+.aac-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: $space-3; margin-bottom: $space-5; }
+.aac-stat { padding: $space-4; border-radius: $radius; background: $white; border: 1px solid $border;
+  b { display: block; font-size: $fs-2xl; line-height: 1.1; color: $navy; }
+  span { color: $ink-soft; font-size: $fs-sm; small { display: block; font-size: $fs-xs; } } }
+.aac-grid { display: grid; gap: $space-4; margin-bottom: $space-4; @include respond(lg) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.aac-list { margin: 0; padding: 0; list-style: none;
+  li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .15rem $space-3; padding: .5rem 0; border-bottom: 1px solid $border; &:last-child { border-bottom: 0; } }
+  li > span { color: $ink-soft; font-size: $fs-sm; }
+  &--links li { justify-content: flex-start; } }
+.aac-facts { margin: 0; div { display: flex; justify-content: space-between; gap: $space-3; padding: .4rem 0; border-bottom: 1px solid $border; } dt { color: $ink-soft; } dd { margin: 0; font-weight: 600; text-align: right; } }
+.aac-inline { display: flex; flex-wrap: wrap; align-items: flex-end; gap: $space-3; margin: $space-3 0; .field { margin: 0; } }
+.aac-actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; margin-top: $space-3; }
+.aac-statusbar { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; margin-bottom: $space-4; padding: $space-3 $space-4; border-radius: $radius; background: $surface; }
+.aac-num { display: inline-grid; place-items: center; width: 1.8rem; height: 1.8rem; margin-right: .35rem; border-radius: 50%; background: $navy; color: $white; font-size: $fs-sm; }
+.aac-lessons { margin: 0 0 $space-3; padding: 0; list-style: none; counter-reset: lesson;
+  li { counter-increment: lesson; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-2 $space-3; padding: .55rem 0; border-bottom: 1px solid $border;
+    &::before { content: counter(lesson) '.'; color: $ink-soft; min-width: 1.6rem; }
+    &.is-hidden { opacity: .6; } }
+  &__title { flex: 1; min-width: 12rem; small { display: block; color: $ink-soft; } } }
+.aac-edit { > summary { cursor: pointer; list-style: none; &::-webkit-details-marker { display: none; } }
+  &__form { display: grid; gap: $space-2; max-width: 26rem; margin-top: $space-2; padding: $space-3; border: 1px solid $border; border-radius: $radius; background: $white; } }
+.aac-script { font-family: $font-mono; font-size: .9rem; line-height: 1.55; min-height: 24rem; tab-size: 2; }
+.aac-example { padding: $space-3; border-radius: $radius-sm; background: $surface; overflow: auto; font-size: .85rem; }
+.aac-inline form { margin: 0; }

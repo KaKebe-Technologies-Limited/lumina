@@ -9,6 +9,10 @@ final class Route
     /** Default regex per placeholder name. Anything else = [^/]+ */
     public const PATTERNS = [
         'id'    => '\d+',
+        'mid'   => '\d+',       // LAF Academy: module / lesson / quiz / course ids (the controller receives an int)
+        'lid'   => '\d+',
+        'qid'   => '\d+',
+        'courseId' => '\d+',
         'slug'  => '[a-z0-9]+(?:-[a-z0-9]+)*',
         'token' => '[A-Za-z0-9_-]+',
         'year'  => '\d{4}',

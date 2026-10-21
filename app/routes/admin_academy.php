@@ -1,0 +1,89 @@
+<?php
+/**
+ * ADMIN routes - LAF ACADEMY. Two ability levels (docs/ACADEMY.md): academy.teach (facilitators: their own courses, classes and learners; the controllers add the
+ * ownership checks) and academy.manage (administrators: everything). CSRF is verified by the router for every POST. $router is in scope.
+ */
+
+use App\Controllers\Admin\AcademyAdminController;
+use App\Controllers\Admin\AcademyCertificatesController;
+use App\Controllers\Admin\AcademyClassesController;
+use App\Controllers\Admin\AcademyCoursesController;
+use App\Controllers\Admin\AcademyCurriculumController;
+use App\Controllers\Admin\AcademyFacilitatorsController;
+use App\Controllers\Admin\AcademyLearnersController;
+
+$router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:academy.teach']], function ($router) {
+    $router->get('', [AcademyAdminController::class, 'index'])->name('admin.academy.index');
+
+    // courses
+    $router->get('/courses', [AcademyCoursesController::class, 'index'])->name('admin.academy.courses');
+    $router->get('/courses/create', [AcademyCoursesController::class, 'create'])->name('admin.academy.courses.create');
+    $router->post('/courses', [AcademyCoursesController::class, 'store'])->name('admin.academy.courses.store');
+    $router->get('/courses/{id}/edit', [AcademyCoursesController::class, 'edit'])->name('admin.academy.courses.edit');
+    $router->post('/courses/{id}', [AcademyCoursesController::class, 'update'])->name('admin.academy.courses.update');
+    $router->post('/courses/{id}/status', [AcademyCoursesController::class, 'status'])->name('admin.academy.courses.status');
+    $router->post('/courses/{id}/duplicate', [AcademyCoursesController::class, 'duplicate'])->name('admin.academy.courses.duplicate');
+    $router->post('/courses/{id}/delete', [AcademyCoursesController::class, 'delete'])->name('admin.academy.courses.delete');
+
+    // curriculum: modules, lessons, quizzes
+    $router->get('/courses/{id}/curriculum', [AcademyCurriculumController::class, 'show'])->name('admin.academy.curriculum');
+    $router->post('/courses/{id}/modules', [AcademyCurriculumController::class, 'storeModule'])->name('admin.academy.modules.store');
+    $router->post('/modules/{mid}', [AcademyCurriculumController::class, 'updateModule'])->name('admin.academy.modules.update');
+    $router->post('/modules/{mid}/delete', [AcademyCurriculumController::class, 'deleteModule'])->name('admin.academy.modules.delete');
+    $router->post('/modules/{mid}/move', [AcademyCurriculumController::class, 'moveModule'])->name('admin.academy.modules.move');
+    $router->get('/modules/{mid}/lessons/create', [AcademyCurriculumController::class, 'createLesson'])->name('admin.academy.lessons.create');
+    $router->post('/modules/{mid}/lessons', [AcademyCurriculumController::class, 'storeLesson'])->middleware('throttle:120,60')->name('admin.academy.lessons.store');
+    $router->get('/lessons/{lid}/edit', [AcademyCurriculumController::class, 'editLesson'])->name('admin.academy.lessons.edit');
+    $router->post('/lessons/{lid}', [AcademyCurriculumController::class, 'updateLesson'])->middleware('throttle:120,60')->name('admin.academy.lessons.update');
+    $router->post('/lessons/{lid}/delete', [AcademyCurriculumController::class, 'deleteLesson'])->name('admin.academy.lessons.delete');
+    $router->post('/lessons/{lid}/move', [AcademyCurriculumController::class, 'moveLesson'])->name('admin.academy.lessons.move');
+    $router->post('/lessons/{lid}/toggle', [AcademyCurriculumController::class, 'toggleLesson'])->name('admin.academy.lessons.toggle');
+    $router->get('/lessons/{lid}/file', [AcademyCurriculumController::class, 'lessonFile'])->name('admin.academy.lessons.file');
+    $router->get('/modules/{mid}/quiz', [AcademyCurriculumController::class, 'moduleQuiz'])->name('admin.academy.quiz.module');
+    $router->get('/courses/{id}/exam', [AcademyCurriculumController::class, 'examQuiz'])->name('admin.academy.quiz.exam');
+    $router->get('/quizzes/{qid}/edit', [AcademyCurriculumController::class, 'editQuiz'])->name('admin.academy.quiz.edit');
+    $router->post('/quizzes/{qid}', [AcademyCurriculumController::class, 'saveQuiz'])->name('admin.academy.quiz.save');
+    $router->post('/quizzes/{qid}/delete', [AcademyCurriculumController::class, 'deleteQuiz'])->name('admin.academy.quiz.delete');
+
+    // virtual classes
+    $router->get('/classes', [AcademyClassesController::class, 'index'])->name('admin.academy.classes');
+    $router->get('/classes/create', [AcademyClassesController::class, 'create'])->name('admin.academy.classes.create');
+    $router->post('/classes', [AcademyClassesController::class, 'store'])->name('admin.academy.classes.store');
+    $router->get('/classes/{id}/edit', [AcademyClassesController::class, 'edit'])->name('admin.academy.classes.edit');
+    $router->post('/classes/{id}', [AcademyClassesController::class, 'update'])->name('admin.academy.classes.update');
+    $router->post('/classes/{id}/notify', [AcademyClassesController::class, 'notify'])->middleware('throttle:20,60')->name('admin.academy.classes.notify');
+    $router->post('/classes/{id}/status', [AcademyClassesController::class, 'status'])->name('admin.academy.classes.status');
+    $router->post('/classes/{id}/delete', [AcademyClassesController::class, 'delete'])->name('admin.academy.classes.delete');
+
+    // learners (facilitators: only the learners of their courses; the controller limits what they can do)
+    $router->get('/learners', [AcademyLearnersController::class, 'index'])->name('admin.academy.learners');
+    $router->get('/learners/{id}', [AcademyLearnersController::class, 'show'])->name('admin.academy.learners.show');
+    $router->post('/learners/{id}/enroll', [AcademyLearnersController::class, 'enroll'])->name('admin.academy.learners.enroll');
+    $router->post('/learners/{id}/unenroll/{courseId}', [AcademyLearnersController::class, 'unenroll'])->name('admin.academy.learners.unenroll');
+});
+
+// ---- administrators only ---------------------------------------------------------------------------------------------------
+$router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:academy.manage']], function ($router) {
+    $router->post('/starter/install-all', [AcademyAdminController::class, 'installAllStarter'])->name('admin.academy.starter.all');
+    $router->post('/starter/{slug}/install', [AcademyAdminController::class, 'installStarter'])->name('admin.academy.starter.install');
+    $router->post('/starter/{slug}/reinstall', [AcademyAdminController::class, 'reinstallStarter'])->name('admin.academy.starter.reinstall');
+
+    $router->get('/learners/create/new', [AcademyLearnersController::class, 'create'])->name('admin.academy.learners.create');
+    $router->post('/learners', [AcademyLearnersController::class, 'store'])->name('admin.academy.learners.store');
+    $router->get('/learners-export', [AcademyLearnersController::class, 'export'])->middleware('throttle:10,60')->name('admin.academy.learners.export');
+    $router->post('/learners/{id}/reset-link', [AcademyLearnersController::class, 'resetLink'])->middleware('throttle:30,60')->name('admin.academy.learners.reset');
+    $router->post('/learners/{id}/verify', [AcademyLearnersController::class, 'verify'])->name('admin.academy.learners.verify');
+    $router->post('/learners/{id}/toggle', [AcademyLearnersController::class, 'toggle'])->name('admin.academy.learners.toggle');
+    $router->post('/learners/{id}/delete', [AcademyLearnersController::class, 'delete'])->name('admin.academy.learners.delete');
+    $router->post('/learners/{id}/certificate', [AcademyLearnersController::class, 'issueCertificate'])->name('admin.academy.learners.certificate');
+
+    $router->get('/certificates', [AcademyCertificatesController::class, 'index'])->name('admin.academy.certificates');
+    $router->get('/certificates-export', [AcademyCertificatesController::class, 'export'])->middleware('throttle:10,60')->name('admin.academy.certificates.export');
+    $router->post('/certificates/{id}/revoke', [AcademyCertificatesController::class, 'revoke'])->name('admin.academy.certificates.revoke');
+    $router->post('/certificates/{id}/reinstate', [AcademyCertificatesController::class, 'reinstate'])->name('admin.academy.certificates.reinstate');
+
+    $router->get('/facilitators', [AcademyFacilitatorsController::class, 'index'])->name('admin.academy.facilitators');
+    $router->post('/facilitators', [AcademyFacilitatorsController::class, 'store'])->name('admin.academy.facilitators.store');
+    $router->post('/facilitators/{id}/reset-password', [AcademyFacilitatorsController::class, 'resetPassword'])->name('admin.academy.facilitators.reset');
+    $router->post('/facilitators/{id}/toggle', [AcademyFacilitatorsController::class, 'toggle'])->name('admin.academy.facilitators.toggle');
+});

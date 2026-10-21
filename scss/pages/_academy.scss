@@ -1,0 +1,206 @@
+// LAF Academy (public): catalogue, course page, sign-in screens, dashboard, lesson player, quizzes, classes, certificate. Views: web/academy/*
+$ac-tones: (
+  basics: #2c3950, office: #1f5f8b, internet: #3a7d6b, marketing: #c8641b, design: #8a4f9e,
+  security: #b42318, careers: #8a5a06, web: #1e7b45, coding: #3c4e6e, ai: #5b3fa0, hardware: #5a6470
+);
+@each $name, $color in $ac-tones {
+  .ac-tone-#{$name} { background: rgba($color, .12); color: $color; }
+}
+
+.ac-center { text-align: center; margin-top: $space-5; }
+.ac-note { color: $ink-soft; font-size: $fs-sm; margin: $space-3 0; &--inline { margin-left: $space-3; } }
+.ac-ok { background: $success-bg; color: $success; }
+.ac-done { color: $success; display: inline-flex; align-items: center; gap: .25rem; font-weight: 600; }
+.ac-code { font-size: $fs-sm; color: $ink-soft; b { color: $navy; user-select: all; } }
+
+// ---- progress bar
+.ac-progress {
+  height: .6rem; margin: $space-3 0 $space-2; border-radius: $radius-pill; background: $surface; border: 1px solid $border; overflow: hidden;
+  span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, $gold-deep, $gold); transition: width .4s ease; }
+}
+
+// ---- home
+.ac-stats {
+  margin-top: -1rem; padding: 0 0 $space-6;
+  &__list {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-3; margin: 0; padding: 0; list-style: none;
+    @include respond(md) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    li { padding: $space-4; border-radius: $radius-card; background: $white; border: 1px solid $border; text-align: center; box-shadow: 0 6px 20px rgba($navy, .06); }
+    b { display: block; font-family: $font-display; font-size: $fs-2xl; line-height: 1.1; color: $navy; }
+    span { color: $ink-soft; font-size: $fs-sm; }
+  }
+}
+.ac-grid { align-items: stretch; }
+.ac-card {
+  display: flex; flex-direction: column; height: 100%;
+  .card__body { display: flex; flex-direction: column; flex: 1; }
+  .card__footer { margin-top: auto; padding-top: $space-3; }
+  &__icon { display: grid; place-items: center; height: 6.5rem; border-radius: $radius-card $radius-card 0 0; text-decoration: none; }
+  &__tags { display: flex; flex-wrap: wrap; gap: $space-2; margin-bottom: $space-3; }
+  &__facts { display: flex; flex-wrap: wrap; gap: $space-1 $space-4; margin: $space-2 0 0; padding: 0; list-style: none; color: $ink-soft; font-size: $fs-sm;
+    li { display: inline-flex; align-items: center; gap: $space-1; } }
+}
+.ac-why {
+  display: grid; gap: $space-4; margin: 0; padding: 0; list-style: none;
+  @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @include respond(lg) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  &__item { display: flex; gap: $space-3; padding: $space-4; background: $white; border: 1px solid $border; border-radius: $radius-card;
+    p { margin: .25rem 0 0; color: $ink-soft; font-size: $fs-sm; } }
+  &__tick { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: $success-bg; color: $success; }
+}
+
+// ---- classes
+.ac-classlist { display: grid; gap: $space-3; margin: 0; padding: 0; list-style: none; }
+.ac-class {
+  display: flex; align-items: center; gap: $space-4; padding: $space-4; background: $white; border: 1px solid $border; border-radius: $radius-card;
+  &__date { flex: none; display: grid; place-items: center; width: 3.6rem; padding: $space-2 0; border-radius: $radius; background: $navy; color: $white; text-align: center;
+    b { font-family: $font-display; font-size: $fs-xl; line-height: 1; } span { font-size: $fs-xs; text-transform: uppercase; letter-spacing: .06em; } }
+  &__main { flex: 1; min-width: 0; }
+  &__title { margin: 0 0 .25rem; font-size: $fs-md; font-family: $font-heading; display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; }
+  &__meta { margin: .15rem 0; color: $ink-soft; font-size: $fs-sm; display: flex; flex-wrap: wrap; align-items: center; gap: $space-1; }
+  &__text { margin: $space-2 0; font-size: $fs-sm; }
+  &__actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; margin-top: $space-3; }
+  &--full { align-items: flex-start; }
+}
+
+// ---- course page
+.ac-layout {
+  display: grid; gap: $space-6;
+  @include respond(lg) { grid-template-columns: minmax(0, 1fr) 21rem; align-items: start; }
+  &__aside { @include respond(lg) { position: sticky; top: 6.5rem; } }
+}
+.ac-block { margin-bottom: $space-6; &__title { font-size: $fs-xl; margin: 0 0 $space-3; &--sm { font-size: $fs-lg; margin-top: $space-6; } } &__sub { color: $ink-soft; margin: 0 0 $space-4; } }
+.ac-list { padding-left: 1.2rem; li { margin: .35rem 0; } }
+.ac-outcomes { display: grid; gap: $space-2; }
+.ac-module {
+  margin-bottom: $space-2; border: 1px solid $border; border-radius: $radius; background: $white; overflow: hidden;
+  summary { display: flex; align-items: center; justify-content: space-between; gap: $space-3; padding: $space-3 $space-4; cursor: pointer; font-weight: 700; background: $surface; list-style: none;
+    &::-webkit-details-marker { display: none; } &:focus-visible { outline: 3px solid $gold-deep; outline-offset: -3px; } }
+  &__meta { font-weight: 500; color: $ink-soft; font-size: $fs-sm; white-space: nowrap; }
+  &__summary { margin: 0; padding: $space-3 $space-4 0; color: $ink-soft; font-size: $fs-sm; }
+}
+.ac-lessons {
+  margin: 0; padding: $space-2 $space-4 $space-3; list-style: none;
+  &__item { display: flex; align-items: center; gap: $space-3; padding: .55rem 0; border-bottom: 1px solid $border; &:last-child { border-bottom: 0; }
+    a { flex: 1; min-width: 0; } span:not(.ac-lessons__mark):not(.ac-lessons__min) { flex: 1; min-width: 0; }
+    &.is-done { color: $success; } &--quiz { font-weight: 600; } }
+  &__mark { flex: none; display: inline-flex; color: $ink-soft; .is-done & { color: $success; } }
+  &__min { flex: none; color: $ink-soft; font-size: $fs-xs; }
+}
+.ac-exam { display: flex; gap: $space-3; align-items: center; margin-top: $space-4; padding: $space-4; border-radius: $radius; background: $navy; color: $white;
+  p { margin: .15rem 0 0; opacity: .9; font-size: $fs-sm; } &__icon { color: $gold; } }
+.ac-enrol {
+  padding: $space-5; border-radius: $radius-card; background: $white; border: 1px solid $border; box-shadow: 0 10px 30px rgba($navy, .08);
+  .btn { margin-top: $space-3; }
+  &__status { margin: 0; font-weight: 700; color: $navy; font-size: $fs-md; }
+  &__pct { margin: 0; color: $ink-soft; font-size: $fs-sm; }
+  &__more { margin: $space-4 0 0; font-size: $fs-sm; }
+}
+.ac-facts { margin: $space-4 0 0; padding-top: $space-3; border-top: 1px solid $border;
+  div { display: flex; justify-content: space-between; gap: $space-3; padding: .3rem 0; font-size: $fs-sm; }
+  dt { color: $ink-soft; } dd { margin: 0; font-weight: 600; text-align: right; } }
+
+// ---- sign-in screens
+.ac-auth { .ac-form + .ac-form { margin-top: $space-5; } }
+.ac-form { &__alt { margin: $space-3 0 0; text-align: center; font-size: $fs-sm; } .btn--block { margin-top: $space-3; } }
+.ac-notice { text-align: center; &__icon { display: inline-flex; color: $gold-deep; margin-bottom: $space-3; &.is-bad { color: $danger; } } p { margin: 0 0 $space-4; } }
+.ac-danger { border-color: rgba($danger, .35); .card__title { color: $danger; } }
+
+// ---- dashboard
+.ac-dash { &__grid { display: grid; gap: $space-6; @include respond(lg) { grid-template-columns: minmax(0, 1fr) 20rem; align-items: start; } } }
+.ac-mine { display: flex; gap: $space-4; padding: $space-4; margin-bottom: $space-3;
+  &__icon { flex: none; display: grid; place-items: center; width: 3.6rem; height: 3.6rem; border-radius: $radius; }
+  &__body { flex: 1; min-width: 0; }
+  &__title { margin: 0; font-size: $fs-md; font-family: $font-heading; display: flex; flex-wrap: wrap; gap: $space-2; align-items: center; }
+  &__meta { margin: 0 0 $space-3; color: $ink-soft; font-size: $fs-sm; }
+  &__actions { display: flex; flex-wrap: wrap; gap: $space-2; } }
+.ac-panel { padding: $space-4; margin-bottom: $space-4; background: $white; border: 1px solid $border; border-radius: $radius-card;
+  &__title { margin: 0 0 $space-3; font-size: $fs-md; font-family: $font-heading; display: flex; align-items: center; gap: $space-2; } p { margin: .35rem 0; font-size: $fs-sm; } }
+.ac-minilist { margin: 0; padding: 0; list-style: none; li { padding: .45rem 0; border-bottom: 1px solid $border; display: flex; flex-direction: column; &:last-child { border-bottom: 0; } span { color: $ink-soft; font-size: $fs-xs; } } }
+
+// ---- lesson player
+.ac-player { padding: $space-5 0 $space-8;
+  &__layout { display: grid; gap: $space-5; @include respond(lg) { grid-template-columns: 21rem minmax(0, 1fr); align-items: start; } } }
+.ac-side {
+  @include respond(lg) { position: sticky; top: 6rem; max-height: calc(100vh - 7rem); overflow: auto; }
+  &__box { border: 1px solid $border; border-radius: $radius-card; background: $white; padding: $space-3 $space-4; > summary { cursor: pointer; display: flex; justify-content: space-between; gap: $space-3; align-items: center; list-style: none; &::-webkit-details-marker { display: none; } } }
+  &__title { font-weight: 700; color: $navy; } &__pct { font-weight: 700; color: $gold-deep; }
+  &__count { margin: 0 0 $space-3; color: $ink-soft; font-size: $fs-xs; }
+  &__module { border-top: 1px solid $border; padding: .4rem 0;
+    > summary { cursor: pointer; font-weight: 600; font-size: $fs-sm; padding: .35rem 0; list-style: none; &::-webkit-details-marker { display: none; } }
+    ol { margin: 0 0 .25rem; padding: 0; list-style: none; }
+    li a { display: flex; gap: .5rem; align-items: flex-start; padding: .35rem .4rem; border-radius: $radius-sm; font-size: $fs-sm; text-decoration: none; color: $ink;
+      &:hover { background: $surface; } }
+    li.is-current a { background: rgba($gold, .22); font-weight: 600; }
+    li.is-done .ac-side__mark { color: $success; } }
+  &__mark { flex: none; display: inline-flex; margin-top: .15rem; color: $ink-soft; }
+  &__quiz a { font-weight: 600; }
+  &__exam { margin: $space-3 0 0; padding-top: $space-3; border-top: 1px solid $border; a { display: flex; flex-wrap: wrap; gap: $space-2; align-items: center; font-weight: 700; text-decoration: none; } &.is-current a { color: $gold-deep; } }
+}
+.ac-lesson { min-width: 0; padding: $space-5; background: $white; border: 1px solid $border; border-radius: $radius-card;
+  @include respond(lg) { padding: $space-6; }
+  &__crumb { margin: 0 0 $space-2; color: $ink-soft; font-size: $fs-sm; }
+  &__title { margin: 0 0 $space-2; font-size: fluid(1.6rem, '1.2rem + 1.4vw', 2.4rem); }
+  &__meta { margin: 0 0 $space-4; color: $ink-soft; font-size: $fs-sm; display: flex; flex-wrap: wrap; gap: $space-2; align-items: center; }
+  &__nav { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: $space-3; margin-top: $space-6; padding-top: $space-4; border-top: 1px solid $border; }
+  &__done { display: flex; flex-wrap: wrap; gap: $space-3; align-items: center; } }
+.ac-prose { max-width: none; h3 { font-size: $fs-lg; margin-top: 1.6em; } h4 { margin-top: 1.2em; }
+  pre { overflow: auto; padding: $space-3 $space-4; border-radius: $radius; background: #172036; color: #f4f1ea; font-size: .9rem; line-height: 1.5; }
+  code { font-family: $font-mono; font-size: .92em; } p code, li code, td code { padding: .1rem .35rem; border-radius: 4px; background: $surface; color: $navy; }
+  table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; th, td { padding: .5rem .75rem; border: 1px solid $border; text-align: left; vertical-align: top; } th { background: $surface; } }
+  blockquote { margin-left: 0; padding: $space-2 $space-4; border-left: 4px solid $gold; background: $surface; } }
+.ac-video { position: relative; aspect-ratio: 16 / 9; margin: 0 0 $space-4; border-radius: $radius; overflow: hidden; background: #000; iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; } }
+.ac-file { display: flex; align-items: center; gap: $space-3; margin-top: $space-5; padding: $space-3 $space-4; border: 1px dashed $border-strong; border-radius: $radius; background: $surface; div { flex: 1; min-width: 0; strong { display: block; overflow-wrap: anywhere; } small { color: $ink-soft; } } }
+.ac-callout { display: flex; align-items: center; gap: $space-3; margin-top: $space-5; padding: $space-4; border-radius: $radius; background: $warning-bg; color: $warning; p { margin: .15rem 0 0; } div { flex: 1; } svg { flex: none; } }
+
+// ---- quizzes
+.ac-quizfacts { display: flex; flex-wrap: wrap; gap: $space-2 $space-5; margin: 0 0 $space-4; padding: 0; list-style: none; color: $ink-soft; li { display: inline-flex; align-items: center; gap: $space-1; } }
+.ac-timer { display: inline-flex; align-items: center; gap: $space-2; margin: $space-2 0 0; padding: .35rem .9rem; border-radius: $radius-pill; background: $surface; border: 1px solid $border-strong; font-weight: 600;
+  &.is-low { background: $danger-bg; color: $danger; border-color: rgba($danger, .4); } b { font-variant-numeric: tabular-nums; } }
+.ac-q { margin: 0 0 $space-4; padding: $space-4; border: 1px solid $border; border-radius: $radius; background: $white; min-width: 0;
+  legend, &__title { font-weight: 700; font-size: $fs-md; line-height: 1.4; padding: 0 .25rem; }
+  legend { display: flex; gap: $space-3; align-items: flex-start; float: none; width: 100%; padding: 0; margin-bottom: $space-3; }
+  &__num { flex: none; display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: $navy; color: $white; font-size: $fs-sm; }
+  &__hint { margin: -.25rem 0 $space-3 2.9rem; color: $ink-soft; font-size: $fs-sm; }
+  &__why { margin: $space-3 0 0; padding: $space-3; border-radius: $radius-sm; background: $surface; font-size: $fs-sm; }
+  &--review { &.is-right { border-color: rgba($success, .45); } &.is-wrong { border-color: rgba($danger, .4); } .ac-q__title { display: flex; flex-wrap: wrap; gap: $space-2 $space-3; align-items: center; margin: 0 0 $space-3; } } }
+fieldset.ac-q { padding: 0 $space-4 $space-4;
+  legend { float: left; width: 100%; padding: $space-4 0 $space-3; margin: 0; }
+  legend + * { clear: both; } }
+.ac-opt { display: flex; gap: $space-3; align-items: flex-start; margin: .35rem 0; padding: .7rem .9rem; border: 1px solid $border; border-radius: $radius-sm; cursor: pointer;
+  input { flex: none; margin-top: .25rem; width: 1.15rem; height: 1.15rem; accent-color: $navy; }
+  &:hover { background: $surface; } &:has(input:checked) { border-color: $navy; background: rgba($navy, .06); } &:focus-within { outline: 3px solid rgba($gold-deep, .6); outline-offset: 1px; } }
+.ac-quiz__bar { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3; margin-top: $space-5; padding: $space-3 0; background: linear-gradient(180deg, rgba($white, 0), $white 30%); }
+.ac-result { display: flex; gap: $space-5; align-items: center; margin-bottom: $space-4; padding: $space-5; border-radius: $radius-card;
+  &.is-pass { background: $success-bg; color: $success; } &.is-fail { background: $warning-bg; color: $warning; }
+  &__score { flex: none; text-align: center; b { display: block; font-family: $font-display; font-size: 3rem; line-height: 1; } span { font-size: $fs-sm; } }
+  &__text { strong { font-size: $fs-lg; font-family: $font-heading; } p { margin: .25rem 0 0; color: $ink; } }
+  &__actions { display: flex; flex-wrap: wrap; gap: $space-3; align-items: center; } }
+.ac-review { margin: 0; padding: 0; list-style: none;
+  li { display: flex; gap: $space-3; align-items: flex-start; padding: .45rem .6rem; border-radius: $radius-sm; color: $ink-soft;
+    &.is-correct { background: $success-bg; color: $ink; svg { color: $success; } } &.is-chosen:not(.is-correct) { background: $danger-bg; color: $ink; svg { color: $danger; } } }
+  &__tag { margin-left: .4rem; font-size: $fs-xs; font-style: normal; font-weight: 700; color: $ink-soft; &--ok { color: $success; } } }
+
+// ---- certificate page
+.ac-cert { max-width: 46rem; margin: $space-5 auto; padding: clamp(1.25rem, 4vw, 3rem); text-align: center; background: #fbf7ee; border: 4px double $gold-deep; border-radius: 6px; box-shadow: 0 14px 40px rgba($navy, .12);
+  &__org { margin: 0; font-size: $fs-xs; letter-spacing: .18em; text-transform: uppercase; font-weight: 700; color: $gold-text; }
+  &__title { margin: $space-3 0; font-family: $font-display; font-size: fluid(1.7rem, '1.1rem + 2.2vw', 2.7rem); color: $navy; }
+  &__small { margin: 0; font-style: italic; color: $ink-soft; }
+  &__name { margin: $space-3 0; padding-bottom: $space-2; border-bottom: 1px solid $border-strong; font-family: $font-display; font-size: fluid(1.8rem, '1.2rem + 2.4vw', 3rem); font-weight: 700; color: $navy; overflow-wrap: anywhere; }
+  &__text { max-width: 30rem; margin: $space-3 auto; color: $ink; }
+  &__course { margin: $space-3 0; font-family: $font-heading; font-weight: 700; font-size: $fs-xl; color: $navy; }
+  &__facts { margin: $space-3 0; color: $ink-soft; font-size: $fs-sm; }
+  &__no { margin: $space-4 0 0; font-size: $fs-sm; color: $ink-soft; b { color: $navy; letter-spacing: .06em; } } }
+@media print {
+  body.is-academy-certificate { .page-hero, .topbar, .site-header, .site-footer, .back-to-top, .ac-center, .opp-notice, .skip-link, .breadcrumbs { display: none !important; } .section { padding: 0; } }
+  .ac-cert { box-shadow: none; margin: 0 auto; page-break-inside: avoid; }
+}
+
+// ---- small screens
+@media (max-width: 639px) {
+  .ac-class { flex-wrap: wrap; }
+  .ac-result { flex-direction: column; text-align: center; }
+  .ac-mine { flex-direction: column; }
+  .ac-lesson__nav > * { flex: 1 1 100%; } .ac-lesson__nav .btn { width: 100%; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) { .ac-progress span { transition: none; } }

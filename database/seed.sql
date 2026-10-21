@@ -953,3 +953,23 @@ WHERE slug = 'editor' AND is_system = 1
   AND abilities = '["dashboard.view","pages.edit","content.manage","content.delete","inbox.manage","export.csv","members.manage","newsletter.manage","calendar.manage","meetings.manage","forms.manage","forms.submissions","shop.manage","shop.orders"]'
   AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_social_editor_role_v1') m);
 INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_social_editor_role_v1', '1');
+
+-- ------------------------------------------------------------------ LAF Academy (see docs/ACADEMY.md). ADDITIVE and IDEMPOTENT.
+-- Role "Facilitator": teaches in the Academy (own courses, quizzes, virtual classes, the learners of those courses). INSERT IGNORE: a role the owner edited is never overwritten.
+INSERT IGNORE INTO roles (slug, name, description, abilities, is_system) VALUES
+  ('facilitator', 'Facilitator', 'Teaches in the LAF Academy: writes their own courses and quizzes, schedules virtual classes and follows their learners. Cannot see anything else.', '["dashboard.view","academy.teach"]', 0);
+
+-- Page: /academy (the Academy home and every Academy screen use its wording: app/config/pages/academy.php). Needed as a row because content_blocks.page_slug is a foreign key to pages.slug.
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
+  ('academy', 'LAF Academy', 'registry', 'default', 1, 1, 1, 'LAF Academy', 45, NULL)
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
+  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
+  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
+  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
+  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
+  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
+  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
+  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);

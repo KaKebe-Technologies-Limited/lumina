@@ -55,6 +55,7 @@ final class SitemapBuilder
             ['shop',       "SELECT c.slug, c.created_at AS updated_at FROM shop_categories c WHERE c.is_active = 1 AND EXISTS (SELECT 1 FROM shop_products p WHERE p.category_id = c.id AND p.status = 'published' AND p.is_sample = 0) ORDER BY c.sort_order, c.id", '/shop/category/'],
             ['careers',    'SELECT slug, updated_at FROM jobs WHERE is_active = 1 AND (closing_date IS NULL OR closing_date >= CURDATE()) ORDER BY sort_order, id DESC', '/careers/'],
             ['opportunities', 'SELECT slug, updated_at FROM opportunities WHERE is_active = 1 AND needs_review = 0 AND (deadline IS NULL OR deadline >= CURDATE()) ORDER BY posted_at DESC LIMIT 500', '/opportunities/'],
+            ['academy', "SELECT slug, updated_at FROM academy_courses WHERE status = 'published' ORDER BY sort_order, id", '/academy/courses/'],
         ];
         $latest = [];                       // group => newest updated_at among its detail pages (the list page changes with them)
         foreach ($groups as [$parentSlug, $sql, $prefix]) {

@@ -362,7 +362,7 @@ function analytics_id(): string
         return '';
     }
     $path = (string) (\App\Core\Request::current()?->path() ?? '');
-    return preg_match('~^/?(?:meeting/|membership/(?:me|verify|confirmation)/)~i', $path) === 1 ? '' : $id;
+    return preg_match('~^/?(?:meeting/|membership/(?:me|verify|confirmation)/|academy/(?:verify|reset|learn|certificate)/)~i', $path) === 1 ? '' : $id;
 }
 
 function current_user(): ?array
@@ -596,4 +596,15 @@ function responsive_sources(string $src): ?array
         $parts[] = asset('img/hero/' . basename($file)) . ' ' . $w . 'w';
     }
     return $cache[$key] = ['srcset' => implode(', ', $parts), 'max' => (int) array_key_last($found)];
+}
+
+/** "45 min", "2 h", "2 h 30 min": a length of time for the Academy. */
+function academy_duration(int $minutes): string
+{
+    if ($minutes < 60) {
+        return max(1, $minutes) . ' min';
+    }
+    $h = intdiv($minutes, 60);
+    $m = $minutes % 60;
+    return $h . ' h' . ($m > 0 ? ' ' . $m . ' min' : '');
 }
