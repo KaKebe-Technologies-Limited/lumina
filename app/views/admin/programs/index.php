@@ -52,7 +52,15 @@ $th = static fn(string $label, string $key, string $class = ''): string => parti
                         <span class="cell-sub"><?= e($r['tagline'] ?: '/programs/' . $r['slug']) ?></span>
                     </td>
                     <td class="col-num" data-label="Order"><?= (int) $r['sort_order'] ?></td>
-                    <td data-label="Stage"><?= partial('partials/admin/status-badge', ['status' => $r['status'] ?? 'planned', 'tone' => $statusTone[$r['status'] ?? 'planned'] ?? 'neutral', 'label' => $statuses[$r['status'] ?? 'planned'] ?? (string) ($r['status'] ?? '')]) ?></td>
+                    <td data-label="Stage">
+                        <?php $cur = (string) ($r['status'] ?? 'planned'); ?>
+                        <form class="stage-switch" method="post" action="<?= e(url('admin/programs/' . (int) $r['id'] . '/status')) ?>" role="group" aria-label="Stage of <?= e($r['title']) ?>">
+                            <?= csrf_field() ?><input type="hidden" name="return" value="<?= e($returnQs) ?>">
+                            <?php foreach (['planned' => 'Planned', 'ongoing' => 'Ongoing', 'completed' => 'Completed'] as $k => $label): ?>
+                                <button class="stage-switch__btn stage-switch__btn--<?= e($k) ?><?= $cur === $k ? ' is-current' : '' ?>" type="submit" name="status" value="<?= e($k) ?>"<?= $cur === $k ? ' aria-pressed="true" disabled' : ' aria-pressed="false"' ?> title="<?= $cur === $k ? 'Current stage' : 'Mark as ' . e(strtolower($label)) ?>"><?= e($label) ?></button>
+                            <?php endforeach; ?>
+                        </form>
+                    </td>
                     <td data-label="On website"><?= partial('admin/_content/active-toggle', ['c' => $c, 'row' => $r, 'returnQs' => $returnQs]) ?></td>
                     <td data-label="Updated"><span class="nowrap"><?= e(format_date($r['updated_at'], 'j M Y')) ?></span></td>
                     <td class="col-actions">

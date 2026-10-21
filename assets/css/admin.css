@@ -4938,6 +4938,63 @@ html.js [data-upload-fallback] {
   padding: 0.3rem;
 }
 
+.stage-switch {
+  display: inline-flex;
+  margin: 0;
+  border: 1px solid #E4E1DA;
+  border-radius: 999px;
+  background: #FFFFFF;
+  overflow: hidden;
+}
+
+.stage-switch__btn {
+  padding: 0.3rem 0.75rem;
+  border: 0;
+  border-inline-start: 1px solid #E4E1DA;
+  background: transparent;
+  color: #5A6470;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.stage-switch__btn:first-child {
+  border-inline-start: 0;
+}
+
+.stage-switch__btn:hover:not(:disabled) {
+  background: #F7F3EC;
+  color: #2C3950;
+}
+
+.stage-switch__btn:focus-visible {
+  outline: 2px solid #2C3950;
+  outline-offset: -2px;
+}
+
+.stage-switch__btn.is-current {
+  cursor: default;
+  font-weight: 700;
+  opacity: 1;
+}
+
+.stage-switch__btn--planned.is-current {
+  background: #E6F1F8;
+  color: #1F5F8B;
+}
+
+.stage-switch__btn--ongoing.is-current {
+  background: #E7F5EC;
+  color: #1E7B45;
+}
+
+.stage-switch__btn--completed.is-current {
+  background: #F7F3EC;
+  color: #2C3950;
+}
+
 .admin-inbox .inbox-tabs {
   gap: 0 0.25rem;
 }

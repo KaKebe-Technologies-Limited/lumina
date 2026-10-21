@@ -5,6 +5,8 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\Admin\Content\CrudController;
 use App\Core\Database;
+use App\Core\Flash;
+use App\Core\HttpException;
 use App\Core\Icons;
 use App\Core\Request;
 use App\Core\Response;
@@ -94,6 +96,28 @@ final class ProgramController extends CrudController
         ];
     }
 
+    /**
+     * POST /admin/programs/{id}/status (status = planned | ongoing | completed): change the stage of a program straight from the list. The public pages read the
+     * status from the database on every request, so the program card, the Programs page and the program page show the new stage at once.
+     */
+    public function status(Request $request, int $id): Response
+    {
+        $this->authorize('content.manage');
+        $row = $this->find($id);
+        $to = $request->string('status');
+        if (!in_array($to, Program::STATUSES, true)) {
+            throw new HttpException(422, 'Unknown status');
+        }
+        if ((string) ($row['status'] ?? '') !== $to) {
+            Database::update('programs', ['status' => $to], 'id = ?', [$id]);
+            $this->audit('program.status', 'program', $id, 'Changed the stage of program "' . $this->rowLabel($row) . '" from ' . ($row['status'] ?? '?') . ' to ' . $to);
+        }
+        if ($request->expectsJson()) {
+            return $this->json(['ok' => true, 'id' => $id, 'status' => $to]);
+        }
+        Flash::success('"' . $this->rowLabel($row) . '" is now ' . strtolower(self::STATUS_LABELS[$to]) . '. The website shows the new stage straight away.');
+        return Response::redirect($this->returnUrl($request, 'admin/programs'));
+    }
     /** Projects that belong to a program are kept (program_id is set to NULL by the FK); report how many in the audit trail. */
     public function delete(Request $request, int $id): Response
     {

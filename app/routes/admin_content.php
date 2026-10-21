@@ -44,6 +44,9 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth', 'can:content.manag
         }
     }
 
+    // programs: change the stage (planned / ongoing / completed) from the list; the website follows at once
+    $router->post('/programs/{id}/status', [ProgramController::class, 'status'])->name('admin.programs.status');
+
     // posts: preview of drafts / scheduled posts rendered in the public layout
     $router->get('/posts/{id}/preview', [PostController::class, 'preview'])->name('admin.posts.preview');
 
