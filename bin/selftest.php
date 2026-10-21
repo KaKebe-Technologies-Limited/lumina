@@ -120,11 +120,11 @@ check('global is virtual (not in nav)', (SitePages::get('global')['virtual'] ?? 
 SitePages::sync();
 Content::resetPage('home');
 check('default value without override', Content::get('home', 'hero.title') === PageRegistry::field('home', 'hero.title')['default']);
-Content::saveMany('home', ['hero.title' => '<b>Custom</b> title', 'hero.image.alt' => 'New alt', 'who_we_are._visible' => '0', 'hero.cta1_url' => 'javascript:alert(1)']);
+Content::saveMany('home', ['hero.title' => '<b>Custom</b> title', 'hero.image.alt' => 'New alt', 'background._visible' => '0', 'hero.cta1_url' => 'javascript:alert(1)']);
 check('override stored (tags stripped)', Content::get('home', 'hero.title') === 'Custom title', (string) Content::get('home', 'hero.title'));
 check('bad url dropped to empty', Content::get('home', 'hero.cta1_url') === '');
 check('image alt override', Content::image('home', 'hero.image')['alt'] === 'New alt');
-check('section toggle hides', Content::sectionOn('home', 'who_we_are') === false && Content::sectionOn('home', 'challenge') === true);
+check('section toggle hides', Content::sectionOn('home', 'background') === false && Content::sectionOn('home', 'challenge') === true);
 $rows = [['title' => 'A', 'subtitle' => 's', 'text' => 't', 'url' => '/x', 'image' => ''], ['title' => '', 'subtitle' => '', 'text' => '', 'url' => '', 'image' => '']];
 Content::saveMany('home', ['projects.items' => $rows]);
 $list = Content::list('home', 'projects.items');

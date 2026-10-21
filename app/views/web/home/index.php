@@ -1,18 +1,18 @@
 <?php
 /**
- * HOME. EVERY string comes from content('home', ...) (registry app/config/pages/home.php, editable in Admin > Pages > Home),
- * from the database (programs, projects, stats, stories, faqs, gallery) or from Settings. Nothing is hard-coded or invented:
- * data blocks print nothing when their table is empty.
- * Vars (HomeController): $stats, $featured, $stories, $gallery, $faqs.   Layout language: docs/DESIGN.md.
+ * HOME: a page of HIGHLIGHTS that lead to the detail pages. EVERY string comes from content('home', ...) (registry app/config/pages/home.php,
+ * editable in Admin > Pages > Home), from the database (programs, projects, stats, opportunities, stories, Academy numbers) or from Settings.
+ * Nothing is hard-coded or invented: data blocks print nothing when their table is empty.
+ * Vars (HomeController): $stats, $programs, $projects, $fallbackCards, $stories, $academy (numbers|null), $opportunities.   Layout language: docs/DESIGN.md.
  *
  * Section order (each one has an on/off switch in the registry):
- *   hero > help > who_we_are + challenge > volunteer band + stats card > vision_mission (+ founder quote, mosaic)
- *   > projects carousel > donate_panel > stories > faq > why_digital > founder > impact > background > contact
+ *   hero > quick links > statistics > programs > projects > LAF Academy > opportunities > get involved > about us (short) > stories > newsletter > contact
+ * The long narrative (challenge, why digital inclusion, founder story, commitment, background) is shown on the About page.
  */
 
 use App\Controllers\Web\HomeSupport as H;
 
-/** Small helper: a pill button as safe html for the partials that take ready-made html (carousel foot). */
+/** A pill link as safe html. */
 $pill = static function (array $b, string $class): string {
     return $b['has'] ? '<a class="btn ' . e($class) . '" href="' . e($b['url']) . '"' . ($b['external'] ? ' target="_blank" rel="noopener noreferrer"' : '') . '>' . e($b['label']) . '</a>' : '';
 };
@@ -20,8 +20,6 @@ $pill = static function (array $b, string $class): string {
 $titled = static fn(array $rows): array => array_values(array_filter($rows, static fn(array $r): bool => trim((string) ($r['title'] ?? '')) !== ''));
 
 $heroOn = section_on('home', 'hero');
-$founderOn = section_on('home', 'founder') && trim(strip_tags((string) content('home', 'founder.body'))) !== '';
-$city = trim((string) setting('city_country', ''));
 ?>
 <?php /* ------------------------------------------------------------------ 1. HERO (photo, headline with one highlighted phrase, orange button + video lightbox) */ ?>
 <?php
@@ -48,103 +46,170 @@ if ($heroOn) {
 }
 ?>
 
-<?php /* ------------------------------------------------------------------ 2. HOW WE HELP (outlined feature cards + tall rounded photo) */ ?>
+<?php /* ------------------------------------------------------------------ 2. QUICK LINKS (four tiles that overlap the hero) */ ?>
 <?php
-$helpItems = $titled(content_list('home', 'help.items'));
-$helpImg = content_img('home', 'help.image');
-section_begin('home', 'help', ['class' => 'home-help' . ($heroOn ? ' sheet' : ''), 'labelledby' => 'help-title']);
+$quick = $titled(content_list('home', 'quick.items'));
+if ($quick):
+    section_begin('home', 'quick', ['class' => 'home-quick' . ($heroOn ? ' home-quick--overlap' : ''), 'attrs' => ['aria-label' => 'Quick links']]);
 ?>
-    <div class="split split--wide-text split--start home-help__grid<?= $helpImg['has'] ? '' : ' home-help__grid--solo' ?>">
-        <div>
-            <?= partial('partials/section-head', ['eyebrow' => content('home', 'help.eyebrow'), 'title' => content('home', 'help.title'), 'lead' => content('home', 'help.lead'), 'id' => 'help-title']) ?>
-            <?php if ($helpItems): ?>
-                <div class="home-help__cards">
-                    <?php foreach ($helpItems as $f): ?>
-                        <?= partial('partials/feature-card', ['icon' => $f['icon'] ?? '', 'title' => $f['title'], 'text' => $f['text'] ?? '', 'href' => link_url((string) ($f['url'] ?? ''))]) ?>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </div>
-        <?php if ($helpImg['has']): ?><figure class="split__media split__media--portrait home-help__media" data-reveal><?= photo_tag($helpImg) ?></figure><?php endif; ?>
-    </div>
-<?php section_end(); ?>
+    <ul class="home-quick__grid">
+        <?php foreach ($quick as $q): $qHref = link_url((string) ($q['url'] ?? '')); ?>
+            <li>
+                <a class="home-tile" href="<?= e($qHref !== '' ? $qHref : url('')) ?>" data-reveal>
+                    <span class="home-tile__icon"><?= icon(safe_icon($q['icon'] ?? '', 'check-circle'), 'icon--lg') ?></span>
+                    <span class="home-tile__body"><strong class="home-tile__title"><?= e($q['title']) ?></strong><span class="home-tile__text"><?= e($q['text'] ?? '') ?></span></span>
+                    <span class="home-tile__go" aria-hidden="true">Explore <?= icon('arrow-right', 'icon--arrow') ?></span>
+                </a>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+<?php section_end(); endif; ?>
 
-<?php /* ------------------------------------------------------------------ 3. WHO WE ARE (tilted photo stack + copy + orange button) */ ?>
+<?php /* ------------------------------------------------------------------ 2b. STATISTICS (numbers from Admin > Stats) */ ?>
 <?php
-$whoBtn = content_btn('home', 'who_we_are.cta');
-$whoStack = partial('partials/photo-stack', ['images' => [content_img('home', 'who_we_are.image'), content_img('home', 'who_we_are.image2'), content_img('home', 'who_we_are.image3')]]);
-section_begin('home', 'who_we_are', ['class' => 'section--tint home-who', 'labelledby' => 'who-title']);
-?>
-    <div class="split split--wide-media">
-        <?= $whoStack ?>
-        <div data-reveal>
-            <?= partial('partials/section-head', ['eyebrow' => content('home', 'who_we_are.eyebrow'), 'title' => content('home', 'who_we_are.title'), 'id' => 'who-title', 'class' => 'mb-0']) ?>
-            <div class="prose mt-4"><?= content_html('home', 'who_we_are.body') ?></div>
-            <?php if ($whoBtn['has']): ?><p class="mt-5"><a class="btn btn--cta btn--caps" href="<?= e($whoBtn['url']) ?>"<?= $whoBtn['external'] ? ' target="_blank" rel="noopener noreferrer"' : '' ?>><?= e($whoBtn['label']) ?></a></p><?php endif; ?>
-        </div>
-    </div>
-<?php section_end(); ?>
-
-<?php /* ------------------------------------------------------------------ 3b. THE CHALLENGE (white card on the same cream background) */ ?>
-<?php
-$chImg = content_img('home', 'challenge.image');
-section_begin('home', 'challenge', ['class' => 'section--tint section--flush-top home-challenge', 'labelledby' => 'challenge-title']);
-?>
-    <div class="home-challenge__card<?= $chImg['has'] ? ' home-challenge__card--photo' : '' ?>" data-reveal>
-        <div class="home-challenge__head">
-            <?php if (trim((string) content('home', 'challenge.eyebrow')) !== ''): ?><span class="eyebrow"><?= e(content('home', 'challenge.eyebrow')) ?></span><?php endif; ?>
-            <h2 class="home-challenge__title" id="challenge-title"><?= highlight((string) content('home', 'challenge.title')) ?></h2>
-        </div>
-        <div class="prose home-challenge__body"><?= content_html('home', 'challenge.body') ?></div>
-        <?php if ($chImg['has']): ?><figure class="home-challenge__media"><?= photo_tag($chImg) ?></figure><?php endif; ?>
-    </div>
-<?php section_end(); ?>
-
-<?php /* ------------------------------------------------------------------ 4. VOLUNTEER BAND + overlapping STATS CARD (stats table only) */ ?>
-<?php
-$volOn = section_on('home', 'volunteer');
-$statCard = ($stats && section_on('home', 'stats')) ? partial('partials/stat-band', ['stats' => $stats, 'overlap' => $volOn]) : '';
-if ($volOn) {
-    $volActions = [];
-    $b = content_btn('home', 'volunteer.cta');
-    if ($b['has']) {
-        $volActions[] = ['label' => $b['label'], 'url' => $b['url'], 'class' => 'btn--cta btn--caps'];
-    }
-    $b = content_btn('home', 'volunteer.cta2');
-    if ($b['has']) {
-        $volActions[] = ['label' => $b['label'], 'url' => $b['url'], 'class' => 'btn--white btn--caps'];
-    }
-    section_begin('home', 'volunteer', ['bleed' => true, 'class' => 'band-section home-volunteer']);
-    echo partial('partials/band', [
-        'image'   => content_img('home', 'volunteer.image'),
-        'eyebrow' => content('home', 'volunteer.eyebrow'),
-        'title'   => content('home', 'volunteer.title'),
-        'text'    => content('home', 'volunteer.text'),
-        'actions' => $volActions,
-        'video'   => ['url' => content('home', 'volunteer.video_url'), 'label' => content('home', 'volunteer.video_label'), 'title' => content('home', 'volunteer.video_title')],
-        'after'   => $statCard,
-        'focus'   => '50% 40%',
-    ]);
-    section_end();
-} elseif ($statCard !== '') {
+if ($stats):
     section_begin('home', 'stats', ['class' => 'section--sm home-stats']);
-    echo $statCard;
+    echo partial('partials/stat-band', ['stats' => $stats]);
     section_end();
-}
+endif;
 ?>
 
-<?php /* ------------------------------------------------------------------ 5. VISION & MISSION (collage + tint cards + icon rows + founder quote) + gallery MOSAIC */ ?>
+<?php /* ------------------------------------------------------------------ 3. WHAT WE DO (program highlights) */ ?>
 <?php
-$vmRows = $titled(content_list('home', 'vision_mission.rows'));
+$cardCta = trim((string) content('home', 'programs.card_cta'));
+$progBtn = $pill(content_btn('home', 'programs.cta'), 'btn--primary btn--caps');
+if ($programs):
+    section_begin('home', 'programs', ['class' => 'home-programs', 'labelledby' => 'programs-title']);
+    echo partial('partials/section-head', ['eyebrow' => content('home', 'programs.eyebrow'), 'title' => content('home', 'programs.title'), 'lead' => content('home', 'programs.intro'), 'align' => 'center', 'id' => 'programs-title']);
+?>
+    <div class="home-cards">
+        <?php foreach ($programs as $p): ?><?= partial('partials/program-card', ['program' => $p, 'cta' => $cardCta !== '' ? $cardCta : null]) ?><?php endforeach; ?>
+    </div>
+    <?php if ($progBtn !== ''): ?><p class="section__footer"><?= $progBtn ?></p><?php endif; ?>
+<?php section_end(); endif; ?>
+
+<?php /* ------------------------------------------------------------------ 3b. PROJECTS IN FOCUS */ ?>
+<?php
+$projCta = trim((string) content('home', 'projects.card_cta'));
+$projBtn = $pill(content_btn('home', 'projects.cta'), 'btn--primary btn--caps');
+$projectStatusLabels = [
+    'planned'   => (string) content('projects', 'list.status_planned'),
+    'ongoing'   => (string) content('projects', 'list.status_ongoing'),
+    'completed' => (string) content('projects', 'list.status_completed'),
+];
+if ($projects || $fallbackCards):
+    section_begin('home', 'projects', ['class' => 'section--tint home-projects', 'labelledby' => 'projects-title']);
+    echo partial('partials/section-head', ['eyebrow' => content('home', 'projects.eyebrow'), 'title' => content('home', 'projects.title'), 'lead' => content('home', 'projects.intro'), 'align' => 'center', 'id' => 'projects-title']);
+?>
+    <div class="home-cards">
+        <?php foreach ($projects as $p): $pHref = url('projects/' . $p['slug']); $pStatus = (string) ($p['status'] ?? ''); $pStatusText = (string) ($projectStatusLabels[$pStatus] ?? ''); ?>
+            <article class="home-focus" data-reveal>
+                <div class="home-focus__top">
+                    <?php if (trim((string) ($p['program_title'] ?? '')) !== ''): ?><span class="home-focus__program"><?= e($p['program_title']) ?></span><?php endif; ?>
+                    <?php if ($pStatusText !== ''): ?><span class="badge badge--<?= e(['planned' => 'info', 'ongoing' => 'success', 'completed' => 'neutral'][$pStatus] ?? 'neutral') ?>"><?= e($pStatusText) ?></span><?php endif; ?>
+                </div>
+                <h3 class="home-focus__title"><a href="<?= e($pHref) ?>"><?= e($p['title']) ?></a></h3>
+                <?php if (trim((string) ($p['summary'] ?? '')) !== ''): ?><p class="home-focus__text"><?= e(excerpt((string) $p['summary'], 130)) ?></p><?php endif; ?>
+                <?php if ($projCta !== ''): ?><span class="home-focus__go" aria-hidden="true"><?= e($projCta) ?> <?= icon('arrow-right', 'icon--arrow') ?></span><?php endif; ?>
+            </article>
+        <?php endforeach; ?>
+        <?php foreach ($fallbackCards as $row): ?>
+            <article class="card" data-reveal>
+                <?php if ($row['image'] !== ''): ?><div class="card__media"><img src="<?= e($row['image']) ?>" alt="<?= e($row['image_alt']) ?>" loading="lazy"></div><?php endif; ?>
+                <div class="card__body">
+                    <?php if (trim($row['tagline']) !== ''): ?><div class="card__meta"><span><?= e($row['tagline']) ?></span></div><?php endif; ?>
+                    <h3 class="card__title"><?php if ($row['href'] !== ''): ?><a class="card__stretch" href="<?= e($row['href']) ?>"><?= e($row['title']) ?></a><?php else: ?><?= e($row['title']) ?><?php endif; ?></h3>
+                    <?php if (trim($row['summary']) !== ''): ?><p class="card__text"><?= e($row['summary']) ?></p><?php endif; ?>
+                    <?php if ($row['href'] !== '' && $projCta !== ''): ?><div class="card__footer"><span class="btn btn--cta btn--caps btn--sm"><?= e($projCta) ?></span></div><?php endif; ?>
+                </div>
+            </article>
+        <?php endforeach; ?>
+    </div>
+    <?php if ($projBtn !== ''): ?><p class="section__footer"><?= $projBtn ?></p><?php endif; ?>
+<?php section_end(); endif; ?>
+
+<?php /* ------------------------------------------------------------------ 4. LAF ACADEMY (live numbers + shortcuts) */ ?>
+<?php
+if ($academy !== null):
+    $acImg = content_img('home', 'academy.image');
+    $acLinks = $titled(content_list('home', 'academy.links'));
+    $acB1 = content_btn('home', 'academy.cta');
+    $acB2 = content_btn('home', 'academy.cta2');
+    $acFacts = array_values(array_filter([
+        ['n' => (int) $academy['courses'], 'l' => (int) $academy['courses'] === 1 ? 'free course' : 'free courses'],
+        ['n' => (int) $academy['lessons'], 'l' => (int) $academy['lessons'] === 1 ? 'lesson' : 'lessons'],
+        ['n' => (int) $academy['challenges'], 'l' => (int) $academy['challenges'] === 1 ? 'open challenge' : 'open challenges'],
+    ], static fn(array $f): bool => $f['n'] > 0));
+    section_begin('home', 'academy', ['bleed' => true, 'class' => 'home-academy-wrap']);
+?>
+    <div class="home-academy"<?= $acImg['has'] ? ' style="--ac-photo: url(\'' . e($acImg['src']) . '\')"' : '' ?>>
+        <div class="container home-academy__inner">
+            <div class="home-academy__copy" data-reveal>
+                <?php if (trim((string) content('home', 'academy.eyebrow')) !== ''): ?><span class="eyebrow"><?= e(content('home', 'academy.eyebrow')) ?></span><?php endif; ?>
+                <h2 class="home-academy__title"><?= highlight((string) content('home', 'academy.title')) ?></h2>
+                <p class="home-academy__text"><?= e(content('home', 'academy.text')) ?></p>
+                <p class="home-academy__actions">
+                    <?php if ($acB1['has']): ?><a class="btn btn--cta btn--caps btn--lg" href="<?= e($acB1['url']) ?>"><?= e($acB1['label']) ?></a><?php endif; ?>
+                    <?php if ($acB2['has']): ?><a class="btn btn--white btn--caps btn--lg" href="<?= e($acB2['url']) ?>"><?= e($acB2['label']) ?></a><?php endif; ?>
+                </p>
+            </div>
+            <div class="home-academy__side" data-reveal>
+                <?php if ($acFacts): ?>
+                    <ul class="home-academy__facts">
+                        <?php foreach ($acFacts as $f): ?><li><b data-count-to="<?= (int) $f['n'] ?>"><?= (int) $f['n'] ?></b><span><?= e($f['l']) ?></span></li><?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+                <?php if ($acLinks): ?>
+                    <ul class="home-academy__links">
+                        <?php foreach ($acLinks as $l): ?>
+                            <li><a href="<?= e(link_url((string) ($l['url'] ?? ''))) ?>"><?= icon(safe_icon($l['icon'] ?? '', 'check-circle'), 'icon--sm') ?> <span><?= e($l['title']) ?></span> <?= icon('arrow-right', 'icon--arrow') ?></a></li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+<?php section_end(); endif; ?>
+
+<?php /* ------------------------------------------------------------------ 5. OPPORTUNITIES (the newest open ones) */ ?>
+<?php
+$oppBtn = $pill(content_btn('home', 'opportunities.cta'), 'btn--primary btn--caps');
+if ($opportunities):
+    section_begin('home', 'opportunities', ['class' => 'home-opps', 'labelledby' => 'opps-title']);
+    echo partial('partials/section-head', ['eyebrow' => content('home', 'opportunities.eyebrow'), 'title' => content('home', 'opportunities.title'), 'lead' => content('home', 'opportunities.intro'), 'align' => 'center', 'id' => 'opps-title']);
+?>
+    <div class="home-cards">
+        <?php foreach ($opportunities as $o): ?><?= partial('web/opportunities/_card', ['o' => $o]) ?><?php endforeach; ?>
+    </div>
+    <?php if ($oppBtn !== ''): ?><p class="section__footer"><?= $oppBtn ?></p><?php endif; ?>
+<?php section_end(); endif; ?>
+
+<?php /* ------------------------------------------------------------------ 6. GET INVOLVED (volunteer, partner, donate) */ ?>
+<?php
+$involved = $titled(content_list('home', 'involved.items'));
+if ($involved):
+    section_begin('home', 'involved', ['class' => 'section--tint home-involve', 'labelledby' => 'involve-title']);
+    echo partial('partials/section-head', ['eyebrow' => content('home', 'involved.eyebrow'), 'title' => content('home', 'involved.title'), 'align' => 'center', 'id' => 'involve-title']);
+?>
+    <div class="home-involve__grid">
+        <?php foreach ($involved as $i): $iHref = link_url((string) ($i['url'] ?? '')); ?>
+            <article class="home-involve__card" data-reveal>
+                <span class="home-involve__icon"><?= icon(safe_icon($i['icon'] ?? '', 'check-circle'), 'icon--lg') ?></span>
+                <h3 class="home-involve__title"><?= e($i['title']) ?></h3>
+                <p class="home-involve__text"><?= e($i['text'] ?? '') ?></p>
+                <?php if ($iHref !== '' && trim((string) ($i['button'] ?? '')) !== ''): ?><p class="home-involve__cta"><a class="btn btn--outline btn--caps btn--sm" href="<?= e($iHref) ?>"><?= e($i['button']) ?> <?= icon('arrow-right', 'icon--arrow') ?></a></p><?php endif; ?>
+            </article>
+        <?php endforeach; ?>
+    </div>
+<?php section_end(); endif; ?>
+
+<?php /* ------------------------------------------------------------------ 7. ABOUT US (short: vision, mission, founder quote; the full story is on the About page) */ ?>
+<?php
 $vmStack = partial('partials/photo-stack', ['images' => [content_img('home', 'vision_mission.image1'), content_img('home', 'vision_mission.image2')]]);
 $quote = trim((string) content('home', 'founder.quote'));
 $founderImg = content_img('home', 'founder.image');
-// gallery photos the carousel cards below already show are left out of the mosaic; fewer than three left = no mosaic (no repeats)
-$srcKey = static fn(string $src): string => (string) strtok($src, '?');
-$cardPhotos = array_map(static fn(array $f): string => $srcKey(img_url((string) ($f['row']['image'] ?? ''))), $featured);
-// (filter first, THEN keep five: photos added later in Admin > Gallery sit at the end of the list and must still reach the mosaic)
-$mosaicImages = array_slice(array_values(array_filter($gallery, static fn(array $g): bool => !in_array($srcKey($g['src']), $cardPhotos, true))), 0, 5);
-$mosaic = (bool) content('home', 'vision_mission.show_mosaic') && count($mosaicImages) >= 3 ? partial('partials/media-mosaic', ['images' => $mosaicImages]) : '';
+$vmB1 = content_btn('home', 'vision_mission.cta');
+$vmB2 = content_btn('home', 'vision_mission.cta2');
 section_begin('home', 'vision_mission', ['class' => 'home-mission', 'labelledby' => 'mission-title']);
 ?>
     <div class="split split--start home-mission__grid<?= $vmStack === '' ? ' home-mission__grid--solo' : '' ?>">
@@ -155,209 +220,48 @@ section_begin('home', 'vision_mission', ['class' => 'home-mission', 'labelledby'
                 <?= partial('partials/feature-card', ['class' => 'feature-card--tint feature-card--row', 'icon' => 'eye', 'title' => content('home', 'vision_mission.vision_title'), 'text' => content('home', 'vision_mission.vision_text')]) ?>
                 <?= partial('partials/feature-card', ['class' => 'feature-card--tint feature-card--row', 'icon' => 'target', 'title' => content('home', 'vision_mission.mission_title'), 'text' => content('home', 'vision_mission.mission_text')]) ?>
             </div>
+            <?php if ($vmB1['has'] || $vmB2['has']): ?>
+                <p class="mt-5 home-mission__actions">
+                    <?php if ($vmB1['has']): ?><a class="btn btn--cta btn--caps" href="<?= e($vmB1['url']) ?>"><?= e($vmB1['label']) ?></a><?php endif; ?>
+                    <?php if ($vmB2['has']): ?><a class="btn btn--outline btn--caps" href="<?= e($vmB2['url']) ?>"><?= e($vmB2['label']) ?> <?= icon('arrow-right', 'icon--arrow') ?></a><?php endif; ?>
+                </p>
+            <?php endif; ?>
         </div>
     </div>
-    <?php if ($vmRows || $quote !== ''): ?>
+    <?php if ($quote !== ''): ?>
         <div class="home-mission__lower">
-            <?php if ($vmRows): ?>
-                <div class="home-mission__rows">
-                    <?php foreach ($vmRows as $r): ?>
-                        <?= partial('partials/feature-card', ['class' => 'feature-card--row feature-card--plain', 'icon' => $r['icon'] ?? '', 'title' => $r['title'], 'text' => $r['text'] ?? '']) ?>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-            <?php if ($quote !== ''): ?>
-                <?= partial('partials/quote-card', [
-                    'variant' => 'dark',
-                    'quote'   => $quote,
-                    'name'    => (string) setting('founder_name', ''),
-                    'role'    => (string) content('home', 'founder.quote_role'),
-                    'image'   => ['src' => $founderImg['src'], 'alt' => $founderImg['alt']],
-                    'href'    => $founderOn ? '#founder' : '',
-                ]) ?>
-            <?php endif; ?>
+            <?= partial('partials/quote-card', [
+                'variant' => 'dark',
+                'quote'   => $quote,
+                'name'    => (string) setting('founder_name', ''),
+                'role'    => (string) content('home', 'founder.quote_role'),
+                'image'   => ['src' => $founderImg['src'], 'alt' => $founderImg['alt']],
+                'href'    => $vmB1['has'] ? $vmB1['url'] : '',
+            ]) ?>
         </div>
     <?php endif; ?>
-    <?php if ($mosaic !== ''): ?><div class="home-mission__mosaic"><?= $mosaic ?></div><?php endif; ?>
 <?php section_end(); ?>
-
-<?php /* ------------------------------------------------------------------ 6. FEATURED PROGRAMS & PROJECTS (carousel; round focus-area chip, no figures) */ ?>
-<?php
-$cardCta = trim((string) content('home', 'projects.card_cta'));
-$cards = [];
-// status labels for the project cards (editable: Admin > Pages > Projects); program cards read their own labels
-$projectStatusLabels = [
-    'planned'   => (string) content('projects', 'list.status_planned'),
-    'ongoing'   => (string) content('projects', 'list.status_ongoing'),
-    'completed' => (string) content('projects', 'list.status_completed'),
-];
-foreach ($featured as $f) {
-    $row = $f['row'];
-    if ($f['kind'] === 'program') {
-        $cards[] = partial('partials/program-card', ['program' => $row, 'cta' => $cardCta !== '' ? $cardCta : null]);
-    } elseif ($f['kind'] === 'project') {
-        $cards[] = partial('partials/project-card', ['project' => $row, 'statusLabels' => $projectStatusLabels, 'cta' => $cardCta !== '' ? $cardCta : null]);
-    } else {
-        ob_start(); ?>
-        <article class="card" data-reveal>
-            <?php if ($row['image'] !== ''): ?><div class="card__media"><img src="<?= e($row['image']) ?>" alt="<?= e($row['image_alt']) ?>" loading="lazy"></div><?php endif; ?>
-            <div class="card__body">
-                <?php if (trim($row['tagline']) !== ''): ?><div class="card__meta"><span><?= e($row['tagline']) ?></span></div><?php endif; ?>
-                <h3 class="card__title"><?php if ($row['href'] !== ''): ?><a class="card__stretch" href="<?= e($row['href']) ?>"><?= e($row['title']) ?></a><?php else: ?><?= e($row['title']) ?><?php endif; ?></h3>
-                <?php if (trim($row['summary']) !== ''): ?><p class="card__text"><?= e($row['summary']) ?></p><?php endif; ?>
-                <?php if ($row['href'] !== '' && $cardCta !== ''): ?><div class="card__footer"><span class="btn btn--cta btn--caps btn--sm"><?= e($cardCta) ?></span></div><?php endif; ?>
-            </div>
-        </article>
-        <?php $cards[] = (string) ob_get_clean();
-    }
-}
-if ($cards):
-    section_begin('home', 'projects', ['class' => 'section--tint home-featured', 'labelledby' => 'featured-title']);
-    echo partial('partials/carousel', [
-        'items'   => $cards,
-        'label'   => strip_highlight((string) content('home', 'projects.title')),
-        'eyebrow' => content('home', 'projects.eyebrow'),
-        'title'   => content('home', 'projects.title'),
-        'lead'    => content('home', 'projects.intro'),
-        'id'      => 'featured',
-        'foot'    => $pill(content_btn('home', 'projects.cta'), 'btn--primary btn--caps'),
-    ]);
-    section_end();
-endif;
-?>
-
-<?php /* ------------------------------------------------------------------ 7. DONATION PANEL (pledge / redirect, never a payment form; wording lives in Site-wide content) */ ?>
-<?php
-$dpOverrides = ['images' => [content_img('home', 'donate_panel.image1'), content_img('home', 'donate_panel.image2')]];
-foreach (['eyebrow', 'title', 'text'] as $k) {
-    $v = trim((string) content('home', 'donate_panel.' . $k));
-    if ($v !== '') {
-        $dpOverrides[$k] = $v;
-    }
-}
-$dpHtml = section_on('global', 'donate_panel') ? partial('partials/donate-panel', $dpOverrides) : '';
-if (trim($dpHtml) !== ''):
-    section_begin('home', 'donate_panel', ['class' => 'home-donate']);
-    echo $dpHtml;
-    section_end();
-endif;
-?>
 
 <?php /* ------------------------------------------------------------------ 8. IMPACT STORIES (consented stories only; hidden when none) */ ?>
 <?php
 $storyCards = array_values(array_filter(array_map(static fn(array $s): string => partial('partials/quote-card', ['story' => $s]), $stories), static fn(string $h): bool => trim($h) !== ''));
 if ($storyCards):
     section_begin('home', 'stories', ['class' => 'section--cool home-stories', 'labelledby' => 'stories-title']);
-    $storiesFoot = $pill(content_btn('home', 'stories.cta'), 'btn--primary btn--caps');
-    if (count($storyCards) > 3) {
-        echo partial('partials/carousel', ['items' => $storyCards, 'label' => strip_highlight((string) content('home', 'stories.title')), 'eyebrow' => content('home', 'stories.eyebrow'), 'title' => content('home', 'stories.title'), 'lead' => content('home', 'stories.lead'), 'id' => 'stories', 'foot' => $storiesFoot]);
-    } else {
-        echo partial('partials/section-head', ['eyebrow' => content('home', 'stories.eyebrow'), 'title' => content('home', 'stories.title'), 'lead' => content('home', 'stories.lead'), 'align' => 'center', 'id' => 'stories-title']);
-        ?>
-        <div class="cards-center"><?= implode('', $storyCards) ?></div>
-        <?php if ($storiesFoot !== ''): ?><p class="section__footer"><?= $storiesFoot ?></p><?php endif;
-    }
+    echo partial('partials/section-head', ['eyebrow' => content('home', 'stories.eyebrow'), 'title' => content('home', 'stories.title'), 'lead' => content('home', 'stories.lead'), 'align' => 'center', 'id' => 'stories-title']);
+    ?>
+    <div class="cards-center"><?= implode('', $storyCards) ?></div>
+    <?php $storiesFoot = $pill(content_btn('home', 'stories.cta'), 'btn--primary btn--caps'); ?>
+    <?php if ($storiesFoot !== ''): ?><p class="section__footer"><?= $storiesFoot ?></p><?php endif;
     section_end();
 endif;
 ?>
 
-<?php /* ------------------------------------------------------------------ 8b. LATEST NEWSLETTER (newest published issue; hidden when there is none) */ ?>
+<?php /* ------------------------------------------------------------------ 9. LATEST NEWSLETTER (newest published issue; hidden when there is none) */ ?>
 <?= partial('web/newsletter/_home-teaser') ?>
 
-<?php /* ------------------------------------------------------------------ 9. FAQ (photo + accordion, first item open) */ ?>
+<?php /* ------------------------------------------------------------------ 10. CONTACT TEASER (the newsletter form lives in the footer) */ ?>
 <?php
-if ($faqs):
-    section_begin('home', 'faq', ['class' => 'section--tint home-faq']);
-    echo partial('partials/faq-split', [
-        'faqs'    => $faqs,
-        'image'   => content_img('home', 'faq.image'),
-        'eyebrow' => content('home', 'faq.eyebrow'),
-        'title'   => content('home', 'faq.title'),
-        'lead'    => content('home', 'faq.lead'),
-        'prefix'  => 'home-faq',
-    ]);
-    section_end();
-endif;
-?>
-
-<?php /* ------------------------------------------------------------------ 10a. WHY DIGITAL INCLUSION MATTERS (two-column text + highlighted closing statement) */ ?>
-<?php
-$whyImg = content_img('home', 'why_digital.image');
-$whyClosing = trim((string) content('home', 'why_digital.closing'));
-$whyHead = partial('partials/section-head', ['eyebrow' => content('home', 'why_digital.eyebrow'), 'title' => content('home', 'why_digital.title'), 'lead' => content('home', 'why_digital.lead'), 'id' => 'why-title', 'align' => $whyImg['has'] ? 'left' : 'center']);
-section_begin('home', 'why_digital', ['class' => 'home-why', 'labelledby' => 'why-title'] + ($whyImg['has'] ? [] : ['container' => 'container--narrow']));
-?>
-    <?php if ($whyImg['has']): ?>
-        <div class="split split--start">
-            <div data-reveal>
-                <?= $whyHead ?>
-                <div class="prose"><?= content_html('home', 'why_digital.body') ?></div>
-            </div>
-            <figure class="split__media split__media--frame" data-reveal><?= photo_tag($whyImg) ?></figure>
-        </div>
-    <?php else: ?>
-        <div data-reveal><?= $whyHead ?></div>
-        <div class="prose prose--wide home-why__body" data-reveal><?= content_html('home', 'why_digital.body') ?></div>
-    <?php endif; ?>
-    <?php if ($whyClosing !== ''): ?><div class="callout mt-6" data-reveal><?= nl2p($whyClosing) ?></div><?php endif; ?>
-<?php section_end(); ?>
-
-<?php /* ------------------------------------------------------------------ 10b. FOUNDER STORY (arch portrait + story) */ ?>
-<?php
-$fBtn = content_btn('home', 'founder.cta');
-$fCaption = trim((string) content('home', 'founder.caption'));
-section_begin('home', 'founder', ['class' => 'section--cool home-founder', 'labelledby' => 'founder-title']);
-?>
-    <div class="split split--start<?= $founderImg['has'] ? '' : ' home-founder__solo' ?>">
-        <?php if ($founderImg['has']): ?>
-            <figure class="split__media split__media--arch home-founder__photo" data-reveal>
-                <?= photo_tag($founderImg) ?>
-                <?php if ($fCaption !== ''): ?><figcaption><?= e($fCaption) ?></figcaption><?php endif; ?>
-            </figure>
-        <?php endif; ?>
-        <div data-reveal>
-            <?= partial('partials/section-head', ['eyebrow' => content('home', 'founder.eyebrow'), 'title' => content('home', 'founder.title'), 'id' => 'founder-title', 'class' => 'mb-0']) ?>
-            <div class="prose mt-4"><?= content_html('home', 'founder.body') ?></div>
-            <?php if ($fBtn['has']): ?>
-                <p class="mt-5"><a class="btn btn--outline btn--caps" href="<?= e($fBtn['url']) ?>"<?= $fBtn['external'] ? ' target="_blank" rel="noopener noreferrer"' : '' ?>><?= e($fBtn['label']) ?> <?= icon($fBtn['external'] ? 'external-link' : 'arrow-right', $fBtn['external'] ? 'icon--sm' : 'icon--arrow') ?></a></p>
-            <?php endif; ?>
-        </div>
-    </div>
-<?php section_end(); ?>
-
-<?php /* ------------------------------------------------------------------ 10c. OUR IMPACT (deep navy band) */ ?>
-<?php
-$impImg = content_img('home', 'impact.image');
-section_begin('home', 'impact', ['class' => 'section--navy home-impact', 'labelledby' => 'impact-title']);
-?>
-    <?php if ($impImg['has']): ?>
-        <div class="split">
-            <div data-reveal>
-                <?= partial('partials/section-head', ['eyebrow' => content('home', 'impact.eyebrow'), 'title' => content('home', 'impact.title'), 'id' => 'impact-title', 'class' => 'mb-0']) ?>
-                <div class="prose mt-4"><?= content_html('home', 'impact.body') ?></div>
-            </div>
-            <figure class="split__media" data-reveal><?= photo_tag($impImg) ?></figure>
-        </div>
-    <?php else: ?>
-        <div class="home-impact__inner" data-reveal>
-            <?= partial('partials/section-head', ['eyebrow' => content('home', 'impact.eyebrow'), 'title' => content('home', 'impact.title'), 'id' => 'impact-title', 'align' => 'center', 'class' => 'mb-0']) ?>
-            <div class="prose prose--wide mt-4"><?= content_html('home', 'impact.body') ?></div>
-        </div>
-    <?php endif; ?>
-<?php section_end(); ?>
-
-<?php /* ------------------------------------------------------------------ 10d. BACKGROUND & RATIONALE */ ?>
-<?php
-$bgClosing = trim((string) content('home', 'background.closing'));
-section_begin('home', 'background', ['class' => 'home-background', 'container' => 'container--narrow', 'labelledby' => 'background-title']);
-?>
-    <div data-reveal><?= partial('partials/section-head', ['eyebrow' => content('home', 'background.eyebrow'), 'title' => content('home', 'background.title'), 'id' => 'background-title', 'class' => 'mb-0']) ?></div>
-    <div class="prose prose--wide mt-5" data-reveal><?= content_html('home', 'background.body') ?></div>
-    <?php if ($bgClosing !== ''): ?><div class="callout mt-6" data-reveal><?= nl2p($bgClosing) ?></div><?php endif; ?>
-<?php section_end(); ?>
-
-<?php /* ------------------------------------------------------------------ 10e. CONTACT TEASER (the newsletter form lives in the footer) */ ?>
-<?php
+$city = trim((string) setting('city_country', ''));
 $cbtn = content_btn('home', 'contact.cta');
 $emails = array_values(array_filter([(string) setting('email_primary', ''), (string) setting('email_info', '')]));
 $phones = array_values(array_filter([(string) setting('phone_1', ''), (string) setting('phone_2', '')]));

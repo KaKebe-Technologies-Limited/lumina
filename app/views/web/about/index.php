@@ -110,7 +110,10 @@ $quoteEyebrow = trim((string) content('about', 'quote.eyebrow')); ?>
 <?php section_end(); ?>
 
 <?php /* ------------------------------------------------------------------ GOVERNANCE (+ board from Admin > Team) */ ?>
-<?php section_begin('about', 'governance', ['class' => 'section--tint about-governance', 'labelledby' => 'about-gov-title']); $teamBtn = content_btn('about', 'governance.team_cta'); ?>
+<?php /* ------------------------------------------------------------------ THE LONGER STORY (challenge, why digital inclusion, founder story, commitment, background; wording: Pages > Home) */ ?>
+<?= partial('web/about/_narrative') ?>
+
+<?php section_begin('about', 'governance',['class' => 'section--tint about-governance', 'labelledby' => 'about-gov-title']); $teamBtn = content_btn('about', 'governance.team_cta'); ?>
     <?= partial('partials/section-head', ['eyebrow' => (string) content('about', 'governance.eyebrow'), 'title' => (string) content('about', 'governance.title'), 'lead' => (string) content('about', 'governance.text'), 'align' => 'center', 'id' => 'about-gov-title']) ?>
     <?php if ($board): ?>
         <h3 class="about-governance__board text-center" data-reveal><?= e(content('about', 'governance.board_title')) ?></h3>

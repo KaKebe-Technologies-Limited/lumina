@@ -18,13 +18,18 @@ $pStatusTone = ['planned' => 'info', 'ongoing' => 'success', 'completed' => 'neu
             <?php if ($pStatusText !== ''): ?><span class="card__badge badge badge--<?= e($pStatusTone) ?>"><?= e($pStatusText) ?></span><?php endif; ?>
         </a>
     <?php endif; ?>
+    <?php if ($img === ''): $bannerIcon = !empty($program['icon']) && in_array($program['icon'], \App\Core\Icons::names(), true) ? $program['icon'] : 'target'; ?>
+        <a class="card__media card__media--icon" href="<?= e($href) ?>" tabindex="-1" aria-hidden="true"><?= icon($bannerIcon, 'icon--xl') ?>
+            <?php if ($pStatusText !== ''): ?><span class="card__badge badge badge--<?= e($pStatusTone) ?>"><?= e($pStatusText) ?></span><?php endif; ?>
+        </a>
+    <?php endif; ?>
     <?php $chip = !empty($program['icon']) && in_array($program['icon'], \App\Core\Icons::names(), true) ? $program['icon'] : ''; ?>
     <div class="card__body<?= $chip !== '' && $img !== '' ? ' card__body--chip' : '' ?>">
         <?php if ($chip !== '' && $img !== ''): ?><span class="card__chip"><?= icon($chip, 'icon--lg') ?></span><?php endif; ?>
-        <?php if ($img === '' && $pStatusText !== ''): ?><div class="card__meta"><span class="badge badge--<?= e($pStatusTone) ?>"><?= e($pStatusText) ?></span></div><?php endif; ?>
         <?php if (!empty($program['tagline'])): ?><div class="card__meta"><span><?= e($program['tagline']) ?></span></div><?php endif; ?>
         <h3 class="card__title"><a href="<?= e($href) ?>"><?= e($program['title']) ?></a></h3>
         <?php if (!empty($program['summary'])): ?><p class="card__text"><?= e($program['summary']) ?></p><?php endif; ?>
+        <?php if (empty($program['summary']) && !empty($program['focus'])): ?><ul class="card__list"><?php foreach ($program['focus'] as $fa): ?><li><?= e($fa) ?></li><?php endforeach; ?></ul><?php endif; ?>
         <div class="card__footer"><a class="btn btn--cta btn--caps btn--sm" href="<?= e($href) ?>"><?= e($cta) ?><span class="visually-hidden">: <?= e($program['title']) ?></span></a></div>
     </div>
 </article>

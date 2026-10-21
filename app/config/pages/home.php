@@ -6,9 +6,10 @@
  * DEFAULT WORDING = the live site https://www.luminaafricafoundation.com/ (docs/live-snapshot/home.txt). Where a heading had to be
  * written for the new layout it is built only from live wording (hero, programs, vision, mission, involvement page).
  *
- * Sections, in the order they appear on the page (each has an on/off switch):
- *   hero > help (How we help) > who_we_are > challenge > volunteer (+ stats card) > vision_mission (+ founder quote, photo mosaic)
- *   > projects (featured programs & projects carousel) > donate_panel > stories > faq > why_digital > founder > impact > background > contact
+ * Sections, in the order they appear on the page (each has an on/off switch). The home page is a page of HIGHLIGHTS that link to the detail pages:
+ *   hero > quick links > statistics > program highlights > projects in focus > LAF Academy > opportunities > get involved > about us (short)
+ *   > impact stories > newsletter > contact.   The long narrative sections at the end (challenge, why digital inclusion, founder story, commitment, background)
+ *   are shown on the About page.
  *
  * Text fields accept [[double brackets]] around ONE phrase to give it the hand-drawn gold/orange underline (headings only).
  * Tokens usable in text fields: {reg_number} {site_name} {founder_name} {city} (filled from Settings; see HomeSupport::fill()).
@@ -22,7 +23,7 @@ return [
     'slug'  => 'home',
     'title' => 'Home',
     'route' => '/',
-    'help'  => 'The landing page: hero with video, how we help, who we are, volunteer band with statistics, vision and mission, featured programs, donation panel, impact stories, FAQ, and the longer story sections.',
+    'help'  => 'The landing page of highlights: hero with video, quick links, statistics, programs and projects in focus, the LAF Academy, opportunities, ways to get involved, a short About block, impact stories and contact. The longer story sections are shown on the About page.',
     'nav'   => ['label' => 'Home', 'order' => 10, 'header' => true, 'footer' => false],
     'seo'   => [
         'title'       => 'Building Pathways to Opportunity',
@@ -40,10 +41,10 @@ return [
                 ['key' => 'lead', 'label' => 'Intro paragraph', 'type' => 'textarea', 'rows' => 4,
                     'default' => 'Lumina Africa Foundation is a registered community-based, non-profit organisation headquartered in Gulu City, Northern Uganda, Reg. No: {reg_number}. We are developing a portfolio of community-centred programs designed to expand opportunities for underserved communities, particularly young people in Northern Uganda.',
                     'help' => '{reg_number} is filled from Settings > Organisation > Registration number. Remove the "Reg. No" part if you do not want it shown.'],
-                ['key' => 'cta1_label', 'label' => 'First button (orange): text', 'type' => 'text', 'default' => 'Explore Our Planned Programs'],
+                ['key' => 'cta1_label', 'label' => 'First button (orange): text', 'type' => 'text', 'default' => 'Explore Our Programs'],
                 ['key' => 'cta1_url', 'label' => 'First button: link', 'type' => 'url', 'default' => '/programs'],
-                ['key' => 'cta2_label', 'label' => 'Extra button (glass): text (optional)', 'type' => 'text', 'default' => '', 'help' => 'Leave empty for the cleaner two-button hero (orange button + video button).'],
-                ['key' => 'cta2_url', 'label' => 'Extra button: link', 'type' => 'url', 'default' => '/involvement'],
+                ['key' => 'cta2_label', 'label' => 'Extra button (glass): text (optional)', 'type' => 'text', 'default' => 'Learn free at the Academy', 'help' => 'Leave empty for the cleaner two-button hero (orange button + video button).'],
+                ['key' => 'cta2_url', 'label' => 'Extra button: link', 'type' => 'url', 'default' => '/academy'],
                 ['key' => 'video_url', 'label' => 'Video: YouTube link', 'type' => 'url', 'default' => 'https://www.youtube.com/watch?v=DpptGd72fwc', 'help' => 'A youtube.com or youtu.be link. The video button opens a pop-up player; nothing is loaded from YouTube until a visitor presses it. Leave empty to hide the video button.'],
                 ['key' => 'video_label', 'label' => 'Video: button text', 'type' => 'text', 'default' => 'Watch video'],
                 ['key' => 'video_title', 'label' => 'Video: title', 'type' => 'text', 'default' => 'Driving Digital Inclusion in Africa | Orange’s Vision at Africa Tech Festival 2024', 'help' => 'Shown above the player and read by screen readers.'],
@@ -55,81 +56,28 @@ return [
                     'help' => 'Keep faces inside the visible part: choose where the people are in your photo.'],
             ],
         ],
-        // ------------------------------------------------------------------ 2. how we help
+        // ------------------------------------------------------------------ 2. quick links (right under the hero)
         [
-            'key' => 'help', 'label' => '2. How we help (feature cards + tall photo)', 'toggle' => true, 'default_visible' => true,
-            'help' => 'Outlined cards for the three planned program pillars, with a tall portrait photo beside them.',
+            'key' => 'quick', 'label' => '2. Quick links (four tiles under the hero)', 'toggle' => true, 'default_visible' => true,
+            'help' => 'Four large tiles that send visitors to the most useful pages: the Academy, opportunities, programs and ways to get involved.',
             'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Our planned programs'],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Building [[Pathways to Opportunity]]', 'help' => $hl],
-                ['key' => 'lead', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 3, 'default' => 'Our planned interventions focus on three interconnected pillars: Health, Education, and Technology & Innovation.'],
-                ['key' => 'items', 'label' => 'Cards', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a card', 'max_rows' => 4,
+                ['key' => 'items', 'label' => 'Tiles', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a tile', 'max_rows' => 4,
                     'fields' => [
                         ['key' => 'icon', 'label' => 'Icon', 'type' => 'select', 'options' => icon_options(), 'default' => 'check-circle'],
                         ['key' => 'title', 'label' => 'Title', 'type' => 'text'],
-                        ['key' => 'text', 'label' => 'One-line description', 'type' => 'textarea', 'rows' => 2],
-                        ['key' => 'url', 'label' => 'Link (optional)', 'type' => 'url'],
+                        ['key' => 'text', 'label' => 'One line', 'type' => 'textarea', 'rows' => 2],
+                        ['key' => 'url', 'label' => 'Link', 'type' => 'url'],
                     ],
                     'default' => [
-                        ['icon' => 'heart', 'title' => 'Health & Community Wellbeing', 'text' => 'Promoting health awareness and supporting healthier communities.', 'url' => '/programs/health-community-wellbeing'],
-                        ['icon' => 'graduation-cap', 'title' => 'Education, Skills & Youth Development', 'text' => 'Expanding learning opportunities and preparing young people for the future.', 'url' => '/programs/education-skills-youth-development'],
-                        ['icon' => 'laptop', 'title' => 'Technology, Digital Inclusion & Innovation', 'text' => 'Expanding access to technology and preparing young people for the digital economy.', 'url' => '/programs/technology-digital-inclusion-innovation'],
+                        ['icon' => 'book', 'title' => 'LAF Academy', 'text' => 'Free ICT courses, quizzes, challenges and certificates.', 'url' => '/academy'],
+                        ['icon' => 'award', 'title' => 'Opportunities', 'text' => 'Scholarships, fellowships, jobs and grants for young people.', 'url' => '/opportunities'],
+                        ['icon' => 'target', 'title' => 'Our programs', 'text' => 'Climate, health, education, technology and community development.', 'url' => '/programs'],
+                        ['icon' => 'heart', 'title' => 'Get involved', 'text' => 'Volunteer, partner with us or support the work.', 'url' => '/involvement'],
                     ]],
-                ['key' => 'image', 'label' => 'Tall photo (portrait)', 'type' => 'image', 'default' => 'assets/img/site/photo-04.jpg',
-                    'alt' => 'Young people seated in the audience of an event, some smiling',
-                    'help' => 'Shown in a 4:5 portrait frame with very round corners. Keep the faces near the centre of the photo.'],
-            ],
-        ],
-        // ------------------------------------------------------------------ 3. who we are (photo stack)
-        [
-            'key' => 'who_we_are', 'label' => '3. Who We Are (tilted photos + text)', 'toggle' => true, 'default_visible' => true,
-            'help' => 'Short introduction to the foundation, with up to three overlapping photos.',
-            'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Who We Are'],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'A portfolio of [[community-centred programs]]', 'help' => $hl],
-                ['key' => 'body', 'label' => 'Text', 'type' => 'richtext', 'default' => '<p>Lumina Africa Foundation is a community based nonprofit organization headquartered in Gulu City, Northern Uganda. Founded by young African changemakers, the organization is developing a portfolio of community-centred programs designed to expand opportunities for underserved communities, particularly young people in Northern Uganda.</p><p>Lumina Africa Foundation intends to develop initiatives that support learning, mentorship, personal development and access to skills relevant to employment, entrepreneurship and community participation. As a growing community-based organisation, we are working towards establishing the partnerships, resources and implementation frameworks necessary to translate these plans into meaningful community impact.</p><p>Our work is grounded in the belief that digital inclusion is essential for sustainable development and economic resilience.</p>'],
-                ['key' => 'cta_label', 'label' => 'Button: text (optional)', 'type' => 'text', 'default' => 'Learn more'],
-                ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/about'],
-                ['key' => 'image', 'label' => 'Front photo', 'type' => 'image', 'default' => 'assets/img/site/photo-03.jpg',
-                    'alt' => 'A trainer points at a screen while young people wearing headphones work at computers in a training room'],
-                ['key' => 'image2', 'label' => 'Second photo (behind, optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg',
-                    'alt' => 'Young people seated at desks in a lecture hall'],
-                ['key' => 'image3', 'label' => 'Third photo (furthest back, optional)', 'type' => 'image', 'default' => '', 'alt' => ''],
-            ],
-        ],
-        // ------------------------------------------------------------------ 3b. challenge
-        [
-            'key' => 'challenge', 'label' => '3b. The Challenge We Address', 'toggle' => true, 'default_visible' => true,
-            'help' => 'The problem the foundation exists to solve. Sits directly under "Who We Are" on the same cream background.',
-            'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'The Challenge We Address', 'help' => $hl],
-                ['key' => 'body', 'label' => 'Text', 'type' => 'richtext', 'default' => '<p>Northern Uganda experienced over two decades of armed conflict that displaced millions of people and severely disrupted education systems and economic activity.</p><p>Many young people today continue to face the long term consequences of that conflict.</p><p>Access to computers, internet connectivity, and digital training opportunities remains limited, particularly for youth from vulnerable backgrounds or those who did not complete formal education.</p><p>As the global economy becomes increasingly digital, the absence of these skills risks leaving an entire generation behind.</p><p>Lumina Africa Foundation exists to ensure that young people in Northern Uganda are not excluded from the opportunities created by the digital age.</p>'],
-                ['key' => 'image', 'label' => 'Photo (optional)', 'type' => 'image', 'default' => '', 'alt' => '', 'help' => 'Leave empty for a text-only card. When a photo is added it appears beside the text.'],
-            ],
-        ],
-        // ------------------------------------------------------------------ 4. volunteer band + statistics card
-        [
-            'key' => 'volunteer', 'label' => '4. Volunteer band (photo + buttons)', 'toggle' => true, 'default_visible' => true,
-            'help' => 'Full-width photo with a centred invitation. The statistics card (next section) overlaps its bottom edge.',
-            'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Volunteer With Us'],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Together, we can help turn these plans into [[practical opportunities]]', 'help' => $hl],
-                ['key' => 'text', 'label' => 'Text (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
-                ['key' => 'cta_label', 'label' => 'First button (orange): text', 'type' => 'text', 'default' => 'Volunteer With Us'],
-                ['key' => 'cta_url', 'label' => 'First button: link', 'type' => 'url', 'default' => '/involvement?type=volunteer#join'],
-                ['key' => 'cta2_label', 'label' => 'Second button (white): text (optional)', 'type' => 'text', 'default' => 'Partner With Us'],
-                ['key' => 'cta2_url', 'label' => 'Second button: link', 'type' => 'url', 'default' => '/involvement?type=partner#join'],
-                ['key' => 'video_url', 'label' => 'Video: YouTube link (optional)', 'type' => 'url', 'default' => '', 'help' => 'Adds a small white "play" button. Leave empty for none.'],
-                ['key' => 'video_label', 'label' => 'Video: button text', 'type' => 'text', 'default' => 'Watch video'],
-                ['key' => 'video_title', 'label' => 'Video: title', 'type' => 'text', 'default' => ''],
-                ['key' => 'image', 'label' => 'Background photo', 'type' => 'image', 'default' => 'assets/img/site/photo-05.jpg',
-                    'alt' => 'Young people seated in a training room, one of them typing on a laptop',
-                    'help' => 'Darkened behind the text, so people far from the centre are fine; a plain navy band is shown when empty.'],
             ],
         ],
         [
-            'key' => 'stats', 'label' => '4b. Statistics card', 'toggle' => true, 'default_visible' => true,
+            'key' => 'stats', 'label' => '2b. Statistics card (right under the quick links)', 'toggle' => true, 'default_visible' => true,
             'help' => 'The deep navy card with big numbers. The numbers come from Admin > Stats (up to four are shown); the list below is only used until you add statistics there. Nothing is shown when there are none.',
             'fields' => [
                 ['key' => 'items', 'label' => 'Fallback statistics (used only while Admin > Stats is empty)', 'type' => 'repeater', 'item_label' => 'label', 'add_label' => 'Add a statistic', 'max_rows' => 4,
@@ -146,45 +94,32 @@ return [
                 ],
             ],
         ],
-        // ------------------------------------------------------------------ 5. vision & mission
+        // ------------------------------------------------------------------ 3. what we do (program highlights)  [the cards come from Admin > Programs]
         [
-            'key' => 'vision_mission', 'label' => '5. Vision & Mission (cards, founder quote, photo row)', 'toggle' => true, 'default_visible' => true,
-            'help' => 'Photo collage on the left; heading, vision and mission cards, icon rows and a founder quote on the right; a row of gallery photos underneath.',
+            'key' => 'programs', 'label' => '3. What we do (program highlights)', 'toggle' => true, 'default_visible' => true,
+            'help' => 'A grid of the active programs from Admin > Programs: photo, one line and a link to each program page.',
             'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'About Lumina Africa Foundation'],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our [[vision]] and mission', 'help' => $hl],
-                ['key' => 'vision_title', 'label' => 'Vision: heading', 'type' => 'text', 'default' => 'Our Vision'],
-                ['key' => 'vision_text', 'label' => 'Vision: text', 'type' => 'textarea', 'rows' => 4, 'default' => 'An inclusive digital future for Northern Uganda where all young people and women are equipped, connected, and empowered to thrive in the global digital economy.'],
-                ['key' => 'mission_title', 'label' => 'Mission: heading', 'type' => 'text', 'default' => 'Our Mission'],
-                ['key' => 'mission_text', 'label' => 'Mission: text', 'type' => 'textarea', 'rows' => 4, 'default' => 'We aim to strengthen access to learning, improve practical competencies, build confidence and help young people prepare for further education, employment, entrepreneurship and leadership.'],
-                ['key' => 'rows', 'label' => 'Icon rows (optional)', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a row', 'max_rows' => 4,
-                    'fields' => [
-                        ['key' => 'icon', 'label' => 'Icon', 'type' => 'select', 'options' => icon_options(), 'default' => 'check-circle'],
-                        ['key' => 'title', 'label' => 'Title', 'type' => 'text'],
-                        ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 2],
-                    ],
-                    'default' => [
-                        ['icon' => 'heart', 'title' => 'Health & Community Wellbeing', 'text' => 'We aim to help communities become better informed about health, strengthen awareness of preventive practices and improve knowledge of appropriate health information and services.'],
-                        ['icon' => 'laptop', 'title' => 'Technology, Digital Inclusion & Innovation', 'text' => 'We aspire to improve digital readiness, expand access to technology learning, encourage innovation and help young people explore opportunities in the digital economy.'],
-                        ['icon' => 'users', 'title' => 'Youth Empowerment', 'text' => 'We intend to place young people at the centre of opportunity creation, supporting their development as professionals, entrepreneurs, innovators, leaders and active community participants.'],
-                    ]],
-                ['key' => 'image1', 'label' => 'Collage: front photo', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
-                ['key' => 'image2', 'label' => 'Collage: photo behind (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-05.jpg', 'alt' => 'Young people seated in a training room, one of them typing on a laptop'],
-                ['key' => 'show_mosaic', 'label' => 'Show the row of gallery photos underneath', 'type' => 'boolean', 'default' => true, 'help' => 'Uses the active photos of Admin > Gallery. It is hidden automatically while fewer than three photos remain that the projects carousel does not already show.'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'What we do'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our program [[highlights]]', 'help' => $hl],
+                ['key' => 'intro', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 2, 'default' => 'Community-centred programs that open pathways to learning, work and resilience for young people and communities in Northern Uganda.'],
+                ['key' => 'limit', 'label' => 'How many programs to show', 'type' => 'number', 'default' => 6, 'min' => 1, 'max' => 12],
+                ['key' => 'card_cta', 'label' => 'Card button text', 'type' => 'text', 'default' => 'Learn more'],
+                ['key' => 'cta_label', 'label' => 'Button below the cards: text (optional)', 'type' => 'text', 'default' => 'See all programs'],
+                ['key' => 'cta_url', 'label' => 'Button below the cards: link', 'type' => 'url', 'default' => '/programs'],
             ],
         ],
-        // ------------------------------------------------------------------ 6. featured programs & projects
+        // ------------------------------------------------------------------ 3b. projects in focus
         [
-            'key' => 'projects', 'label' => '6. Featured programs & projects (carousel)', 'toggle' => true, 'default_visible' => true,
-            'help' => 'A swipeable row of cards taken from Admin > Programs (and any extra, separate projects from Admin > Projects). The cards below are only used while both lists are empty.',
+            'key' => 'projects', 'label' => '3b. Projects in focus', 'toggle' => true, 'default_visible' => true,
+            'help' => 'The featured projects from Admin > Projects (a project that mirrors a program is shown with the programs, not here).',
             'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Our planned programs'],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our three planned program [[pillars]]', 'help' => $hl],
-                ['key' => 'intro', 'label' => 'Intro', 'type' => 'text', 'default' => 'Our planned interventions focus on three interconnected pillars: Health, Education, and Technology & Innovation.'],
-                ['key' => 'limit', 'label' => 'How many cards to show', 'type' => 'number', 'default' => 3, 'min' => 1, 'max' => 12],
-                ['key' => 'card_cta', 'label' => 'Card button text', 'type' => 'text', 'default' => 'Learn more'],
-                ['key' => 'cta_label', 'label' => 'Button below the cards: text (optional)', 'type' => 'text', 'default' => 'Explore Our Planned Programs'],
-                ['key' => 'cta_url', 'label' => 'Button below the cards: link', 'type' => 'url', 'default' => '/programs'],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Projects in focus'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Where our plans take [[shape]]', 'help' => $hl],
+                ['key' => 'intro', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 2, 'default' => 'Specific projects that turn each program into practical activities for young people and communities.'],
+                ['key' => 'limit', 'label' => 'How many projects to show', 'type' => 'number', 'default' => 6, 'min' => 1, 'max' => 8, 'help' => 'Taken from every program in turn, so each program is represented.'],
+                ['key' => 'card_cta', 'label' => 'Link text on each project', 'type' => 'text', 'default' => 'Learn more'],
+                ['key' => 'cta_label', 'label' => 'Button below the projects: text (optional)', 'type' => 'text', 'default' => 'See all projects'],
+                ['key' => 'cta_url', 'label' => 'Button below the cards: link', 'type' => 'url', 'default' => '/projects'],
                 ['key' => 'items', 'label' => 'Fallback cards (used only while Admin > Programs and Projects are empty)', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a card', 'max_rows' => 8,
                     'fields' => [
                         ['key' => 'title', 'label' => 'Title', 'type' => 'text'],
@@ -193,26 +128,90 @@ return [
                         ['key' => 'url', 'label' => 'Link', 'type' => 'url'],
                         ['key' => 'image', 'label' => 'Image', 'type' => 'image'],
                     ],
-                    'default' => [
-                        ['title' => 'Health & Community Wellbeing', 'subtitle' => 'Planned program area', 'text' => 'Promoting health awareness and supporting healthier communities.', 'url' => '/programs/health-community-wellbeing', 'image' => '', 'image_alt' => ''],
-                        ['title' => 'Education, Skills & Youth Development', 'subtitle' => 'Planned program area', 'text' => 'Expanding learning opportunities and preparing young people for the future.', 'url' => '/programs/education-skills-youth-development', 'image' => '', 'image_alt' => ''],
-                        ['title' => 'Technology, Digital Inclusion & Innovation', 'subtitle' => 'Planned program area', 'text' => 'Expanding access to technology and preparing young people for the digital economy.', 'url' => '/programs/technology-digital-inclusion-innovation', 'image' => '', 'image_alt' => ''],
-                    ],
+                    'default' => [],
                 ],
             ],
         ],
-        // ------------------------------------------------------------------ 7. donation panel
+        // ------------------------------------------------------------------ 4. LAF Academy highlight
         [
-            'key' => 'donate_panel', 'label' => '7. Donation panel', 'toggle' => true, 'default_visible' => true,
-            'help' => 'The deep navy "make a gift" panel with amount buttons. It does NOT take payments: amounts go to the Donate page (pledge form) and the second button opens the online donation link from Settings. Its wording, amounts, currency and photos are edited once under Site-wide content > Donation panel; fill in the fields below only to say something different on the home page.',
+            'key' => 'academy', 'label' => '4. LAF Academy highlight', 'toggle' => true, 'default_visible' => true,
+            'help' => 'A band that introduces the free learning portal, with live numbers and shortcuts to its main pages. Hidden while the Academy is switched off.',
             'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading (leave empty to use the site-wide wording)', 'type' => 'text', 'default' => ''],
-                ['key' => 'title', 'label' => 'Heading (leave empty to use the site-wide wording)', 'type' => 'text', 'default' => '', 'help' => $hl],
-                ['key' => 'text', 'label' => 'Text (leave empty to use the site-wide wording)', 'type' => 'textarea', 'rows' => 3, 'default' => ''],
-                ['key' => 'image1', 'label' => 'Collage photo (front)', 'type' => 'image', 'default' => 'assets/img/site/photo-hero-wide.jpg',
-                    'alt' => 'Pupils in blue school uniforms seated along rows of desks with laptops in a classroom',
-                    'help' => 'The home page shows its own photo here so the projects carousel just above does not repeat the same pictures. Remove it (and the next one) to use the site-wide collage photos instead.'],
-                ['key' => 'image2', 'label' => 'Collage photo (behind, optional)', 'type' => 'image', 'default' => '', 'alt' => ''],
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'LAF Academy'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Learn ICT skills for [[free]]', 'help' => $hl],
+                ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Free online courses from computer basics to cloud, data and cybersecurity. Join live virtual classes, take part in quiz challenges and hackathons, and earn certificates you can share with employers.'],
+                ['key' => 'cta_label', 'label' => 'First button (orange): text', 'type' => 'text', 'default' => 'Start learning free'],
+                ['key' => 'cta_url', 'label' => 'First button: link', 'type' => 'url', 'default' => '/academy'],
+                ['key' => 'cta2_label', 'label' => 'Second button (white): text (optional)', 'type' => 'text', 'default' => 'Join a challenge'],
+                ['key' => 'cta2_url', 'label' => 'Second button: link', 'type' => 'url', 'default' => '/academy/challenges'],
+                ['key' => 'links', 'label' => 'Shortcut chips', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a shortcut', 'max_rows' => 6,
+                    'fields' => [
+                        ['key' => 'icon', 'label' => 'Icon', 'type' => 'select', 'options' => icon_options(), 'default' => 'check-circle'],
+                        ['key' => 'title', 'label' => 'Title', 'type' => 'text'],
+                        ['key' => 'url', 'label' => 'Link', 'type' => 'url'],
+                    ],
+                    'default' => [
+                        ['icon' => 'book', 'title' => 'All free courses', 'url' => '/academy#courses'],
+                        ['icon' => 'target', 'title' => 'Challenges and hackathons', 'url' => '/academy/challenges'],
+                        ['icon' => 'award', 'title' => 'Winners of the month', 'url' => '/academy/winners'],
+                        ['icon' => 'users', 'title' => 'Become a volunteer facilitator', 'url' => '/academy/facilitate'],
+                    ]],
+                ['key' => 'image', 'label' => 'Background photo', 'type' => 'image', 'default' => 'assets/img/site/photo-05.jpg',
+                    'alt' => 'Young people seated in a training room, one of them typing on a laptop', 'help' => 'Darkened behind the text.'],
+            ],
+        ],
+        // ------------------------------------------------------------------ 5. opportunities teaser
+        [
+            'key' => 'opportunities', 'label' => '5. Opportunities for young people', 'toggle' => true, 'default_visible' => true,
+            'help' => 'The newest open opportunities from Admin > Opportunities (scholarships, fellowships, jobs ...). Hidden while there are none.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Opportunities'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Opportunities for [[young people]]', 'help' => $hl],
+                ['key' => 'intro', 'label' => 'Intro', 'type' => 'textarea', 'rows' => 2, 'default' => 'Scholarships, fellowships, internships, grants and jobs we found for you. Check the deadline and apply early.'],
+                ['key' => 'limit', 'label' => 'How many to show', 'type' => 'number', 'default' => 3, 'min' => 1, 'max' => 6],
+                ['key' => 'cta_label', 'label' => 'Button below the list: text', 'type' => 'text', 'default' => 'See all opportunities'],
+                ['key' => 'cta_url', 'label' => 'Button below the list: link', 'type' => 'url', 'default' => '/opportunities'],
+            ],
+        ],
+        // ------------------------------------------------------------------ 6. get involved
+        [
+            'key' => 'involved', 'label' => '6. Get involved (three cards)', 'toggle' => true, 'default_visible' => true,
+            'help' => 'Three cards that invite visitors to volunteer, partner or donate.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Get involved'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Together, we can turn plans into [[practical opportunities]]', 'help' => $hl],
+                ['key' => 'items', 'label' => 'Cards', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a card', 'max_rows' => 4,
+                    'fields' => [
+                        ['key' => 'icon', 'label' => 'Icon', 'type' => 'select', 'options' => icon_options(), 'default' => 'check-circle'],
+                        ['key' => 'title', 'label' => 'Title', 'type' => 'text'],
+                        ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3],
+                        ['key' => 'button', 'label' => 'Button text', 'type' => 'text'],
+                        ['key' => 'url', 'label' => 'Link', 'type' => 'url'],
+                    ],
+                    'default' => [
+                        ['icon' => 'users', 'title' => 'Volunteer', 'text' => 'Give your time and skills to mentor, teach, organise or support community activities.', 'button' => 'Volunteer with us', 'url' => '/involvement?type=volunteer#join'],
+                        ['icon' => 'globe', 'title' => 'Partner', 'text' => 'Schools, businesses and organisations: work with us to reach more young people.', 'button' => 'Partner with us', 'url' => '/involvement?type=partner#join'],
+                        ['icon' => 'heart', 'title' => 'Donate', 'text' => 'Support learning, mentorship and digital skills for young people in Northern Uganda.', 'button' => 'Give a gift', 'url' => '/donate'],
+                    ]],
+            ],
+        ],
+        // ------------------------------------------------------------------ 5. vision & mission
+        [
+            'key' => 'vision_mission', 'label' => '7. About us block (vision, mission and founder quote, with links to the About page)', 'toggle' => true, 'default_visible' => true,
+            'help' => 'A short introduction to who we are: photo collage, the vision and mission cards, the founder quote and two buttons that lead to the About and Team pages. The longer story is on the About page.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'About Lumina Africa Foundation'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our [[vision]] and mission', 'help' => $hl],
+                ['key' => 'vision_title', 'label' => 'Vision: heading', 'type' => 'text', 'default' => 'Our Vision'],
+                ['key' => 'vision_text', 'label' => 'Vision: text', 'type' => 'textarea', 'rows' => 4, 'default' => 'An inclusive digital future for Northern Uganda where all young people and women are equipped, connected, and empowered to thrive in the global digital economy.'],
+                ['key' => 'mission_title', 'label' => 'Mission: heading', 'type' => 'text', 'default' => 'Our Mission'],
+                ['key' => 'mission_text', 'label' => 'Mission: text', 'type' => 'textarea', 'rows' => 4, 'default' => 'We aim to strengthen access to learning, improve practical competencies, build confidence and help young people prepare for further education, employment, entrepreneurship and leadership.'],
+                ['key' => 'image1', 'label' => 'Collage: front photo', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
+                ['key' => 'image2', 'label' => 'Collage: photo behind (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-05.jpg', 'alt' => 'Young people seated in a training room, one of them typing on a laptop'],
+                ['key' => 'cta_label', 'label' => 'First button: text', 'type' => 'text', 'default' => 'Read our story'],
+                ['key' => 'cta_url', 'label' => 'First button: link', 'type' => 'url', 'default' => '/about'],
+                ['key' => 'cta2_label', 'label' => 'Second button: text (optional)', 'type' => 'text', 'default' => 'Meet the team'],
+                ['key' => 'cta2_url', 'label' => 'Second button: link', 'type' => 'url', 'default' => '/team'],
             ],
         ],
         // ------------------------------------------------------------------ 8. impact stories
@@ -229,7 +228,7 @@ return [
         ],
         // ------------------------------------------------------------------ 8b. latest newsletter
         [
-            'key' => 'newsletter', 'label' => '8b. Latest newsletter', 'toggle' => true, 'default_visible' => true,
+            'key' => 'newsletter', 'label' => '9. Latest newsletter', 'toggle' => true, 'default_visible' => true,
             'help' => 'A card for the newest published newsletter issue (title, number and date, summary, cover picture). It is filled in by itself from Admin > Newsletter and stays hidden until an issue is published; only the words around it are edited here.',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Newsletter'],
@@ -241,20 +240,35 @@ return [
                 ['key' => 'badge', 'label' => 'Small label on the card', 'type' => 'text', 'default' => 'Latest issue'],
             ],
         ],
-        // ------------------------------------------------------------------ 9. FAQ
+        // ------------------------------------------------------------------ 10e. contact teaser
         [
-            'key' => 'faq', 'label' => '9. FAQ (photo + questions)', 'toggle' => true, 'default_visible' => true,
-            'help' => 'Questions come from Admin > FAQs: group "home" if you create one, otherwise "general", otherwise the Donate questions. Hidden when there are none.',
+            'key' => 'contact', 'label' => '10. Contact teaser', 'toggle' => true, 'default_visible' => true,
+            'help' => 'A short "get in touch" card. The contact details come from Settings > Contact details; the button leads to the Contact page. (The newsletter form is in the footer.)',
             'fields' => [
-                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'FAQ'],
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Frequently Asked [[Questions]]', 'help' => $hl],
-                ['key' => 'lead', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => ''],
-                ['key' => 'image', 'label' => 'Photo (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-04.jpg', 'alt' => 'Young people seated in the audience of an event, some smiling', 'help' => 'Leave empty for a centred list without a photo.'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Contact Us', 'help' => $hl],
+                ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Get in touch to empower youth and communities.'],
+                ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Submit Your Inquiry'],
+                ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/contact'],
+                ['key' => 'email_label', 'label' => 'Label: email', 'type' => 'text', 'default' => 'Email'],
+                ['key' => 'phone_label', 'label' => 'Label: phone', 'type' => 'text', 'default' => 'Tel'],
+                ['key' => 'whatsapp_label', 'label' => 'Label: WhatsApp', 'type' => 'text', 'default' => 'WhatsApp'],
+                ['key' => 'location_label', 'label' => 'Label: location', 'type' => 'text', 'default' => 'Location'],
+            ],
+        ],
+        // ------------------------------------------------------------------ 3b. challenge
+        [
+            'key' => 'challenge', 'label' => '10a. The Challenge We Address (shown on the About page)', 'toggle' => true, 'default_visible' => true,
+            'help' => 'The problem the foundation exists to solve. Sits directly under "Who We Are" on the same cream background.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'The Challenge We Address', 'help' => $hl],
+                ['key' => 'body', 'label' => 'Text', 'type' => 'richtext', 'default' => '<p>Northern Uganda experienced over two decades of armed conflict that displaced millions of people and severely disrupted education systems and economic activity.</p><p>Many young people today continue to face the long term consequences of that conflict.</p><p>Access to computers, internet connectivity, and digital training opportunities remains limited, particularly for youth from vulnerable backgrounds or those who did not complete formal education.</p><p>As the global economy becomes increasingly digital, the absence of these skills risks leaving an entire generation behind.</p><p>Lumina Africa Foundation exists to ensure that young people in Northern Uganda are not excluded from the opportunities created by the digital age.</p>'],
+                ['key' => 'image', 'label' => 'Photo (optional)', 'type' => 'image', 'default' => '', 'alt' => '', 'help' => 'Leave empty for a text-only card. When a photo is added it appears beside the text.'],
             ],
         ],
         // ------------------------------------------------------------------ 10a. why digital inclusion matters
         [
-            'key' => 'why_digital', 'label' => '10a. Why Digital Inclusion Matters', 'toggle' => true, 'default_visible' => true,
+            'key' => 'why_digital', 'label' => '10b. Why Digital Inclusion Matters (shown on the About page)', 'toggle' => true, 'default_visible' => true,
             'help' => 'Long-form explanation in two columns, with a highlighted closing statement.',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
@@ -267,7 +281,7 @@ return [
         ],
         // ------------------------------------------------------------------ 10b. founder story
         [
-            'key' => 'founder', 'label' => '10b. Founder Story', 'toggle' => true, 'default_visible' => true,
+            'key' => 'founder', 'label' => '10c. Founder Story (shown on the About page; its quote also appears in the home page About block)', 'toggle' => true, 'default_visible' => true,
             'help' => 'The founder\'s story with a portrait. The quote shown in the Vision & Mission section is taken from here.',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Founder Story'],
@@ -286,7 +300,7 @@ return [
         ],
         // ------------------------------------------------------------------ 10c. impact
         [
-            'key' => 'impact', 'label' => '10c. Our Impact', 'toggle' => true, 'default_visible' => true,
+            'key' => 'impact', 'label' => '10d. Our Commitment to Responsible Development (shown on the About page)', 'toggle' => true, 'default_visible' => true,
             'help' => 'A short statement on a deep navy band.',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
@@ -297,27 +311,12 @@ return [
         ],
         // ------------------------------------------------------------------ 10d. background & rationale
         [
-            'key' => 'background', 'label' => '10d. Background and Rationale', 'toggle' => true, 'default_visible' => true,
+            'key' => 'background', 'label' => '10e. Background and Rationale (shown on the About page)', 'toggle' => true, 'default_visible' => true,
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Background and Rationale', 'help' => $hl],
                 ['key' => 'body', 'label' => 'Text', 'type' => 'richtext', 'default' => '<p>Northern Uganda’s recovery story is inseparable from its past. For over two decades, the Lord’s Resistance Army insurgency displaced an estimated 1.8 million people across the Acholi sub region. Entire communities lived in internally displaced persons camps for nearly 20 years. Education systems collapsed, livelihoods were disrupted, and institutional capacity weakened. A generation of young people grew up with interrupted schooling, trauma exposure, and limited pathways into formal employment.</p><p>Although stability has returned, the structural effects remain visible. Many youth lack UCE, UACE, or tertiary completion certificates, not because of limited ability, but because conflict interrupted their education. This has resulted in layered exclusion, limited qualifications, restricted access to formal jobs, lower earning potential, and heightened economic vulnerability.</p><p>At the same time, Uganda’s economy is rapidly digitising. Access to government services, banking, commerce, and recruitment increasingly requires basic digital literacy. Yet in Northern Uganda, limited access to computers, weak connectivity, and minimal structured digital skills training have deepened the digital divide. For post conflict youth, digital exclusion risks becoming a second wave of marginalisation.</p><p>Lumina Africa Foundation was born at this intersection of post conflict recovery and digital inequality. Lumina Africa Foundation is planning foundational computer training covering computer use, office productivity tools, internet literacy and digital communication.</p>'],
                 ['key' => 'closing', 'label' => 'Closing statement (highlighted)', 'type' => 'textarea', 'rows' => 4, 'default' => 'Small digital opportunities can unlock income. Income restores confidence. Confidence rebuilds dignity. Lumina Africa Foundation was established to ensure that Northern Uganda’s youth are not left behind in a digitising economy, but positioned to participate, compete, and rebuild their futures with resilience and purpose.'],
-            ],
-        ],
-        // ------------------------------------------------------------------ 10e. contact teaser
-        [
-            'key' => 'contact', 'label' => '10e. Contact teaser', 'toggle' => true, 'default_visible' => true,
-            'help' => 'A short "get in touch" card. The contact details come from Settings > Contact details; the button leads to the Contact page. (The newsletter form is in the footer.)',
-            'fields' => [
-                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Contact Us', 'help' => $hl],
-                ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Get in touch to empower youth and communities.'],
-                ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Submit Your Inquiry'],
-                ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/contact'],
-                ['key' => 'email_label', 'label' => 'Label: email', 'type' => 'text', 'default' => 'Email'],
-                ['key' => 'phone_label', 'label' => 'Label: phone', 'type' => 'text', 'default' => 'Tel'],
-                ['key' => 'whatsapp_label', 'label' => 'Label: WhatsApp', 'type' => 'text', 'default' => 'WhatsApp'],
-                ['key' => 'location_label', 'label' => 'Label: location', 'type' => 'text', 'default' => 'Location'],
             ],
         ],
     ],
