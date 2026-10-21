@@ -18,6 +18,8 @@ $missing = array_filter($starter, static fn(array $s): bool => !$s['installed'])
     <div class="aac-stat"><b><?= (int) $stats['certificates'] ?></b><span>Certificates</span></div>
     <div class="aac-stat"><b><?= (int) $stats['attempts7'] ?></b><span>Quiz attempts<small>last 7 days</small></span></div>
     <?php if ($manager): ?><div class="aac-stat"><b><?= (int) $stats['unverified'] ?></b><span>Waiting to confirm e-mail</span></div><?php endif; ?>
+    <div class="aac-stat"><b><?= (int) $stats['challenges'] ?></b><span><a href="<?= e(url('admin/academy/challenges')) ?>">Open challenges</a></span></div>
+    <?php if ($manager): ?><div class="aac-stat"><b><?= (int) $stats['applications'] ?></b><span><a href="<?= e(url('admin/academy/facilitator-applications', ['status' => 'pending'])) ?>">Facilitator applications waiting</a></span></div><?php endif; ?>
 </div>
 
 <div class="aac-grid">

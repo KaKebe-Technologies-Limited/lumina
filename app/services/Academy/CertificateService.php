@@ -69,6 +69,40 @@ final class CertificateService
         return (array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]);
     }
 
+    /**
+     * Certificate for a challenge: $award is "Winner, 1st place" or "Participant". One active certificate per learner and challenge.
+     * @return array<string,mixed>
+     */
+    public static function issueForChallenge(array $learner, array $challenge, string $award, ?float $score): array
+    {
+        $existing = Database::one('SELECT * FROM academy_certificates WHERE learner_id = ? AND challenge_id = ? AND revoked_at IS NULL ORDER BY id DESC LIMIT 1', [(int) $learner['id'], (int) $challenge['id']]);
+        if ($existing !== null) {
+            return $existing;
+        }
+        $id = Database::insert('academy_certificates', [
+            'code' => self::generateCode(), 'kind' => 'challenge', 'learner_id' => (int) $learner['id'], 'challenge_id' => (int) $challenge['id'],
+            'learner_name' => mb_substr((string) $learner['name'], 0, 120), 'course_title' => mb_substr((string) $challenge['title'], 0, 190),
+            'award' => mb_substr($award, 0, 80), 'score_pct' => $score,
+        ]);
+        return (array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]);
+    }
+
+    /** @return array{heading:string,intro:string,statement:string,scoreLabel:string} the wording of a certificate by its kind */
+    public static function texts(array $cert): array
+    {
+        if (($cert['kind'] ?? 'course') !== 'challenge') {
+            return ['heading' => 'Certificate of completion', 'intro' => 'This is to certify that', 'statement' => self::wording()['statement'], 'scoreLabel' => 'Final score'];
+        }
+        $award = (string) ($cert['award'] ?? '');
+        $winner = str_starts_with($award, 'Winner');
+        return [
+            'heading' => $winner ? 'Certificate of achievement' : 'Certificate of participation',
+            'intro' => $winner ? 'This certificate of achievement is proudly awarded to' : 'This is to certify that',
+            'statement' => $winner ? 'has been recognised as ' . strtolower(trim((string) preg_replace('/^Winner,\s*/', '', $award))) . ' winner of the LAF Academy challenge:' : 'took part in the LAF Academy challenge:',
+            'scoreLabel' => 'Score',
+        ];
+    }
+
     public static function revoke(int $id, string $reason): void
     {
         Database::update('academy_certificates', ['revoked_at' => date('Y-m-d H:i:s'), 'revoked_reason' => mb_substr(trim($reason), 0, 255) ?: null], 'id = ?', [$id]);
@@ -133,7 +167,8 @@ final class CertificateService
         $navy = '#1F2A44';
         $gold = '#B7852F';
         $ink = '#2B2F36';
-        $pdf = new PdfWriter(['title' => 'Certificate ' . $cert['code'], 'author' => $w['org'], 'subject' => 'LAF Academy certificate of completion']);
+        $tx = self::texts($cert);
+        $pdf = new PdfWriter(['title' => 'Certificate ' . $cert['code'], 'author' => $w['org'], 'subject' => 'LAF Academy ' . strtolower($tx['heading'])]);
         $pdf->addPage(841.89, 595.28);
         $W = $pdf->pageWidth();
         $H = $pdf->pageHeight();
@@ -170,13 +205,13 @@ final class CertificateService
             $y = 66.0;
         }
         $pdf->text($cx, $y + 4, mb_strtoupper($w['org']) . '  -  LAF ACADEMY', 'helvetica-bold', 11, $gold, 'c');
-        $pdf->text($cx, $y + 44, 'CERTIFICATE OF COMPLETION', 'times-bold', 33, $navy, 'c');
+        $pdf->text($cx, $y + 44, mb_strtoupper($tx['heading']), 'times-bold', 33, $navy, 'c');
         $pdf->save();
         $pdf->stroke($gold);
         $pdf->lineWidth(1);
         $pdf->line($cx - 90, $y + 58, $cx + 90, $y + 58);
         $pdf->restore();
-        $pdf->text($cx, $y + 86, 'This is to certify that', 'times-italic', 15, $ink, 'c');
+        $pdf->text($cx, $y + 86, $tx['intro'], 'times-italic', 15, $ink, 'c');
 
         $name = (string) $cert['learner_name'];
         $size = self::fit($name, 'times-bold', 40, $W - 200, 20);
@@ -189,7 +224,7 @@ final class CertificateService
         $pdf->restore();
 
         $yy = $y + 172;
-        foreach (self::wrap($w['statement'], 'times-roman', 15, $W - 260) as $line) {
+        foreach (self::wrap($tx['statement'], 'times-roman', 15, $W - 260) as $line) {
             $pdf->text($cx, $yy, $line, 'times-roman', 15, $ink, 'c');
             $yy += 20;
         }
@@ -207,7 +242,7 @@ final class CertificateService
         }
         $bits = [];
         if ($cert['score_pct'] !== null) {
-            $bits[] = 'Final score ' . rtrim(rtrim(number_format((float) $cert['score_pct'], 1), '0'), '.') . '%';
+            $bits[] = $tx['scoreLabel'] . ' ' . rtrim(rtrim(number_format((float) $cert['score_pct'], 1), '0'), '.') . '%';
         }
         if ($cert['hours'] !== null) {
             $bits[] = rtrim(rtrim(number_format((float) $cert['hours'], 1), '0'), '.') . ' learning hours';

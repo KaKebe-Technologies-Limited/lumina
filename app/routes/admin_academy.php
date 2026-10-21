@@ -6,6 +6,8 @@
 
 use App\Controllers\Admin\AcademyAdminController;
 use App\Controllers\Admin\AcademyCertificatesController;
+use App\Controllers\Admin\AcademyChallengesAdminController;
+use App\Controllers\Admin\AcademyFacilitatorApplicationsController;
 use App\Controllers\Admin\AcademyClassesController;
 use App\Controllers\Admin\AcademyCoursesController;
 use App\Controllers\Admin\AcademyCurriculumController;
@@ -56,6 +58,12 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/classes/{id}/status', [AcademyClassesController::class, 'status'])->name('admin.academy.classes.status');
     $router->post('/classes/{id}/delete', [AcademyClassesController::class, 'delete'])->name('admin.academy.classes.delete');
 
+    // challenges: the list, scoring projects and viewing entry files (facilitators); everything else is below (administrators)
+    $router->get('/challenges', [AcademyChallengesAdminController::class, 'index'])->name('admin.academy.challenges');
+    $router->get('/challenges/{id}/judge', [AcademyChallengesAdminController::class, 'judge'])->name('admin.academy.challenges.judge');
+    $router->post('/challenges/{id}/judge/{eid}', [AcademyChallengesAdminController::class, 'saveJudgment'])->middleware('throttle:300,60')->name('admin.academy.challenges.judge.save');
+    $router->get('/challenges/entries/{eid}/file/{part}', [AcademyChallengesAdminController::class, 'entryFile'])->middleware('throttle:120,60')->name('admin.academy.challenges.entry.file');
+
     // learners (facilitators: only the learners of their courses; the controller limits what they can do)
     $router->get('/learners', [AcademyLearnersController::class, 'index'])->name('admin.academy.learners');
     $router->get('/learners/{id}', [AcademyLearnersController::class, 'show'])->name('admin.academy.learners.show');
@@ -82,6 +90,25 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->get('/certificates-export', [AcademyCertificatesController::class, 'export'])->middleware('throttle:10,60')->name('admin.academy.certificates.export');
     $router->post('/certificates/{id}/revoke', [AcademyCertificatesController::class, 'revoke'])->name('admin.academy.certificates.revoke');
     $router->post('/certificates/{id}/reinstate', [AcademyCertificatesController::class, 'reinstate'])->name('admin.academy.certificates.reinstate');
+
+    $router->get('/challenges/create', [AcademyChallengesAdminController::class, 'create'])->name('admin.academy.challenges.create');
+    $router->post('/challenges', [AcademyChallengesAdminController::class, 'store'])->name('admin.academy.challenges.store');
+    $router->post('/challenges/starter', [AcademyChallengesAdminController::class, 'loadStarter'])->name('admin.academy.challenges.starter');
+    $router->get('/challenges/{id}/edit', [AcademyChallengesAdminController::class, 'edit'])->name('admin.academy.challenges.edit');
+    $router->post('/challenges/{id}', [AcademyChallengesAdminController::class, 'update'])->name('admin.academy.challenges.update');
+    $router->post('/challenges/{id}/status', [AcademyChallengesAdminController::class, 'status'])->name('admin.academy.challenges.status');
+    $router->post('/challenges/{id}/delete', [AcademyChallengesAdminController::class, 'delete'])->name('admin.academy.challenges.delete');
+    $router->get('/challenges/{id}/entries', [AcademyChallengesAdminController::class, 'entries'])->name('admin.academy.challenges.entries');
+    $router->post('/challenges/{id}/finalize', [AcademyChallengesAdminController::class, 'finalize'])->name('admin.academy.challenges.finalize');
+    $router->post('/challenges/{id}/reopen', [AcademyChallengesAdminController::class, 'reopen'])->name('admin.academy.challenges.reopen');
+    $router->post('/challenges/entries/{eid}/decision', [AcademyChallengesAdminController::class, 'entryDecision'])->name('admin.academy.challenges.entry.decision');
+    $router->post('/challenges/entries/{eid}/photo', [AcademyChallengesAdminController::class, 'entryPhoto'])->name('admin.academy.challenges.entry.photo');
+
+    $router->get('/facilitator-applications', [AcademyFacilitatorApplicationsController::class, 'index'])->name('admin.academy.applications');
+    $router->get('/facilitator-applications/{id}', [AcademyFacilitatorApplicationsController::class, 'show'])->name('admin.academy.applications.show');
+    $router->post('/facilitator-applications/{id}', [AcademyFacilitatorApplicationsController::class, 'decide'])->name('admin.academy.applications.decide');
+    $router->get('/facilitator-applications/{id}/file/{part}', [AcademyFacilitatorApplicationsController::class, 'file'])->middleware('throttle:120,60')->name('admin.academy.applications.file');
+    $router->post('/facilitator-applications/{id}/delete', [AcademyFacilitatorApplicationsController::class, 'delete'])->name('admin.academy.applications.delete');
 
     $router->get('/partner-courses', [AcademyPartnersController::class, 'index'])->name('admin.academy.partners');
     $router->get('/partner-courses/create', [AcademyPartnersController::class, 'create'])->name('admin.academy.partners.create');

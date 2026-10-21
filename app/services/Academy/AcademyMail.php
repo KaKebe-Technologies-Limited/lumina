@@ -114,6 +114,91 @@ final class AcademyMail
         ], ['label' => 'Open my certificate', 'url' => abs_url('academy/certificate/' . $cert['code'])]);
     }
 
+    // ------------------------------------------------------------------------------------------------------------- volunteer facilitators
+
+    public static function facilitatorReceived(array $app): bool
+    {
+        return self::send((string) $app['email'], 'We received your application to facilitate at the LAF Academy', [
+            'Hello ' . self::first((string) $app['name']) . ',',
+            'Thank you for offering your time as a volunteer facilitator for "' . $app['topic_detail'] . '". We have received your application, your CV and your papers.',
+            'An administrator will review them and write to you. This is a voluntary role: facilitators are not paid, and every approved volunteer receives a certificate of appreciation on request.',
+        ]);
+    }
+
+    /** @param array{name:string,email:string,password:string}|null $creds the temporary sign-in details to e-mail (approval only) */
+    public static function facilitatorDecision(array $app, string $status, string $note, ?array $creds = null): bool
+    {
+        $first = 'Hello ' . self::first((string) $app['name']) . ',';
+        $noteLine = trim($note) !== '' ? 'Message from the Academy team: ' . trim($note) : null;
+        if ($status === 'approved') {
+            $p = [$first, 'Good news: your application to facilitate "' . $app['topic_detail'] . '" at the LAF Academy has been approved. Thank you for volunteering your time.'];
+            if ($creds !== null) {
+                $p[] = "Your facilitator account is ready.\nSign in address: " . abs_url('admin/login') . "\nE-mail: " . $creds['email'] . "\nTemporary password: " . $creds['password'] . "\nYou will be asked to choose your own password the first time you sign in. Please delete this e-mail afterwards.";
+            } else {
+                $p[] = 'You can sign in with your existing account: your Academy menu is now available.';
+            }
+            if ($noteLine !== null) {
+                $p[] = $noteLine;
+            }
+            return self::send((string) $app['email'], 'Your LAF Academy facilitator application was approved', $p);
+        }
+        if ($status === 'more_info') {
+            $p = [$first, 'We are reviewing your application to facilitate "' . $app['topic_detail'] . '" and need a little more information before we can decide.'];
+            $p[] = $noteLine ?? 'Please reply to this e-mail with the missing details.';
+            return self::send((string) $app['email'], 'LAF Academy: we need more information', $p, null, self::supportEmail());
+        }
+        $p = [$first, 'Thank you for applying to facilitate "' . $app['topic_detail'] . '" at the LAF Academy. After careful review we are not able to approve the application at this time.'];
+        if ($noteLine !== null) {
+            $p[] = $noteLine;
+        }
+        $p[] = 'You are welcome to apply again later, and you can keep learning for free in the Academy.';
+        return self::send((string) $app['email'], 'Your LAF Academy facilitator application', $p);
+    }
+
+    /** A short notice to the Academy team address. */
+    public static function staffNotice(string $subject, array $paragraphs, string $path): bool
+    {
+        $to = self::supportEmail();
+        if ($to === '' || !Mailer::validEmail($to)) {
+            return false;
+        }
+        return self::send($to, $subject, $paragraphs, ['label' => 'Open in the admin', 'url' => abs_url($path)]);
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- challenges
+
+    public static function challengeEntry(array $challenge, array $learner, string $status, string $note = ''): bool
+    {
+        $first = 'Hello ' . self::first((string) $learner['name']) . ',';
+        $url = abs_url('academy/challenges/' . $challenge['slug']);
+        if ($status === 'approved') {
+            return self::send((string) $learner['email'], 'You are in: ' . mb_substr((string) $challenge['title'], 0, 90), [
+                $first, 'Your entry to "' . $challenge['title'] . '" has been approved. Open the challenge page when it starts to take part.',
+            ], ['label' => 'Open the challenge', 'url' => $url]);
+        }
+        $p = [$first, 'Thank you for applying to "' . $challenge['title'] . '". We are not able to accept your entry this time.'];
+        if (trim($note) !== '') {
+            $p[] = 'Message from the Academy team: ' . trim($note);
+        }
+        return self::send((string) $learner['email'], 'About your entry to ' . mb_substr((string) $challenge['title'], 0, 90), $p, ['label' => 'See other challenges', 'url' => abs_url('academy/challenges')]);
+    }
+
+    /** @param array<string,mixed> $cert the certificate row */
+    public static function challengeResult(array $challenge, array $entry, array $learner, ?array $cert): bool
+    {
+        $first = 'Hello ' . self::first((string) $learner['name']) . ',';
+        if (!empty($entry['is_winner'])) {
+            $p = [$first . ' Congratulations!', 'You won ' . ($entry['award'] ?: 'a place') . ' in "' . $challenge['title'] . '". You will be featured as a winner of the month on the LAF Academy.'];
+        } else {
+            $p = [$first, 'Thank you for taking part in "' . $challenge['title'] . '". The results are final: you can see the ranking on the challenge page.'];
+        }
+        if ($cert !== null) {
+            $p[] = 'Your certificate number is ' . $cert['code'] . '. You can view it, download the PDF and share the verification link.';
+        }
+        return self::send((string) $learner['email'], (!empty($entry['is_winner']) ? 'You won: ' : 'Results: ') . mb_substr((string) $challenge['title'], 0, 90), $p,
+            ['label' => $cert !== null ? 'Open my certificate' : 'See the results', 'url' => $cert !== null ? abs_url('academy/certificate/' . $cert['code']) : abs_url('academy/challenges/' . $challenge['slug'])]);
+    }
+
     /** @param array<string,mixed> $class a row of academy_classes, @param array<string,mixed> $learner */
     public static function classNotice(array $class, array $learner, bool $reminder): bool
     {

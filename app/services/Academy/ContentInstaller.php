@@ -14,6 +14,9 @@ use App\Core\Slug;
  */
 final class ContentInstaller
 {
+    /** Marker value of setting academy_starter_done: 1 = first starter courses installed, 2 = the courses 320-410 and the starter challenges too. */
+    public const VERSION = '2';
+
     public static function dir(): string
     {
         return APP_PATH . '/config/academy/courses';
@@ -61,6 +64,7 @@ final class ContentInstaller
                 'modules' => count((array) ($c['modules'] ?? [])), 'lessons' => $lessons,
                 'installed' => $row !== null, 'course_id' => $row !== null ? (int) $row['id'] : null, 'learners' => $row !== null ? (int) $row['learners'] : 0,
                 'status' => $row !== null ? (string) $row['status'] : '',
+                'order' => preg_match('/^(\d+)-/', basename($file), $om) === 1 ? (int) $om[1] : 0,
             ];
         }
         return $out;
@@ -160,7 +164,8 @@ final class ContentInstaller
      */
     public static function autoInstall(): bool
     {
-        if ((string) setting('academy_starter_done', '0') === '1') {
+        $marker = (string) setting('academy_starter_done', '0');
+        if ($marker === self::VERSION) {
             return false;
         }
         try {
@@ -169,13 +174,23 @@ final class ContentInstaller
             }
             @set_time_limit(180);
             $did = false;
-            if ((int) Database::value('SELECT COUNT(*) FROM academy_courses', [], 0) === 0) {
+            if ($marker === '1') {
+                // a site that already had the first starter courses: add only the courses written since then (file number above 310), once
+                foreach (self::status() as $s) {
+                    if (!$s['installed'] && (int) $s['order'] > 310) {
+                        $did = self::install((string) $s['slug'], null, true)['ok'] || $did;
+                    }
+                }
+            } elseif ((int) Database::value('SELECT COUNT(*) FROM academy_courses', [], 0) === 0) {
                 $did = self::installAll(null, true)['installed'] > 0;
             }
             if (Database::tableExists('academy_partner_courses') && PartnerCourses::count() === 0) {
                 $did = PartnerCourses::installStarter() > 0 || $did;
             }
-            \App\Core\Settings::set('academy_starter_done', '1');
+            if (Database::tableExists('academy_challenges')) {
+                $did = ChallengeInstaller::installAll(null) > 0 || $did;
+            }
+            \App\Core\Settings::set('academy_starter_done', self::VERSION);
             return $did;
         } catch (\Throwable $e) {
             \App\Core\Log::error('Academy first-run install failed: ' . $e->getMessage());

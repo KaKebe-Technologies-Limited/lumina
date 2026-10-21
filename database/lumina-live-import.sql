@@ -1948,6 +1948,153 @@ CREATE TABLE IF NOT EXISTS `academy_partner_courses` (
   KEY `ix_academy_partner_provider` (`provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ---------------------------------------------------------------------------------------------------------------------------------------
+-- LAF Academy: VOLUNTEER FACILITATOR APPLICATIONS (public form, CV and papers kept privately, reviewed in Admin > LAF Academy > Facilitator applications).
+-- Approving an application creates the facilitator account (role facilitator) and records it in user_id. The role is voluntary and unpaid.
+CREATE TABLE IF NOT EXISTS `academy_facilitator_applications` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(120) NOT NULL,
+  `email` VARCHAR(190) NOT NULL,
+  `phone` VARCHAR(40) NULL,
+  `country` VARCHAR(80) NULL,
+  `topic` VARCHAR(20) NOT NULL,                                   -- a course topic key (CourseService::CATEGORIES)
+  `topic_detail` VARCHAR(190) NULL,                               -- the particular subject within the topic
+  `headline` VARCHAR(190) NULL,                                   -- current role / organisation
+  `experience` TEXT NULL,
+  `motivation` TEXT NULL,
+  `availability` VARCHAR(190) NULL,
+  `links` VARCHAR(500) NULL,                                      -- LinkedIn, portfolio, GitHub ...
+  `cv_path` VARCHAR(255) NULL,
+  `cv_name` VARCHAR(190) NULL,
+  `docs` MEDIUMTEXT NULL,                                         -- JSON list of supporting papers: {path, name, size}
+  `status` ENUM('pending','more_info','approved','rejected') NOT NULL DEFAULT 'pending',
+  `admin_note` TEXT NULL,                                         -- internal notes, never shown to the applicant
+  `applicant_note` VARCHAR(500) NULL,                             -- the message e-mailed to the applicant with the decision
+  `reviewed_by` INT UNSIGNED NULL,
+  `reviewed_at` DATETIME NULL,
+  `user_id` INT UNSIGNED NULL,
+  `consent_at` DATETIME NULL,
+  `ip_hash` CHAR(40) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_fapp_status` (`status`, `created_at`),
+  KEY `ix_academy_fapp_email` (`email`),
+  KEY `ix_academy_fapp_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------------------------------------------------------------------------
+-- LAF Academy: CHALLENGES (quiz challenges, innovation challenges, hackathons). The administrator opens one for a time window; learners apply, take part,
+-- and the system ranks the entries and marks the winners when the challenge ends (docs/ACADEMY.md).
+CREATE TABLE IF NOT EXISTS `academy_challenges` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `slug` VARCHAR(120) NOT NULL,
+  `kind` ENUM('quiz','innovation','hackathon') NOT NULL DEFAULT 'quiz',
+  `title` VARCHAR(190) NOT NULL,
+  `category` VARCHAR(20) NOT NULL DEFAULT 'basics',               -- the topic
+  `summary` VARCHAR(320) NULL,
+  `description` TEXT NULL,
+  `rules` TEXT NULL,
+  `prize` VARCHAR(400) NULL,
+  `status` ENUM('draft','published','cancelled') NOT NULL DEFAULT 'draft',
+  `apply_opens_at` DATETIME NULL,
+  `apply_closes_at` DATETIME NULL,
+  `starts_at` DATETIME NULL,
+  `ends_at` DATETIME NULL,
+  `judging_ends_at` DATETIME NULL,                                -- judged challenges: results are final at this moment (default: the end)
+  `team_max` TINYINT UNSIGNED NOT NULL DEFAULT 1,                 -- 1 = individuals only
+  `max_entries` SMALLINT UNSIGNED NULL,
+  `approval` ENUM('auto','manual') NOT NULL DEFAULT 'auto',
+  `scoring` ENUM('quiz','judged') NOT NULL DEFAULT 'quiz',
+  `quiz_script` MEDIUMTEXT NULL,
+  `quiz_minutes` SMALLINT UNSIGNED NULL,
+  `criteria` TEXT NULL,                                           -- JSON list of {name, weight} (weights add up to 100)
+  `winners_count` TINYINT UNSIGNED NOT NULL DEFAULT 3,
+  `pass_score` TINYINT UNSIGNED NOT NULL DEFAULT 0,               -- minimum score (%) to qualify for a certificate of participation
+  `certify_participants` TINYINT(1) NOT NULL DEFAULT 1,
+  `finalized_at` DATETIME NULL,
+  `source` VARCHAR(10) NOT NULL DEFAULT 'manual',
+  `created_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_academy_challenges_slug` (`slug`),
+  KEY `ix_academy_challenges_list` (`status`, `starts_at`),
+  KEY `ix_academy_challenges_final` (`status`, `finalized_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `academy_challenge_entries` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `challenge_id` INT UNSIGNED NOT NULL,
+  `learner_id` INT UNSIGNED NOT NULL,
+  `team_name` VARCHAR(120) NULL,
+  `members` VARCHAR(600) NULL,                                    -- names of the other team members (plain text)
+  `idea_title` VARCHAR(190) NULL,
+  `idea_summary` TEXT NULL,
+  `status` ENUM('pending','approved','rejected','withdrawn') NOT NULL DEFAULT 'pending',
+  `admin_note` VARCHAR(500) NULL,
+  `photo_path` VARCHAR(255) NULL,
+  `photo_consent_at` DATETIME NULL,                               -- the learner agreed to the photo being published if they win
+  `publish_photo` TINYINT(1) NOT NULL DEFAULT 1,                  -- staff can hide a photo from the winners page
+  `quiz_started_at` DATETIME NULL,
+  `quiz_submitted_at` DATETIME NULL,
+  `quiz_layout` MEDIUMTEXT NULL,                                  -- JSON: question and answer order shown to this entrant
+  `quiz_answers` MEDIUMTEXT NULL,
+  `quiz_correct` SMALLINT UNSIGNED NULL,
+  `quiz_total` SMALLINT UNSIGNED NULL,
+  `quiz_seconds` INT UNSIGNED NULL,
+  `sub_title` VARCHAR(190) NULL,
+  `sub_summary` TEXT NULL,
+  `sub_url` VARCHAR(500) NULL,
+  `sub_file_path` VARCHAR(255) NULL,
+  `sub_file_name` VARCHAR(190) NULL,
+  `submitted_at` DATETIME NULL,
+  `score` DECIMAL(6,2) NULL,                                      -- final score out of 100 (quiz: percentage; judged: weighted average of the judges)
+  `rank_no` SMALLINT UNSIGNED NULL,
+  `is_winner` TINYINT(1) NOT NULL DEFAULT 0,
+  `award` VARCHAR(60) NULL,                                       -- for example "1st place"
+  `certificate_id` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_academy_centry` (`challenge_id`, `learner_id`),
+  KEY `ix_academy_centry_learner` (`learner_id`),
+  KEY `ix_academy_centry_winner` (`is_winner`, `challenge_id`),
+  CONSTRAINT `fk_academy_centry_challenge` FOREIGN KEY (`challenge_id`) REFERENCES `academy_challenges` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_academy_centry_learner` FOREIGN KEY (`learner_id`) REFERENCES `academy_learners` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `academy_challenge_judgments` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `entry_id` INT UNSIGNED NOT NULL,
+  `judge_id` INT UNSIGNED NOT NULL,                               -- users.id of the staff member
+  `scores` TEXT NOT NULL,                                         -- JSON list: points 0-10 for each criterion, in order
+  `total` DECIMAL(6,2) NOT NULL,                                  -- weighted total out of 100
+  `comment` VARCHAR(500) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_academy_judgment` (`entry_id`, `judge_id`),
+  CONSTRAINT `fk_academy_judgment_entry` FOREIGN KEY (`entry_id`) REFERENCES `academy_challenge_entries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Certificates of challenges: the same table and public check page as course certificates (kind = course or challenge; award = for example "Winner, 1st place").
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_certificates' AND column_name = 'kind');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_certificates` ADD COLUMN `kind` VARCHAR(12) NOT NULL DEFAULT ''course'' AFTER `code`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_certificates' AND column_name = 'award');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_certificates` ADD COLUMN `award` VARCHAR(80) NULL AFTER `course_title`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_certificates' AND column_name = 'challenge_id');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_certificates` ADD COLUMN `challenge_id` INT UNSIGNED NULL AFTER `course_id`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 
 -- ======================================================================
 -- PART: seed.sql

@@ -43,6 +43,7 @@ class AcademyAdminController extends AdminController
     {
         $this->authorize('academy.teach');
         ContentInstaller::autoInstall();
+        \App\Services\Academy\ChallengeService::settle();
         [$scopeSql, $scopeParams] = AcademyAccess::courseScope('c');
         $ids = AcademyAccess::courseIds();
         $in = $ids === null ? null : ($ids === [] ? '0' : implode(',', $ids));
@@ -55,6 +56,8 @@ class AcademyAdminController extends AdminController
             'certificates' => (int) Database::value('SELECT COUNT(*) FROM academy_certificates WHERE revoked_at IS NULL' . ($in === null ? '' : ' AND course_id IN (' . $in . ')'), [], 0),
             'attempts7' => (int) Database::value('SELECT COUNT(*) FROM academy_attempts WHERE submitted_at >= (NOW() - INTERVAL 7 DAY)' . ($in === null ? '' : ' AND course_id IN (' . $in . ')'), [], 0),
             'new30' => AcademyAccess::manager() ? (int) Database::value('SELECT COUNT(*) FROM academy_learners WHERE created_at >= (NOW() - INTERVAL 30 DAY)', [], 0) : 0,
+            'challenges' => (int) Database::value("SELECT COUNT(*) FROM academy_challenges WHERE status = 'published' AND finalized_at IS NULL", [], 0),
+            'applications' => AcademyAccess::manager() ? (int) Database::value("SELECT COUNT(*) FROM academy_facilitator_applications WHERE status IN ('pending','more_info')", [], 0) : 0,
             'unverified' => AcademyAccess::manager() ? (int) Database::value('SELECT COUNT(*) FROM academy_learners WHERE email_verified_at IS NULL AND is_active = 1', [], 0) : 0,
         ];
         ClassService::settle();

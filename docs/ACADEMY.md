@@ -2,7 +2,7 @@
 
 A free ICT learning portal at `/academy`: courses made of modules, lessons and quizzes; learner accounts with e-mail confirmation; progress tracking; a final exam and a
 certificate with a public number and a PDF; live virtual classes (Google Meet, Zoom, Microsoft Teams, free Jitsi or any https link); facilitator (teacher) accounts; full
-administrator control. 31 starter courses at three levels (over 570 lessons and 2,000 quiz questions) plus a catalogue of free partner courses ship with the site.
+administrator control. 41 starter courses at three levels (over 740 lessons and 2,700 quiz questions), challenges and hackathons with automatic winners, plus a catalogue of free partner courses ship with the site.
 
 ## For learners (public)
 
@@ -56,7 +56,7 @@ learner deletion, exports, settings. Every controller checks ownership (`Academy
 
 ## Starter courses
 
-`app/config/academy/courses/NN-slug.php` (31 files; format and writing rules in `docs/ACADEMY-CONTENT.md`; check with `php bin/academy-validate-content.php`). Install from
+`app/config/academy/courses/NN-slug.php` (41 files; format and writing rules in `docs/ACADEMY-CONTENT.md`; check with `php bin/academy-validate-content.php`). Install from
 Admin > LAF Academy > Starter courses, or `php bin/academy-install-content.php [--draft] [--only=slug]`. A course already installed is never changed; a starter course nobody has
 enrolled in can be reset to the starter version. After installing, courses are ordinary courses: edit, hide or delete them.
 
@@ -74,6 +74,45 @@ more) are listed at `/academy/partner-courses`, grouped by level, with a teaser 
 is copied, links open in a new tab with `nofollow`, and a disclaimer says free access and certificate rules belong to each provider. Starter list: `app/config/academy/partners.php`
 (installed by address, never twice). Admin > LAF Academy > Partner courses (administrators): add, edit, hide, delete, feature, load the starter list, and **Check links** (25 at a
 time; the checker only accepts public hosts; an address that answers 404/410 is hidden from visitors until fixed). Table `academy_partner_courses`.
+
+## Volunteer facilitators (applications)
+
+Anyone can apply at `/academy/facilitate` (no account needed) to facilitate **one topic** as a **volunteer** (unpaid): name, e-mail, topic and the particular subject,
+experience, motivation, availability, links, a **CV (required)** and up to **four supporting papers** (PDF or Word, 5 MB each; the content is checked, not only the extension).
+The files are stored privately (`storage/private/academy`), open only for administrators, and are deleted with the application. One open application per e-mail address; 3 per
+connection per day; honeypot and throttle on the form. The applicant and the team address (Settings > LAF Academy > support e-mail) get an e-mail.
+
+Admin > LAF Academy > **Facilitator applications** (administrators): read everything, download the CV and papers, then **Approve** (creates the facilitator account
+with a temporary password, shown once and, by default, e-mailed to the applicant, who must change it at first sign-in; an existing teaching account is linked instead),
+**Ask for more information**, or **Decline**; each decision e-mails the applicant with your message. Internal notes are never sent. The approved topic is kept on the application and
+limits which judged challenges that facilitator may score. Table `academy_facilitator_applications`.
+
+## Challenges, hackathons and winners of the month
+
+Admin > LAF Academy > **Challenges**: three kinds. A **quiz challenge** (timed, marked by the system), an **innovation challenge** and a **hackathon** (teams submit a project,
+judges score it against weighted criteria). The administrator sets the title, topic, rules, prize, **dates** (applications open / close, start, end, and for judged challenges when
+results are final), team size, maximum entries, whether entries are approved automatically or by staff, the number of winners and a minimum qualifying score, then **publishes**.
+Ready-made drafts (six quiz challenges of 30 questions, an innovation challenge and a hackathon, `app/config/academy/challenges/*.php`) can be added with one click.
+
+Flow for learners (signed in): *apply* (optional team, idea for projects, optional **photo** with a consent tick) -> entry approved (automatically or by staff, e-mailed) -> when the
+challenge is live: **take the quiz** (one attempt, shuffled questions, the clock starts when pressed, graded on the server, late answers count as blank) or **submit the project**
+(title, description, https link and/or PDF/Word/PowerPoint file; editable until the end) -> **results**.
+
+**Winners are marked automatically.** When a quiz challenge ends, or when the judging deadline of a judged challenge passes and at least one project has been scored,
+`ChallengeService::settle()` ranks the eligible entries (quiz: highest percentage, then the fastest finishing time; judged: the average of the judges' weighted totals, then the earliest
+submission), marks the top N (who reach the minimum score) as winners ("1st place" ...), issues certificates and e-mails the entrants. It runs from the public pages, the admin overview
+and `bin/academy-reminders.php` (cron). Administrators can also "Make the results now" or **reopen** the results (winners cleared, the challenge certificates withdrawn) to correct scores.
+Judges (any staff member with "Teach in the LAF Academy", limited to their approved topic when they have one) score each project 0-10 per criterion at Challenges > Score.
+
+**Certificates**: winners get a *certificate of achievement* ("Winner, 1st place"), other entrants at or above the pass score a *certificate of participation* (switchable per
+challenge). They use the same numbers, PDF and public check page as course certificates (`academy_certificates.kind = challenge`).
+
+**Winners of the month** (`/academy/winners`, teaser on the Academy home): winners grouped by the month the results were made, with their photo. A photo and the full name are shown **only
+when the learner ticked the consent box** (otherwise first name and initial, no photo); staff can hide a photo. Photos are cropped square and stripped of metadata
+(`ImageOptimizer::portrait`), kept privately and served only for published winners. Tables `academy_challenges`, `academy_challenge_entries`, `academy_challenge_judgments`.
+
+Existing sites: on the first visit after the upgrade the marker `academy_starter_done` moves from 1 to 2 and the newer starter courses (numbers above 310) and the starter challenges
+are added once.
 
 ## Quiz format
 
@@ -98,7 +137,7 @@ Q: What does CPU stand for?
 ## Data (additive tables, `database/schema.sql`)
 
 `academy_courses`, `academy_modules`, `academy_lessons`, `academy_quizzes` (module_id NULL = the final exam), `academy_questions`, `academy_options`, `academy_learners`,
-`academy_enrollments`, `academy_progress`, `academy_attempts`, `academy_certificates` (keeps a snapshot of the name and the course title), `academy_classes`, `academy_partner_courses`.
+`academy_enrollments`, `academy_progress`, `academy_attempts`, `academy_certificates` (keeps a snapshot of the name and the course title), `academy_classes`, `academy_partner_courses`, `academy_facilitator_applications`, `academy_challenges`, `academy_challenge_entries`, `academy_challenge_judgments` (and three columns on `academy_certificates`: kind, award, challenge_id).
 Deleting a course removes its lessons, quizzes and the learners' progress in it; certificates stay valid. Deleting a learner removes their progress; their certificates stay valid.
 
 ## Code map

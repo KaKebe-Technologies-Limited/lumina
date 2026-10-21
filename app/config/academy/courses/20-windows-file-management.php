@@ -22,7 +22,6 @@ return [
     'pass_mark'   => 70,
     'resources'   => [
         ['title' => 'Microsoft Support: Windows help and learning', 'url' => 'https://support.microsoft.com/windows'],
-        ['title' => 'GCFGlobal: Windows Basics (free tutorials)', 'url' => 'https://edu.gcfglobal.org/en/windowsbasics/'],
         ['title' => 'Microsoft Learn', 'url' => 'https://learn.microsoft.com/training/'],
     ],
     'modules' => [

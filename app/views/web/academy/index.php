@@ -98,7 +98,38 @@ $cta = content_btn('academy', 'cta.button');
     <p class="ac-center"><a class="btn btn--outline btn--caps" href="<?= e(url('academy/partner-courses')) ?>"><?= e(content('academy', 'partners.button')) ?> (<?= (int) $partnerTotal ?>)</a></p>
 <?php section_end(); endif; ?>
 
-<?php section_begin('academy', 'why', ['class' => 'section--tint', 'labelledby' => 'ac-why-title']); ?>
+<?php if ($challenges): section_begin('academy', 'challenges', ['class' => 'section--tint', 'labelledby' => 'ac-chal-title']); ?>
+    <?= partial('partials/section-head', ['eyebrow' => (string) content('academy', 'challenges.eyebrow'), 'title' => (string) content('academy', 'challenges.title'), 'lead' => (string) content('academy', 'challenges.intro'), 'align' => 'center', 'id' => 'ac-chal-title']) ?>
+    <div class="grid grid--3 grid--gap-lg post-grid ac-grid">
+        <?php foreach ($challenges as $c): ?><?= partial('web/academy/_challenge_card', ['c' => $c]) ?><?php endforeach; ?>
+    </div>
+    <p class="ac-center"><a class="btn btn--outline btn--caps" href="<?= e(url('academy/challenges')) ?>"><?= e(content('academy', 'challenges.button')) ?></a></p>
+<?php section_end(); endif; ?>
+
+<?php if ($winners): section_begin('academy', 'winners', ['labelledby' => 'ac-win-title']); ?>
+    <?= partial('partials/section-head', ['title' => (string) content('academy', 'winners.home_title'), 'align' => 'center', 'id' => 'ac-win-title']) ?>
+    <div class="ac-winners">
+        <?php foreach ($winners as $w): ?>
+            <article class="ac-winner<?= (int) $w['rank_no'] === 1 ? ' ac-winner--first' : '' ?>" data-reveal>
+                <div class="ac-winner__pic">
+                    <?php if ($w['photo_ok']): ?><img src="<?= e(url('academy/winners/' . (int) $w['id'] . '/photo')) ?>" alt="Photo of <?= e($w['display_name']) ?>" width="220" height="220" loading="lazy">
+                    <?php else: ?><span class="ac-winner__initials" aria-hidden="true"><?= e(mb_strtoupper(mb_substr((string) $w['display_name'], 0, 1))) ?></span><?php endif; ?>
+                    <span class="ac-winner__badge"><?= icon('award', 'icon--sm') ?> <?= e((string) $w['award']) ?></span>
+                </div>
+                <h3 class="ac-winner__name"><?= e($w['display_name']) ?></h3>
+                <p class="ac-winner__meta"><a href="<?= e(url('academy/challenges/' . $w['challenge_slug'])) ?>"><?= e($w['challenge_title']) ?></a></p>
+            </article>
+        <?php endforeach; ?>
+    </div>
+    <p class="ac-center"><a class="btn btn--outline btn--caps" href="<?= e(url('academy/winners')) ?>">All winners</a></p>
+<?php section_end(); endif; ?>
+
+<?php section_begin('academy', 'facilitate', ['class' => 'section--tint', 'labelledby' => 'ac-fac-title']); ?>
+    <?= partial('partials/section-head', ['eyebrow' => (string) content('academy', 'facilitate.eyebrow'), 'title' => (string) content('academy', 'facilitate.title'), 'lead' => (string) content('academy', 'facilitate.intro'), 'align' => 'center', 'id' => 'ac-fac-title']) ?>
+    <p class="ac-center"><a class="btn btn--cta btn--caps" href="<?= e(url('academy/facilitate')) ?>"><?= e(content('academy', 'facilitate.button')) ?></a></p>
+<?php section_end(); ?>
+
+<?php section_begin('academy', 'why', ['labelledby' => 'ac-why-title']); ?>
     <?= partial('partials/section-head', ['title' => (string) content('academy', 'why.title'), 'align' => 'center', 'id' => 'ac-why-title']) ?>
     <?php if ($why): ?>
         <ul class="ac-why">

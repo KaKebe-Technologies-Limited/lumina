@@ -230,6 +230,7 @@ require __DIR__ . '/selftest-opportunities.php';        // opportunities: feed p
 require __DIR__ . '/selftest-hero.php';                 // hero / banner images: responsive WebP copies, <picture> partial, one well-formed hero image on every banner page
 require __DIR__ . '/selftest-academy.php';               // LAF Academy: quiz text format, starter courses + installer, learner accounts (sign-up, e-mailed confirmation, sign-in, reset), enrolling, lessons, quizzes and grading, final exam, certificates (PDF, check page), virtual classes, access control (removes its own test data)
 require __DIR__ . '/selftest-academy-admin.php';         // LAF Academy admin: courses, curriculum, lessons + handouts, quiz editor, classes, learners, certificates, facilitator accounts and the facilitator limits (removes its own test data)
+require __DIR__ . '/selftest-academy-challenges.php';     // LAF Academy: volunteer facilitator applications (files, review, approval creates the account) and challenges (quiz, innovation, hackathon: applying, timed quiz, judges, automatic ranking, winners, certificates, winners of the month) (removes its own test data)
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);

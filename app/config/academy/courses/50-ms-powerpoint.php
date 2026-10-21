@@ -22,7 +22,6 @@ return [
     'pass_mark'   => 70,
     'resources'   => [
         ['title' => 'Microsoft Support: PowerPoint help', 'url' => 'https://support.microsoft.com/powerpoint'],
-        ['title' => 'Microsoft Office Training Center', 'url' => 'https://support.microsoft.com/training'],
     ],
     'modules' => [
         [

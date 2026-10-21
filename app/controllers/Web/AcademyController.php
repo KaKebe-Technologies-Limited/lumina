@@ -41,6 +41,8 @@ final class AcademyController extends AcademyBaseController
         $upcoming = [];
         $partners = [];
         $partnerTotal = 0;
+        $challenges = [];
+        $winners = [];
         try {
             ContentInstaller::autoInstall();                 // first visit ever: fill the empty catalogue once (docs/ACADEMY.md)
             $courses = CourseService::published($filters);
@@ -55,12 +57,18 @@ final class AcademyController extends AcademyBaseController
             $partnerAll = Database::tableExists('academy_partner_courses') ? PartnerCourses::visible() : [];
             $partnerTotal = count($partnerAll);
             $partners = array_slice($partnerAll, 0, 6);
+            if (Database::tableExists('academy_challenges')) {
+                \App\Services\Academy\ChallengeService::settle();
+                $challenges = array_slice(array_values(array_filter(\App\Services\Academy\ChallengeService::publicList(), static fn(array $c): bool => \App\Services\Academy\ChallengeService::phase($c) !== 'finished')), 0, 3);
+                $months = \App\Services\Academy\ChallengeService::winnersByMonth(1);
+                $winners = $months !== [] ? array_slice($months[0]['winners'], 0, 4) : [];
+            }
         } catch (\Throwable) {
             // the Academy tables are not imported yet: show the empty home page
         }
         $filtered = $filters['q'] !== '' || $filters['category'] !== '' || $filters['level'] !== '';
         return $this->renderAcademy('web/academy/index', [
-            'courses' => $courses, 'counts' => $counts, 'filters' => $filters, 'filtered' => $filtered, 'stats' => $stats, 'upcoming' => $upcoming, 'partners' => $partners, 'partnerTotal' => $partnerTotal,
+            'courses' => $courses, 'counts' => $counts, 'filters' => $filters, 'filtered' => $filtered, 'stats' => $stats, 'upcoming' => $upcoming, 'partners' => $partners, 'partnerTotal' => $partnerTotal, 'challenges' => $challenges, 'winners' => $winners,
             'categories' => CourseService::categoryLabels(), 'levels' => CourseService::LEVELS,
         ], [
             'bodyClass' => 'is-academy is-academy-home',

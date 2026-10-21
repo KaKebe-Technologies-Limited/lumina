@@ -22,7 +22,6 @@ return [
     'pass_mark'   => 70,
     'resources'   => [
         ['title' => 'Microsoft Support: Word help', 'url' => 'https://support.microsoft.com/word'],
-        ['title' => 'Microsoft Office Training Center', 'url' => 'https://support.microsoft.com/training'],
     ],
     'modules' => [
         [

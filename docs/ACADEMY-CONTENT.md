@@ -122,7 +122,43 @@ File names: `NN-slug.php` where NN is the order number below. Targets per course
 | 290 | cybersecurity-essentials | Cybersecurity Essentials for Organisations | security | intermediate |
 | 300 | project-management-basics | Project Management Basics | business | beginner |
 | 310 | video-editing-content-creation | Video Editing and Content Creation | design | beginner |
+| 320 | git-github-collaboration | Git and GitHub: Version Control and Teamwork | web | intermediate |
+| 330 | graphic-design-fundamentals | Graphic Design Fundamentals | design | beginner |
+| 340 | ux-ui-design-basics | UX and UI Design: Design Apps People Love | design | intermediate |
+| 350 | generative-ai-at-work | Generative AI at Work: Prompting, Safety and Productivity | ai | intermediate |
+| 360 | machine-learning-introduction | Introduction to Machine Learning | ai | advanced |
+| 370 | php-mysql-web-apps | Web Applications with PHP and MySQL | web | advanced |
+| 380 | cybersecurity-defence-advanced | Defending Systems: Security Operations and Incident Response | security | advanced |
+| 390 | freelancing-remote-work | Freelancing and Remote Work from Africa | careers | intermediate |
+| 400 | digital-finance-mobile-money | Digital Finance, Mobile Money and Safe Online Payments | business | beginner |
+| 410 | data-visualisation-power-bi | Data Visualisation and Reporting with Power BI | data | intermediate |
 
 Level guide: **beginner** assumes nothing; **intermediate** assumes the learner can use a computer and has done the relevant beginner course (say which one in `requirements`); **advanced** assumes comfortable intermediate skills (name them in `requirements`) and works on realistic projects, trade-offs and good practice. Intermediate and advanced lessons may run to 700-900 words and may use more code, formulas and screenshots-in-words, but keep the same lesson shape and the same quiz rules.
 
 `sort` = the NN of the file.
+
+## Challenge files (starter quiz challenges)
+
+`app/config/academy/challenges/NN-slug.php` returns an array describing a **quiz challenge** (a timed, auto-graded competition that the administrator opens at a chosen time). Check with
+`/c/xampp/php/php.exe bin/academy-validate-challenges.php [file]`.
+
+```php
+return [
+    'slug' => 'ict-basics-quiz', 'kind' => 'quiz',            // quiz | innovation | hackathon
+    'title' => '...', 'category' => 'basics',                 // a course topic key
+    'summary' => 'One or two plain sentences (max 320 characters).',
+    'description' => "Plain text, 2-3 short paragraphs separated by a blank line.",
+    'rules' => "Plain text, one rule per line (6-10 lines): who may enter, time limit, one attempt, no help, scoring, tie-break, prize, certificate.",
+    'prize' => 'Winner of the month feature, a certificate and ... (plain text, max 400)',
+    'winners_count' => 3, 'quiz_minutes' => 30, 'pass_score' => 50,   // pass_score = % needed to qualify for a certificate of participation
+    'quiz' => <<<'QUIZ'
+Q: ...
+* ...
+- ...
+= explanation
+QUIZ,
+];
+```
+
+Quiz challenge rules of thumb: 30 questions, a mix of easy (40%), medium (40%) and hard (20%), covering the whole topic, QuizScript format exactly as for courses, correct answer in varied positions,
+believable wrong answers, every question has an explanation. Plain text only (no HTML anywhere in a challenge file).

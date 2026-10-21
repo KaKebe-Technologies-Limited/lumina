@@ -1,6 +1,6 @@
 <?php
 /**
- * CRON JOB: e-mails learners a reminder before a virtual class of the LAF Academy (Settings > LAF Academy > "Remind learners ... before").
+ * CRON JOB: e-mails learners a reminder before a virtual class of the LAF Academy, and finalises challenges that have ended (winners and certificates) (Settings > LAF Academy > "Remind learners ... before").
  *
  *   php /path/to/site/bin/academy-reminders.php [--verbose]
  *
@@ -21,8 +21,9 @@ use App\Services\Academy\ClassService;
 try {
     $n = ClassService::sendDueReminders();
     ClassService::settle();
+    $made = \App\Services\Academy\ChallengeService::settle();                  // challenges whose time has come: rank the entries, mark the winners, issue certificates
     if (in_array('--verbose', array_slice($argv, 1), true)) {
-        echo 'Classes reminded: ' . $n . PHP_EOL;
+        echo 'Classes reminded: ' . $n . ', challenges finalised: ' . $made . PHP_EOL;
     }
     exit(0);
 } catch (\Throwable $e) {

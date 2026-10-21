@@ -14,6 +14,8 @@ return [
         ['key' => 'academy_classes',     'label' => 'Virtual classes', 'url' => 'admin/academy/classes',      'icon' => 'video',     'can' => 'academy.teach',  'order' => 30, 'badge' => null],
         ['key' => 'academy_learners',     'label' => 'Learners',        'url' => 'admin/academy/learners',     'icon' => 'users',     'can' => 'academy.teach',  'order' => 40, 'badge' => null],
         ['key' => 'academy_certificates', 'label' => 'Certificates',    'url' => 'admin/academy/certificates', 'icon' => 'award',     'can' => 'academy.manage', 'order' => 50, 'badge' => null],
-        ['key' => 'academy_facilitators', 'label' => 'Facilitators',    'url' => 'admin/academy/facilitators', 'icon' => 'user-plus', 'can' => 'academy.manage', 'order' => 60, 'badge' => null],
+        ['key' => 'academy_challenges',   'label' => 'Challenges',      'url' => 'admin/academy/challenges',   'icon' => 'target',    'can' => 'academy.teach',  'order' => 35, 'badge' => null],
+        ['key' => 'academy_applications', 'label' => 'Facilitator applications', 'url' => 'admin/academy/facilitator-applications', 'icon' => 'user-plus', 'can' => 'academy.manage', 'order' => 55, 'badge' => null],
+        ['key' => 'academy_facilitators','label' => 'Facilitators',    'url' => 'admin/academy/facilitators', 'icon' => 'user-plus', 'can' => 'academy.manage', 'order' => 60, 'badge' => null],
     ],
 ];

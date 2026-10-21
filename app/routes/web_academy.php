@@ -6,7 +6,9 @@
  */
 
 use App\Controllers\Web\AcademyAccountController;
+use App\Controllers\Web\AcademyChallengesController;
 use App\Controllers\Web\AcademyController;
+use App\Controllers\Web\AcademyFacilitateController;
 use App\Controllers\Web\AcademyLearnController;
 
 // ---- public ---------------------------------------------------------------------------------------------------------------
@@ -49,3 +51,20 @@ $router->get('/academy/learn/{slug}/quiz/{id}', [AcademyLearnController::class, 
 $router->post('/academy/learn/{slug}/quiz/{id}/start', [AcademyLearnController::class, 'startQuiz'])->middleware('throttle:60,600')->name('academy.quiz.start');
 $router->get('/academy/learn/{slug}/attempt/{id}', [AcademyLearnController::class, 'attempt'])->name('academy.attempt');
 $router->post('/academy/learn/{slug}/attempt/{id}', [AcademyLearnController::class, 'submit'])->middleware('throttle:60,600')->name('academy.attempt.submit');
+
+// ---- volunteer facilitators, challenges and winners (docs/ACADEMY.md) --------------------------------------------------------
+$router->get('/academy/facilitate', [AcademyFacilitateController::class, 'form'])->name('academy.facilitate');
+$router->post('/academy/facilitate', [AcademyFacilitateController::class, 'submit'])->middleware(['honeypot', 'throttle:10,600'])->name('academy.facilitate.post');
+$router->get('/academy/facilitate/thanks', [AcademyFacilitateController::class, 'thanks'])->name('academy.facilitate.thanks');
+
+$router->get('/academy/challenges', [AcademyChallengesController::class, 'index'])->name('academy.challenges');
+$router->get('/academy/challenges/{slug}', [AcademyChallengesController::class, 'show'])->name('academy.challenge');
+$router->post('/academy/challenges/{slug}/apply', [AcademyChallengesController::class, 'apply'])->middleware('throttle:20,600')->name('academy.challenge.apply');
+$router->post('/academy/challenges/{slug}/withdraw', [AcademyChallengesController::class, 'withdraw'])->middleware('throttle:20,600')->name('academy.challenge.withdraw');
+$router->post('/academy/challenges/{slug}/photo', [AcademyChallengesController::class, 'photo'])->middleware('throttle:20,600')->name('academy.challenge.photo');
+$router->post('/academy/challenges/{slug}/quiz/start', [AcademyChallengesController::class, 'quizStart'])->middleware('throttle:20,600')->name('academy.challenge.quiz.start');
+$router->get('/academy/challenges/{slug}/quiz', [AcademyChallengesController::class, 'quiz'])->name('academy.challenge.quiz');
+$router->post('/academy/challenges/{slug}/quiz/submit', [AcademyChallengesController::class, 'quizSubmit'])->middleware('throttle:20,600')->name('academy.challenge.quiz.submit');
+$router->post('/academy/challenges/{slug}/project', [AcademyChallengesController::class, 'project'])->middleware('throttle:30,600')->name('academy.challenge.project');
+$router->get('/academy/winners', [AcademyChallengesController::class, 'winners'])->name('academy.winners');
+$router->get('/academy/winners/{id}/photo', [AcademyChallengesController::class, 'winnerPhoto'])->middleware('throttle:300,60')->name('academy.winner.photo');

@@ -27,4 +27,9 @@
     script.addEventListener('input', update);
     update();
   }
+  // a button inside a form can ask for confirmation too (the shared admin.js only handles form[data-confirm])
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("button[data-confirm]") : null;
+    if (b && !window.confirm(b.getAttribute("data-confirm"))) e.preventDefault();
+  });
 })();

@@ -15,13 +15,13 @@
                 <?= $revoked ? 'This certificate was withdrawn on ' . e(format_date($cert['revoked_at'])) . '.' : 'This is a genuine certificate issued by the LAF Academy.' ?></p>
             <div class="ac-cert" aria-label="Certificate">
                 <p class="ac-cert__org"><?= e($wording['org']) ?> &middot; LAF Academy</p>
-                <h2 class="ac-cert__title">Certificate of completion</h2>
-                <p class="ac-cert__small">This is to certify that</p>
+                <?php $tx = \App\Services\Academy\CertificateService::texts($cert); ?><h2 class="ac-cert__title"><?= e($tx['heading']) ?></h2>
+                <p class="ac-cert__small"><?= e($tx['intro']) ?></p>
                 <p class="ac-cert__name"><?= e($cert['learner_name']) ?></p>
-                <p class="ac-cert__text"><?= e($wording['statement']) ?></p>
+                <p class="ac-cert__text"><?= e($tx['statement']) ?></p>
                 <p class="ac-cert__course"><?= e($cert['course_title']) ?></p>
                 <p class="ac-cert__facts">
-                    <?php if ($cert['score_pct'] !== null): ?>Final score <?= e(rtrim(rtrim(number_format((float) $cert['score_pct'], 1), '0'), '.')) ?>% &nbsp;|&nbsp; <?php endif; ?>
+                    <?php if ($cert['score_pct'] !== null): ?><?= e($tx['scoreLabel']) ?> <?= e(rtrim(rtrim(number_format((float) $cert['score_pct'], 1), '0'), '.')) ?>% &nbsp;|&nbsp; <?php endif; ?>
                     <?php if ($cert['hours'] !== null): ?><?= e(rtrim(rtrim(number_format((float) $cert['hours'], 1), '0'), '.')) ?> learning hours &nbsp;|&nbsp; <?php endif; ?>
                     Issued <?= e(format_date($cert['issued_at'])) ?></p>
                 <p class="ac-cert__no">Certificate no. <b><?= e($cert['code']) ?></b></p>

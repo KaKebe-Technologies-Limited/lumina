@@ -82,6 +82,46 @@ return [
             ],
         ],
         [
+            'key' => 'challenges', 'label' => 'Challenges and hackathons',
+            'help' => 'Quiz challenges, innovation challenges and hackathons that the Academy team opens for a time window. They are managed under LAF Academy > Challenges.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Home page: small heading', 'type' => 'text', 'default' => 'Compete and shine'],
+                ['key' => 'title', 'label' => 'Home page: heading', 'type' => 'text', 'default' => 'Challenges, quizzes and [[hackathons]]', 'help' => $hl],
+                ['key' => 'intro', 'label' => 'Home page: intro', 'type' => 'textarea', 'rows' => 2, 'default' => 'Test your skills against other learners, build something that helps your community and win a certificate and a place on our wall of winners.'],
+                ['key' => 'button', 'label' => 'Home page: button', 'type' => 'text', 'default' => 'See all challenges'],
+                ['key' => 'page_title', 'label' => 'Challenges page: heading', 'type' => 'text', 'default' => 'Challenges and [[hackathons]]', 'help' => $hl],
+                ['key' => 'page_lead', 'label' => 'Challenges page: intro', 'type' => 'textarea', 'rows' => 3, 'default' => 'Quiz challenges, innovation challenges and hackathons open at set times. Apply, take part and the system ranks the entries and marks the winners automatically. Winners are featured and receive a certificate.'],
+                ['key' => 'empty_title', 'label' => 'When there is none: headline', 'type' => 'text', 'default' => 'No challenge is open right now'],
+                ['key' => 'empty_text', 'label' => 'When there is none: text', 'type' => 'textarea', 'rows' => 2, 'default' => 'New challenges are announced here and by e-mail. Keep learning in the meantime.'],
+                ['key' => 'photo_note', 'label' => 'Entry form: picture and consent note', 'type' => 'textarea', 'rows' => 2, 'default' => 'Add a clear, recent photo of your face. If you win, your name, photo and result may be published on the LAF Academy website and social media pages. You can change your mind before the results by removing your consent.'],
+            ],
+        ],
+        [
+            'key' => 'winners', 'label' => 'Winners of the month',
+            'fields' => [
+                ['key' => 'title', 'label' => 'Winners page: heading', 'type' => 'text', 'default' => 'Winners of the [[month]]', 'help' => $hl],
+                ['key' => 'lead', 'label' => 'Winners page: intro', 'type' => 'textarea', 'rows' => 3, 'default' => 'Congratulations to the learners who topped our challenges. Their results were marked automatically by the system from their scores.'],
+                ['key' => 'home_title', 'label' => 'Home page: heading', 'type' => 'text', 'default' => 'Our latest [[winners]]', 'help' => $hl],
+                ['key' => 'empty_text', 'label' => 'When there are no winners yet', 'type' => 'textarea', 'rows' => 2, 'default' => 'The first winners will appear here once a challenge has finished.'],
+            ],
+        ],
+        [
+            'key' => 'facilitate', 'label' => 'Become a volunteer facilitator',
+            'help' => 'The page where experts apply to facilitate a topic as volunteers. Applications are reviewed under LAF Academy > Facilitator applications.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Home page: small heading', 'type' => 'text', 'default' => 'Share your skills'],
+                ['key' => 'title', 'label' => 'Home page: heading', 'type' => 'text', 'default' => 'Volunteer as a [[facilitator]]', 'help' => $hl],
+                ['key' => 'intro', 'label' => 'Home page: intro', 'type' => 'textarea', 'rows' => 2, 'default' => 'Are you experienced in an ICT topic? Teach it online as a volunteer: run live classes, guide learners and help young people build digital skills.'],
+                ['key' => 'button', 'label' => 'Home page: button', 'type' => 'text', 'default' => 'Apply to facilitate'],
+                ['key' => 'page_title', 'label' => 'Application page: heading', 'type' => 'text', 'default' => 'Become a volunteer [[facilitator]]', 'help' => $hl],
+                ['key' => 'page_lead', 'label' => 'Application page: intro', 'type' => 'textarea', 'rows' => 3, 'default' => 'Facilitators teach one topic at the LAF Academy: they prepare lessons and quizzes, run live virtual classes and support learners. Applications are reviewed by our team, and you are approved for the topic you apply for.'],
+                ['key' => 'voluntary', 'label' => 'Voluntary role note', 'type' => 'textarea', 'rows' => 3, 'default' => 'This is a voluntary role. Facilitators are not paid. In return you gain teaching experience, a public volunteer profile in our community and a certificate of appreciation.'],
+                ['key' => 'requirements', 'label' => 'What to send', 'type' => 'textarea', 'rows' => 4, 'default' => "Your CV (PDF or Word, up to 5 MB).\nSupporting papers such as certificates, degrees, licences or a reference letter (up to 4 files).\nA short description of your experience in the topic you want to facilitate."],
+                ['key' => 'thanks_title', 'label' => 'After sending: headline', 'type' => 'text', 'default' => 'Application received'],
+                ['key' => 'thanks_text', 'label' => 'After sending: text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Thank you for offering your time. We sent a confirmation to your e-mail address. Our team will review your CV and papers and write to you with the decision.'],
+            ],
+        ],
+        [
             'key' => 'why', 'label' => 'Why learn here', 'toggle' => true,
             'fields' => [
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Skills that open [[doors]]', 'help' => $hl],
