@@ -33,6 +33,9 @@ final class ChallengeInstaller
 
     public static function pending(): int
     {
+        if (!ChallengeService::ready()) {
+            return 0;
+        }
         $have = array_flip(array_column(Database::all('SELECT slug FROM academy_challenges'), 'slug'));
         $n = 0;
         foreach (self::starter() as $c) {

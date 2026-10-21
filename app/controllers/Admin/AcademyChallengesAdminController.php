@@ -25,15 +25,31 @@ use App\Services\Academy\QuizScript;
  */
 final class AcademyChallengesAdminController extends AcademyAdminController
 {
+    /** A redirect with an explanation when the database update has not been imported yet. */
+    private function notReady(): ?Response
+    {
+        if (ChallengeService::ready()) {
+            return null;
+        }
+        Flash::warning('The database update has not been imported yet. In phpMyAdmin, import lumina-live-import.sql into your database (it is safe to run again), then open this page again.');
+        return $this->redirect('admin/academy');
+    }
+
     private function load(int $id, string $ability = 'academy.manage'): array
     {
         $this->authorize($ability);
+        if (!ChallengeService::ready()) {
+            throw new HttpException(404, 'Not found');
+        }
         return ChallengeService::find($id) ?? throw new HttpException(404, 'Not found');
     }
 
     public function index(Request $request): Response
     {
         $this->authorize('academy.teach');
+        if ($r = $this->notReady()) {
+            return $r;
+        }
         ChallengeService::settle();
         $rows = Database::all(
             "SELECT c.*, (SELECT COUNT(*) FROM academy_challenge_entries e WHERE e.challenge_id = c.id AND e.status IN ('pending','approved')) AS entries,
@@ -54,6 +70,9 @@ final class AcademyChallengesAdminController extends AcademyAdminController
     public function create(Request $request): Response
     {
         $this->authorize('academy.manage');
+        if ($r = $this->notReady()) {
+            return $r;
+        }
         $kind = in_array($request->string('kind'), array_keys(ChallengeService::KINDS), true) ? $request->string('kind') : 'quiz';
         return $this->form(null, [
             'kind' => $kind, 'category' => 'basics', 'status' => 'draft', 'team_max' => $kind === 'hackathon' ? 4 : 1, 'approval' => 'auto', 'scoring' => $kind === 'quiz' ? 'quiz' : 'judged',

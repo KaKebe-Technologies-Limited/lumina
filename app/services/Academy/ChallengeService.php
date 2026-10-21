@@ -47,6 +47,20 @@ final class ChallengeService
 
     // ------------------------------------------------------------------------------------------------------------- reading
 
+    /** True when the challenge tables exist (the database update of lumina-live-import.sql was imported). */
+    public static function ready(): bool
+    {
+        static $ok = null;
+        if ($ok === null) {
+            try {
+                $ok = Database::tableExists('academy_challenges') && Database::tableExists('academy_challenge_entries') && Database::tableExists('academy_challenge_judgments');
+            } catch (\Throwable) {
+                $ok = false;
+            }
+        }
+        return $ok;
+    }
+
     public static function find(int $id): ?array
     {
         return Database::one('SELECT * FROM academy_challenges WHERE id = ?', [$id]);
@@ -630,6 +644,9 @@ final class ChallengeService
      */
     public static function settle(): int
     {
+        if (!self::ready()) {
+            return 0;
+        }
         try {
             $due = Database::all(
                 "SELECT * FROM academy_challenges WHERE status = 'published' AND finalized_at IS NULL AND ends_at IS NOT NULL AND ends_at <= NOW()

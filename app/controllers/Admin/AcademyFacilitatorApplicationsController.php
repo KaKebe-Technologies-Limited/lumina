@@ -23,12 +23,19 @@ final class AcademyFacilitatorApplicationsController extends AcademyAdminControl
     private function load(int $id): array
     {
         $this->authorize('academy.manage');
+        if (!FacilitatorApplications::ready()) {
+            throw new HttpException(404, 'Not found');
+        }
         return FacilitatorApplications::find($id) ?? throw new HttpException(404, 'Not found');
     }
 
     public function index(Request $request): Response
     {
         $this->authorize('academy.manage');
+        if (!FacilitatorApplications::ready()) {
+            Flash::warning('The database update has not been imported yet. In phpMyAdmin, import lumina-live-import.sql into your database (it is safe to run again), then open this page again.');
+            return $this->redirect('admin/academy');
+        }
         $status = $request->string('status');
         $status = isset(FacilitatorApplications::STATUSES[$status]) ? $status : '';
         $q = trim($request->string('q'));

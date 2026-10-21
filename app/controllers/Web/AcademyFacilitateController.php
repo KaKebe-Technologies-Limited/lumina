@@ -18,6 +18,10 @@ final class AcademyFacilitateController extends AcademyBaseController
 {
     public function form(Request $request): Response
     {
+        $this->gate();
+        if (!FacilitatorApplications::ready()) {
+            throw new \App\Core\HttpException(404, 'Not found');
+        }
         return $this->renderAcademy('web/academy/facilitate', ['topics' => CourseService::categoryLabels()], [
             'bodyClass' => 'is-academy is-academy-auth',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Become a facilitator', null]],
@@ -28,6 +32,9 @@ final class AcademyFacilitateController extends AcademyBaseController
     public function submit(Request $request): Response
     {
         $this->gate();
+        if (!FacilitatorApplications::ready()) {
+            throw new \App\Core\HttpException(404, 'Not found');
+        }
         $res = FacilitatorApplications::submit($request->all(), $request->file('cv'), $request->files('papers'), $request->ip());
         if (!$res['ok']) {
             $this->fail($res['errors'], 'academy/facilitate');

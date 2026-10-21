@@ -23,6 +23,20 @@ final class FacilitatorApplications
     public const MAX_BYTES = 5 * 1024 * 1024;
     public const EXTS = ['pdf', 'doc', 'docx'];
 
+    /** True when the applications table exists (the database update was imported). */
+    public static function ready(): bool
+    {
+        static $ok = null;
+        if ($ok === null) {
+            try {
+                $ok = Database::tableExists('academy_facilitator_applications');
+            } catch (\Throwable) {
+                $ok = false;
+            }
+        }
+        return $ok;
+    }
+
     public static function find(int $id): ?array
     {
         return Database::one('SELECT * FROM academy_facilitator_applications WHERE id = ?', [$id]);

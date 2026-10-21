@@ -23,6 +23,9 @@ final class AcademyChallengesController extends AcademyBaseController
     private function challenge(string $slug): array
     {
         $this->gate();
+        if (!ChallengeService::ready()) {
+            throw new HttpException(404, 'Not found');
+        }
         ChallengeService::settle();
         return ChallengeService::bySlug($slug) ?? throw new HttpException(404, 'Not found');
     }
@@ -47,6 +50,9 @@ final class AcademyChallengesController extends AcademyBaseController
     public function index(Request $request): Response
     {
         $this->gate();
+        if (!ChallengeService::ready()) {
+            throw new HttpException(404, 'Not found');
+        }
         ChallengeService::settle();
         $cat = $request->string('category');
         $kind = $request->string('kind');
@@ -233,6 +239,9 @@ final class AcademyChallengesController extends AcademyBaseController
     public function winners(Request $request): Response
     {
         $this->gate();
+        if (!ChallengeService::ready()) {
+            throw new HttpException(404, 'Not found');
+        }
         ChallengeService::settle();
         return $this->renderAcademy('web/academy/winners', ['months' => ChallengeService::winnersByMonth(12)], [
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Winners', null]],
@@ -243,6 +252,9 @@ final class AcademyChallengesController extends AcademyBaseController
     public function winnerPhoto(Request $request, int $id): Response
     {
         $this->gate();
+        if (!ChallengeService::ready()) {
+            throw new HttpException(404, 'Not found');
+        }
         $e = ChallengeService::entry($id);
         $c = $e !== null ? ChallengeService::find((int) $e['challenge_id']) : null;
         if ($e === null || $c === null || $c['status'] !== 'published' || empty($c['finalized_at']) || !ChallengeService::photoPublic($e)) {
