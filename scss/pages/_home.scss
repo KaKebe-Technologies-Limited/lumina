@@ -244,38 +244,51 @@ $b1-pages: '.page-home, .page-about, .page-programs, .page-projects, .page-invol
 // ---------------------------------------------------------------------------------------------------------------------
 .page-home {
     // ---- quick links: four tiles under the hero ---------------------------------------------------------------------
-    .home-quick { padding-block: $space-5 $space-4; }
-    .home-quick--overlap { @include respond(lg) { margin-top: -1.5rem; position: relative; z-index: 2; } }
+    .home-quick { padding-block: $space-8 $space-6; @include respond(lg) { padding-block: $space-9 $space-7; } }
     .home-quick__grid {
         display: grid;
-        gap: $space-4;
+        gap: $space-5;
         grid-template-columns: minmax(0, 1fr);
         @include respond(sm) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        @include respond(xl) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: $space-6; }
+        > li { display: flex; }
     }
     .home-tile {
         position: relative;
         display: flex;
+        flex: 1;
         flex-direction: column;
-        align-items: flex-start;
         gap: $space-3;
-        height: 100%;
-        padding: $space-5;
+        padding: $space-6 $space-5 $space-5;
         border: 1px solid $line;
+        border-top: 4px solid $gold;
         border-radius: $radius-lg;
         background: $white;
         box-shadow: $shadow-card;
         color: $navy;
         text-decoration: none;
         transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-        &:hover, &:focus-visible { border-color: $gold; box-shadow: $shadow-lg; transform: translateY(-3px); }
-        &:focus-visible { outline: 3px solid $gold; outline-offset: 2px; }
-        &__icon { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 3.1rem; height: 3.1rem; border-radius: 50%; background: $navy-dark; color: $gold; }
-        &__body { display: grid; gap: 0.3rem; min-width: 0; flex: 1; }
-        &__title { font-family: $font-heading; font-size: 1.3rem; line-height: 1.2; color: $navy; }
-        &__text { font-size: $fs-sm; line-height: 1.5; color: $ink-soft; }
-        &__go { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: auto; font-size: $fs-sm; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: $orange-dark; transition: gap 0.18s ease; }
-        &:hover &__go { gap: 0.7rem; }
+        &:hover, &:focus-visible { border-color: $line; border-top-color: $orange-dark; box-shadow: $shadow-lg; transform: translateY(-4px); }
+        &:focus-visible { outline: 3px solid $gold; outline-offset: 3px; }
+        &__icon { display: inline-flex; align-items: center; justify-content: center; width: 3.4rem; height: 3.4rem; border-radius: 50%; background: $navy-dark; color: $gold; margin-bottom: $space-1; }
+        &__body { display: flex; flex-direction: column; gap: $space-2; flex: 1; min-width: 0; }
+        &__title { font-family: $font-heading; font-size: 1.35rem; line-height: 1.2; color: $navy; }
+        &__text { font-size: $fs-sm; line-height: 1.6; color: $ink-soft; }
+        &__go {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: $space-3;
+            padding-top: $space-3;
+            border-top: 1px solid $line;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: $orange-dark;
+            transition: gap 0.18s ease;
+        }
+        &:hover &__go { gap: 0.75rem; }
     }
     @media (prefers-reduced-motion: reduce) { .home-tile, .home-tile__go { transition: none; } .home-tile:hover { transform: none; } }
 

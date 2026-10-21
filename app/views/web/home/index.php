@@ -50,7 +50,7 @@ if ($heroOn) {
 <?php
 $quick = $titled(content_list('home', 'quick.items'));
 if ($quick):
-    section_begin('home', 'quick', ['class' => 'home-quick' . ($heroOn ? ' home-quick--overlap' : ''), 'attrs' => ['aria-label' => 'Quick links']]);
+    section_begin('home', 'quick', ['class' => 'home-quick', 'attrs' => ['aria-label' => 'Quick links']]);
 ?>
     <ul class="home-quick__grid">
         <?php foreach ($quick as $q): $qHref = link_url((string) ($q['url'] ?? '')); ?>
