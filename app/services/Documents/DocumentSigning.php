@@ -53,7 +53,8 @@ final class DocumentSigning
         if ($ok === null) {
             try {
                 $ok = Database::tableExists('document_signatories') && Database::tableExists('document_signatures')
-                    && (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'documents' AND column_name = 'signed_path'", [], 0) === 1;
+                    && (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'documents' AND column_name = 'signed_path'", [], 0) === 1
+                    && (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'document_signatures' AND column_name = 'slot_index'", [], 0) === 1;
             } catch (\Throwable) {
                 $ok = false;
             }
@@ -67,7 +68,7 @@ final class DocumentSigning
     public static function rows(int $documentId): array
     {
         return Database::all(
-            'SELECT s.*, g.name, g.title, g.signature_path, g.signature_mime, g.is_active AS signatory_active FROM document_signatures s JOIN document_signatories g ON g.id = s.signatory_id
+            'SELECT s.*, g.name, g.title, g.signature_path, g.signature_mime, g.is_active AS signatory_active FROM document_signatures s LEFT JOIN document_signatories g ON g.id = s.signatory_id
              WHERE s.document_id = ? ORDER BY s.sort_order ASC, s.id ASC',
             [$documentId]
         );
@@ -174,8 +175,17 @@ final class DocumentSigning
         if (!str_starts_with($original, '%PDF-')) {
             return ['ok' => false, 'message' => 'The original file is not a PDF.', 'mode' => null];
         }
+        $info = PdfSlots::read($original);
+        $slots = [];
+        foreach (($info['slots'] ?? []) as $sl) {
+            $slots[(int) $sl['index']] = $sl;
+        }
+        $draws = [];
         $data = [];
         foreach ($rows as $r) {
+            if (empty($r['signatory_id'])) {
+                continue;                                                          // a block that still waits for a person
+            }
             $image = null;
             if (!empty($r['signed_at']) && !empty($r['signature_path'])) {
                 try {
@@ -183,6 +193,14 @@ final class DocumentSigning
                 } catch (\Throwable) {
                     $image = null;
                 }
+            }
+            if ($r['slot_index'] !== null && isset($slots[(int) $r['slot_index']])) {
+                // a block of the document's own signature page: the signature is drawn ON its lines
+                if (!empty($r['signed_at'])) {
+                    $draws[] = ['slot' => $slots[(int) $r['slot_index']], 'name' => (string) $r['name'], 'title' => $r['title'] !== null ? (string) $r['title'] : null,
+                        'date' => date('j M Y', (int) strtotime((string) $r['signed_at'])), 'image' => $image];
+                }
+                continue;
             }
             $data[] = ['role' => (string) $r['role_label'], 'name' => (string) $r['name'], 'title' => $r['title'] !== null ? (string) $r['title'] : null,
                 'signed_at' => !empty($r['signed_at']) ? (string) $r['signed_at'] : null, 'image' => $image];
@@ -194,13 +212,37 @@ final class DocumentSigning
             'org' => $site, 'fingerprint' => hash('sha256', $original), 'generated' => time(),
         ];
         try {
-            $page = PdfSigner::approvalPdf($meta, $data);
+            $overlay = $draws !== [] ? PdfSigner::overlayPdf($info, $draws) : null;
+            $page = $data !== [] ? PdfSigner::approvalPdf($meta, $data) : null;
         } catch (\Throwable $e) {
-            return ['ok' => false, 'message' => 'The approval page could not be drawn: ' . $e->getMessage(), 'mode' => null];
+            return ['ok' => false, 'message' => 'The signatures could not be drawn: ' . $e->getMessage(), 'mode' => null];
         }
-        $merged = PdfSigner::appendPages($original, $page);
-        $mode = $merged !== null ? 'merged' : 'page';
-        $bytes = $merged ?? $page;
+        $merged = $info !== null || $page !== null ? PdfSigner::build($original, $info, $overlay, $page) : null;
+        $mode = $merged !== null ? ($overlay !== null && $page === null ? 'inplace' : 'merged') : 'page';
+        if ($merged === null) {
+            // the original cannot be extended: every applied signature goes on a standalone approval page
+            $all = [];
+            foreach ($rows as $r) {
+                if (empty($r['signatory_id']) || empty($r['signed_at'])) {
+                    continue;
+                }
+                $img = null;
+                if (!empty($r['signature_path'])) {
+                    try {
+                        $img = (string) file_get_contents(Uploader::privatePath((string) $r['signature_path']));
+                    } catch (\Throwable) {
+                        $img = null;
+                    }
+                }
+                $all[] = ['role' => (string) $r['role_label'], 'name' => (string) $r['name'], 'title' => $r['title'] !== null ? (string) $r['title'] : null, 'signed_at' => (string) $r['signed_at'], 'image' => $img];
+            }
+            if ($all === []) {
+                return ['ok' => false, 'message' => 'Nothing to sign: no applied signature has a person.', 'mode' => null];
+            }
+            $bytes = PdfSigner::approvalPdf($meta, $all);
+        } else {
+            $bytes = $merged;
+        }
         $rel = 'documents/' . date('Y/m') . '/' . bin2hex(random_bytes(16)) . '.pdf';
         if (!self::write($rel, $bytes)) {
             return ['ok' => false, 'message' => 'The server could not save the signed copy.', 'mode' => null];
@@ -209,20 +251,25 @@ final class DocumentSigning
         if ($old !== '') {
             Uploader::deletePrivate($old);
         }
-        return ['ok' => true, 'mode' => $mode, 'message' => $mode === 'merged'
-            ? 'The signed copy was built: the original pages plus an "Approval and signatures" page.'
-            : 'This PDF cannot be extended, so the signed copy is the approval page on its own (download it together with the original).'];
+        return ['ok' => true, 'mode' => $mode, 'message' => match ($mode) {
+            'inplace' => 'The signed copy was built: the signatures, names and dates are on the document\'s own signature lines.',
+            'merged' => 'The signed copy was built: the original pages plus an "Approval and signatures" page.',
+            default => 'This PDF cannot be extended, so the signed copy is the approval page on its own (download it together with the original).',
+        }];
     }
 
     /** Apply the signature of a row now (needs the signatory\'s picture) and rebuild. @return array{ok:bool,message:string} */
     public static function apply(int $rowId, ?int $userId, string $ip): array
     {
-        $r = Database::one('SELECT s.*, g.name, g.signature_path FROM document_signatures s JOIN document_signatories g ON g.id = s.signatory_id WHERE s.id = ?', [$rowId]);
+        $r = Database::one('SELECT s.*, g.name, g.signature_path FROM document_signatures s LEFT JOIN document_signatories g ON g.id = s.signatory_id WHERE s.id = ?', [$rowId]);
         if ($r === null) {
             return ['ok' => false, 'message' => 'Signature not found.'];
         }
-        if (empty($r['signature_path'])) {
-            return ['ok' => false, 'message' => $r['name'] . ' has no signature picture yet. Upload one under Signatories first.'];
+        if (empty($r['signatory_id'])) {
+            return ['ok' => false, 'message' => 'Choose who signs as "' . $r['role_label'] . '" first.'];
+        }
+        if ($r === null || empty($r['signature_path'])) {
+            return ['ok' => false, 'message' => ($r['name'] ?? 'This person') . ' has no signature picture yet. Upload one under Signatories first.'];
         }
         Database::update('document_signatures', ['signed_at' => date('Y-m-d H:i:s'), 'signed_by' => $userId, 'signed_ip' => mb_substr($ip, 0, 45)], 'id = ?', [$rowId]);
         $doc = Document::find((int) $r['document_id']);
@@ -230,6 +277,139 @@ final class DocumentSigning
         return ['ok' => $res['ok'], 'message' => $res['message']];
     }
 
+    // ------------------------------------------------------------------------------------------------------------- reading who must sign
+
+    /**
+     * Read the signature page of a PDF document and add one row per signature block that is not there yet (role as printed, no person). Safe to repeat.
+     * @return int how many blocks were added (0 = nothing found or all known)
+     */
+    public static function detectSlots(int $documentId): int
+    {
+        $doc = Document::find($documentId);
+        if ($doc === null || strtolower(pathinfo((string) $doc['file_path'], PATHINFO_EXTENSION)) !== 'pdf') {
+            return 0;
+        }
+        try {
+            $bytes = (string) file_get_contents(Uploader::privatePath((string) $doc['file_path']));
+        } catch (\Throwable) {
+            return 0;
+        }
+        $info = PdfSlots::read($bytes);
+        if ($info === null || $info['slots'] === []) {
+            return 0;
+        }
+        $have = array_map('intval', array_column(Database::all('SELECT slot_index FROM document_signatures WHERE document_id = ? AND slot_index IS NOT NULL', [$documentId]), 'slot_index'));
+        $added = 0;
+        foreach ($info['slots'] as $sl) {
+            if (in_array((int) $sl['index'], $have, true)) {
+                continue;
+            }
+            $added += Database::execute('INSERT INTO document_signatures (document_id, signatory_id, role_label, sort_order, slot_index) VALUES (?, NULL, ?, ?, ?)',
+                [$documentId, (string) $sl['role'], ((int) $sl['index'] + 1) * 10, (int) $sl['index']]) > 0 ? 1 : 0;
+        }
+        return $added;
+    }
+
+    /** Read every PDF document. @return array{documents:int,blocks:int} documents that gained blocks, blocks added */
+    public static function detectAll(): array
+    {
+        $docs = 0;
+        $blocks = 0;
+        foreach (Database::all("SELECT id FROM documents WHERE file_path LIKE '%.pdf' AND is_active = 1 ORDER BY id") as $d) {
+            $n = self::detectSlots((int) $d['id']);
+            if ($n > 0) {
+                $docs++;
+                $blocks += $n;
+            }
+        }
+        return ['documents' => $docs, 'blocks' => $blocks];
+    }
+
+    /** The roles found in the documents, with how many documents print each, who is assigned and how many are signed. @return list<array<string,mixed>> */
+    public static function roles(): array
+    {
+        $out = [];
+        foreach (Database::all(
+            'SELECT s.role_label, COUNT(*) AS total, SUM(s.signatory_id IS NULL) AS waiting, SUM(s.signed_at IS NOT NULL) AS signed, COUNT(DISTINCT s.signatory_id) AS people, MIN(s.signatory_id) AS signatory_id
+             FROM document_signatures s WHERE s.slot_index IS NOT NULL GROUP BY s.role_label ORDER BY COUNT(*) DESC, s.role_label ASC'
+        ) as $r) {
+            $out[] = ['role' => (string) $r['role_label'], 'total' => (int) $r['total'], 'waiting' => (int) $r['waiting'], 'signed' => (int) $r['signed'], 'people' => (int) $r['people'],
+                'signatory_id' => $r['signatory_id'] !== null ? (int) $r['signatory_id'] : null];
+        }
+        return $out;
+    }
+
+    /** Words that carry the meaning of a role or title, for matching ("Chairperson of the Board" and "CHAIRPERSON, BOARD OF DIRECTORS" give the same words). @return list<string> */
+    public static function roleWords(string $text): array
+    {
+        $text = strtolower(str_replace(['&', ',', '/', '-'], ' ', $text));
+        $words = [];
+        foreach (preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $w) {
+            $w = ['chairperson' => 'chair', 'chairman' => 'chair', 'chairwoman' => 'chair', 'directors' => 'board', 'ed' => 'executive', 'secretary' => 'secretary'][$w] ?? $w;
+            if (in_array($w, ['of', 'the', 'and', 'for', 'a', 'to'], true)) {
+                continue;
+            }
+            $words[$w] = $w;
+        }
+        return array_values($words);
+    }
+
+    /** How well a person's title fits a printed role, 0 to 1 (1 = the same words). */
+    public static function roleMatch(string $role, string $title): float
+    {
+        $a = self::roleWords($role);
+        $b = self::roleWords($title);
+        if ($a === [] || $b === []) {
+            return 0.0;
+        }
+        $both = count(array_intersect($a, $b));
+        $all = count(array_unique(array_merge($a, $b)));
+        return $all === 0 ? 0.0 : $both / $all;
+    }
+
+    /**
+     * Give the people to the blocks that wait for one, by title: every role with no person goes to the active signatory whose title fits it best (at least half the words),
+     * provided that person fits no other waiting role better. Never changes a block that already has a person. @return int blocks assigned
+     */
+    public static function autoAssign(): int
+    {
+        $people = Database::all('SELECT id, title FROM document_signatories WHERE is_active = 1 AND title IS NOT NULL AND title <> \'\'');
+        $n = 0;
+        foreach (Database::all('SELECT DISTINCT role_label FROM document_signatures WHERE slot_index IS NOT NULL AND signatory_id IS NULL') as $r) {
+            $best = null;
+            $bestScore = 0.0;
+            foreach ($people as $p) {
+                $sc = self::roleMatch((string) $r['role_label'], (string) $p['title']);
+                if ($sc > $bestScore + 0.0001) {
+                    $best = (int) $p['id'];
+                    $bestScore = $sc;
+                }
+            }
+            if ($best !== null && $bestScore >= 0.5) {
+                $n += self::assignRole((string) $r['role_label'], $best);
+            }
+        }
+        return $n;
+    }
+
+    /** Put a person on every block of this role that has nobody (and is not signed). @return int blocks assigned */
+    public static function assignRole(string $role, int $signatoryId): int
+    {
+        return Database::execute('UPDATE IGNORE document_signatures SET signatory_id = ? WHERE slot_index IS NOT NULL AND role_label = ? AND signatory_id IS NULL AND signed_at IS NULL', [$signatoryId, $role]);
+    }
+
+    /** A person leaves: their blocks of the documents' own signature pages wait again, any other row of theirs is removed; the signed copies are rebuilt. */
+    public static function releasePerson(int $signatoryId): void
+    {
+        $docIds = array_map('intval', array_column(Database::all('SELECT DISTINCT document_id FROM document_signatures WHERE signatory_id = ?', [$signatoryId]), 'document_id'));
+        Database::execute('UPDATE document_signatures SET signatory_id = NULL, signed_at = NULL, signed_by = NULL, signed_ip = NULL WHERE signatory_id = ? AND slot_index IS NOT NULL', [$signatoryId]);
+        Database::execute('DELETE FROM document_signatures WHERE signatory_id = ?', [$signatoryId]);
+        foreach ($docIds as $d) {
+            if (($doc = Document::find($d)) !== null) {
+                self::rebuild($doc);
+            }
+        }
+    }
     // ------------------------------------------------------------------------------------------------------------- policy pack importer
 
     /**
@@ -268,6 +448,10 @@ final class DocumentSigning
                 'file_path' => $rel, 'file_name' => $name, 'file_size' => strlen($bytes), 'mime' => 'application/pdf', 'is_public' => 0, 'is_active' => 1,
             ]);
             $added++;
+        }
+        if ($added > 0) {
+            self::detectAll();
+            self::autoAssign();
         }
         return ['added' => $added, 'skipped' => $skipped, 'failed' => $failed];
     }

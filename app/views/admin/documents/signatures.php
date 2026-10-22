@@ -20,7 +20,7 @@ $tone = ['signed' => 'success', 'partial' => 'warning', 'awaiting' => 'info', 'n
         <div class="card__body">
             <?php if (!empty($doc['signed_path'])): ?>
                 <p><?= icon('check-circle', 'icon--sm') ?> A signed copy exists (built <?= e(format_datetime($doc['signed_at'], 'j M Y, H:i')) ?>, <?= e(human_filesize((int) $doc['signed_size'])) ?>).
-                    <?= ($doc['signed_mode'] ?? '') === 'merged' ? 'It is the original pages plus an "Approval and signatures" page.' : 'It is the approval page on its own.' ?></p>
+                    <?= match ((string) ($doc['signed_mode'] ?? '')) { 'inplace' => 'The signatures, names and dates are on the document\'s own signature lines.', 'merged' => 'It is the original pages plus an "Approval and signatures" page.', default => 'It is the approval page on its own.' } ?></p>
                 <p><a class="btn btn--primary btn--sm" href="<?= e(url('admin/documents/' . $id . '/signed')) ?>"><?= icon('download', 'icon--sm') ?> Download the signed copy</a>
                     <a class="btn btn--outline btn--sm" href="<?= e(url('admin/documents/' . $id . '/download')) ?>">Download the original</a></p>
                 <p class="text-muted">Visitors get the signed copy while this document is public. <?= (int) $doc['is_public'] === 1 ? 'It is public now.' : 'It is private now: make it public from the document list when you are ready.' ?></p>
@@ -31,10 +31,12 @@ $tone = ['signed' => 'success', 'partial' => 'warning', 'awaiting' => 'info', 'n
     </section>
 
     <section class="card" aria-labelledby="ds-rows">
-        <div class="card__header"><h2 class="card__title" id="ds-rows">Who signs</h2></div>
+        <div class="card__header"><h2 class="card__title" id="ds-rows">Who signs</h2>
+            <?php if ($isPdf): ?><form method="post" action="<?= e(url('admin/documents/' . $id . '/signatures/read')) ?>" class="inline-form"><?= csrf_field() ?>
+                <button class="btn btn--outline btn--sm" type="submit"><?= icon('refresh', 'icon--sm') ?> Read the signature page</button></form><?php endif; ?></div>
         <div class="card__body">
             <?php if ($rows === []): ?>
-                <p class="text-muted">Nobody is attached yet.</p>
+                <p class="text-muted">Nobody is attached yet. Press "Read the signature page" to find who must sign this document, or add a person below.</p>
             <?php else: ?>
                 <div class="table-wrap"><table class="table table--stack">
                     <caption class="visually-hidden">Signatures of this document</caption>
@@ -42,7 +44,17 @@ $tone = ['signed' => 'success', 'partial' => 'warning', 'awaiting' => 'info', 'n
                     <tbody>
                     <?php foreach ($rows as $r): $rid = (int) $r['id']; $done = !empty($r['signed_at']); ?>
                         <tr>
-                            <td data-label="Role"><?= e($r['role_label']) ?></td>
+                            <td data-label="Role"><?= e($r['role_label']) ?><?php if ($r['slot_index'] !== null): ?><span class="cell-sub">printed in the document</span><?php endif; ?></td>
+                            <?php if (empty($r['signatory_id'])): ?>
+                            <td data-label="Person" colspan="2">
+                                <form class="doc-sig-pick" method="post" action="<?= e(url('admin/documents/' . $id . '/signatures/' . $rid . '/assign')) ?>"><?= csrf_field() ?>
+                                    <select class="select" name="signatory_id" aria-label="Person for <?= e($r['role_label']) ?>"><option value="">Choose who signs as <?= e($r['role_label']) ?></option>
+                                        <?php foreach ($people as $p): ?><option value="<?= (int) $p['id'] ?>"><?= e($p['name']) ?><?= $p['title'] ? ' (' . e($p['title']) . ')' : '' ?></option><?php endforeach; ?></select>
+                                    <button class="btn btn--outline btn--sm" type="submit">Assign</button></form>
+                            </td>
+                            <td data-label="Status"><span class="badge">Waiting for a person</span></td>
+                            <td class="col-actions"></td>
+                            <?php else: ?>
                             <td data-label="Person"><strong><?= e($r['name']) ?></strong><span class="cell-sub"><?= e((string) ($r['title'] ?? '')) ?></span></td>
                             <td data-label="Signature"><?php if (!empty($r['signature_path'])): ?><img class="doc-sig-thumb" src="<?= e(url('admin/documents/signatories/' . (int) $r['signatory_id'] . '/signature')) ?>" alt="Signature of <?= e($r['name']) ?>" loading="lazy"><?php else: ?><span class="text-muted">No picture uploaded</span><?php endif; ?></td>
                             <td data-label="Status"><?= $done ? '<span class="badge badge--success">Signed ' . e(format_date($r['signed_at'], 'j M Y')) . '</span>' : '<span class="badge badge--info">Awaiting signature</span>' ?></td>
@@ -57,6 +69,7 @@ $tone = ['signed' => 'success', 'partial' => 'warning', 'awaiting' => 'info', 'n
                                 <form method="post" action="<?= e(url('admin/documents/' . $id . '/signatures/' . $rid . '/delete')) ?>" class="inline-form" data-confirm="Remove this person from the document?"><?= csrf_field() ?>
                                     <button class="btn btn--ghost btn--sm org-danger" type="submit" aria-label="Remove <?= e($r['name']) ?>"><?= icon('trash', 'icon--sm') ?></button></form>
                             </div></td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                     </tbody></table></div>

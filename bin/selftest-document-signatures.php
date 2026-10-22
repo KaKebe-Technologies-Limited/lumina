@@ -79,6 +79,34 @@ if ($src !== null) {
     $docId = (int) ($doc['id'] ?? 0);
     check('import: private, active, policy, unsigned', $doc !== null && (int) $doc['is_public'] === 0 && (int) $doc['is_active'] === 1 && $doc['category'] === 'policy' && empty($doc['signed_path']));
 
+    // ---- the system reads the signature page and puts the signature on the document's own lines
+    $slots = Database::all('SELECT * FROM document_signatures WHERE document_id = ? AND slot_index IS NOT NULL ORDER BY slot_index', [$docId]);
+    check('read: the import found the 3 signature blocks with their printed roles, nobody assigned yet', count($slots) === 3 && $slots[0]['role_label'] === 'CHAIRPERSON, BOARD OF DIRECTORS'
+        && $slots[1]['role_label'] === 'EXECUTIVE DIRECTOR' && $slots[2]['role_label'] === 'SECRETARY, BOARD OF DIRECTORS' && $slots[0]['signatory_id'] === null, json_encode(array_column($slots, 'role_label')));
+    check('read: reading again adds nothing', DS::detectSlots($docId) === 0);
+    $pp = \App\Services\Documents\PdfSlots::read((string) file_get_contents(Uploader::privatePath((string) $doc['file_path'])));
+    check('read: lines are located on the page (signature, name, date) in PDF points', $pp !== null && count($pp['slots']) === 3 && $pp['slots'][0]['sig'][1] > $pp['slots'][1]['sig'][1] && $pp['slots'][0]['name'][1] > $pp['slots'][0]['sig'][1]);
+    check('match: titles fit roles by their words', DS::roleMatch('CHAIRPERSON, BOARD OF DIRECTORS', 'Chairperson of the Board') === 1.0 && DS::roleMatch('EXECUTIVE DIRECTOR', 'Executive Director') === 1.0
+        && DS::roleMatch('EXECUTIVE DIRECTOR', 'Chairperson of the Board') === 0.0 && DS::roleMatch('FINANCE & AUDIT COMMITTEE CHAIR', 'Chair, Finance & Audit Committee') === 1.0);
+    $p1 = Database::insert('document_signatories', ['name' => 'zz-sig Auto Chair', 'title' => 'zz Chairperson of the Board', 'signature_path' => $img['path'], 'signature_mime' => $img['mime'], 'signature_updated_at' => date('Y-m-d H:i:s')]);
+    $p2 = Database::insert('document_signatories', ['name' => 'zz-sig Auto Director', 'title' => 'Executive Director', 'signature_path' => $img['path'], 'signature_mime' => $img['mime'], 'signature_updated_at' => date('Y-m-d H:i:s')]);
+    Database::update('document_signatories', ['title' => 'Chairperson of the Board'], 'id = ?', [$p1]);
+    $assigned = DS::autoAssign();
+    $slots = Database::all('SELECT * FROM document_signatures WHERE document_id = ? AND slot_index IS NOT NULL ORDER BY slot_index', [$docId]);
+    check('auto-assign: the chair and the director fill their roles, the secretary block still waits', $assigned >= 2 && (int) $slots[0]['signatory_id'] === $p1 && (int) $slots[1]['signatory_id'] === $p2 && $slots[2]['signatory_id'] === null);
+    $r = DS::apply((int) $slots[0]['id'], null, '127.0.0.1');
+    $r2 = DS::apply((int) $slots[2]['id'], null, '127.0.0.1');
+    $doc = Document::find($docId);
+    check('sign: in place (the document\'s own signature page), the waiting block refuses', $r['ok'] && !$r2['ok'] && $doc['signed_mode'] === 'inplace' && !empty($doc['signed_path']), json_encode([$r, $r2, $doc['signed_mode']]));
+    $orig0 = (string) file_get_contents(Uploader::privatePath((string) $doc['file_path']));
+    $signed0 = (string) file_get_contents(Uploader::privatePath((string) $doc['signed_path']));
+    check('sign: the original bytes are untouched, the page count is unchanged, a form XObject with the picture was added', strlen($signed0) > strlen($orig0) && str_contains($signed0, '/LAFSig') && substr_count($signed0, '/Type /Page') >= 0 && str_starts_with($signed0, substr($orig0, 0, 4096)));
+    DS::releasePerson($p1);
+    DS::releasePerson($p2);
+    $slots = Database::all('SELECT * FROM document_signatures WHERE document_id = ? AND slot_index IS NOT NULL ORDER BY slot_index', [$docId]);
+    check('a person who leaves frees their blocks and the signed copy goes', count($slots) === 3 && $slots[0]['signatory_id'] === null && empty(Document::find($docId)['signed_path']));
+    Database::execute('DELETE FROM document_signatories WHERE id IN (?, ?)', [$p1, $p2]);
+    Database::execute('DELETE FROM document_signatures WHERE document_id = ?', [$docId]);
     $g1 = Database::insert('document_signatories', ['name' => 'zz-sig Chair', 'title' => 'Chairperson', 'signature_path' => $img['path'], 'signature_mime' => $img['mime'], 'signature_updated_at' => date('Y-m-d H:i:s')]);
     $g2 = Database::insert('document_signatories', ['name' => 'zz-sig Director', 'title' => 'Executive Director']);
     $r1 = Database::insert('document_signatures', ['document_id' => $docId, 'signatory_id' => $g1, 'role_label' => 'Approved by', 'sort_order' => 1]);

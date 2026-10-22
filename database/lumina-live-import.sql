@@ -2157,7 +2157,7 @@ CREATE TABLE IF NOT EXISTS `document_signatories` (
 CREATE TABLE IF NOT EXISTS `document_signatures` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `document_id` INT UNSIGNED NOT NULL,
-  `signatory_id` INT UNSIGNED NOT NULL,
+  `signatory_id` INT UNSIGNED NULL,                               -- NULL = a signature block read from the PDF that waits for a person
   `role_label` VARCHAR(80) NOT NULL DEFAULT 'Approved by',
   `sort_order` INT NOT NULL DEFAULT 10,
   `signed_at` DATETIME NULL,                                      -- NULL = awaiting signature
@@ -2211,6 +2211,18 @@ DEALLOCATE PREPARE lumina_stmt;
 -- Podcast / live broadcast meetings: new platform values (additive, idempotent).
 SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'meetings' AND column_name = 'platform' AND column_type LIKE '%tiktok_live%');
 SET @lumina_ddl = IF(@lumina_has_col = 0 AND (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'meetings') = 1, 'ALTER TABLE `meetings` MODIFY COLUMN `platform` ENUM(''zoom'',''google_meet'',''teams'',''jitsi'',''whatsapp'',''phone'',''in_person'',''other'',''podcast'',''youtube_live'',''facebook_live'',''tiktok_live'',''instagram_live'') NOT NULL DEFAULT ''other''', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
+-- Signature blocks read from the PDF itself (slot_index = which block of the signature page; the role is printed in the document): a block can wait for a person (signatory_id NULL).
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'document_signatures' AND column_name = 'slot_index');
+SET @lumina_ddl = IF(@lumina_has_col = 0 AND (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'document_signatures') = 1, 'ALTER TABLE `document_signatures` ADD COLUMN `slot_index` TINYINT UNSIGNED NULL AFTER `sort_order`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_nullable = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'document_signatures' AND column_name = 'signatory_id' AND is_nullable = 'NO');
+SET @lumina_ddl = IF(@lumina_nullable = 1, 'ALTER TABLE `document_signatures` MODIFY COLUMN `signatory_id` INT UNSIGNED NULL', 'DO 0');
 PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;

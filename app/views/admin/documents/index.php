@@ -17,6 +17,12 @@ $aria = static fn(string $col): string => $sort === $col ? ($dir === 'asc' ? 'as
             !empty($signing) && can('documents.sign') ? [['label' => 'Signatories', 'url' => url('admin/documents/signatories'), 'class' => 'btn--outline', 'icon' => 'users']] : []
         ),
     ]) ?>
+    <?php if (!empty($signing) && can('documents.sign')): ?>
+        <form class="opp-notice" method="post" action="<?= e(url('admin/documents/read-signers')) ?>"><?= csrf_field() ?>
+            <button class="btn btn--outline btn--sm" type="submit"><?= icon('refresh', 'icon--sm') ?> Find who signs each document</button>
+            <span class="text-muted">Reads the signature page of every PDF and lists the roles to sign. Then add the people under <a href="<?= e(url('admin/documents/signatories')) ?>">Signatories</a>.</span>
+        </form>
+    <?php endif; ?>
     <?php if (!empty($packReady) && can('documents.sign')): ?>
         <form class="opp-notice" method="post" action="<?= e(url('admin/documents/import-pack')) ?>"><?= csrf_field() ?>
             The policy pack is on the server. <button class="btn btn--primary btn--sm" type="submit"><?= icon('upload', 'icon--sm') ?> Import the policy pack</button>

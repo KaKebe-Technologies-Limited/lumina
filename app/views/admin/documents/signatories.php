@@ -9,10 +9,58 @@ $this->start('scripts'); ?>
 <div class="admin-org">
     <?= partial('partials/admin/page-header', [
         'title' => 'Signatories',
-        'subtitle' => 'The people responsible for the policies. Add each person once with a picture of their signature, attach them to the documents they must sign, then apply their signature: every document gets a signed PDF with an "Approval and signatures" page.',
+        'subtitle' => 'The system reads each document to find who must sign it. You only add the person: name, title and a picture of their signature. Then press Sign and the signature, name and date are placed on the document\'s own signature line.',
         'actions' => [['label' => 'All documents', 'url' => url('admin/documents'), 'class' => 'btn--ghost', 'icon' => 'arrow-left']],
     ]) ?>
 
+    <section class="card" aria-labelledby="sg-roles">
+        <div class="card__header">
+            <h2 class="card__title" id="sg-roles">Who signs, read from the documents</h2>
+            <form method="post" action="<?= e(url('admin/documents/read-signers')) ?>" class="inline-form"><?= csrf_field() ?>
+                <button class="btn btn--outline btn--sm" type="submit"><?= icon('refresh', 'icon--sm') ?> Read the documents again</button></form>
+        </div>
+        <div class="card__body">
+            <?php if ($found === []): ?>
+                <p class="text-muted">No signature page has been read yet. Press "Read the documents again": the system opens each PDF, finds the signature blocks on its last page and lists the role printed above each one.</p>
+            <?php else: ?>
+                <p class="text-muted">These are the roles printed on the signature pages of the documents. Choose the person for each role once: they are put on that role in every document that prints it. Then press <strong>Sign</strong> to apply the signature, name and date on the document's own signature line. Adding a person whose title matches a role (for example "Executive Director") fills it in automatically.</p>
+                <div class="table-wrap"><table class="table table--stack">
+                    <caption class="visually-hidden">Roles found in the documents</caption>
+                    <thead><tr><th scope="col">Role printed in the documents</th><th scope="col">Documents</th><th scope="col">Person</th><th scope="col">Signed</th><th scope="col" class="col-actions"><span class="visually-hidden">Actions</span></th></tr></thead>
+                    <tbody>
+                    <?php foreach ($found as $i => $f):
+                        $suggest = $f['signatory_id'];
+                        if ($suggest === null) {
+                            $bestScore = 0.0;
+                            foreach ($people as $p) {
+                                $sc = \App\Services\Documents\DocumentSigning::roleMatch($f['role'], (string) ($p['title'] ?? ''));
+                                if ($sc > $bestScore) { $bestScore = $sc; $suggest = (int) $p['id']; }
+                            }
+                        }
+                        $formId = 'role-' . $i; ?>
+                        <tr>
+                            <td data-label="Role"><strong><?= e($f['role']) ?></strong></td>
+                            <td data-label="Documents"><?= (int) $f['total'] ?></td>
+                            <td data-label="Person">
+                                <form id="<?= $formId ?>" method="post" action="<?= e(url('admin/documents/signatories/assign-role')) ?>"><?= csrf_field() ?><input type="hidden" name="role" value="<?= e($f['role']) ?>">
+                                    <select class="select" name="signatory_id" aria-label="Person for <?= e($f['role']) ?>">
+                                        <option value="">Choose a person</option>
+                                        <?php foreach ($people as $p): ?><option value="<?= (int) $p['id'] ?>"<?= $suggest === (int) $p['id'] ? ' selected' : '' ?>><?= e($p['name']) ?><?= $p['title'] ? ' (' . e($p['title']) . ')' : '' ?><?= empty($p['signature_path']) ? ' - no picture' : '' ?></option><?php endforeach; ?>
+                                    </select>
+                                </form>
+                                <?php if ((int) $f['waiting'] > 0 && (int) $f['people'] > 0): ?><span class="cell-sub"><?= (int) $f['waiting'] ?> of <?= (int) $f['total'] ?> still without a person</span><?php endif; ?>
+                            </td>
+                            <td data-label="Signed"><?= (int) $f['signed'] ?> of <?= (int) $f['total'] ?></td>
+                            <td class="col-actions"><div class="table__actions">
+                                <button class="btn btn--outline btn--sm" type="submit" form="<?= $formId ?>"><?= icon('user', 'icon--sm') ?> Assign</button>
+                                <button class="btn btn--primary btn--sm" type="submit" form="<?= $formId ?>" name="sign" value="1" data-confirm="<?= e('Apply the signature to every unsigned "' . $f['role'] . '" in ' . (int) $f['total'] . ' document(s)? Each signed PDF is rebuilt.') ?>"><?= icon('check', 'icon--sm') ?> Assign and sign</button>
+                            </div></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody></table></div>
+            <?php endif; ?>
+        </div>
+    </section>
     <section class="card" aria-labelledby="sg-new">
         <div class="card__header"><h2 class="card__title" id="sg-new">Add a person</h2></div>
         <form class="card__body" method="post" action="<?= e(url('admin/documents/signatories')) ?>" enctype="multipart/form-data" novalidate>
@@ -27,7 +75,9 @@ $this->start('scripts'); ?>
                     <?php if (error('signature')): ?><div class="field__error" role="alert"><?= e((string) error('signature')) ?></div><?php endif; ?>
                 </div>
             </div>
-            <?= partial('admin/documents/_doc-picker', ['docs' => $docs, 'roles' => $roles]) ?>
+            <details class="doc-sig-attach"><summary class="btn btn--ghost btn--sm">Choose documents by hand (optional)</summary>
+                <?= partial('admin/documents/_doc-picker', ['docs' => $docs, 'roles' => $roles]) ?>
+            </details>
             <div class="form-actions"><button class="btn btn--primary" type="submit"><?= icon('plus', 'icon--sm') ?> Add the person</button></div>
         </form>
     </section>

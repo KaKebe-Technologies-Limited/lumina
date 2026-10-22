@@ -6215,6 +6215,18 @@ body.admin-receipt .receipt__sign-label {
   gap: .25rem;
 }
 
+.doc-sig-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+}
+
+.doc-sig-pick .select {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
 .partner-logo-pic {
   display: contents;
 }

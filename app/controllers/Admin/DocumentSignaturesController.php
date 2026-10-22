@@ -51,6 +51,12 @@ final class DocumentSignaturesController extends OrgAdminController
         if ($r = $this->notReady()) {
             return $r;
         }
+        if (DocumentSigning::roles() === []) {
+            // first visit: read the signature pages of the documents by themselves
+            @set_time_limit(120);
+            DocumentSigning::detectAll();
+            DocumentSigning::autoAssign();
+        }
         $rows = Database::all(
             'SELECT g.*, (SELECT COUNT(*) FROM document_signatures s WHERE s.signatory_id = g.id) AS attached, (SELECT COUNT(*) FROM document_signatures s2 WHERE s2.signatory_id = g.id AND s2.signed_at IS NULL) AS waiting
              FROM document_signatories g ORDER BY g.is_active DESC, g.name ASC'
@@ -60,7 +66,8 @@ final class DocumentSignaturesController extends OrgAdminController
         foreach (Database::all('SELECT s.signatory_id, s.document_id, s.role_label, s.signed_at, d.title FROM document_signatures s JOIN documents d ON d.id = s.document_id ORDER BY d.title ASC') as $a) {
             $attached[(int) $a['signatory_id']][] = $a;
         }
-        return $this->render('admin/documents/signatories', ['rows' => $rows, 'docs' => $docs, 'attached' => $attached, 'roles' => DocumentSignature::ROLES],
+        return $this->render('admin/documents/signatories', ['rows' => $rows, 'docs' => $docs, 'attached' => $attached, 'roles' => DocumentSignature::ROLES,
+            'found' => DocumentSigning::roles(), 'people' => array_values(array_filter($rows, static fn(array $g): bool => (int) $g['is_active'] === 1))],
             ['title' => 'Signatories', 'nav' => 'documents', 'breadcrumbs' => [['Documents', url('admin/documents')], ['Signatories', null]]]);
     }
 
@@ -76,6 +83,10 @@ final class DocumentSignaturesController extends OrgAdminController
         ]);
         $this->audit('document.signatory.create', 'document_signatory', $id, 'Added signatory "' . $data['name'] . '"');
         $n = count($this->attachFromRequest($request, $id));
+        $auto = DocumentSigning::autoAssign();
+        if ($auto > 0) {
+            Flash::success('"' . $data['name'] . '" was matched by title to ' . $auto . ' signature block' . ($auto === 1 ? '' : 's') . ' in the documents. Press "Sign" under Roles found in the documents when you are ready.');
+        }
         Flash::success('"' . $data['name'] . '" was added' . ($pic['path'] === '' ? '. Upload their signature picture to be able to sign documents.' : ' with their signature.')
             . ($n > 0 ? ' Attached to ' . $n . ' document' . ($n === 1 ? '' : 's') . ': apply the signature when you are ready.' : ''));
         return $this->redirect($back);
@@ -94,6 +105,7 @@ final class DocumentSignaturesController extends OrgAdminController
             $upd += ['signature_path' => $pic['path'], 'signature_mime' => $pic['mime'], 'signature_updated_at' => date('Y-m-d H:i:s')];
         }
         DocumentSignatory::update($id, $upd);
+        DocumentSigning::autoAssign();
         if ($pic['path'] !== '' && $oldPath !== '') {
             Uploader::deletePrivate($oldPath);
         }
@@ -107,6 +119,7 @@ final class DocumentSignaturesController extends OrgAdminController
         $this->gate();
         $g = DocumentSignatory::findOrFail($id);
         DocumentSignatory::update($id, ['is_active' => (int) $g['is_active'] === 1 ? 0 : 1]);
+        DocumentSigning::autoAssign();
         Flash::success('"' . $g['name'] . '" is now ' . ((int) $g['is_active'] === 1 ? 'inactive (hidden from the pick lists)' : 'active') . '.');
         return $this->redirect('admin/documents/signatories');
     }
@@ -116,14 +129,9 @@ final class DocumentSignaturesController extends OrgAdminController
         $this->gate();
         $g = DocumentSignatory::findOrFail($id);
         $docs = Database::all('SELECT DISTINCT document_id FROM document_signatures WHERE signatory_id = ?', [$id]);
+        DocumentSigning::releasePerson($id);                              // their blocks wait again, other rows go, signed copies are rebuilt
         DocumentSignatory::delete($id);
         Uploader::deletePrivate((string) ($g['signature_path'] ?? ''));
-        foreach ($docs as $d) {
-            $doc = Document::find((int) $d['document_id']);
-            if ($doc !== null) {
-                DocumentSigning::rebuild($doc);
-            }
-        }
         $this->audit('document.signatory.delete', 'document_signatory', $id, 'Deleted signatory "' . $g['name'] . '"');
         Flash::success('"' . $g['name'] . '" was deleted' . ($docs ? ' and removed from ' . count($docs) . ' document(s); their signed copies were rebuilt.' : '.'));
         return $this->redirect('admin/documents/signatories');
@@ -201,6 +209,84 @@ final class DocumentSignaturesController extends OrgAdminController
         return $this->redirect('admin/documents/signatories');
     }
 
+    // ------------------------------------------------------------------------------------------------------------- reading who must sign
+
+    /** POST /admin/documents/read-signers: read the signature page of every PDF document and match people to the roles found. */
+    public function readSigners(Request $request): Response
+    {
+        $this->gate();
+        @set_time_limit(180);
+        $r = DocumentSigning::detectAll();
+        $auto = DocumentSigning::autoAssign();
+        $this->audit('document.signature.read_all', 'document', null, 'Read the signature pages: ' . $r['blocks'] . ' block(s) in ' . $r['documents'] . ' document(s), ' . $auto . ' matched');
+        if ($r['blocks'] === 0) {
+            Flash::info('Every document was already read. Nothing new was found.');
+        } else {
+            Flash::success('Found ' . $r['blocks'] . ' signature block' . ($r['blocks'] === 1 ? '' : 's') . ' in ' . $r['documents'] . ' document' . ($r['documents'] === 1 ? '' : 's') . '.' . ($auto > 0 ? ' ' . $auto . ' matched a person by title.' : ''));
+        }
+        return $this->redirect('admin/documents/signatories');
+    }
+
+    /** POST /admin/documents/{id}/signatures/read: read one document. */
+    public function readOne(Request $request, int $id): Response
+    {
+        $this->gate();
+        Document::findOrFail($id);
+        $n = DocumentSigning::detectSlots($id);
+        $auto = DocumentSigning::autoAssign();
+        Flash::{$n > 0 ? 'success' : 'info'}($n > 0 ? 'Found ' . $n . ' signature block' . ($n === 1 ? '' : 's') . ' in this document.' . ($auto > 0 ? ' ' . $auto . ' matched a person by title.' : '') : 'No new signature block was found in this document.');
+        return $this->redirect('admin/documents/' . $id . '/signatures');
+    }
+
+    /** POST /admin/documents/signatories/assign-role: one person for a role in every document that prints it (optionally signing at once). */
+    public function assignRole(Request $request): Response
+    {
+        $this->gate();
+        $back = 'admin/documents/signatories';
+        $role = mb_substr($this->clean($request->string('role')), 0, 80);
+        $g = DocumentSignatory::find($request->int('signatory_id'));
+        if ($role === '' || $g === null) {
+            Flash::warning('Choose a person for the role.');
+            return $this->redirect($back);
+        }
+        @set_time_limit(240);
+        DocumentSigning::assignRole($role, (int) $g['id']);
+        $n = (int) Database::value('SELECT COUNT(*) FROM document_signatures WHERE slot_index IS NOT NULL AND role_label = ? AND signatory_id = ?', [$role, (int) $g['id']], 0);
+        $signed = 0;
+        $failed = 0;
+        if ($request->bool('sign')) {
+            if (empty($g['signature_path'])) {
+                Flash::warning('Upload the signature picture of ' . $g['name'] . ' first; the person was assigned but nothing was signed.');
+            } else {
+                foreach (Database::all('SELECT id FROM document_signatures WHERE slot_index IS NOT NULL AND role_label = ? AND signatory_id = ? AND signed_at IS NULL', [$role, (int) $g['id']]) as $r) {
+                    DocumentSigning::apply((int) $r['id'], $this->userId(), $request->ip())['ok'] ? $signed++ : $failed++;
+                }
+            }
+        }
+        $this->audit('document.signature.assign_role', 'document_signatory', (int) $g['id'], 'Assigned "' . $g['name'] . '" to the role "' . $role . '" (' . $n . ' document(s), ' . $signed . ' signed)');
+        Flash::success('"' . $g['name'] . '" is now ' . $role . ' in ' . $n . ' document' . ($n === 1 ? '' : 's') . ($signed > 0 ? ' and signed ' . $signed : '') . ($failed > 0 ? ' (' . $failed . ' could not be built)' : '') . '.');
+        return $this->redirect($back);
+    }
+
+    /** POST /admin/documents/{id}/signatures/{sigid}/assign: a person for one block of one document. */
+    public function assignRow(Request $request, int $id, int $sigid): Response
+    {
+        $this->gate();
+        $back = 'admin/documents/' . $id . '/signatures';
+        $row = $this->row($id, $sigid);
+        $g = DocumentSignatory::find($request->int('signatory_id'));
+        if ($g === null) {
+            Flash::warning('Choose a person.');
+            return $this->redirect($back);
+        }
+        if (!empty($row['signed_at'])) {
+            Flash::warning('This block is signed already. Withdraw the signature first.');
+            return $this->redirect($back);
+        }
+        $ok = Database::execute('UPDATE IGNORE document_signatures SET signatory_id = ? WHERE id = ?', [(int) $g['id'], $sigid]);
+        Flash::{$ok > 0 ? 'success' : 'warning'}($ok > 0 ? '"' . $g['name'] . '" will sign as ' . $row['role_label'] . '.' : $g['name'] . ' is already on this document.');
+        return $this->redirect($back);
+    }
     // ------------------------------------------------------------------------------------------------------------- one document
 
     public function sign(Request $request, int $id): Response
@@ -211,10 +297,10 @@ final class DocumentSignaturesController extends OrgAdminController
         }
         $doc = Document::findOrFail($id);
         $rows = DocumentSigning::rows($id);
-        $attached = array_map(static fn(array $r): int => (int) $r['signatory_id'], $rows);
+        $attached = array_map(static fn(array $r): int => (int) ($r['signatory_id'] ?? 0), $rows);
         $pick = array_values(array_filter(Database::all('SELECT id, name, title, signature_path FROM document_signatories WHERE is_active = 1 ORDER BY name ASC'), static fn(array $g): bool => !in_array((int) $g['id'], $attached, true)));
         return $this->render('admin/documents/signatures', [
-            'doc' => $doc, 'rows' => $rows, 'status' => DocumentSigning::status($rows), 'pick' => $pick, 'roles' => DocumentSignature::ROLES, 'isPdf' => strtolower(pathinfo((string) $doc['file_path'], PATHINFO_EXTENSION)) === 'pdf',
+            'doc' => $doc, 'rows' => $rows, 'status' => DocumentSigning::status($rows), 'pick' => $pick, 'roles' => DocumentSignature::ROLES, 'people' => Database::all('SELECT id, name, title, signature_path FROM document_signatories WHERE is_active = 1 ORDER BY name ASC'), 'isPdf' => strtolower(pathinfo((string) $doc['file_path'], PATHINFO_EXTENSION)) === 'pdf',
         ], ['title' => 'Signatures: ' . $doc['title'], 'nav' => 'documents', 'breadcrumbs' => [['Documents', url('admin/documents')], [(string) $doc['title'], url('admin/documents/' . $id . '/edit')], ['Signatures', null]]]);
     }
 
@@ -284,8 +370,13 @@ final class DocumentSignaturesController extends OrgAdminController
     public function removeRow(Request $request, int $id, int $sigid): Response
     {
         $this->gate();
-        $this->row($id, $sigid);
-        Database::execute('DELETE FROM document_signatures WHERE id = ?', [$sigid]);
+        $row = $this->row($id, $sigid);
+        if ($row['slot_index'] !== null) {
+            // a block of the document's own signature page stays (the role is printed there); only the person is taken off it
+            Database::execute('UPDATE document_signatures SET signatory_id = NULL, signed_at = NULL, signed_by = NULL, signed_ip = NULL WHERE id = ?', [$sigid]);
+        } else {
+            Database::execute('DELETE FROM document_signatures WHERE id = ?', [$sigid]);
+        }
         $res = DocumentSigning::rebuild((array) Document::find($id));
         $this->audit('document.signature.remove', 'document', $id, 'Removed a signatory from document #' . $id, ['row' => $sigid]);
         Flash::success('Removed. ' . $res['message']);

@@ -213,46 +213,208 @@ final class PdfSigner
     // ------------------------------------------------------------------------------------------------ merging
 
     /**
-     * Append the pages of $pagesPdf (made by PdfWriter: objects 1 catalog, 2 pages, 3 info, the rest fonts, images, contents and pages) to $original with an incremental update.
-     * Returns the new file, or null when the original cannot be extended safely.
+     * Append the pages of $pagesPdf (made by PdfWriter) to $original with an incremental update. Returns the new file, or null when the original cannot be extended safely.
      */
     public static function appendPages(string $original, string $pagesPdf): ?string
     {
-        $o = self::readOriginal($original);
-        if ($o === null) {
-            return null;
-        }
-        $new = self::readWriterObjects($pagesPdf);
-        if ($new === null || $new['pages'] === []) {
-            return null;
-        }
-        $base = $o['size'];                                         // first new object number
-        $map = static function (int $id) use ($base, $o): int {
-            return $id === 2 ? $o['pagesId'] : $base + ($id - 4);
-        };
-        $remap = static fn(string $dict): string => (string) preg_replace_callback('/(\d+) 0 R/', static fn(array $m): string => $map((int) $m[1]) . ' 0 R', $dict);
+        return self::build($original, null, null, $pagesPdf);
+    }
 
+    /**
+     * Draw signatures ON the signature lines of the original's last page: for every entry of $draws a signature picture, the name, the title and the date at the positions
+     * PdfSlots found. Returns a one-page PdfWriter file (same page size) that build() turns into an overlay.
+     * @param array{width:float,height:float} $info
+     * @param list<array{slot:array<string,mixed>,name:string,title:?string,date:string,image:?string}> $draws
+     */
+    public static function overlayPdf(array $info, array $draws): string
+    {
+        $pdf = new PdfWriter(['title' => 'Signature overlay', 'creator' => 'Lumina documents']);
+        $W = (float) $info['width'];
+        $H = (float) $info['height'];
+        $pdf->addPage($W, $H);
+        $fit = static function (string $text, string $font, float $size, float $max): float {
+            while ($size > 6.0 && PdfWriter::textWidth($text, $font, $size) > $max) {
+                $size -= 0.5;
+            }
+            return $size;
+        };
+        foreach ($draws as $d) {
+            $slot = $d['slot'];
+            if (!empty($d['image'])) {
+                $inf = PdfWriter::imageInfo((string) $d['image']);
+                if ($inf !== null) {
+                    try {
+                        $name = $inf['mime'] === 'image/png' ? $pdf->addPng((string) $d['image']) : $pdf->addJpeg((string) $d['image']);
+                        // the signature goes above the signature line, right of the "Full name" caption and left of the "Title / position" caption (the captions stay readable)
+                        [$sx, $sy, $sw, $sh] = $slot['sig'];
+                        $left = $sx + 56.0;
+                        $maxW = max(40.0, min(110.0, (float) $slot['title'][0] - 6.0 - $left));
+                        $maxH = min(26.0, $sh);
+                        $scale = min($maxW / max(1, $inf['w']), $maxH / max(1, $inf['h']));
+                        $w = $inf['w'] * $scale;
+                        $h = $inf['h'] * $scale;
+                        $pdf->image($name, $left, $H - ($sy + 2 + $h), $w, $h);
+                    } catch (\Throwable) {
+                        // a picture the writer cannot place: the line stays empty
+                    }
+                }
+            }
+            // the title line is already printed in the document (the role), so only the name and the date are written
+            foreach (['name' => ['helvetica-bold', 10.0, $d['name']], 'date' => ['helvetica', 9.0, $d['date']]] as $key => [$font, $size, $text]) {
+                if ($text === '') {
+                    continue;
+                }
+                [$lx, $ly, $lw] = $slot[$key];
+                $pdf->text($lx + 2, $H - ($ly + 3), $text, $font, $fit($text, $font, $size, $lw - 4), self::INK);
+            }
+        }
+        return $pdf->output();
+    }
+
+    /**
+     * One incremental update that can do both: lay $overlayPdf (made by overlayPdf()) over the last page of the original, and append the pages of $pagesPdf.
+     * Returns the new file, or null when the original cannot be extended safely (compressed cross-reference stream, a /Prev chain, an indirect /Kids, resources that are a
+     * reference ...): the caller then falls back to the separate approval page.
+     * @param ?array{page:int,pageBody:string,width:float,height:float} $slotInfo the last page as read by PdfSlots (needed with $overlayPdf)
+     */
+    public static function build(string $original, ?array $slotInfo, ?string $overlayPdf, ?string $pagesPdf): ?string
+    {
+        $o = self::readOriginal($original);
+        if ($o === null || ($overlayPdf === null && $pagesPdf === null) || ($overlayPdf !== null && $slotInfo === null)) {
+            return null;
+        }
+        $next = $o['size'];                                         // first new object number
+        $emit = [];                                                 // new id => ['dict' => text, 'stream' => ?bytes]
+
+        // ---- the overlay: its fonts and images are imported, its content becomes a Form XObject the last page draws
+        $pageObject = null;
+        if ($overlayPdf !== null) {
+            $ov = self::readWriterObjects($overlayPdf);
+            if ($ov === null || count($ov['pages']) !== 1) {
+                return null;
+            }
+            $ovPage = $ov['pages'][0];
+            $pageDict = (string) $ov['objects'][$ovPage]['dict'];
+            if (preg_match('/\/Contents\s+(\d+)\s+0\s+R/', $pageDict, $cm) !== 1) {
+                return null;
+            }
+            $ovContent = (int) $cm[1];
+            $resPos = strpos($pageDict, '/Resources');
+            $resStart = $resPos === false ? false : strpos($pageDict, '<<', $resPos);
+            if ($resStart === false) {
+                return null;
+            }
+            $depth = 0;
+            $resEnd = null;
+            for ($i = $resStart, $n = strlen($pageDict); $i < $n - 1; $i++) {
+                $two = $pageDict[$i] . $pageDict[$i + 1];
+                if ($two === '<<') {
+                    $depth++;
+                    $i++;
+                } elseif ($two === '>>') {
+                    $depth--;
+                    $i++;
+                    if ($depth === 0) {
+                        $resEnd = $i + 1;
+                        break;
+                    }
+                }
+            }
+            if ($resEnd === null) {
+                return null;
+            }
+            $resources = substr($pageDict, $resStart, $resEnd - $resStart);
+            $map = [];
+            foreach (array_keys($ov['objects']) as $id) {
+                if ($id >= 4 && $id !== $ovPage) {
+                    $map[$id] = $next++;
+                }
+            }
+            $remap = static fn(string $t): string => (string) preg_replace_callback('/(\d+) 0 R/', static fn(array $m): string => ((int) $m[1] === 2 || !isset($map[(int) $m[1]]) ? $m[0] : $map[(int) $m[1]] . ' 0 R'), $t);
+            foreach ($ov['objects'] as $id => $obj) {
+                if (!isset($map[$id])) {
+                    continue;
+                }
+                if ($id === $ovContent) {
+                    $inner = trim((string) preg_replace('/^<<|>>$/', '', trim($obj['dict'])));
+                    $obj['dict'] = '<< /Type /XObject /Subtype /Form /BBox [0 0 ' . self::num($slotInfo['width']) . ' ' . self::num($slotInfo['height']) . '] /Resources ' . $remap($resources) . ' ' . $inner . ' >>';
+                    $emit[$map[$id]] = $obj;
+                } else {
+                    $emit[$map[$id]] = ['dict' => $remap($obj['dict']), 'stream' => $obj['stream']];
+                }
+            }
+            $formId = $map[$ovContent];
+            $callId = $next++;
+            $call = "q /LAFSig Do Q
+";
+            $emit[$callId] = ['dict' => '<< /Length ' . strlen($call) . ' >>', 'stream' => $call];
+            // the last page: one more content stream and one more XObject resource
+            $page = $slotInfo['pageBody'];
+            if (preg_match('/\/Contents\s+(\d+)\s+0\s+R/', $page) === 1) {
+                $page = (string) preg_replace('/\/Contents\s+(\d+)\s+0\s+R/', '/Contents [ $1 0 R ' . $callId . ' 0 R ]', $page, 1);
+            } elseif (preg_match('/\/Contents\s*\[/', $page) === 1) {
+                $page = (string) preg_replace('/(\/Contents\s*\[[^\]]*)\]/', '$1 ' . $callId . ' 0 R ]', $page, 1);
+            } else {
+                return null;
+            }
+            if (preg_match('/\/Resources\s*<</', $page) !== 1) {
+                return null;                                        // resources held in another object: not touched
+            }
+            if (preg_match('/\/Resources\s*<<.*?\/XObject\s*<</s', $page) === 1) {
+                $page = (string) preg_replace('/(\/Resources\s*<<.*?\/XObject\s*<<)/s', '$1 /LAFSig ' . $formId . ' 0 R ', $page, 1);
+            } else {
+                $page = (string) preg_replace('/(\/Resources\s*<<)/', '$1 /XObject << /LAFSig ' . $formId . ' 0 R >> ', $page, 1);
+            }
+            $pageObject = [(int) $slotInfo['page'], $page];
+        }
+
+        // ---- appended pages
+        $pagesNew = null;
+        $kids = '';
+        if ($pagesPdf !== null) {
+            $pagesNew = self::readWriterObjects($pagesPdf);
+            if ($pagesNew === null || $pagesNew['pages'] === []) {
+                return null;
+            }
+            $base = $next;
+            $pmap = static function (int $id) use ($base, $o): int {
+                return $id === 2 ? $o['pagesId'] : $base + ($id - 4);
+            };
+            $remap = static fn(string $dict): string => (string) preg_replace_callback('/(\d+) 0 R/', static fn(array $m): string => $pmap((int) $m[1]) . ' 0 R', $dict);
+            foreach ($pagesNew['objects'] as $id => $obj) {
+                if ($id < 4) {
+                    continue;                                       // catalog, page tree and info of the helper file are not used
+                }
+                $nid = $pmap($id);
+                $next = max($next, $nid + 1);
+                $emit[$nid] = ['dict' => $remap($obj['dict']), 'stream' => $obj['stream']];
+            }
+            foreach ($pagesNew['pages'] as $pid) {
+                $kids .= ' ' . $pmap($pid) . ' 0 R';
+            }
+        }
+
+        // ---- write
         $out = rtrim($original, "\r\n") . "\n";
         $offsets = [];
-        $maxId = $base - 1;
-        foreach ($new['objects'] as $id => $obj) {
-            if ($id < 4) {
-                continue;                                           // catalog, page tree and info of the helper file are not used
-            }
-            $nid = $map($id);
+        $maxId = $o['size'] - 1;
+        ksort($emit);
+        foreach ($emit as $nid => $obj) {
             $maxId = max($maxId, $nid);
             $offsets[$nid] = strlen($out);
-            $out .= $nid . " 0 obj\n" . $remap($obj['dict']) . ($obj['stream'] !== null ? "\nstream\n" . $obj['stream'] . "\nendstream" : '') . "\nendobj\n";
+            $out .= $nid . " 0 obj\n" . $obj['dict'] . ($obj['stream'] !== null ? "\nstream\n" . $obj['stream'] . "\nendstream" : '') . "\nendobj\n";
         }
-        $kids = '';
-        foreach ($new['pages'] as $pid) {
-            $kids .= ' ' . $map($pid) . ' 0 R';
+        if ($pageObject !== null) {
+            $offsets[$pageObject[0]] = strlen($out);
+            $out .= $pageObject[0] . " 0 obj\n" . $pageObject[1] . "\nendobj\n";
         }
-        $tree = $o['pagesBody'];
-        $tree = (string) preg_replace('/\/Kids\s*\[(.*?)\]/s', '/Kids [$1' . $kids . ' ]', $tree, 1);
-        $tree = (string) preg_replace_callback('/\/Count\s+(\d+)/', static fn(array $m): string => '/Count ' . ((int) $m[1] + count($new['pages'])), $tree, 1);
-        $offsets[$o['pagesId']] = strlen($out);
-        $out .= $o['pagesId'] . " 0 obj\n" . $tree . "\nendobj\n";
+        if ($pagesNew !== null) {
+            $tree = $o['pagesBody'];
+            $tree = (string) preg_replace('/\/Kids\s*\[(.*?)\]/s', '/Kids [$1' . $kids . ' ]', $tree, 1);
+            $tree = (string) preg_replace_callback('/\/Count\s+(\d+)/', static fn(array $m): string => '/Count ' . ((int) $m[1] + count($pagesNew['pages'])), $tree, 1);
+            $offsets[$o['pagesId']] = strlen($out);
+            $out .= $o['pagesId'] . " 0 obj\n" . $tree . "\nendobj\n";
+        }
 
         ksort($offsets);
         $xref = strlen($out);
@@ -276,9 +438,13 @@ final class PdfSigner
         return $out;
     }
 
+    private static function num(float $v): string
+    {
+        return rtrim(rtrim(number_format($v, 4, '.', ''), '0'), '.');
+    }
     /**
      * What an incremental update needs from the original: the cross-reference offset, /Size, /Root, /Info, the first /ID and the body of the root page tree node.
-     * @return array{xref:int,size:int,root:int,info:?int,id1:?string,pagesId:int,pagesBody:string}|null
+     * @return array{xref:int,size:int,root:int,info:?int,id1:?string,pagesId:int,pagesBody:string,body:\Closure,offsets:array<int,int>}|null
      */
     private static function readOriginal(string $pdf): ?array
     {
@@ -343,7 +509,13 @@ final class PdfSigner
         if ($tree === null || preg_match('/\/Kids\s*\[/', $tree) !== 1 || preg_match('/\/Count\s+\d+/', $tree) !== 1 || str_contains($tree, '/Kids ' . 'obj')) {
             return null;
         }
-        return ['xref' => $xref, 'size' => (int) $sz[1], 'root' => (int) $rt[1], 'info' => $info, 'id1' => $id1, 'pagesId' => $pagesId, 'pagesBody' => $tree];
+        return ['xref' => $xref, 'size' => (int) $sz[1], 'root' => (int) $rt[1], 'info' => $info, 'id1' => $id1, 'pagesId' => $pagesId, 'pagesBody' => $tree, 'body' => $body, 'offsets' => $offsets];
+    }
+
+    /** The parts of an original PDF that signing needs (see readOriginal), plus `body(id)` (the text of an object) and `offsets`; null when it cannot be extended safely. */
+    public static function open(string $pdf): ?array
+    {
+        return self::readOriginal($pdf);
     }
 
     /**

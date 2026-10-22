@@ -62,11 +62,15 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth']], function ($route
     $router->post('/documents/signatories/{id}/delete', [DocumentSignaturesController::class, 'deleteSignatory'])->name('admin.documents.signatories.delete');
     $router->post('/documents/signatories/{id}/attach', [DocumentSignaturesController::class, 'attach'])->name('admin.documents.signatories.attach');
     $router->post('/documents/signatories/{id}/sign-all', [DocumentSignaturesController::class, 'signAll'])->middleware('throttle:10,60')->name('admin.documents.signatories.sign_all');
+    $router->post('/documents/read-signers', [DocumentSignaturesController::class, 'readSigners'])->middleware('throttle:10,60')->name('admin.documents.read_signers');
+    $router->post('/documents/signatories/assign-role', [DocumentSignaturesController::class, 'assignRole'])->middleware('throttle:30,60')->name('admin.documents.signatories.assign_role');
     $router->post('/documents/import-pack', [DocumentSignaturesController::class, 'importPack'])->middleware('throttle:10,60')->name('admin.documents.import_pack');
     $router->get('/documents/{id}/signatures', [DocumentSignaturesController::class, 'sign'])->name('admin.documents.signatures');
     $router->post('/documents/{id}/signatures/details', [DocumentSignaturesController::class, 'details'])->name('admin.documents.signatures.details');
     $router->post('/documents/{id}/signatures/add', [DocumentSignaturesController::class, 'addRow'])->name('admin.documents.signatures.add');
     $router->post('/documents/{id}/signatures/generate', [DocumentSignaturesController::class, 'generate'])->middleware('throttle:30,60')->name('admin.documents.signatures.generate');
+    $router->post('/documents/{id}/signatures/read', [DocumentSignaturesController::class, 'readOne'])->middleware('throttle:30,60')->name('admin.documents.signatures.read');
+    $router->post('/documents/{id}/signatures/{sigid}/assign', [DocumentSignaturesController::class, 'assignRow'])->name('admin.documents.signatures.assign');
     $router->post('/documents/{id}/signatures/{sigid}/apply', [DocumentSignaturesController::class, 'apply'])->middleware('throttle:60,60')->name('admin.documents.signatures.apply');
     $router->post('/documents/{id}/signatures/{sigid}/unsign', [DocumentSignaturesController::class, 'unsign'])->name('admin.documents.signatures.unsign');
     $router->post('/documents/{id}/signatures/{sigid}/delete', [DocumentSignaturesController::class, 'removeRow'])->name('admin.documents.signatures.delete');
