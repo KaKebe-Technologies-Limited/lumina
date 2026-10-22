@@ -38,6 +38,7 @@ return [
                 ['key' => 'month_tab', 'label' => 'Tab: month grid', 'type' => 'text', 'default' => 'Month'],
                 ['key' => 'agenda_tab', 'label' => 'Tab: list of dates', 'type' => 'text', 'default' => 'List'],
                 ['key' => 'upcoming_tab', 'label' => 'Tab: coming up', 'type' => 'text', 'default' => 'Coming up'],
+                ['key' => 'podcast_tab', 'label' => 'Tab: podcasts and live broadcasts', 'type' => 'text', 'default' => 'Podcasts & live'],
                 ['key' => 'today_label', 'label' => 'Button: go to today', 'type' => 'text', 'default' => 'Today'],
                 ['key' => 'prev_label', 'label' => 'Button: previous month (accessible name)', 'type' => 'text', 'default' => 'Previous month'],
                 ['key' => 'next_label', 'label' => 'Button: next month (accessible name)', 'type' => 'text', 'default' => 'Next month'],
@@ -69,6 +70,18 @@ return [
                 ['key' => 'count', 'label' => 'How many dates to list', 'type' => 'number', 'default' => 12, 'min' => 3, 'max' => 50],
                 ['key' => 'empty_title', 'label' => 'Empty state: heading', 'type' => 'text', 'default' => 'No dates coming up'],
                 ['key' => 'empty_text', 'label' => 'Empty state: text', 'type' => 'textarea', 'rows' => 2, 'default' => 'Nothing is scheduled for the selected types yet. Please check back soon.'],
+            ],
+        ],
+        [
+            'key' => 'podcast', 'label' => 'Podcasts and live tab',
+            'help' => 'The independent tab that lists podcasts and live broadcasts (meetings of the type Podcast, YouTube / Facebook / TikTok / Instagram Live scheduled under Admin > Meetings).',
+            'fields' => [
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Podcasts & [[live]] broadcasts', 'help' => $hlHelp],
+                ['key' => 'intro', 'label' => 'Short introduction', 'type' => 'textarea', 'rows' => 2, 'default' => 'Join our podcasts and live sessions on TikTok, Facebook, YouTube and more. Press Watch live at the time of the broadcast.'],
+                ['key' => 'empty_title', 'label' => 'Empty state: heading', 'type' => 'text', 'default' => 'No podcast or live broadcast scheduled'],
+                ['key' => 'empty_text', 'label' => 'Empty state: text', 'type' => 'textarea', 'rows' => 2, 'default' => 'Our next podcast or live session will be announced here. Please check back soon.'],
+                ['key' => 'seo_title', 'label' => 'Page title (search engines)', 'type' => 'text', 'default' => 'Podcasts and live broadcasts'],
+                ['key' => 'seo_description', 'label' => 'Page description (search engines)', 'type' => 'textarea', 'rows' => 2, 'default' => 'Upcoming podcasts and live broadcasts of Lumina Africa Foundation: watch live on TikTok, Facebook, YouTube and more.'],
             ],
         ],
         [

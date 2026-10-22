@@ -148,7 +148,7 @@
 
         root.classList.add('cal-ready');
         this.bindClicks();
-        if (this.view === 'upcoming') {
+        if (this.view === 'upcoming' || this.view === 'podcast') {
             this.bindFilters(false);                            // the list is server-made: a change reloads the page
             return;
         }
@@ -289,7 +289,7 @@
     };
     // the tab title and the history entries name the month shown (the same words as the month pages the server renders: seo.month_title)
     Calendar.prototype.setTitle = function () {
-        if (this.kind !== 'page' || !this.L.title_month || this.view === 'upcoming') { return; }
+        if (this.kind !== 'page' || !this.L.title_month || this.view === 'upcoming' || this.view === 'podcast') { return; }
         if (this.titleSuffix === undefined) {
             var m = /\s\|\s[^|]*$/.exec(document.title);
             this.titleSuffix = m ? m[0] : '';

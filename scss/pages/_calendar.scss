@@ -621,3 +621,9 @@ html.cal-lock { overflow: hidden; }
     .cal-pill--holiday { border-width: 3px; }
     .cal-dialog { border: 2px solid CanvasText; }
 }
+// Podcasts and live broadcasts tab
+.cal-podcast__intro { max-width: 46rem; margin: -.25rem 0 1.25rem; color: var(--text-muted, #5b6472); font-size: 1.05rem; }
+.cal-tabs__item [class*="icon"] { flex: none; }
+.cal-podcast__item { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; }
+.cal-podcast__item > :first-child { flex: 1 1 18rem; min-width: 0; }
+.cal-podcast__watch { flex: none; }

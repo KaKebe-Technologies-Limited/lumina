@@ -75,6 +75,14 @@ curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 40]);
 $html = (string) curl_exec($ch);
 check('public calendar page of the entry shows the title and the Watch live button', str_contains($html, 'zz-pod Tiktok talk') && str_contains($html, 'Watch live') && str_contains($html, 'tiktok.com/@luminaafrica/live'));
 
+$ch = curl_init($base . '/calendar?view=podcast');
+curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 40]);
+$tab = (string) curl_exec($ch);
+check('calendar: the independent Podcasts & live tab lists the broadcast with Watch live', str_contains($tab, 'zz-pod Tiktok talk') && str_contains($tab, 'cal-podcast__watch') && str_contains($tab, 'tiktok.com/@luminaafrica/live') && str_contains($tab, 'Podcasts'));
+$ch = curl_init($base . '/calendar');
+curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 40]);
+check('calendar: the tab is offered on the normal calendar page', str_contains((string) curl_exec($ch), 'data-cal-tab="podcast"'));
+
 $z = $mk('zz-pod Zoom meet', 'zoom', 'https://zoom.us/j/123456789');
 $zid = (int) ($z['id'] ?? 0);
 $ids[] = $zid;

@@ -25,7 +25,7 @@ use App\Services\Calendar\RecurrenceRules;
  */
 final class CalendarController extends Controller
 {
-    private const VIEWS = ['month', 'list', 'upcoming'];
+    private const VIEWS = ['month', 'list', 'upcoming', 'podcast'];
     /** months beyond this distance from today that hold only the recurring system days are thin pages: noindex */
     private const THIN_MONTHS = 24;
     /** the jump form and ?month= accept this span (the grid of 1900 / 2200 would reach outside the supported years) */
@@ -57,7 +57,11 @@ final class CalendarController extends Controller
         $grid = CalendarService::monthGrid($month, $filters);
         $upcoming = [];
         $agenda = [];
-        if ($view === 'upcoming') {
+        $flat = in_array($view, ['upcoming', 'podcast'], true);          // list views that do not depend on the month
+        if ($view === 'podcast') {
+            // the independent Podcasts and live tab: only the "Podcast / live broadcast" type, whatever the colour-key filter says
+            $upcoming = CalendarService::upcoming(50, ['types' => ['podcast']]);
+        } elseif ($view === 'upcoming') {
             $upcoming = CalendarService::upcoming(max(3, min(50, (int) content('calendar', 'upcoming.count'))), $filters);
         } elseif ($view === 'list') {
             $agenda = CalendarService::groupByDay($grid['items'], CivilDate::monthStart($month), CivilDate::monthEnd($month));
@@ -65,17 +69,21 @@ final class CalendarController extends Controller
 
         $isDefault = !$monthGiven || $grid['is_current'];
         $monthCanonical = $isDefault ? '/calendar' : '/calendar?month=' . $month;
-        $meta = ['canonical' => $view === 'upcoming' ? '/calendar?view=upcoming' : $monthCanonical];
-        if ($view !== 'upcoming' && !$isDefault) {
+        $meta = ['canonical' => $flat ? '/calendar?view=' . $view : $monthCanonical];
+        if ($view === 'podcast') {
+            $meta['title'] = (string) content('calendar', 'podcast.seo_title');
+            $meta['description'] = (string) content('calendar', 'podcast.seo_description');
+        }
+        if (!$flat && !$isDefault) {
             $meta['title'] = $this->tpl((string) content('calendar', 'seo.month_title'), ['month' => $grid['label'], 'count' => $grid['total']]);
             $meta['description'] = $this->tpl((string) content('calendar', 'seo.month_description'), ['month' => $grid['label'], 'count' => $grid['total']]);
         }
         // thin or parameter-made pages stay out of search results: a month far from today holding only the recurring system days, and filtered views
-        if ($sel['param'] !== null || ($view !== 'upcoming' && $this->monthsFrom($todayMonth, $month) > self::THIN_MONTHS && $grid['custom_total'] === 0)) {
+        if ($sel['param'] !== null || (!$flat && $this->monthsFrom($todayMonth, $month) > self::THIN_MONTHS && $grid['custom_total'] === 0)) {
             $meta['robots'] = 'noindex,follow';
         }
 
-        $jsonLd = $view === 'upcoming' ? $this->eventLd($upcoming) : ($view === 'month' || $view === 'list' ? $this->eventLd($this->monthItems($grid)) : []);
+        $jsonLd = $flat ? $this->eventLd($upcoming) : ($view === 'month' || $view === 'list' ? $this->eventLd($this->monthItems($grid)) : []);
 
         return $this->renderPage('calendar', 'web/calendar/index', [
             'grid' => $grid, 'view' => $view, 'upcoming' => $upcoming, 'agenda' => $agenda, 'jsonLd' => $jsonLd,

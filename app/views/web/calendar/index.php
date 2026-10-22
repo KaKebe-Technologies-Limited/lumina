@@ -57,15 +57,15 @@ $config = [
         <?php /* ---- view tabs + print */ ?>
         <div class="cal-toolbar">
             <nav class="cal-tabs" aria-label="<?= e(content('calendar', 'aria.nav_label')) ?>">
-                <?php foreach (['month' => ['views.month_tab', 'calendar'], 'list' => ['views.agenda_tab', 'list'], 'upcoming' => ['views.upcoming_tab', 'clock']] as $v => [$key, $ico]): ?>
+                <?php foreach (['month' => ['views.month_tab', 'calendar'], 'list' => ['views.agenda_tab', 'list'], 'upcoming' => ['views.upcoming_tab', 'clock'], 'podcast' => ['views.podcast_tab', 'mic']] as $v => [$key, $ico]): ?>
                     <a class="cal-tabs__item<?= $view === $v ? ' is-active' : '' ?>" href="<?= e($link(['view' => $v])) ?>"<?= $view === $v ? ' aria-current="page"' : '' ?> data-cal-tab="<?= e($v) ?>"><?= icon($ico, 'icon--sm') ?><span><?= e(content('calendar', $key)) ?></span></a>
                 <?php endforeach; ?>
             </nav>
-            <?php if ($view !== 'upcoming'): ?><button type="button" class="btn btn--ghost btn--sm" hidden data-cal-print><?= icon('file-text', 'icon--sm') ?> <?= e(content('calendar', 'views.print_label')) ?></button><?php endif; ?>
+            <?php if (!in_array($view, ['upcoming', 'podcast'], true)): ?><button type="button" class="btn btn--ghost btn--sm" hidden data-cal-print><?= icon('file-text', 'icon--sm') ?> <?= e(content('calendar', 'views.print_label')) ?></button><?php endif; ?>
         </div>
 
         <div class="cal-shell">
-            <?php if ($view !== 'upcoming'): ?>
+            <?php if (!in_array($view, ['upcoming', 'podcast'], true)): ?>
                 <?php /* ---- month controls (previous / next / today + jump to a month) */ ?>
                 <div class="cal-bar">
                     <div class="cal-bar__nav">
@@ -89,6 +89,7 @@ $config = [
             <?php endif; ?>
 
             <?php /* ---- filters = the colour key (a GET form, so it works without JavaScript) */ ?>
+            <?php if ($view !== 'podcast'): ?>
             <form class="cal-filters" method="get" action="<?= e(url('calendar')) ?>" data-cal-filters>
                 <?php if ($view !== 'upcoming' && $grid['month'] !== $todayMonth): ?><input type="hidden" name="month" value="<?= e($grid['month']) ?>"><?php endif; ?>
                 <?php if ($view !== 'month'): ?><input type="hidden" name="view" value="<?= e($view) ?>"><?php endif; ?>
@@ -99,6 +100,7 @@ $config = [
                     <button class="btn btn--primary btn--sm cal-filters__apply" type="submit"><?= e(content('calendar', 'views.go_label')) ?></button>
                 </p>
             </form>
+            <?php endif; ?>
 
             <p class="visually-hidden" role="status" aria-live="polite" data-cal-status></p>
 
@@ -112,6 +114,24 @@ $config = [
                     <div class="cal-month__agenda" data-cal-agenda><?= partial('partials/calendar-agenda', ['days' => $monthDays, 'emptyText' => $emptyTitle]) ?></div>
                 </div>
                 <p class="cal-hint"><?= e(content('calendar', 'views.time_note')) ?> <span class="cal-hint__keys"><?= e(content('calendar', 'aria.keyboard_hint')) ?></span></p>
+            <?php elseif ($view === 'podcast'): ?>
+                <div class="cal-upcoming-view cal-podcast">
+                    <h2 class="cal-upcoming-view__title"><?= highlight((string) content('calendar', 'podcast.title')) ?></h2>
+                    <?php if (trim((string) content('calendar', 'podcast.intro')) !== ''): ?><p class="cal-podcast__intro"><?= e(content('calendar', 'podcast.intro')) ?></p><?php endif; ?>
+                    <?php if ($upcoming): ?>
+                        <ul class="cal-upcoming cal-upcoming--page cal-podcast__list">
+                            <?php foreach ($upcoming as $o): $watch = preg_match('~^https?://~i', (string) ($o['link_url'] ?? '')) ? (string) $o['link_url'] : ''; ?>
+                                <li class="cal-upcoming__item cal-podcast__item">
+                                    <?= partial('partials/calendar-item', ['o' => $o, 'lead' => 'date', 'summary' => true]) ?>
+                                    <?php if ($watch !== ''): ?><a class="btn btn--gold btn--caps btn--sm cal-podcast__watch" href="<?= e($watch) ?>" target="_blank" rel="noopener noreferrer"><?= icon('mic', 'icon--sm') ?> <?= e($o['link_label'] ?: 'Watch live') ?> <?= icon('external-link', 'icon--sm') ?><span class="visually-hidden">: <?= e($o['title']) ?></span></a><?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php else: ?>
+                        <?= partial('partials/empty-state', ['title' => (string) content('calendar', 'podcast.empty_title'), 'text' => (string) content('calendar', 'podcast.empty_text'), 'icon' => 'mic', 'tag' => 'h3']) ?>
+                    <?php endif; ?>
+                </div>
+                <p class="cal-hint"><?= e(content('calendar', 'views.time_note')) ?></p>
             <?php elseif ($view === 'list'): ?>
                 <div class="cal-listview" data-cal-agenda data-cal-list>
                     <?= partial('partials/calendar-agenda', ['days' => $agenda, 'emptyText' => $emptyTitle . ' ' . ($allChecked ? content('calendar', 'empty.month_text') : content('calendar', 'empty.filtered_text')), 'summary' => true]) ?>
