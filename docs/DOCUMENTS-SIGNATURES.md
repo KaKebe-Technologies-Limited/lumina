@@ -13,7 +13,7 @@ Public downloads (`/reports/download/{id}`) serve the **signed copy** when one e
 
 ## Signatories and signatures
 1. **Documents > Signatories**: add each responsible person once (name, title, picture of the signature: PNG with transparent background is best, JPEG works, up to 1.5 MB). The picture is stored privately and never public by itself.
-2. Attach the person to documents (all policies, or a chosen list) with a role (Approved by, Endorsed by, Reviewed by, Prepared by, Witnessed by), or from one document: row action **Signatures**.
+2. When adding a person, tick the documents they sign and choose the role on each one (Approved by, Endorsed by, Reviewed by, Prepared by, Witnessed by); "Select all policies" ticks the policies. Each person's card lists the documents they sign, the role, and whether it is signed. "Attach to more documents" adds others later; from one document, the row action **Signatures** also adds people.
 3. **Apply signature** per person per document (or "Apply to all waiting documents" on the person). **Withdraw** takes it back.
 4. Per document you can set version, approval authority and date of adoption: they print on the approval page.
 

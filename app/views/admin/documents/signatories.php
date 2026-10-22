@@ -27,6 +27,7 @@ $this->start('scripts'); ?>
                     <?php if (error('signature')): ?><div class="field__error" role="alert"><?= e((string) error('signature')) ?></div><?php endif; ?>
                 </div>
             </div>
+            <?= partial('admin/documents/_doc-picker', ['docs' => $docs, 'roles' => $roles]) ?>
             <div class="form-actions"><button class="btn btn--primary" type="submit"><?= icon('plus', 'icon--sm') ?> Add the person</button></div>
         </form>
     </section>
@@ -65,16 +66,22 @@ $this->start('scripts'); ?>
                         <form method="post" action="<?= e(url('admin/documents/signatories/' . $gid . '/sign-all')) ?>" data-confirm="<?= e('Apply the signature of ' . $g['name'] . ' to the ' . (int) $g['waiting'] . ' documents that await it? Each signed PDF is rebuilt.') ?>"><?= csrf_field() ?>
                             <button class="btn btn--primary btn--sm" type="submit"><?= icon('check', 'icon--sm') ?> Apply to all <?= (int) $g['waiting'] ?> waiting documents</button></form>
                     <?php endif; ?>
+                    <?php $mine = $attached[$gid] ?? []; ?>
+                    <?php if ($mine !== []): ?>
+                        <div class="doc-sig-mine">
+                            <strong>Signs these documents</strong>
+                            <ul>
+                                <?php foreach ($mine as $m): ?><li><a href="<?= e(url('admin/documents/' . (int) $m['document_id'] . '/signatures')) ?>"><?= e($m['title']) ?></a> <span class="badge"><?= e($m['role_label']) ?></span> <?= !empty($m['signed_at']) ? '<span class="badge badge--success">Signed</span>' : '<span class="badge badge--info">Awaiting</span>' ?></li><?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-muted">Not attached to any document yet.</p>
+                    <?php endif; ?>
                     <details class="doc-sig-attach">
-                        <summary class="btn btn--outline btn--sm">Attach to documents</summary>
+                        <summary class="btn btn--outline btn--sm">Attach to more documents</summary>
                         <form method="post" action="<?= e(url('admin/documents/signatories/' . $gid . '/attach')) ?>" novalidate>
                             <?= csrf_field() ?>
-                            <div class="field"><label class="field__label" for="role-<?= $gid ?>">Role on the signature page</label>
-                                <input class="input" id="role-<?= $gid ?>" name="role_label" list="roles-list" value="Approved by" maxlength="80"></div>
-                            <label class="check"><input type="checkbox" name="all_policies" value="1"> <span>All policies</span></label>
-                            <fieldset class="doc-sig-docs"><legend class="visually-hidden">Or choose documents</legend>
-                                <?php foreach ($docs as $d): ?><label class="check"><input type="checkbox" name="documents[]" value="<?= (int) $d['id'] ?>"> <span><?= e($d['title']) ?><?= (int) $d['is_public'] === 1 ? ' <em class="text-muted">(public)</em>' : '' ?></span></label><?php endforeach; ?>
-                            </fieldset>
+                            <?= partial('admin/documents/_doc-picker', ['docs' => $docs, 'roles' => $roles, 'skip' => array_map(static fn(array $m): int => (int) $m['document_id'], $mine)]) ?>
                             <button class="btn btn--primary btn--sm" type="submit">Attach</button>
                         </form>
                     </details>
@@ -86,5 +93,4 @@ $this->start('scripts'); ?>
             </div>
         </section>
     <?php endforeach; ?>
-    <datalist id="roles-list"><?php foreach ($roles as $r): ?><option value="<?= e($r) ?>"><?php endforeach; ?></datalist>
 </div>

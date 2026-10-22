@@ -56,7 +56,11 @@ final class DocumentSignaturesController extends OrgAdminController
              FROM document_signatories g ORDER BY g.is_active DESC, g.name ASC'
         );
         $docs = Database::all("SELECT id, title, category, is_public FROM documents WHERE file_path LIKE '%.pdf' ORDER BY (category = 'policy') DESC, title ASC LIMIT 300");
-        return $this->render('admin/documents/signatories', ['rows' => $rows, 'docs' => $docs, 'roles' => DocumentSignature::ROLES],
+        $attached = [];
+        foreach (Database::all('SELECT s.signatory_id, s.document_id, s.role_label, s.signed_at, d.title FROM document_signatures s JOIN documents d ON d.id = s.document_id ORDER BY d.title ASC') as $a) {
+            $attached[(int) $a['signatory_id']][] = $a;
+        }
+        return $this->render('admin/documents/signatories', ['rows' => $rows, 'docs' => $docs, 'attached' => $attached, 'roles' => DocumentSignature::ROLES],
             ['title' => 'Signatories', 'nav' => 'documents', 'breadcrumbs' => [['Documents', url('admin/documents')], ['Signatories', null]]]);
     }
 
@@ -71,7 +75,9 @@ final class DocumentSignaturesController extends OrgAdminController
             'signature_mime' => $pic['mime'] ?: null, 'signature_updated_at' => $pic['path'] !== '' ? date('Y-m-d H:i:s') : null, 'created_by' => $this->userId(),
         ]);
         $this->audit('document.signatory.create', 'document_signatory', $id, 'Added signatory "' . $data['name'] . '"');
-        Flash::success('"' . $data['name'] . '" was added' . ($pic['path'] === '' ? '. Upload their signature picture to be able to sign documents.' : ' with their signature.'));
+        $n = count($this->attachFromRequest($request, $id));
+        Flash::success('"' . $data['name'] . '" was added' . ($pic['path'] === '' ? '. Upload their signature picture to be able to sign documents.' : ' with their signature.')
+            . ($n > 0 ? ' Attached to ' . $n . ' document' . ($n === 1 ? '' : 's') . ': apply the signature when you are ready.' : ''));
         return $this->redirect($back);
     }
 
@@ -139,32 +145,38 @@ final class DocumentSignaturesController extends OrgAdminController
     {
         $this->gate();
         $g = DocumentSignatory::findOrFail($id);
-        $role = $this->clean($request->string('role_label')) ?: 'Approved by';
-        $ids = [];
-        foreach ((array) $request->input('documents', []) as $v) {
-            if (is_scalar($v) && ctype_digit((string) $v)) {
-                $ids[(int) $v] = true;
-            }
-        }
-        $ids = array_keys($ids);
-        if ($ids === [] && $request->bool('all_policies')) {
-            $ids = array_map(static fn(array $r): int => (int) $r['id'], Database::all("SELECT id FROM documents WHERE category = 'policy' AND file_path LIKE '%.pdf'"));
-        }
-        if ($ids === []) {
-            Flash::warning('Tick at least one document, or choose "All policies".');
+        $done = $this->attachFromRequest($request, $id);
+        if ($done === []) {
+            Flash::warning('Tick at least one document (each with its role), or they were all attached already.');
             return $this->redirect('admin/documents/signatories');
         }
-        $n = 0;
-        foreach ($ids as $docId) {
-            if (Document::find($docId) === null) {
+        Flash::success('"' . $g['name'] . '" was attached to ' . count($done) . ' document' . (count($done) === 1 ? '' : 's') . '. Apply the signatures when you are ready.');
+        return $this->redirect('admin/documents/signatories');
+    }
+
+    /**
+     * Attach a signatory to the documents ticked in the form (documents[] ids), each with its own role (doc_role[id]).
+     * @return array<int,string> document id => role, for the ones newly attached
+     */
+    private function attachFromRequest(Request $request, int $signatoryId): array
+    {
+        $roles = (array) $request->input('doc_role', []);
+        $done = [];
+        foreach ((array) $request->input('documents', []) as $v) {
+            if (!is_scalar($v) || !ctype_digit((string) $v) || isset($done[(int) $v]) || Document::find((int) $v) === null) {
                 continue;
             }
+            $docId = (int) $v;
+            $role = $this->clean(is_scalar($roles[$docId] ?? null) ? (string) $roles[$docId] : '') ?: 'Approved by';
             $order = (int) Database::value('SELECT COALESCE(MAX(sort_order), 0) + 10 FROM document_signatures WHERE document_id = ?', [$docId], 10);
-            $n += Database::execute('INSERT IGNORE INTO document_signatures (document_id, signatory_id, role_label, sort_order) VALUES (?, ?, ?, ?)', [$docId, $id, mb_substr($role, 0, 80), $order]) > 0 ? 1 : 0;
+            if (Database::execute('INSERT IGNORE INTO document_signatures (document_id, signatory_id, role_label, sort_order) VALUES (?, ?, ?, ?)', [$docId, $signatoryId, mb_substr($role, 0, 80), $order]) > 0) {
+                $done[$docId] = $role;
+            }
         }
-        $this->audit('document.signature.attach', 'document_signatory', $id, 'Attached "' . $g['name'] . '" (' . $role . ') to ' . $n . ' document(s)', ['documents' => $ids]);
-        Flash::success('"' . $g['name'] . '" was attached to ' . $n . ' document' . ($n === 1 ? '' : 's') . ' as "' . $role . '"' . ($n < count($ids) ? ' (the others already had them)' : '') . '. Apply the signatures when you are ready.');
-        return $this->redirect('admin/documents/signatories');
+        if ($done !== []) {
+            $this->audit('document.signature.attach', 'document_signatory', $signatoryId, 'Attached a signatory to ' . count($done) . ' document(s)', ['documents' => $done]);
+        }
+        return $done;
     }
 
     /** Apply this signatory's signature to every attached document where it is still awaited. */
