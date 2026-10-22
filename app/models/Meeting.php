@@ -28,5 +28,13 @@ final class Meeting extends Model
         'phone'       => 'Phone call',
         'in_person'   => 'In person',
         'other'       => 'Other',
+        'podcast'        => 'Podcast / live broadcast (any link)',
+        'youtube_live'   => 'YouTube Live',
+        'facebook_live'  => 'Facebook Live',
+        'tiktok_live'    => 'TikTok Live',
+        'instagram_live' => 'Instagram Live',
     ];
+
+    /** Platforms that are a public podcast or live broadcast: the link is for viewers, so the meeting is shown on the website with a "Watch live" button. */
+    public const BROADCAST = ['podcast', 'youtube_live', 'facebook_live', 'tiktok_live', 'instagram_live'];
 }

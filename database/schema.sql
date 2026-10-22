@@ -2198,3 +2198,10 @@ SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `documents` ADD COLUMN `s
 PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
+
+-- Podcast / live broadcast meetings: new platform values (additive, idempotent).
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'meetings' AND column_name = 'platform' AND column_type LIKE '%tiktok_live%');
+SET @lumina_ddl = IF(@lumina_has_col = 0 AND (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'meetings') = 1, 'ALTER TABLE `meetings` MODIFY COLUMN `platform` ENUM(''zoom'',''google_meet'',''teams'',''jitsi'',''whatsapp'',''phone'',''in_person'',''other'',''podcast'',''youtube_live'',''facebook_live'',''tiktok_live'',''instagram_live'') NOT NULL DEFAULT ''other''', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;

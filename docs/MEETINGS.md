@@ -322,3 +322,8 @@ If two agents need the same new helper each writes its own inside its own files;
 2. Check the wording: Admin > Pages > Meetings (e-mails and invitee page) and Pages > Contact > Request a meeting; topics in Settings > Meetings.
 3. Add the cron line for `bin/meetings-send.php` (reminders and finishing interrupted sends).
 4. Confirm the legal position for using members' e-mail addresses (section 13) and update the privacy notice if needed.
+
+
+## Podcast / live broadcast meetings
+
+Platforms `podcast` (any live or podcast link), `youtube_live`, `facebook_live`, `tiktok_live`, `instagram_live` (`Meeting::BROADCAST`). Choose one in the schedule form and paste the link (a Zoom or Google Meet link may be used with `podcast` too). A broadcast meeting is **always public with its link shown** (the form's Zoom-bombing choice does not apply: the link is for viewers). Its calendar entry is filed under the calendar type **Podcast / live broadcast** (slug `podcast`, created on first use, editable under Calendar types) and the entry page has a **Watch live** button. When the meeting is completed (or cancelled) the button disappears, as for any meeting. The database change (new `platform` values) is in `database/schema.sql`, additive and idempotent. Test: `bin/selftest-podcast.php`.

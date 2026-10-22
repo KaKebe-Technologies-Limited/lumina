@@ -336,8 +336,11 @@ final class MeetingService
             $errors['visibility'] = 'Choose who can see this meeting.';
             $vis = 'private';
         }
+        if (in_array($platform, Meeting::BROADCAST, true)) {
+            $vis = 'public';                                          // a podcast / live broadcast is for viewers: it is public and its link is shown ("Watch live")
+        }
         $row['visibility'] = $vis;
-        $row['show_join_link_public'] = ($vis === 'public' && $bool($in['show_join_link_public'] ?? null, false)) ? 1 : 0;
+        $row['show_join_link_public'] = ($vis === 'public' && (in_array($platform, Meeting::BROADCAST, true) || $bool($in['show_join_link_public'] ?? null, false))) ? 1 : 0;
         $row['reminder_24h'] = $bool($in['reminder_24h'] ?? null, false) ? 1 : 0;
         $row['reminder_1h'] = $bool($in['reminder_1h'] ?? null, false) ? 1 : 0;
         $row['allow_rsvp'] = $bool($in['allow_rsvp'] ?? null, true) ? 1 : 0;
@@ -355,7 +358,9 @@ final class MeetingService
         $url = trim((string) ($m['join_url'] ?? ''));
         $dial = trim((string) ($m['dial_in'] ?? ''));
         $loc = trim((string) ($m['location'] ?? ''));
-        if (in_array($platform, self::ONLINE_PLATFORMS, true) && $url === '') {
+        if (in_array($platform, Meeting::BROADCAST, true) && $url === '') {
+            $p['join_url'] = 'Add the link people will use to watch ' . self::platformLabel($platform) . '.';
+        } elseif (in_array($platform, self::ONLINE_PLATFORMS, true) && $url === '') {
             $p['join_url'] = 'Add the meeting link for ' . self::platformLabel($platform) . ' (or press "Generate a free private video room").';
         } elseif ($platform === 'in_person' && $loc === '') {
             $p['location'] = 'Enter the address where people should come.';
@@ -393,6 +398,18 @@ final class MeetingService
         return (int) $t['id'];
     }
 
+    /** The id of the calendar type "Podcast / live broadcast" (slug `podcast`) used by podcast and live-stream meetings; created on first use. */
+    public static function podcastTypeId(): int
+    {
+        $t = CalendarService::typeBySlug('podcast');
+        if ($t === null) {
+            Database::execute("INSERT IGNORE INTO calendar_types (slug, name, color, icon, sort_order, is_active, show_on_public, is_system) VALUES ('podcast', 'Podcast / live broadcast', '#c0392b', 'mic', 55, 1, 1, 0)");
+            CalendarService::flush();
+            $t = CalendarService::typeBySlug('podcast');
+        }
+        return $t !== null ? (int) $t['id'] : self::calendarTypeId();
+    }
+
     /**
      * The calendar entry input for a meeting row. Public only when the meeting is public AND scheduled / completed; cancelled meetings are
      * inactive; a draft is never public. The entry carries NO description, location or attendee data: title, date and time only, plus the join
@@ -405,12 +422,12 @@ final class MeetingService
         // the join link is advertised only while the meeting is still to come: a finished meeting must not keep a (possibly reusable) room on the public calendar, feed and .ics
         $link = ($public && $m['status'] === 'scheduled' && (int) $m['show_join_link_public'] === 1 && preg_match('~^https://~i', (string) $m['join_url']) === 1) ? (string) $m['join_url'] : '';
         return [
-            'title' => $m['title'], 'type_id' => self::calendarTypeId(), 'description' => '', 'location' => '', 'all_day' => '0',
+            'title' => $m['title'], 'type_id' => in_array((string) $m['platform'], Meeting::BROADCAST, true) ? self::podcastTypeId() : self::calendarTypeId(), 'description' => '', 'location' => '', 'all_day' => '0',
             'start_date' => MeetingTime::date((string) $m['start_at']), 'start_time' => MeetingTime::time((string) $m['start_at']), 'end_time' => MeetingTime::time((string) $m['end_at']),
             // a meeting that ends after midnight is one entry that runs into the next day (without this the calendar refuses it: "end before start")
             'end_date' => MeetingTime::date((string) $m['end_at']) !== MeetingTime::date((string) $m['start_at']) ? MeetingTime::date((string) $m['end_at']) : '',
             'recurrence' => 'none', 'is_public' => $public ? '1' : '0', 'is_active' => $m['status'] === 'cancelled' ? '0' : '1',
-            'link_url' => $link, 'link_label' => $link !== '' ? self::JOIN_LABEL_TOKEN : '',
+            'link_url' => $link, 'link_label' => $link !== '' ? (in_array((string) $m['platform'], Meeting::BROADCAST, true) ? 'Watch live' : self::JOIN_LABEL_TOKEN) : '',
         ];
     }
 

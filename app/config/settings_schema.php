@@ -196,8 +196,8 @@ return [
             'fields' => [
                 'meeting_default_duration' => ['label' => 'Default length of a meeting (minutes)', 'type' => 'select', 'default' => '60', 'rules' => 'required|in:15,30,45,60,90',
                     'options' => ['15' => '15 minutes', '30' => '30 minutes', '45' => '45 minutes', '60' => '1 hour', '90' => '1 hour 30 minutes']],
-                'meeting_default_platform' => ['label' => 'Default meeting type', 'type' => 'select', 'default' => 'google_meet', 'rules' => 'required|in:zoom,google_meet,teams,jitsi,whatsapp,phone,in_person,other',
-                    'options' => ['zoom' => 'Zoom', 'google_meet' => 'Google Meet', 'teams' => 'Microsoft Teams', 'jitsi' => 'Jitsi (free video room)', 'whatsapp' => 'WhatsApp call', 'phone' => 'Phone call', 'in_person' => 'In person', 'other' => 'Other']],
+                'meeting_default_platform' => ['label' => 'Default meeting type', 'type' => 'select', 'default' => 'google_meet', 'rules' => 'required|in:zoom,google_meet,teams,jitsi,whatsapp,phone,in_person,other,podcast,youtube_live,facebook_live,tiktok_live,instagram_live',
+                    'options' => ['zoom' => 'Zoom', 'google_meet' => 'Google Meet', 'teams' => 'Microsoft Teams', 'jitsi' => 'Jitsi (free video room)', 'whatsapp' => 'WhatsApp call', 'phone' => 'Phone call', 'in_person' => 'In person', 'other' => 'Other', 'podcast' => 'Podcast / live broadcast', 'youtube_live' => 'YouTube Live', 'facebook_live' => 'Facebook Live', 'tiktok_live' => 'TikTok Live', 'instagram_live' => 'Instagram Live']],
                 'meeting_from_note' => ['label' => 'Extra line at the bottom of invitations', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:500',
                     'help' => 'Optional, for example how to reach the office or a reminder to be on time. Leave empty for none.'],
                 'meeting_request_enabled' => ['label' => 'Accept meeting requests on the Contact page', 'type' => 'boolean', 'default' => '1',

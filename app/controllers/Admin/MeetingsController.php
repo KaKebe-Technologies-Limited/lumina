@@ -63,6 +63,21 @@ final class MeetingsController extends AdminController
         'other' => ['icon' => 'link', 'link' => 'show', 'passcode' => 'show', 'dial' => 'show', 'place' => 'show', 'placeholder' => 'https://...',
             'help' => 'Paste any https link, or a phone number or address.',
             'steps' => ['Use this for any other way of meeting.', 'Give at least one of: a link, a phone number or an address.']],
+        'podcast' => ['icon' => 'mic', 'link' => 'required', 'passcode' => 'hide', 'dial' => 'hide', 'place' => 'hide', 'placeholder' => 'https://... (any live or podcast link)',
+            'help' => 'Paste any live or podcast link: a Zoom or Google Meet link people may join, a YouTube, Facebook or TikTok live, or a podcast page. It is shown on the website as a podcast with a Watch live button.',
+            'steps' => ['Start or schedule your live session in the app you use and copy its link.', 'Paste the link here. The meeting is made public automatically, with the link.', 'The Watch live button disappears from the website once the meeting is marked completed.']],
+        'youtube_live' => ['icon' => 'video', 'link' => 'required', 'passcode' => 'hide', 'dial' => 'hide', 'place' => 'hide', 'placeholder' => 'https://www.youtube.com/live/...',
+            'help' => 'Paste the YouTube Live (or premiere) link. It is shown on the website as a podcast with a Watch live button.',
+            'steps' => ['In YouTube Studio choose Create > Go live (or Schedule a stream).', 'Copy the watch link of the stream.', 'Paste it here.']],
+        'facebook_live' => ['icon' => 'video', 'link' => 'required', 'passcode' => 'hide', 'dial' => 'hide', 'place' => 'hide', 'placeholder' => 'https://www.facebook.com/.../videos/... or the page link',
+            'help' => 'Paste the Facebook Live link (or your page link if the video link is not ready yet). It is shown on the website as a podcast with a Watch live button.',
+            'steps' => ['Schedule the live video on your Facebook page.', 'Copy the link of the scheduled video or of the page.', 'Paste it here.']],
+        'tiktok_live' => ['icon' => 'video', 'link' => 'required', 'passcode' => 'hide', 'dial' => 'hide', 'place' => 'hide', 'placeholder' => 'https://www.tiktok.com/@yourhandle/live',
+            'help' => 'Paste the link of your TikTok profile live page. It is shown on the website as a podcast with a Watch live button.',
+            'steps' => ['Open your TikTok profile and copy its link, then add /live at the end.', 'Paste it here.']],
+        'instagram_live' => ['icon' => 'video', 'link' => 'required', 'passcode' => 'hide', 'dial' => 'hide', 'place' => 'hide', 'placeholder' => 'https://www.instagram.com/yourhandle/live',
+            'help' => 'Paste your Instagram profile link. It is shown on the website as a podcast with a Watch live button.',
+            'steps' => ['Open your Instagram profile and copy its link.', 'Paste it here.']],
     ];
 
     // ------------------------------------------------------------------ list
