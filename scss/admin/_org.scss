@@ -227,3 +227,18 @@
         .org-stack { align-items: flex-end; text-align: right; }
     }
 }
+
+// Document signatures (Documents > Signatories / Signatures)
+.doc-sig-thumb { display: block; max-width: 140px; max-height: 48px; background: #fff; border: 1px solid var(--border, #d9dde3); border-radius: 6px; padding: 2px; }
+.doc-sig-person.is-off { opacity: .65; }
+.doc-sig-person__body { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); align-items: start; }
+.doc-sig-person__pic { display: flex; align-items: center; justify-content: center; min-height: 90px; padding: .5rem; background: #fff; border: 1px dashed var(--border, #c9ced6); border-radius: 8px; }
+.doc-sig-person__pic img { max-width: 100%; max-height: 90px; }
+.doc-sig-person__actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: center; }
+.doc-sig-person__actions > p { margin: 0; flex: 1 1 16rem; }
+.doc-sig-attach { flex: 1 1 100%; }
+.doc-sig-attach > summary { display: inline-flex; cursor: pointer; }
+.doc-sig-attach form { margin-top: .75rem; display: grid; gap: .6rem; }
+.doc-sig-docs { border: 0; padding: 0; margin: 0; display: grid; gap: .35rem; max-height: 16rem; overflow: auto; }
+.doc-sig-add { margin-top: 1.25rem; display: grid; gap: .75rem; }
+@media (max-width: 720px) { .doc-sig-person__body { grid-template-columns: 1fr; } }

@@ -12,8 +12,17 @@ $aria = static fn(string $col): string => $sort === $col ? ($dir === 'asc' ? 'as
     <?= partial('partials/admin/page-header', [
         'title'    => 'Documents',
         'subtitle' => 'Reports and downloads for the public Reports & Downloads page. Files are stored privately and only served while a document is active and public.',
-        'actions'  => [['label' => 'Upload document', 'url' => url('admin/documents/create'), 'icon' => 'upload']],
+        'actions'  => array_merge(
+            [['label' => 'Upload document', 'url' => url('admin/documents/create'), 'icon' => 'upload']],
+            !empty($signing) && can('documents.sign') ? [['label' => 'Signatories', 'url' => url('admin/documents/signatories'), 'class' => 'btn--outline', 'icon' => 'users']] : []
+        ),
     ]) ?>
+    <?php if (!empty($packReady) && can('documents.sign')): ?>
+        <form class="opp-notice" method="post" action="<?= e(url('admin/documents/import-pack')) ?>"><?= csrf_field() ?>
+            The policy pack is on the server. <button class="btn btn--primary btn--sm" type="submit"><?= icon('upload', 'icon--sm') ?> Import the policy pack</button>
+            <span class="text-muted">Adds each policy as a private document. Ones already imported are skipped.</span>
+        </form>
+    <?php endif; ?>
 
     <?php if ($total === 0): ?>
         <?= partial('partials/empty-state', [
@@ -114,6 +123,9 @@ $aria = static fn(string $col): string => $sort === $col ? ($dir === 'asc' ? 'as
                                 <td data-label="Category"><?= e($categories[$d['category']] ?? label_from($d['category'])) ?></td>
                                 <td data-label="Year"><?= $d['year'] !== null ? (int) $d['year'] : '<span class="text-muted">&mdash;</span>' ?></td>
                                 <td data-label="Website">
+                                    <?php if (!empty($d['sig'])): ?>
+                                        <span class="badge badge--<?= $d['sig']['signed'] === $d['sig']['total'] ? 'success' : 'info' ?>" title="Signatures"><?= icon('check-circle', 'icon--sm') ?> Signed <?= (int) $d['sig']['signed'] ?>/<?= (int) $d['sig']['total'] ?></span><br>
+                                    <?php endif; ?>
                                     <?php if (!$isOn): ?>
                                         <?= partial('partials/admin/status-badge', ['status' => 'inactive', 'label' => 'Inactive']) ?>
                                     <?php elseif ($isPublic): ?>
@@ -127,6 +139,17 @@ $aria = static fn(string $col): string => $sort === $col ? ($dir === 'asc' ? 'as
                                     <div class="table__actions">
                                         <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/documents/' . (int) $d['id'] . '/download')) ?>" title="Download <?= e($d['title']) ?> (does not count as a public download)"><?= icon('download', 'icon--sm') ?><span class="visually-hidden">Download <?= e($d['title']) ?></span></a>
                                         <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/documents/' . (int) $d['id'] . '/edit')) ?>" title="Edit <?= e($d['title']) ?>"><?= icon('edit', 'icon--sm') ?><span class="visually-hidden">Edit <?= e($d['title']) ?></span></a>
+                                        <?php if (!empty($signing) && can('documents.sign')): ?>
+                                            <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/documents/' . (int) $d['id'] . '/signatures')) ?>" title="Signatures of <?= e($d['title']) ?>"><?= icon('pen-tool', 'icon--sm') ?><span class="visually-hidden">Signatures of <?= e($d['title']) ?></span></a>
+                                        <?php endif; ?>
+                                        <?php if (can('content.manage')): ?>
+                                            <?= partial('admin/org/_row-action', [
+                                                'action' => url('admin/documents/' . (int) $d['id'] . '/visibility'),
+                                                'label'  => ($isPublic ? 'Make private: ' : 'Make public: ') . $d['title'],
+                                                'icon'   => $isPublic ? 'lock' : 'globe',
+                                                'confirm' => $isPublic ? '' : 'Make "' . $d['title'] . '" public? Anyone can then download it' . (!empty($d['signed_path']) ? ' (the signed copy).' : ' (it is not signed).'),
+                                            ]) ?>
+                                        <?php endif; ?>
                                         <?= partial('admin/org/_row-action', [
                                             'action' => url('admin/documents/' . (int) $d['id'] . '/toggle'),
                                             'label'  => ($isOn ? 'Deactivate ' : 'Activate ') . $d['title'],

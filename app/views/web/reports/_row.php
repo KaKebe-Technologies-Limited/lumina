@@ -18,7 +18,8 @@ $cat = (string) ($categoryLabels[$doc['category']] ?? '');
             <?php if ($cat !== ''): ?><span class="document-row__cat"><?= e($cat) ?></span><?php endif; ?>
             <?php if (!empty($doc['year'])): ?><span><?= (int) $doc['year'] ?></span><?php endif; ?>
             <?php if ($ext !== ''): ?><span class="visually-hidden"><?= e($ext) ?></span><?php endif; ?>
-            <?php if (!empty($doc['file_size'])): ?><span><?= e(human_filesize((int) $doc['file_size'])) ?></span><?php endif; ?>
+            <?php if (!empty($doc['signed_path'])): ?><span class="document-row__cat"><?= icon('check-circle', 'icon--sm') ?> Signed<?= !empty($doc['adoption_date']) ? ' &middot; adopted ' . e(format_date($doc['adoption_date'], 'j M Y')) : '' ?></span><?php endif; ?>
+            <?php if (!empty($doc['file_size'])): ?><span><?= e(human_filesize((int) (!empty($doc['signed_path']) && !empty($doc['signed_size']) ? $doc['signed_size'] : $doc['file_size']))) ?></span><?php endif; ?>
             <?php if ($published !== '' && trim((string) $publishedLabel) !== ''): ?><span><?= e($publishedLabel) ?> <time datetime="<?= e(format_date($doc['published_at'], 'Y-m-d')) ?>"><?= e($published) ?></time></span><?php endif; ?>
         </div>
         <?php if (trim((string) ($doc['description'] ?? '')) !== ''): ?><p class="document-row__desc"><?= e($doc['description']) ?></p><?php endif; ?>

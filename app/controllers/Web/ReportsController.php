@@ -82,12 +82,25 @@ final class ReportsController extends OrgPublicController
             throw new HttpException(404);
         }
         $path = (string) $doc['file_path'];
+        $signed = trim((string) ($doc['signed_path'] ?? ''));
+        if ($signed !== '') {
+            try {
+                Uploader::privatePath($signed);
+                $path = $signed;
+            } catch (\Throwable) {
+                $signed = '';
+            }
+        }
         Uploader::privatePath($path);                       // throws 404 when the stored path is malformed or the file is missing
 
         if ($request->isMethod('GET')) {
             Database::execute('UPDATE documents SET download_count = download_count + 1 WHERE id = ?', [$id]);
         }
-        return Uploader::download($path, $this->downloadName($doc));
+        $name = $this->downloadName($doc);
+        if ($signed !== '' && $path === $signed) {
+            $name = preg_replace('/\.pdf$/i', '', $name) . '-signed.pdf';
+        }
+        return Uploader::download($path, $name);
     }
 
     /** A clean file name for the browser's save dialog: the original name when known, else the title; always with the real extension. */

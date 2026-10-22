@@ -2135,6 +2135,79 @@ CREATE TABLE IF NOT EXISTS `ambassador_applications` (
   KEY `ix_ambassadors_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ---------------------------------------------------------------------------------------------------------------------------------------
+-- DOCUMENT SIGNATURES (Admin > Documents > Signatures): the people responsible for a policy upload a signature image once (document_signatories), an administrator attaches them
+-- to a document with a role (document_signatures) and applies the signature; the system then builds a SIGNED COPY of the PDF with an "Approval and signatures" page added at
+-- the end (documents.signed_path). The original file is never changed. Public visitors get the signed copy when there is one.
+CREATE TABLE IF NOT EXISTS `document_signatories` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(150) NOT NULL,
+  `title` VARCHAR(190) NULL,                                      -- for example Chairperson of the Board
+  `signature_path` VARCHAR(255) NULL,                             -- private image (PNG or JPEG) under storage/private
+  `signature_mime` VARCHAR(40) NULL,
+  `signature_updated_at` DATETIME NULL,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_document_signatories_active` (`is_active`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `document_signatures` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `document_id` INT UNSIGNED NOT NULL,
+  `signatory_id` INT UNSIGNED NOT NULL,
+  `role_label` VARCHAR(80) NOT NULL DEFAULT 'Approved by',
+  `sort_order` INT NOT NULL DEFAULT 10,
+  `signed_at` DATETIME NULL,                                      -- NULL = awaiting signature
+  `signed_by` INT UNSIGNED NULL,                                  -- the administrator who applied it
+  `signed_ip` VARCHAR(45) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_document_signature` (`document_id`, `signatory_id`),
+  KEY `ix_document_signatures_signatory` (`signatory_id`),
+  CONSTRAINT `fk_document_signatures_document` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_document_signatures_signatory` FOREIGN KEY (`signatory_id`) REFERENCES `document_signatories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Approval details and the signed copy, on the document itself (additive).
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'documents' AND column_name = 'version');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `documents` ADD COLUMN `version` VARCHAR(20) NULL AFTER `description`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'documents' AND column_name = 'approval_authority');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `documents` ADD COLUMN `approval_authority` VARCHAR(120) NULL AFTER `version`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'documents' AND column_name = 'adoption_date');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `documents` ADD COLUMN `adoption_date` DATE NULL AFTER `approval_authority`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'documents' AND column_name = 'signed_path');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `documents` ADD COLUMN `signed_path` VARCHAR(255) NULL AFTER `file_size`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'documents' AND column_name = 'signed_size');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `documents` ADD COLUMN `signed_size` INT UNSIGNED NULL AFTER `signed_path`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'documents' AND column_name = 'signed_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `documents` ADD COLUMN `signed_at` DATETIME NULL AFTER `signed_size`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'documents' AND column_name = 'signed_mode');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `documents` ADD COLUMN `signed_mode` VARCHAR(10) NULL AFTER `signed_at`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 
 -- ======================================================================
 -- PART: seed.sql

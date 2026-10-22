@@ -19,6 +19,7 @@ return [
             'pages.delete'   => ['Delete custom pages', null],
             'content.manage' => ['Manage content items', 'Programs, projects, blog and news posts, activities, gallery, jobs, opportunities (add, upload, approve, and the websites they are read from), team, partners, documents, events, stories, FAQs and impact figures.'],
             'content.delete' => ['Delete content items', null],
+            'documents.sign' => ['Sign documents', 'Add the people responsible for a policy and their signature images, apply their signatures and create the signed PDF that visitors download. Give this to trusted administrators only.'],
             'menus.manage'   => ['Change the website menus', null],
         ],
     ],

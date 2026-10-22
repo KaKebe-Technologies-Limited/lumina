@@ -92,8 +92,10 @@ final class DocumentController extends OrgAdminController
         }
 
         $pager = $this->paged('documents' . $this->whereSql($where), $params, '*', $this->orderSql($this->sortable(), $st['sort'], $st['dir']));
+        $sig = \App\Services\Documents\DocumentSigning::counts(array_map('intval', array_column($pager->items, 'id')));
         foreach ($pager->items as &$item) {
             $item['file_ok'] = $this->fileExists((string) $item['file_path']);
+            $item['sig'] = $sig[(int) $item['id']] ?? null;
         }
         unset($item);
 
@@ -112,6 +114,8 @@ final class DocumentController extends OrgAdminController
             'total'      => Document::count(),
             'years'      => $years,
             'categories' => Document::CATEGORIES,
+            'signing'    => \App\Services\Documents\DocumentSigning::ready(),
+            'packReady'  => \App\Services\Documents\DocumentSigning::ready() && is_dir(\App\Services\Documents\DocumentSigning::packDir()),
         ], ['title' => 'Documents', 'nav' => 'documents', 'breadcrumbs' => [['Documents', null]]]);
     }
 

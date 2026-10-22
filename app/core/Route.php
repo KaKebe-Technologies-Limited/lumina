@@ -14,6 +14,7 @@ final class Route
         'qid'   => '\d+',
         'courseId' => '\d+',
         'eid'   => '\d+',       // LAF Academy: challenge entry id
+        'sigid' => '\d+',      // a signature row of a document (docs/DOCUMENTS-SIGNATURES.md)
         'part'  => '[a-z0-9]+',   // LAF Academy: which file of a record (cv, photo, project, or a position number)
         'slug'  => '[a-z0-9]+(?:-[a-z0-9]+)*',
         'token' => '[A-Za-z0-9_-]+',

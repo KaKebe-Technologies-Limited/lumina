@@ -150,6 +150,7 @@ return [
         'shop.settings'     => ['admin'],           // shop settings, delivery and PAYMENT settings (holds the payment-gateway secrets): admin only by default
         'shop.export'       => ['admin'],           // download shop orders as CSV
         'shop.delete'       => ['admin'],           // delete products and orders
+        'documents.sign'    => ['admin'],           // DOCUMENTS: manage signatories and their signature images, apply signatures and build signed PDFs (docs/DOCUMENTS-SIGNATURES.md): admin only by default
         'academy.manage'    => ['admin'],           // LAF ACADEMY, everything: all courses, learners, certificates, facilitators, settings, starter courses (docs/ACADEMY.md)
         'academy.teach'     => ['admin'],           // LAF ACADEMY, teaching: the facilitator role. Own courses (lessons, quizzes), virtual classes, the learners of those courses
     ],

@@ -7,6 +7,7 @@
  */
 
 use App\Controllers\Admin\DocumentController;
+use App\Controllers\Admin\DocumentSignaturesController;
 use App\Controllers\Admin\EventController;
 use App\Controllers\Admin\EventRegistrationController;
 use App\Controllers\Admin\PartnerController;
@@ -51,6 +52,26 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth']], function ($route
     $router->post('/documents/{id}', [DocumentController::class, 'update'])->name('admin.documents.update');
     $router->post('/documents/{id}/toggle', [DocumentController::class, 'toggle'])->name('admin.documents.toggle');
     $router->post('/documents/{id}/delete', [DocumentController::class, 'destroy'])->name('admin.documents.delete');
+
+    // ---- Document signatures (docs/DOCUMENTS-SIGNATURES.md): signatories and their pictures, signing a document, the public / private switch, the policy pack (ability documents.sign) ----
+    $router->get('/documents/signatories', [DocumentSignaturesController::class, 'signatories'])->name('admin.documents.signatories');
+    $router->post('/documents/signatories', [DocumentSignaturesController::class, 'storeSignatory'])->middleware('throttle:60,60')->name('admin.documents.signatories.store');
+    $router->post('/documents/signatories/{id}', [DocumentSignaturesController::class, 'updateSignatory'])->middleware('throttle:60,60')->name('admin.documents.signatories.update');
+    $router->get('/documents/signatories/{id}/signature', [DocumentSignaturesController::class, 'signatureImage'])->middleware('throttle:120,60')->name('admin.documents.signatories.image');
+    $router->post('/documents/signatories/{id}/toggle', [DocumentSignaturesController::class, 'toggleSignatory'])->name('admin.documents.signatories.toggle');
+    $router->post('/documents/signatories/{id}/delete', [DocumentSignaturesController::class, 'deleteSignatory'])->name('admin.documents.signatories.delete');
+    $router->post('/documents/signatories/{id}/attach', [DocumentSignaturesController::class, 'attach'])->name('admin.documents.signatories.attach');
+    $router->post('/documents/signatories/{id}/sign-all', [DocumentSignaturesController::class, 'signAll'])->middleware('throttle:10,60')->name('admin.documents.signatories.sign_all');
+    $router->post('/documents/import-pack', [DocumentSignaturesController::class, 'importPack'])->middleware('throttle:10,60')->name('admin.documents.import_pack');
+    $router->get('/documents/{id}/signatures', [DocumentSignaturesController::class, 'sign'])->name('admin.documents.signatures');
+    $router->post('/documents/{id}/signatures/details', [DocumentSignaturesController::class, 'details'])->name('admin.documents.signatures.details');
+    $router->post('/documents/{id}/signatures/add', [DocumentSignaturesController::class, 'addRow'])->name('admin.documents.signatures.add');
+    $router->post('/documents/{id}/signatures/generate', [DocumentSignaturesController::class, 'generate'])->middleware('throttle:30,60')->name('admin.documents.signatures.generate');
+    $router->post('/documents/{id}/signatures/{sigid}/apply', [DocumentSignaturesController::class, 'apply'])->middleware('throttle:60,60')->name('admin.documents.signatures.apply');
+    $router->post('/documents/{id}/signatures/{sigid}/unsign', [DocumentSignaturesController::class, 'unsign'])->name('admin.documents.signatures.unsign');
+    $router->post('/documents/{id}/signatures/{sigid}/delete', [DocumentSignaturesController::class, 'removeRow'])->name('admin.documents.signatures.delete');
+    $router->get('/documents/{id}/signed', [DocumentSignaturesController::class, 'downloadSigned'])->middleware('throttle:60,60')->name('admin.documents.signed');
+    $router->post('/documents/{id}/visibility', [DocumentSignaturesController::class, 'visibility'])->name('admin.documents.visibility');
 
     // ---- Events -------------------------------------------------------------------------------------------------
     $router->get('/events', [EventController::class, 'index'])->name('admin.events.index');
