@@ -2085,3 +2085,43 @@ SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_certificates` AD
 PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
+
+-- ---------------------------------------------------------------------------------------------------------------------------------------
+-- AMBASSADORS: people anywhere in the world who offer to raise funds and lobby for the foundation (page /involvement/ambassadors, Admin > Inbox > Ambassadors).
+-- The yearly pledge is money (annual_amount in currency), in-kind items (computers, materials: inkind_items + inkind_notes) and/or something else (other_text).
+CREATE TABLE IF NOT EXISTS `ambassador_applications` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(150) NOT NULL,
+  `email` VARCHAR(190) NOT NULL,
+  `phone` VARCHAR(40) NULL,
+  `region` VARCHAR(40) NOT NULL,                                  -- a key of App\Services\Web\Countries::REGIONS
+  `country` VARCHAR(80) NOT NULL,
+  `city` VARCHAR(120) NULL,
+  `occupation` VARCHAR(190) NULL,
+  `organisation` VARCHAR(190) NULL,
+  `profile_url` VARCHAR(300) NULL,                                -- LinkedIn, website ...
+  `roles` TEXT NULL,                                              -- JSON list of the ways they can help (fundraise, lobby, ...)
+  `pledge_types` VARCHAR(60) NOT NULL DEFAULT '',                 -- comma list of: money, inkind, other
+  `annual_amount` DECIMAL(14,2) NULL,                             -- what they can raise / give in a year
+  `currency` CHAR(3) NULL,
+  `inkind_items` TEXT NULL,                                       -- JSON list of the kinds of items (computers, books ...)
+  `inkind_notes` TEXT NULL,                                       -- quantity, condition, estimated value, how it would be shipped
+  `other_text` TEXT NULL,                                         -- anything else they can lobby for or donate
+  `network` TEXT NULL,                                            -- who they can reach
+  `motivation` TEXT NULL,
+  `availability` VARCHAR(80) NULL,
+  `public_ok` TINYINT(1) NOT NULL DEFAULT 0,                      -- may the name and country be shown on the website once approved
+  `consent_at` DATETIME NULL,
+  `status` ENUM('new','reviewing','approved','on_hold','declined') NOT NULL DEFAULT 'new',
+  `admin_notes` TEXT NULL,
+  `reviewed_by` INT UNSIGNED NULL,
+  `reviewed_at` DATETIME NULL,
+  `ip` VARCHAR(45) NULL,
+  `user_agent` VARCHAR(255) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_ambassadors_status` (`status`, `created_at`),
+  KEY `ix_ambassadors_region` (`region`, `country`),
+  KEY `ix_ambassadors_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

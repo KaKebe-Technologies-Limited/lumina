@@ -232,6 +232,7 @@ require __DIR__ . '/selftest-academy.php';               // LAF Academy: quiz te
 require __DIR__ . '/selftest-academy-admin.php';         // LAF Academy admin: courses, curriculum, lessons + handouts, quiz editor, classes, learners, certificates, facilitator accounts and the facilitator limits (removes its own test data)
 require __DIR__ . '/selftest-academy-challenges.php';     // LAF Academy: volunteer facilitator applications (files, review, approval creates the account) and challenges (quiz, innovation, hackathon: applying, timed quiz, judges, automatic ranking, winners, certificates, winners of the month) (removes its own test data)
 require __DIR__ . '/selftest-program-status.php';        // Programs: the stage (planned / ongoing / completed) changed in one click from the admin list and shown at once on the public pages (removes its own test data)
+require __DIR__ . '/selftest-ambassadors.php';           // Ambassadors page: regions and countries, the sign-up form and every validation rule, storing and e-mailing an application, the public list of approved ambassadors, admin review / export / delete and access (removes its own test data)
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);

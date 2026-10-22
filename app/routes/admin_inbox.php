@@ -11,6 +11,7 @@
  *   /admin/donations       GET index | GET create | POST (store) | GET export | GET {id}/edit | POST {id} | POST {id}/status | GET {id}/receipt | POST {id}/delete
  */
 
+use App\Controllers\Admin\AmbassadorsController;
 use App\Controllers\Admin\ApplicationController;
 use App\Controllers\Admin\ContactMessageController;
 use App\Controllers\Admin\DonationController;
@@ -43,6 +44,13 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth']], function ($route
     $router->get('/involvement/{id}', [InvolvementController::class, 'show'])->name('admin.involvement.show');
     $router->post('/involvement/{id}', [InvolvementController::class, 'update'])->name('admin.involvement.update');
     $router->post('/involvement/{id}/delete', [InvolvementController::class, 'destroy'])->name('admin.involvement.delete');
+
+    // ---- ambassador applications (page /involvement/ambassadors)
+    $router->get('/ambassadors', [AmbassadorsController::class, 'index'])->name('admin.ambassadors');
+    $router->get('/ambassadors/export', [AmbassadorsController::class, 'export'])->name('admin.ambassadors.export');
+    $router->get('/ambassadors/{id}', [AmbassadorsController::class, 'show'])->name('admin.ambassadors.show');
+    $router->post('/ambassadors/{id}', [AmbassadorsController::class, 'update'])->name('admin.ambassadors.update');
+    $router->post('/ambassadors/{id}/delete', [AmbassadorsController::class, 'destroy'])->name('admin.ambassadors.delete');
 
     // ---- job applications
     $router->get('/applications', [ApplicationController::class, 'index'])->name('admin.applications');

@@ -973,3 +973,18 @@ ON DUPLICATE KEY UPDATE
   nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
   parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
   updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Page: /involvement/ambassadors (call for ambassadors; wording: app/config/pages/ambassadors.php). A child of Involvement. Needed as a row because content_blocks.page_slug is a foreign key to pages.slug.
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
+  ('ambassadors', 'Ambassadors', 'registry', 'default', 1, 1, 1, 'Ambassadors', 56, 'involvement')
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
+  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
+  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
+  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
+  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
+  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
+  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
+  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);

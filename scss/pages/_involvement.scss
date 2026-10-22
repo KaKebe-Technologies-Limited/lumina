@@ -13,3 +13,17 @@
     // join form on the deep navy panel
     .involvement-join__sub { font-family: $font-heading; font-weight: 600; color: $gold; }
 }
+
+// Ambassadors call: a navy banner between the ways to take part and the join form
+.page-involvement {
+    .involvement-ambassadors { padding-block: 0 $space-7; }
+    .inv-amb {
+        display: grid;
+        gap: $space-5;
+        align-items: center;
+        @include respond(lg) { grid-template-columns: minmax(0, 1fr) auto; gap: $space-7; }
+        h2 { color: $white; margin-bottom: $space-3; }
+        p { color: rgba($white, 0.9); max-width: 46rem; }
+        &__cta { margin: 0; }
+    }
+}

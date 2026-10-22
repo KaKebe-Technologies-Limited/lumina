@@ -18,6 +18,14 @@ return [
          'badge' => null],
         ['key' => 'involvement', 'label' => 'Involvement requests', 'url' => 'admin/involvement', 'icon' => 'heart', 'can' => 'inbox.manage', 'order' => 30,
          'badge' => static fn(): int => Counts::get('involvement')],
+        ['key' => 'ambassadors', 'label' => 'Ambassadors', 'url' => 'admin/ambassadors', 'icon' => 'globe', 'can' => 'inbox.manage', 'order' => 35,
+         'badge' => static function (): int {
+             try {
+                 return (int) \App\Core\Database::value("SELECT COUNT(*) FROM ambassador_applications WHERE status = 'new'", [], 0);
+             } catch (\Throwable) {
+                 return 0;                                   // the table is not imported yet
+             }
+         }],
         ['key' => 'applications', 'label' => 'Job applications', 'url' => 'admin/applications', 'icon' => 'briefcase', 'can' => 'inbox.manage', 'order' => 40,
          'badge' => static fn(): int => Counts::get('applications')],
         ['key' => 'donations', 'label' => 'Donations', 'url' => 'admin/donations', 'icon' => 'banknote', 'can' => 'inbox.manage', 'order' => 50,

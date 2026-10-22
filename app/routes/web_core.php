@@ -11,6 +11,7 @@ use App\Controllers\Web\AboutController;
 use App\Controllers\Web\DonateController;
 use App\Controllers\Web\HomeController;
 use App\Controllers\Web\InvolvementController;
+use App\Controllers\Web\AmbassadorsController;
 use App\Controllers\Web\ProgramsController;
 use App\Controllers\Web\ProjectsController;
 
@@ -32,6 +33,11 @@ $router->get('/projects/{slug}', [ProjectsController::class, 'show'])->name('pro
 $router->get('/involvement', [InvolvementController::class, 'index'])->name('involvement')->middleware('page.published:involvement');
 $router->post('/involvement', [InvolvementController::class, 'submit'])->name('involvement.submit')
     ->middleware(['page.published:involvement', 'honeypot', 'throttle:5,600']);
+
+// Ambassadors: a child page of Involvement (call for ambassadors + sign-up form; docs/AMBASSADORS.md)
+$router->get('/involvement/ambassadors', [AmbassadorsController::class, 'index'])->name('ambassadors')->middleware('page.published:ambassadors');
+$router->post('/involvement/ambassadors', [AmbassadorsController::class, 'submit'])->name('ambassadors.submit')
+    ->middleware(['page.published:ambassadors', 'honeypot', 'throttle:15,600']);
 
 // Donate (page + pledge form: a record of intent, never a payment)
 $router->get('/donate', [DonateController::class, 'index'])->name('donate')->middleware('page.published:donate');

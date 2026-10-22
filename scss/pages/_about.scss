@@ -3,7 +3,7 @@
 // leaks to other pages and nothing depends on _home.scss. The other six page partials (programs ... contact) are imported AFTER this one.
 // Tokens / components: docs/DESIGN.md.
 
-$ia-pages: '.page-about, .page-programs, .page-projects, .page-involvement, .page-donate, .page-careers, .page-contact';
+$ia-pages: '.page-about, .page-programs, .page-projects, .page-involvement, .page-donate, .page-careers, .page-contact, .page-ambassadors';
 $ia-field-border: #8791A0;        // 3.2:1 on white (WCAG 1.4.11 for form-field boundaries)
 
 #{$ia-pages} {

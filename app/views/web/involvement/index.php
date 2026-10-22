@@ -53,6 +53,26 @@ section_begin('involvement', 'how', ['class' => 'involvement-how', 'labelledby' 
     <?php endif; ?>
 <?php section_end(); ?>
 
+<?php /* ------------------------------------------------------------------ AMBASSADORS CALL (leads to /involvement/ambassadors) */ ?>
+<?php
+$ambBtn = content_btn('involvement', 'ambassadors.cta');
+$ambOn = false;
+try {
+    $ambOn = \App\Core\Database::tableExists('ambassador_applications') && \App\Core\SitePages::isPublished('ambassadors');
+} catch (\Throwable) {
+    $ambOn = false;
+}
+if ($ambOn && $ambBtn['has']):
+    section_begin('involvement', 'ambassadors', ['class' => 'involvement-ambassadors', 'labelledby' => 'inv-amb-title']); ?>
+    <div class="ia-panel inv-amb" data-reveal>
+        <div class="inv-amb__copy">
+            <?php if (trim((string) content('involvement', 'ambassadors.eyebrow')) !== ''): ?><span class="eyebrow"><?= e(content('involvement', 'ambassadors.eyebrow')) ?></span><?php endif; ?>
+            <h2 id="inv-amb-title"><?= highlight((string) content('involvement', 'ambassadors.title')) ?></h2>
+            <p><?= e(content('involvement', 'ambassadors.text')) ?></p>
+        </div>
+        <p class="inv-amb__cta"><a class="btn btn--cta btn--caps btn--lg" href="<?= e($ambBtn['url']) ?>"><?= e($ambBtn['label']) ?> <?= icon('arrow-right', 'icon--arrow') ?></a></p>
+    </div>
+<?php section_end(); endif; ?>
 <?php /* ------------------------------------------------------------------ JOIN FORM (always on) */ ?>
 <?php
 $fieldMeta = [

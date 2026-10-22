@@ -2095,6 +2095,46 @@ PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
 
+-- ---------------------------------------------------------------------------------------------------------------------------------------
+-- AMBASSADORS: people anywhere in the world who offer to raise funds and lobby for the foundation (page /involvement/ambassadors, Admin > Inbox > Ambassadors).
+-- The yearly pledge is money (annual_amount in currency), in-kind items (computers, materials: inkind_items + inkind_notes) and/or something else (other_text).
+CREATE TABLE IF NOT EXISTS `ambassador_applications` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(150) NOT NULL,
+  `email` VARCHAR(190) NOT NULL,
+  `phone` VARCHAR(40) NULL,
+  `region` VARCHAR(40) NOT NULL,                                  -- a key of App\Services\Web\Countries::REGIONS
+  `country` VARCHAR(80) NOT NULL,
+  `city` VARCHAR(120) NULL,
+  `occupation` VARCHAR(190) NULL,
+  `organisation` VARCHAR(190) NULL,
+  `profile_url` VARCHAR(300) NULL,                                -- LinkedIn, website ...
+  `roles` TEXT NULL,                                              -- JSON list of the ways they can help (fundraise, lobby, ...)
+  `pledge_types` VARCHAR(60) NOT NULL DEFAULT '',                 -- comma list of: money, inkind, other
+  `annual_amount` DECIMAL(14,2) NULL,                             -- what they can raise / give in a year
+  `currency` CHAR(3) NULL,
+  `inkind_items` TEXT NULL,                                       -- JSON list of the kinds of items (computers, books ...)
+  `inkind_notes` TEXT NULL,                                       -- quantity, condition, estimated value, how it would be shipped
+  `other_text` TEXT NULL,                                         -- anything else they can lobby for or donate
+  `network` TEXT NULL,                                            -- who they can reach
+  `motivation` TEXT NULL,
+  `availability` VARCHAR(80) NULL,
+  `public_ok` TINYINT(1) NOT NULL DEFAULT 0,                      -- may the name and country be shown on the website once approved
+  `consent_at` DATETIME NULL,
+  `status` ENUM('new','reviewing','approved','on_hold','declined') NOT NULL DEFAULT 'new',
+  `admin_notes` TEXT NULL,
+  `reviewed_by` INT UNSIGNED NULL,
+  `reviewed_at` DATETIME NULL,
+  `ip` VARCHAR(45) NULL,
+  `user_agent` VARCHAR(255) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_ambassadors_status` (`status`, `created_at`),
+  KEY `ix_ambassadors_region` (`region`, `country`),
+  KEY `ix_ambassadors_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- ======================================================================
 -- PART: seed.sql
@@ -3064,6 +3104,21 @@ INSERT IGNORE INTO roles (slug, name, description, abilities, is_system) VALUES
 -- Page: /academy (the Academy home and every Academy screen use its wording: app/config/pages/academy.php). Needed as a row because content_blocks.page_slug is a foreign key to pages.slug.
 INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
   ('academy', 'LAF Academy', 'registry', 'default', 1, 1, 1, 'LAF Academy', 45, NULL)
+ON DUPLICATE KEY UPDATE
+  title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
+  type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),
+  template = IF((@reseed = 1 OR updated_at = created_at), VALUES(template), template),
+  is_published = IF((@reseed = 1 OR updated_at = created_at), VALUES(is_published), is_published),
+  show_in_nav = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_nav), show_in_nav),
+  show_in_footer = IF((@reseed = 1 OR updated_at = created_at), VALUES(show_in_footer), show_in_footer),
+  nav_label = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_label), nav_label),
+  nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
+  parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
+  updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Page: /involvement/ambassadors (call for ambassadors; wording: app/config/pages/ambassadors.php). A child of Involvement. Needed as a row because content_blocks.page_slug is a foreign key to pages.slug.
+INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug) VALUES
+  ('ambassadors', 'Ambassadors', 'registry', 'default', 1, 1, 1, 'Ambassadors', 56, 'involvement')
 ON DUPLICATE KEY UPDATE
   title = IF((@reseed = 1 OR updated_at = created_at), VALUES(title), title),
   type = IF((@reseed = 1 OR updated_at = created_at), VALUES(type), type),

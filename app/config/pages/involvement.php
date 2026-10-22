@@ -71,6 +71,17 @@ return [
             ],
         ],
         [
+            'key' => 'ambassadors', 'label' => 'Ambassadors call (banner)', 'toggle' => true,
+            'help' => 'A banner that invites visitors to become ambassadors and leads to the Ambassadors page. Hidden while that page is not available.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'New: Ambassadors'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Represent Lumina Africa Foundation from [[anywhere in the world]]', 'help' => $hlHelp],
+                ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Ambassadors raise funds, lobby for the foundation and rally computers, materials and support from their own networks. Tell us what you can raise or give each year, in money or in kind.'],
+                ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Become an ambassador'],
+                ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/involvement/ambassadors'],
+            ],
+        ],
+        [
             'key' => 'form', 'label' => 'Sign-up form', 'help' => 'Heading, labels and messages of the "Join us" form. Requests are stored in Admin > Involvement and emailed to the notification address in Settings.',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
