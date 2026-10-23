@@ -18,7 +18,7 @@
     &--success { background: $success-bg; color: $success; }
     &--warning { background: $warning-bg; color: $warning; }
     &--danger { background: $danger-bg; color: $danger; }
-    &--info { background: $info-bg; color: $info; }
+    &--info { background: $tint-cool; color: $navy; }      // informational labels use the brand navy tint, not a separate blue (navy on tint 10:1)
     &--neutral { background: $surface-alt; color: $ink-soft; }
     &--outline { background: transparent; border: 1px solid $border-strong; color: $ink-soft; }
 }

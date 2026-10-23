@@ -52,23 +52,6 @@
     // ---- why join us ---------------------------------------------------------------------------------------------------
     .ia-checklist--roomy { gap: $space-4; font-size: $fs-md; }
 
-    // ---- recruitment steps -------------------------------------------------------------------------------------------------
-    .ia-steps {
-        display: grid;
-        gap: $space-4;
-        grid-template-columns: repeat(auto-fit, minmax(#{'min(100%, 13.5rem)'}, 1fr));
-    }
-    .ia-step {
-        padding: $space-5;
-        background: $white;
-        border: 1px solid $line;
-        border-radius: $radius-card;
-        transition: border-color $t-fast ease, box-shadow $t-base ease;
-        &:hover { border-color: rgba($gold, 0.9); box-shadow: $shadow-card; }
-        &__num { display: grid; place-items: center; width: 3.2rem; height: 3.2rem; margin-bottom: $space-4; border-radius: 50%; background: $navy; font-family: $font-display; font-size: 1.4rem; font-weight: 600; color: $gold; }
-        &__text { font-size: $fs-base; line-height: 1.55; color: $ink; }
-    }
-
     // ---- volunteer panel (deep navy) -----------------------------------------------------------------------------------------
     .careers-volunteer { padding-top: 0; }      // follows the (white) recruitment steps: no double padding
     .role-card {
@@ -77,7 +60,7 @@
         border-radius: $radius-card;
         background: rgba($white, 0.07);
         @include respond(md) { padding: $space-6; }
-        &__title { margin-bottom: $space-4; font-family: $font-heading; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #E8BD74; }     // gold on this translucent card: 5.3:1
+        &__title { margin-bottom: $space-4; font-family: $font-heading; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: $gold; }     // gold on this translucent card: 5.3:1
         &__list { display: grid; gap: $space-3; }
         &__list li { display: flex; align-items: flex-start; gap: $space-3; color: rgba($white, 0.96); }
         &__tick { flex: none; display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; margin-top: 0.1rem; border-radius: 50%; background: $gold; color: $navy-dark; .icon { width: 0.8rem; height: 0.8rem; stroke-width: 3; } }

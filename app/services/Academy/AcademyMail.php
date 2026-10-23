@@ -48,7 +48,7 @@ final class AcademyMail
             $html .= '<p style="margin:0 0 16px;line-height:1.6;font-size:16px">' . nl2br(htmlspecialchars($p, ENT_QUOTES), false) . '</p>';
         }
         if ($button !== null) {
-            $html .= '<p style="margin:22px 0"><a href="' . htmlspecialchars($button['url'], ENT_QUOTES) . '" style="background:#c8641b;color:#ffffff;text-decoration:none;font-weight:700;padding:13px 24px;border-radius:999px;display:inline-block">'
+            $html .= '<p style="margin:22px 0"><a href="' . htmlspecialchars($button['url'], ENT_QUOTES) . '" style="background:#d6a151;color:#172036;text-decoration:none;font-weight:700;padding:13px 24px;border-radius:999px;display:inline-block">'
                 . htmlspecialchars($button['label'], ENT_QUOTES) . '</a></p>'
                 . '<p style="margin:0 0 16px;font-size:13px;color:#5a6470;word-break:break-all">If the button does not work, copy this address into your browser:<br>' . htmlspecialchars($button['url'], ENT_QUOTES) . '</p>';
         }

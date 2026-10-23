@@ -1,0 +1,17 @@
+// Numbered steps (careers recruitment steps + Academy "how it works"): global, not scoped to one page.
+// ---- recruitment steps -------------------------------------------------------------------------------------------------
+.ia-steps {
+    display: grid;
+    gap: $space-4;
+    grid-template-columns: repeat(auto-fit, minmax(#{'min(100%, 13.5rem)'}, 1fr));
+}
+.ia-step {
+    padding: $space-5;
+    background: $white;
+    border: 1px solid $line;
+    border-radius: $radius-card;
+    transition: border-color $t-fast ease, box-shadow $t-base ease;
+    &:hover { border-color: rgba($gold, 0.9); box-shadow: $shadow-card; }
+    &__num { display: grid; place-items: center; width: 3.2rem; height: 3.2rem; margin-bottom: $space-4; border-radius: 50%; background: $navy; font-family: $font-display; font-size: 1.4rem; font-weight: 600; color: $gold; }
+    &__text { font-size: $fs-base; line-height: 1.55; color: $ink; }
+}

@@ -144,7 +144,7 @@ final class ErrorHandler
             . '<meta name="robots" content="noindex"><title>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</title>' . $css
             . '<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#2c3950;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;text-align:center}'
             . 'main{max-width:560px;padding:2rem}h1{color:#d6a151;font-size:3.5rem;margin:0}h2{margin:.25rem 0 1rem}p{opacity:.9;line-height:1.6}'
-            . 'a{display:inline-block;margin-top:1rem;padding:.75rem 1.5rem;border-radius:999px;background:#e07341;color:#172036;font-weight:700;text-decoration:none}</style></head>'
+            . 'a{display:inline-block;margin-top:1rem;padding:.75rem 1.5rem;border-radius:999px;background:#D6A151;color:#172036;font-weight:700;text-decoration:none}</style></head>'
             . '<body><main><h1>' . $status . '</h1><h2>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h2><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>'
             . '<a href="' . $home . '">Back to the home page</a>' . $dbg . '</main></body></html>';
     }

@@ -8,7 +8,7 @@
 
 $mbd-field-border: #8791A0;          // 3.2:1 on white (WCAG 1.4.11), same as the form fields
 $mbd-card-navy: #0F1B33;             // the card's navy panel (docs/design-reference/membership-card-reference.png)
-$mbd-card-orange: #E0642C;           // the card's accent bar
+$mbd-card-orange: #E0642C;           // the card's accent bar (mirrors the admin card setting membership_card_accent, not the site UI palette)
 $mbd-card-muted: #B9C2DA;            // small labels on the navy panel (9:1)
 $mbd-grey: #5B6472;                  // "expired": white text 6.0:1
 
@@ -95,7 +95,7 @@ $mbd-grey: #5B6472;                  // "expired": white text 6.0:1
     .mb-upload:hover .mb-upload__box { border-color: $navy; }
     .mb-upload.has-file .mb-upload__box { border-style: solid; border-color: $navy; background: $tint-cool; }
     .mb-upload.field--error .mb-upload__box { border-color: $danger; background: $danger-bg; }
-    .mb-upload--photo .mb-upload__thumb { background: $cta; border-color: $cta; }
+    .mb-upload--photo .mb-upload__thumb { background: $gold; border-color: $gold-deep; }
     .mb-upload--proof .mb-upload__ph { color: $navy; }
     .mb-upload--proof .mb-upload__img { object-fit: contain; object-position: 50% 50%; background: $white; }
     .mb-upload__input:focus-visible + .mb-upload__pick { outline: 3px solid $orange-dark; outline-offset: 3px; }
@@ -151,7 +151,7 @@ $mbd-grey: #5B6472;                  // "expired": white text 6.0:1
         background: $white;
         box-shadow: $shadow-sm;
         @include respond(md) { padding: $space-6; }
-        &.is-attention { border-color: $cta; box-shadow: 0 0 0 3px rgba($cta, 0.18), $shadow-sm; }
+        &.is-attention { border-color: $gold-deep; box-shadow: 0 0 0 3px rgba($gold, 0.3), $shadow-sm; }
         .btn { min-height: 2.75rem; }
     }
     .mb-me__h {
@@ -248,7 +248,7 @@ $mbd-grey: #5B6472;                  // "expired": white text 6.0:1
     .mb-me__steptext { font-family: $font-heading; font-size: $fs-sm; font-weight: 600; line-height: 1.3; color: $ink-soft; }
     .mb-me__step--done .mb-me__dot { border-color: $success; background: $success; color: $white; }
     .mb-me__step--done .mb-me__steptext, .mb-me__step--current .mb-me__steptext { color: $navy; }
-    .mb-me__step--current .mb-me__dot { border-color: $cta; color: $cta; box-shadow: 0 0 0 4px rgba($cta, 0.16); }
+    .mb-me__step--current .mb-me__dot { border-color: $gold-deep; color: $gold-text; box-shadow: 0 0 0 4px rgba($gold, 0.3); }
 
     // ---- facts (label over value) ----------------------------------------------------------------------------------------
     .mb-me__facts {
@@ -326,7 +326,7 @@ $mbd-grey: #5B6472;                  // "expired": white text 6.0:1
         &__number { margin: 0; font-family: $font-heading; font-size: fluid(1.35rem, '1.1rem + 1.1vw', 1.9rem); font-weight: 700; letter-spacing: 0.02em; overflow-wrap: anywhere; }
         &__pill { display: inline-block; margin: 1rem 0 0; padding: 0.4rem 1.4rem; border-radius: $radius; background: $success; font-family: $font-heading; font-size: $fs-sm; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
         &__pill--expired { background: $mbd-grey; }
-        &__pill--suspended, &__pill--revoked { background: #C0392B; }
+        &__pill--suspended, &__pill--revoked { background: $danger; }
         &__date { margin: 0; font-size: 1.35rem; font-weight: 700; }
     }
 

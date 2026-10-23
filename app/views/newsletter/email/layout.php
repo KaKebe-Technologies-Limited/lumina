@@ -6,7 +6,7 @@
  *
  * Vars: $issue (row + content_data), $content, $subject, $preheader, $browser_url, $unsubscribe_url ('' = no link), $is_test, $label,
  * $org_name, $org_address, $footer_text, $reason, $logo_url, $labels (follow, view_in_browser, read_online, unsubscribe, test_notice),
- * $featuredHtml, $blocksHtml, $pdf (null, or for a PDF issue: download_url, view_url, size_text, label - two buttons, the file is NOT attached). Brand colours: navy #2C3950, gold #D6A151, cta #B85A14, ink #1D1E20, soft ink #5A6470, cream #F7F3EC.
+ * $featuredHtml, $blocksHtml, $pdf (null, or for a PDF issue: download_url, view_url, size_text, label - two buttons, the file is NOT attached). Brand colours: navy #2C3950, gold #D6A151, cta #D6A151 (gold, navy-dark text), ink #1D1E20, soft ink #5A6470, cream #F7F3EC.
  */
 use App\Services\Newsletter\NewsletterRenderer as R;
 
@@ -61,8 +61,8 @@ $summary = trim((string) ($issue['summary'] ?? ''));
                 <?= $blocksHtml ?>
                 <?php if ($pdf !== null): ?>
                 <tr><td align="center" style="padding:16px 32px 0 32px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#B85A14" style="border-radius:999px;background:#B85A14;">
-                        <a href="<?= e($pdf['download_url']) ?>" style="display:inline-block;padding:13px 28px;font-family:<?= $sans ?>;font-size:15px;line-height:1.2;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:999px;max-width:100%;<?= $wrap ?>"><?= e($pdf['label']) ?></a>
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#D6A151" style="border-radius:999px;background:#D6A151;">
+                        <a href="<?= e($pdf['download_url']) ?>" style="display:inline-block;padding:13px 28px;font-family:<?= $sans ?>;font-size:15px;line-height:1.2;font-weight:bold;color:#172036;text-decoration:none;border-radius:999px;max-width:100%;<?= $wrap ?>"><?= e($pdf['label']) ?></a>
                     </td></tr></table>
                     <?php if ($pdf['size_text'] !== ''): ?><p style="margin:8px 0 0 0;font-family:<?= $sans ?>;font-size:12px;line-height:1.5;color:#5A6470;<?= $wrap ?>"><?= e($pdf['size_text']) ?></p><?php endif; ?>
                 </td></tr>
@@ -73,8 +73,8 @@ $summary = trim((string) ($issue['summary'] ?? ''));
                 </td></tr>
                 <?php else: ?>
                 <tr><td align="center" style="padding:16px 32px 32px 32px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#B85A14" style="border-radius:999px;background:#B85A14;">
-                        <a href="<?= e($browser_url) ?>" style="display:inline-block;padding:13px 28px;font-family:<?= $sans ?>;font-size:15px;line-height:1.2;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:999px;max-width:100%;<?= $wrap ?>"><?= e($labels['read_online']) ?></a>
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#D6A151" style="border-radius:999px;background:#D6A151;">
+                        <a href="<?= e($browser_url) ?>" style="display:inline-block;padding:13px 28px;font-family:<?= $sans ?>;font-size:15px;line-height:1.2;font-weight:bold;color:#172036;text-decoration:none;border-radius:999px;max-width:100%;<?= $wrap ?>"><?= e($labels['read_online']) ?></a>
                     </td></tr></table>
                 </td></tr>
                 <?php endif; ?>

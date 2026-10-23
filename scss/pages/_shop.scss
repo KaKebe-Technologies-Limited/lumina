@@ -21,7 +21,7 @@
   background: $white;
   color: $navy;
   border: 1px solid $border-strong;
-  &--sale { background: $cta; color: $white; border-color: $cta; }
+  &--sale { background: $cta; color: $on-cta; border-color: $cta; }
   &--dark { background: $navy-dark; color: $white; border-color: $navy-dark; }
   &--low { background: $gold; color: $navy-dark; border-color: $gold; }
   &--sample { background: $white; color: $ink-soft; border-style: dashed; }
@@ -162,7 +162,7 @@
   padding: 0 0.35rem;
   border-radius: $radius-pill;
   background: $cta;
-  color: $white;
+  color: $on-cta;
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -517,7 +517,7 @@
   color: $navy;
   text-decoration: none;
   &:hover { background: $tint-cool; color: $navy; }
-  &-count { position: absolute; top: 0.1rem; right: 0.05rem; display: grid; place-items: center; min-width: 1.25rem; height: 1.25rem; padding: 0 0.3rem; border-radius: $radius-pill; background: $cta; color: $white; font-size: 0.68rem; font-weight: 700; line-height: 1; }
+  &-count { position: absolute; top: 0.1rem; right: 0.05rem; display: grid; place-items: center; min-width: 1.25rem; height: 1.25rem; padding: 0 0.3rem; border-radius: $radius-pill; background: $cta; color: $on-cta; font-size: 0.68rem; font-weight: 700; line-height: 1; }
 }
 
 // ---- printable receipt ---------------------------------------------------------------------------------------------------------------------------------

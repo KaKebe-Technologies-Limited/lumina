@@ -8,7 +8,7 @@
  * Vars: $subject, $preheader, $heading, $kicker, $introHtml (escaped paragraphs), $rows (list of [label, text, url|null]), $join (null|[label,url]),
  * $secondary (null|[label,url]), $agendaLabel, $agendaHtml, $bodyHtml (organiser message), $rsvp (null|[title, buttons:[[label,url,tone]]]),
  * $calendar (null|[label,url]), $notes (list<string>), $footerLines (list<string>), $notice (string, test notice), $logoUrl, $orgName, $cancelled (bool).
- * Brand colours: navy #2C3950, gold #D6A151, cta #B85A14, ink #1D1E20, soft ink #5A6470, cream #F7F3EC.
+ * Brand colours: navy #2C3950, gold #D6A151, cta #D6A151 (gold, navy-dark text), ink #1D1E20, soft ink #5A6470, cream #F7F3EC.
  */
 $serif = "Georgia,'Times New Roman',Times,serif";
 $sans = "'DM Sans',Arial,Helvetica,sans-serif";
@@ -60,8 +60,8 @@ $tone = ['yes' => '#2C3950', 'maybe' => '#8A5A06', 'no' => '#7a1f12'];
                 <?php endif; ?>
                 <?php if ($join): ?>
                 <tr><td align="center" style="padding:20px 32px 4px 32px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#B85A14" style="border-radius:999px;background:#B85A14;">
-                        <a href="<?= e($join[1]) ?>" style="display:inline-block;padding:16px 40px;font-family:<?= $sans ?>;font-size:17px;line-height:1.2;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:999px;"><?= e($join[0]) ?></a>
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#D6A151" style="border-radius:999px;background:#D6A151;">
+                        <a href="<?= e($join[1]) ?>" style="display:inline-block;padding:16px 40px;font-family:<?= $sans ?>;font-size:17px;line-height:1.2;font-weight:bold;color:#172036;text-decoration:none;border-radius:999px;"><?= e($join[0]) ?></a>
                     </td></tr></table>
                 </td></tr>
                 <?php endif; ?>

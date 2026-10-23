@@ -133,5 +133,5 @@
     pointer-events: none;
     transition: opacity $t-base ease, transform $t-base ease, background-color $t-fast ease, visibility 0s linear $t-base;
     &.is-visible { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition-delay: 0s; }
-    &:hover { background: $cta; }
+    &:hover { background: $cta; color: $on-cta; }
 }

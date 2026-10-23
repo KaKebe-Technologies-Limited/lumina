@@ -1,7 +1,7 @@
 // =====================================================================================
 // DESIGN TOKENS - shared by main.scss (public) and admin.scss. FOUNDATION-OWNED.
 // Brand colours were sampled from assets/img/brand/logo-512.png (embroidered patch):
-//   navy field  ~ #2C3950   gold ring/lettering ~ #D6A151   orange Africa map ~ #BE7229
+//   navy field  ~ #2C3950   gold ring/lettering ~ #D6A151   (the orange of the Africa map is NOT used in the interface: see docs/DESIGN-COLOURS.md)
 // Text contrast (WCAG AA) is noted next to each pairing that agents are expected to use.
 // =====================================================================================
 
@@ -11,17 +11,18 @@ $navy-dark:     #172036 !default;   // deep shadow of the patch. white = 16.2:1,
 $navy-light:    #3C4E6E !default;
 $gold:          #D6A151 !default;   // logo lettering. on navy-dark = 7.0:1, on navy = 5.0:1 (use for text ONLY on navy)
 $gold-deep:     #C47E0D !default;   // live-site gold; DECORATIVE only on white (3.3:1)
-$gold-text:     #8A5A06 !default;   // gold-looking text on white/cream = 5.9:1
-$orange:        #CC651A !default;   // live-site orange; large text / icons / borders (3.9:1 on white)
-$orange-dark:   #B4540F !default;   // orange for text + white-text buttons: 5.0:1 on white
-$orange-accent: #E07341 !default;   // live-site accent; navy-dark text on it = 5.2:1; links on navy
-$teal:          #4A7C85 !default;   // 4.65:1 on white
+$gold-text:     #85560A !default;   // gold-looking text on white/cream = 6.2:1
+$orange:        $gold-deep !default;   // LEGACY alias (the old rust orange is retired): decorative gold
+$orange-dark:   $gold-text !default;   // LEGACY alias: bronze for icons, focus rings, links on light = 5.9:1 on white
+$orange-accent: $gold !default;        // LEGACY alias: gold fill
+$teal:          #4A7C85 !default;   // 4.65:1 on white (only the optional "teal" form theme uses it)
 $teal-dark:     #3D6870 !default;   // 6.2:1 on white
 
-// ---- Redesign additions (KidHope-inspired layout language; see docs/DESIGN.md) ------------------------------
-$cta:           #B85A14 !default;   // THE orange pill (white text 4.66:1). Hover: $cta-hover
-$cta-hover:     #9A470C !default;   // white text 6.4:1
-$orange-text:   #A64B0C !default;   // orange TEXT on white / cream / pale-navy tint (5.1:1 on the pale-navy tint, 5.8:1 on white)
+// ---- Action colour: ONE call-to-action = gold fill with navy-dark text (7:1). Secondary actions are navy / outline.
+$cta:           $gold !default;
+$cta-hover:     #E3B666 !default;   // a lighter gold on hover, navy-dark text 8.3:1
+$on-cta:        $navy-dark !default;
+$orange-text:   $gold-text !default;   // LEGACY name: gold-looking TEXT on white / cream / pale tints (5.9:1 white, 5.4:1 cream, 5.3:1 pale-navy)
 $tint-cool:     #EEF1F6 !default;   // very pale navy tint (quote cards, mission/vision boxes). navy 10.3:1, ink-soft 5.3:1
 $line:          #E4E1DA !default;   // thin 1px borders on white
 
@@ -30,7 +31,7 @@ $ink:           #1D1E20 !default;   // body text, 16.7:1 on white
 $heading:       #2C2F31 !default;
 $ink-soft:      #5A6470 !default;   // secondary text, 6.0:1 on white, 5.4:1 on cream
 $surface:       #F7F3EC !default;   // warm cream section background
-$surface-alt:   #F1F1F1 !default;   // live-site light grey
+$surface-alt:   #F1EEE8 !default;   // warm light grey (matches the cream surface)
 $border:        #E3DDD2 !default;
 $border-strong: #CFC7B8 !default;
 $white:         #FFFFFF !default;

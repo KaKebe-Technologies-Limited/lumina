@@ -354,7 +354,7 @@ final class NewsletterRenderer
             'ol'         => 'margin:0 0 16px 0;padding:0 0 0 22px;',
             'li'         => 'margin:0 0 6px 0;',
             'blockquote' => 'margin:0 0 16px 0;padding:0 0 0 16px;border-left:3px solid #D6A151;color:#5A6470;',
-            'a'          => 'color:#A64B0C;text-decoration:underline;',
+            'a'          => 'color:#85560A;text-decoration:underline;',
             'img'        => 'max-width:100%;height:auto;border:0;display:block;',
             'hr'         => 'border:0;border-top:1px solid #E4E1DA;margin:20px 0;',
             'table'      => 'border-collapse:collapse;margin:0 0 16px 0;max-width:100%;',

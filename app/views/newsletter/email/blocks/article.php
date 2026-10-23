@@ -19,6 +19,6 @@ $linkLabel = $link['label'] !== '' ? $link['label'] : (string) content('newslett
     <?php if ($block['heading'] !== ''): ?><h2 style="margin:8px 0 10px 0;font-family:<?= $serif ?>;font-size:21px;line-height:1.3;color:#2C3950;font-weight:bold;<?= $wrap ?>"><?= e($block['heading']) ?></h2><?php endif; ?>
     <?= $body ?>
     <?php if ($href !== ''): ?>
-        <p style="margin:0 0 8px 0;"><a href="<?= e($href) ?>" style="color:#A64B0C;font-weight:bold;text-decoration:underline;<?= $wrap ?>"><?= e($linkLabel) ?> &rarr;</a></p>
+        <p style="margin:0 0 8px 0;"><a href="<?= e($href) ?>" style="color:#85560A;font-weight:bold;text-decoration:underline;<?= $wrap ?>"><?= e($linkLabel) ?> &rarr;</a></p>
     <?php endif; ?>
 </td></tr>

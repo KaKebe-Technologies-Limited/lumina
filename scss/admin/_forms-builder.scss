@@ -15,7 +15,7 @@ $fb-z-drawer: 260;
 // 1. Forms list + template picker (server-rendered pages)
 // =====================================================================================================================
 .admin-forms {
-    .btn--cta { background: $cta; color: $white; border-color: $cta; &:hover { background: $cta-hover; border-color: $cta-hover; color: $white; } }
+    .btn--cta { background: $cta; color: $on-cta; border-color: $cta; &:hover { background: $cta-hover; border-color: $cta-hover; color: $on-cta; } }
     .btn--danger { background: $danger; border-color: $danger; color: $white; &:hover { background: darken($danger, 8%); border-color: darken($danger, 8%); color: $white; } }
     .forms-embed { margin-top: $space-2; font-size: $fs-sm; summary { cursor: pointer; color: $ink-soft; } label { display: block; font-weight: 600; margin-top: $space-2; } .input { font-family: $font-mono; font-size: $fs-xs; } }
     .fl-wrap { overflow: visible; }                                       // the forms LIST only: its "More" menu must not be clipped (the answers inbox keeps the scrolling .table-wrap)
@@ -167,7 +167,7 @@ $fb-z-drawer: 260;
     .input, .select, .textarea { width: 100%; max-width: 100%; }
     .textarea { min-height: 0; resize: vertical; }
     .input::placeholder, .textarea::placeholder { color: $fb-ink-faint; opacity: 1; }
-    .btn--cta { background: $cta; color: $white; border-color: $cta; &:hover { background: $cta-hover; border-color: $cta-hover; color: $white; } }
+    .btn--cta { background: $cta; color: $on-cta; border-color: $cta; &:hover { background: $cta-hover; border-color: $cta-hover; color: $on-cta; } }
     .btn--danger { background: $danger; border-color: $danger; color: $white; &:hover { background: darken($danger, 8%); border-color: darken($danger, 8%); color: $white; } }
     .btn .icon { margin: 0; }
     :focus-visible { outline: 3px solid $orange-dark; outline-offset: 2px; }
@@ -958,7 +958,7 @@ $fb-z-drawer: 260;
     &--wide { width: #{'min(46rem, calc(100vw - 2rem))'}; }
     &--preview { width: #{'min(70rem, calc(100vw - 2rem))'}; }
     :focus-visible { outline: 3px solid $orange-dark; outline-offset: 2px; }
-    .btn--cta { background: $cta; color: $white; border-color: $cta; &:hover { background: $cta-hover; border-color: $cta-hover; color: $white; } }
+    .btn--cta { background: $cta; color: $on-cta; border-color: $cta; &:hover { background: $cta-hover; border-color: $cta-hover; color: $on-cta; } }
     .btn--danger { background: $danger; border-color: $danger; color: $white; &:hover { background: darken($danger, 8%); color: $white; } }
     .btn--primary { background: $navy; color: $white; &:hover { background: $navy-dark; color: $white; } }
     .btn--outline { border: 1.5px solid $border-strong; color: $navy; background: transparent; &:hover { background: $navy; border-color: $navy; color: $white; } }

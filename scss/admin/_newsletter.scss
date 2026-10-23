@@ -38,7 +38,7 @@ html:has(.nl-editor) { scroll-padding-top: var(--nl-scroll-pad, #{$nl-sticky + 1
     .input::placeholder, textarea::placeholder { color: #6B7785; }
     .nl-btn-danger { color: $danger; &:hover { background: $danger-bg; color: $danger; } }
     .btn--danger { background: $danger; color: $white; border-color: $danger; &:hover { background: darken($danger, 8%); color: $white; } }
-    .btn--cta { background: $cta; color: $white; &:hover { background: $cta-hover; color: $white; } }
+    .btn--cta { background: $cta; color: $on-cta; &:hover { background: $cta-hover; color: $on-cta; } }
     .btn[disabled], .nl-tool[disabled] { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
     .nl-inline-icon { display: inline-flex; vertical-align: middle; color: $ink-soft; }
     .nl-note { padding: $space-3 $space-4; border-radius: $radius; background: $info-bg; color: darken($info, 6%); font-size: $fs-sm; }

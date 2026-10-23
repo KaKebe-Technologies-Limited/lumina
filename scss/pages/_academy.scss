@@ -1,8 +1,8 @@
 // LAF Academy (public): catalogue, course page, sign-in screens, dashboard, lesson player, quizzes, classes, certificate. Views: web/academy/*
 $ac-tones: (
-  basics: #2c3950, office: #1f5f8b, internet: #3a7d6b, marketing: #c8641b, design: #8a4f9e,
-  security: #b42318, careers: #8a5a06, web: #1e7b45, coding: #3c4e6e, ai: #5b3fa0, hardware: #5a6470,
-  data: #0f766e, cloud: #1d4ed8, business: #a16207
+  basics: $navy, office: $navy-light, internet: $teal-dark, marketing: $gold-text, design: $navy-light,
+  security: $navy, careers: $gold-text, web: $teal-dark, coding: $navy-light, ai: $teal-dark, hardware: $ink-soft,
+  data: $teal-dark, cloud: $navy-light, business: $gold-text
 );
 @each $name, $color in $ac-tones {
   .ac-tone-#{$name} { background: rgba($color, .12); color: $color; }
@@ -146,7 +146,7 @@ $ac-tones: (
   &__nav { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: $space-3; margin-top: $space-6; padding-top: $space-4; border-top: 1px solid $border; }
   &__done { display: flex; flex-wrap: wrap; gap: $space-3; align-items: center; } }
 .ac-prose { max-width: none; h3 { font-size: $fs-lg; margin-top: 1.6em; } h4 { margin-top: 1.2em; }
-  pre { overflow: auto; padding: $space-3 $space-4; border-radius: $radius; background: #172036; color: #f4f1ea; font-size: .9rem; line-height: 1.5; }
+  pre { overflow: auto; padding: $space-3 $space-4; border-radius: $radius; background: $navy-dark; color: $surface; font-size: .9rem; line-height: 1.5; }
   code { font-family: $font-mono; font-size: .92em; } p code, li code, td code { padding: .1rem .35rem; border-radius: 4px; background: $surface; color: $navy; }
   table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; th, td { padding: .5rem .75rem; border: 1px solid $border; text-align: left; vertical-align: top; } th { background: $surface; } }
   blockquote { margin-left: 0; padding: $space-2 $space-4; border-left: 4px solid $gold; background: $surface; } }
@@ -183,7 +183,7 @@ fieldset.ac-q { padding: 0 $space-4 $space-4;
   &__tag { margin-left: .4rem; font-size: $fs-xs; font-style: normal; font-weight: 700; color: $ink-soft; &--ok { color: $success; } } }
 
 // ---- certificate page
-.ac-cert { max-width: 46rem; margin: $space-5 auto; padding: clamp(1.25rem, 4vw, 3rem); text-align: center; background: #fbf7ee; border: 4px double $gold-deep; border-radius: 6px; box-shadow: 0 14px 40px rgba($navy, .12);
+.ac-cert { max-width: 46rem; margin: $space-5 auto; padding: clamp(1.25rem, 4vw, 3rem); text-align: center; background: $surface; border: 4px double $gold-deep; border-radius: 6px; box-shadow: 0 14px 40px rgba($navy, .12);
   &__org { margin: 0; font-size: $fs-xs; letter-spacing: .18em; text-transform: uppercase; font-weight: 700; color: $gold-text; }
   &__title { margin: $space-3 0; font-family: $font-display; font-size: fluid(1.7rem, '1.1rem + 2.2vw', 2.7rem); color: $navy; }
   &__small { margin: 0; font-style: italic; color: $ink-soft; }

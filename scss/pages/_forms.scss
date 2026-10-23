@@ -25,12 +25,12 @@ $lf-accent-hover: $cta-hover;
 .lf-embed {
     --lf-accent: #{$lf-accent};
     --lf-accent-hover: #{$lf-accent-hover};
-    --lf-accent-ink: #{$white};
-    --lf-mark: #{$lf-accent};
-    --lf-soft: #{rgba($lf-accent, 0.08)};
-    --lf-ring: #{$lf-accent};
-    &.theme-navy { --lf-accent: #{$navy}; --lf-accent-hover: #{$navy-dark}; --lf-mark: #{$navy}; --lf-soft: #{rgba($navy, 0.07)}; --lf-ring: #{$navy}; }
-    &.theme-teal { --lf-accent: #{$teal-dark}; --lf-accent-hover: #{darken($teal-dark, 8%)}; --lf-mark: #{$teal-dark}; --lf-soft: #{rgba($teal-dark, 0.09)}; --lf-ring: #{$teal-dark}; }
+    --lf-accent-ink: #{$on-cta};
+    --lf-mark: #{$gold-text};
+    --lf-soft: #{rgba($gold, 0.16)};
+    --lf-ring: #{$navy};
+    &.theme-navy { --lf-accent-ink: #{$white}; --lf-accent: #{$navy}; --lf-accent-hover: #{$navy-dark}; --lf-mark: #{$navy}; --lf-soft: #{rgba($navy, 0.07)}; --lf-ring: #{$navy}; }
+    &.theme-teal { --lf-accent-ink: #{$white}; --lf-accent: #{$teal-dark}; --lf-accent-hover: #{darken($teal-dark, 8%)}; --lf-mark: #{$teal-dark}; --lf-soft: #{rgba($teal-dark, 0.09)}; --lf-ring: #{$teal-dark}; }
     &.theme-gold { --lf-accent: #{$gold}; --lf-accent-hover: #{darken($gold, 8%)}; --lf-accent-ink: #{$navy-dark}; --lf-mark: #{$gold-text}; --lf-soft: #{rgba($gold, 0.16)}; --lf-ring: #{$navy}; }
 }
 
@@ -138,7 +138,7 @@ $lf-accent-hover: $cta-hover;
         &::placeholder { color: #727b86; }
     }
     textarea.lf__input, .textarea { min-height: 9rem; resize: vertical; line-height: 1.55; }
-    &__field.has-error &__input, &__field.has-error .input, &__field.has-error .select, &__field.has-error .textarea { border-color: $danger; box-shadow: 0 0 0 1px $danger; background: #fffafa; }
+    &__field.has-error &__input, &__field.has-error .input, &__field.has-error .select, &__field.has-error .textarea { border-color: $danger; box-shadow: 0 0 0 1px $danger; background: #{$danger-bg}; }
     &__field.is-valid &__input.is-touched { border-color: $success; }
     &__counter { margin: $space-1 0 0; text-align: right; font-size: $fs-xs; color: $ink-soft; font-variant-numeric: tabular-nums; &.is-near { color: $warning; font-weight: 600; } }
     &__other { margin-top: $space-2; max-width: 24rem; min-height: 2.75rem; }
@@ -187,7 +187,7 @@ $lf-accent-hover: $cta-hover;
         &-title { font-family: $font-heading; font-weight: 600; color: $navy; }
         &-hint { font-size: $fs-xs; color: $ink-soft; }
     }
-    &__field.has-error &__drop { border-color: $danger; background: #fffafa; }
+    &__field.has-error &__drop { border-color: $danger; background: #{$danger-bg}; }
     &__file { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
     &__file::file-selector-button { cursor: pointer; }
     &__files { display: grid; gap: $space-2; margin: $space-2 0 0; padding: 0; list-style: none; }

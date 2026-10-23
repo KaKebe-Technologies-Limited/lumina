@@ -216,7 +216,7 @@ $ia-field-border: #8791A0;        // 3.2:1 on white (WCAG 1.4.11 for form-field 
             @include respond(md) { max-width: none; margin: 0; }
             img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: 50% 12%; border: 5px solid rgba($white, 0.92); border-radius: $radius-photo; box-shadow: 0 16px 36px rgba($navy-dark, 0.4); }
         }
-        &__mark { display: inline-grid; place-items: center; width: 3.2rem; height: 3.2rem; margin-bottom: $space-4; border-radius: 50%; background: $cta; color: $white; .icon { width: 1.4rem; height: 1.4rem; } }
+        &__mark { display: inline-grid; place-items: center; width: 3.2rem; height: 3.2rem; margin-bottom: $space-4; border-radius: 50%; background: $cta; color: $on-cta; .icon { width: 1.4rem; height: 1.4rem; } }
         &__text { font-family: $font-display; font-size: fluid(1.2rem, '1rem + 1.1vw', 1.85rem); font-weight: 500; line-height: 1.42; color: $white; p + p { margin-top: $space-4; } }
         &__cite { margin-top: $space-5; font-family: $font-heading; font-size: $fs-sm; font-weight: 600; letter-spacing: 0.04em; color: $gold; &::before { content: '\2014\00a0'; } }
         &__cta { margin-top: $space-5; }

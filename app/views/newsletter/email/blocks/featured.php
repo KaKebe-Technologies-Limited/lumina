@@ -20,8 +20,8 @@ $linkLabel = $link['label'] !== '' ? $link['label'] : (string) content('newslett
     <?php if ($featured['heading'] !== ''): ?><h2 style="margin:0 0 12px 0;font-family:<?= $serif ?>;font-size:24px;line-height:1.3;color:#2C3950;font-weight:bold;<?= $wrap ?>"><?= e($featured['heading']) ?></h2><?php endif; ?>
     <?= $body ?>
     <?php if ($href !== ''): ?>
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 0 0;"><tr><td align="center" bgcolor="#B85A14" style="border-radius:999px;background:#B85A14;">
-            <a href="<?= e($href) ?>" style="display:inline-block;padding:12px 26px;font-family:<?= $sans ?>;font-size:15px;line-height:1.2;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:999px;max-width:100%;<?= $wrap ?>"><?= e($linkLabel) ?></a>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 0 0;"><tr><td align="center" bgcolor="#D6A151" style="border-radius:999px;background:#D6A151;">
+            <a href="<?= e($href) ?>" style="display:inline-block;padding:12px 26px;font-family:<?= $sans ?>;font-size:15px;line-height:1.2;font-weight:bold;color:#172036;text-decoration:none;border-radius:999px;max-width:100%;<?= $wrap ?>"><?= e($linkLabel) ?></a>
         </td></tr></table>
     <?php endif; ?>
 </td></tr>
