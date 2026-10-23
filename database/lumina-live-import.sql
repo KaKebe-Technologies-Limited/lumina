@@ -2757,12 +2757,12 @@ ON DUPLICATE KEY UPDATE
 
 -- Entry types (names and colours are editable in Admin > Calendar > Types; the colour pairs are checked for AA contrast by bin/selftest-calendar.php).
 INSERT INTO calendar_types (slug, name, color, icon, sort_order, is_active, show_on_public, is_system) VALUES
-  ('programme',         'Programme session',          '#2f6f7a', 'graduation-cap', 10, 1, 1, 0),
-  ('event',             'Event',                      '#b4540f', 'calendar',       20, 1, 1, 1),
-  ('uganda-holiday',    'Uganda public holiday',      '#b42318', 'star',           30, 1, 1, 1),
-  ('international-day', 'International / UN day',     '#1f5fa8', 'globe',          40, 1, 1, 0),
-  ('meeting',           'Meeting / outreach',         '#6b4e9b', 'users',          50, 1, 1, 0),
-  ('deadline',          'Deadline',                   '#8a5a06', 'clock',          60, 1, 1, 0),
+  ('programme',         'Programme session',          '#2c3950', 'graduation-cap', 10, 1, 1, 0),
+  ('event',             'Event',                      '#2f6f7a', 'calendar',       20, 1, 1, 1),
+  ('uganda-holiday',    'Uganda public holiday',      '#85560a', 'star',           30, 1, 1, 1),
+  ('international-day', 'International / UN day',     '#1f5f8b', 'globe',          40, 1, 1, 0),
+  ('meeting',           'Meeting / outreach',         '#5e6b3a', 'users',          50, 1, 1, 0),
+  ('deadline',          'Deadline',                   '#b42318', 'clock',          60, 1, 1, 0),
   ('other',             'Other',                      '#5a6470', 'tag',            70, 1, 1, 0)
 ON DUPLICATE KEY UPDATE
   name = IF((@reseed = 1 OR updated_at = created_at), VALUES(name), name),
