@@ -13,6 +13,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Models\User;
+use App\Services\AdminPasswordReset;
 
 /**
  * Admin sign-in / sign-out / password change. OWNER: B3 admin-core.
@@ -53,6 +54,40 @@ final class AuthController extends Controller
             return $this->redirect(ltrim($intended, '/'));
         }
         return $this->redirect('admin');
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- forgotten password
+
+    public function showForgot(Request $request): Response
+    {
+        return $this->render('admin/auth/forgot', [], ['title' => 'Forgot password', 'meta' => ['robots' => 'noindex,nofollow']])->withHeaders(self::NO_STORE);
+    }
+
+    /** Same answer whether or not the address belongs to an account. */
+    public function sendReset(Request $request): Response
+    {
+        AdminPasswordReset::request($request->string('email'), $request->ip());
+        Flash::success('If that address belongs to an admin account, we have sent a link to choose a new password. It works for ' . AdminPasswordReset::RESET_MINUTES . ' minutes.');
+        return $this->redirect('admin/login');
+    }
+
+    public function showReset(Request $request, string $token): Response
+    {
+        $valid = AdminPasswordReset::userForToken($token) !== null;
+        return $this->render('admin/auth/reset', ['token' => $token, 'valid' => $valid, 'min' => (int) Config::get('auth.min_password', 10)],
+            ['title' => 'Choose a new password', 'meta' => ['robots' => 'noindex,nofollow']])->withHeaders(self::NO_STORE + ['Referrer-Policy' => 'no-referrer']);
+    }
+
+    public function doReset(Request $request, string $token): Response
+    {
+        $back = 'admin/reset-password/' . $token;
+        $data = $this->validate(['password' => 'required|max:200|confirmed'], ['password.confirmed' => 'The new passwords do not match.'], ['password' => 'New password'], $back);
+        $res = AdminPasswordReset::reset($token, (string) $data['password']);
+        if (!$res['ok']) {
+            $this->fail(['password' => (string) $res['error']], $back);
+        }
+        Flash::success('Your password has been changed. Sign in with the new password.');
+        return $this->redirect('admin/login');
     }
 
     public function logout(Request $request): Response

@@ -29,6 +29,10 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
     // --- public admin entry points ---
     $router->get('/login', [AuthController::class, 'showLogin'])->name('admin.login')->middleware('guest');
     $router->post('/login', [AuthController::class, 'login'])->middleware(['guest', 'throttle:20,300']);
+    $router->get('/forgot-password', [AuthController::class, 'showForgot'])->name('admin.forgot')->middleware('guest');
+    $router->post('/forgot-password', [AuthController::class, 'sendReset'])->middleware(['guest', 'throttle:10,600']);
+    $router->get('/reset-password/{token}', [AuthController::class, 'showReset'])->name('admin.reset')->middleware('guest');
+    $router->post('/reset-password/{token}', [AuthController::class, 'doReset'])->middleware(['guest', 'throttle:15,600']);
 
     // --- everything below requires a signed-in user ---
     $router->group(['middleware' => ['auth']], function ($router) use ($pageSlug) {

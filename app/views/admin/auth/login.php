@@ -18,5 +18,6 @@
     </div>
     <button class="btn btn--primary btn--lg btn--block" type="submit" data-loading-text="Signing in...">Sign in</button>
 </form>
+<p class="auth__footer"><a href="<?= e(url('admin/forgot-password')) ?>">Forgot your password?</a></p>
 <p class="auth__footer"><a href="<?= e(url('')) ?>">&larr; Back to the website</a></p>
 <script src="<?= e(asset('js/pages/admin-pages.js')) ?>" defer></script>
