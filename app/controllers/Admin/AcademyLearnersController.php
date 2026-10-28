@@ -107,14 +107,14 @@ final class AcademyLearnersController extends AcademyAdminController
         $this->authorize('academy.manage');
         [$where, $params] = $this->filters($request);
         $rows = Database::all(
-            'SELECT ' . (LearnerRegistry::ready() ? 'l.reg_no' : 'NULL AS reg_no') . ', l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.created_at, l.last_login_at, '
+            'SELECT ' . (LearnerRegistry::ready() ? 'l.reg_no' : 'NULL AS reg_no') . ', ' . (\App\Services\Academy\VerificationCode::ready() ? 'l.whatsapp' : 'NULL AS whatsapp') . ', l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.created_at, l.last_login_at, '
             . '(SELECT COUNT(*) FROM academy_enrollments e WHERE e.learner_id = l.id) AS courses, (SELECT COUNT(*) FROM academy_enrollments e2 WHERE e2.learner_id = l.id AND e2.completed_at IS NOT NULL) AS completed, '
             . '(SELECT COUNT(*) FROM academy_certificates c WHERE c.learner_id = l.id AND c.revoked_at IS NULL) AS certificates FROM academy_learners l' . $where . ' ORDER BY l.id',
             $params
         );
         $this->audit('academy.learners.export', 'academy_learner', null, 'Downloaded the learner list', ['rows' => count($rows)]);
-        return CsvExport::response('academy-learners-' . date('Y-m-d') . '.csv', ['Reg no', 'Name', 'Email', 'Phone', 'Country', 'Email confirmed / approved', 'Active', 'Joined', 'Last sign-in', 'Courses', 'Completed', 'Certificates'],
-            array_map(static fn(array $r): array => [$r['reg_no'], $r['name'], $r['email'], $r['phone'], $r['country'], $r['email_verified_at'] ? 'yes' : 'no', $r['is_active'] ? 'yes' : 'no', $r['created_at'], $r['last_login_at'], $r['courses'], $r['completed'], $r['certificates']], $rows));
+        return CsvExport::response('academy-learners-' . date('Y-m-d') . '.csv', ['Reg no', 'Name', 'Email', 'Phone', 'WhatsApp', 'Country', 'Email confirmed / approved', 'Active', 'Joined', 'Last sign-in', 'Courses', 'Completed', 'Certificates'],
+            array_map(static fn(array $r): array => [$r['reg_no'], $r['name'], $r['email'], $r['phone'], $r['whatsapp'] !== null && $r['whatsapp'] !== '' ? '+' . $r['whatsapp'] : '', $r['country'], $r['email_verified_at'] ? 'yes' : 'no', $r['is_active'] ? 'yes' : 'no', $r['created_at'], $r['last_login_at'], $r['courses'], $r['completed'], $r['certificates']], $rows));
     }
 
     public function show(Request $request, int $id): Response

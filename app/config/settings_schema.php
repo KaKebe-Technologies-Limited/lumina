@@ -99,6 +99,16 @@ return [
                 'maintenance_show_social'  => ['label' => 'Show social media links', 'type' => 'boolean', 'default' => '1'],
             ],
         ],
+        'bono' => [
+            'label' => 'Bono AI',
+            'icon'  => 'message-circle',
+            'help'  => 'Bono AI is the support assistant in the corner of every public page. It reads the whole website every day (cron job bin/bono-learn.php, or "Learn the website now" in Admin > Bono AI) and answers questions from it. Teach it answers and see what people ask under Admin > Bono AI.',
+            'fields' => [
+                'bono_enabled'  => ['label' => 'Show Bono AI on the website', 'type' => 'boolean', 'default' => '1', 'help' => 'Switch off to hide the chat window everywhere. What Bono learned is kept.'],
+                'bono_ai'       => ['label' => 'Let Claude phrase the answers (when ANTHROPIC_API_KEY is in the .env file)', 'type' => 'boolean', 'default' => '1', 'help' => 'Without the key, or when this is off, Bono answers with the best sentences of the website itself. Only the matching website passages and the question are sent to Claude, never any personal data.'],
+                'bono_greeting' => ['label' => 'Opening message', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:400', 'help' => 'Leave empty for the standard greeting.'],
+            ],
+        ],
         'academy' => [
             'label' => 'LAF Academy',
             'icon'  => 'book',
@@ -109,6 +119,7 @@ return [
                 'academy_signup_mode'          => ['label' => 'How new learners get in', 'type' => 'select', 'default' => 'approval', 'rules' => 'required|in:approval,email,open',
                     'options' => ['approval' => 'An administrator approves each account (no e-mail code or link)', 'email' => 'They confirm their e-mail (link or 6-digit code), or an administrator approves them', 'open' => 'Nothing: they can sign in at once'],
                     'help' => 'The first option is for when e-mail is limited: nothing is e-mailed to the learner, the new account waits in Admin > LAF Academy > Learners (Approve / Approve all) and the learner is told to sign in after the approval time below. Switch to the second option once e-mail works (Settings > E-mail).'],
+                'academy_support_whatsapp'     => ['label' => 'Academy support WhatsApp number', 'type' => 'text', 'default' => '+256779795662', 'rules' => 'nullable|max:30', 'help' => 'Shown to new learners for quick inquiries about their approval, with a "chat on WhatsApp" link. Include the country code.'],
                 'academy_approval_hours'       => ['label' => 'Approval time shown to new learners (hours)', 'type' => 'select', 'default' => '1', 'rules' => 'required|in:1,2,3,6,12,24,48',
                     'options' => ['1' => '1 hour', '2' => '2 hours', '3' => '3 hours', '6' => '6 hours', '12' => '12 hours', '24' => '24 hours', '48' => '48 hours'], 'help' => 'Only the wording: "your account is approved within about 1 hour, please sign in after that". Approve the accounts within this time.'],
                 'academy_cert_approval'        => ['label' => 'Certificates must be approved before they are available', 'type' => 'boolean', 'default' => '1', 'help' => 'On: a learner who passes the final exam gets a certificate that waits in Admin > Academy > Certificates until you approve it (then it can be downloaded and e-mailed). Off: it is available at once and e-mailed automatically.'],

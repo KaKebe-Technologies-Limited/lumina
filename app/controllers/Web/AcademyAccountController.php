@@ -177,6 +177,10 @@ final class AcademyAccountController extends AcademyBaseController
             }
             $this->fail(['password' => (string) $res['error']], 'academy/login');
         }
+        if (LearnerAuth::missingContact((array) $res['learner'])) {
+            Flash::info('Please add your phone number, country and WhatsApp number to continue. They help us to support you.');
+            return $this->redirect('academy/account#details');
+        }
         return $this->redirect($this->nextAfterLogin());
     }
 
@@ -211,6 +215,10 @@ final class AcademyAccountController extends AcademyBaseController
             return $this->redirect('academy/login');
         }
         LearnerAuth::signIn($res['learner']);
+        if (LearnerAuth::missingContact((array) $res['learner'])) {
+            Flash::info(($res['created'] ? 'Welcome to the LAF Academy! ' : '') . 'Please add your phone number, country and WhatsApp number to continue. They help us to support you.');
+            return $this->redirect('academy/account#details');
+        }
         Flash::success($res['created'] ? 'Welcome to the LAF Academy! Your account is ready.' : 'You are signed in with Google.');
         return $this->redirect($this->nextAfterLogin());
     }
@@ -292,14 +300,15 @@ final class AcademyAccountController extends AcademyBaseController
         if (mb_strlen($name) < 2 || mb_strlen($name) > 120) {
             $this->fail(['name' => 'Please enter your full name.'], 'academy/account');
         }
-        $phone = trim((string) preg_replace('/[^0-9+()\- ]/', '', $request->string('phone')));
-        $country = trim(strip_tags($request->string('country')));
-        Database::update('academy_learners', [
-            'name' => $name, 'phone' => $phone !== '' ? mb_substr($phone, 0, 40) : null, 'country' => $country !== '' ? mb_substr($country, 0, 80) : null,
-        ], 'id = ?', [(int) $l['id']]);
+        $c = LearnerAuth::contact($request->string('phone'), $request->string('country'), $request->string('whatsapp'));
+        if ($c['errors'] !== []) {
+            $this->fail($c['errors'], 'academy/account#details');
+        }
+        Database::update('academy_learners', ['name' => $name, 'phone' => mb_substr($c['phone'], 0, 40), 'country' => mb_substr($c['country'], 0, 80)], 'id = ?', [(int) $l['id']]);
+        \App\Services\Academy\VerificationCode::saveNumber((int) $l['id'], $c['whatsapp']);
         LearnerAuth::flush();
         Flash::success('Your details were saved. Certificates you already earned keep the name they were issued with.');
-        return $this->redirect('academy/account');
+        return $this->redirect($this->nextAfterLogin('academy/account'));
     }
 
     public function photo(Request $request): Response

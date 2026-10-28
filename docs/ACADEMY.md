@@ -206,3 +206,7 @@ The sign-up form has an optional **picture** field: attach a photo, or press **T
 * **They confirm their e-mail, or an administrator approves them:** the earlier behaviour (link + 6-digit code + optional WhatsApp code). Switch to this when e-mail works (Settings > E-mail).
 * **Nothing:** new learners can sign in at once.
 * "Continue with Google" always signs in at once (Google verified the address). Code: `LearnerAuth::signupMode()`.
+
+## Contact details every learner must give
+
+The sign-up form (and **My account**) requires the **phone number, country and WhatsApp number** (the WhatsApp number with the country code; a local number starting with 0 gets +256 unless `WHATSAPP_COUNTRY_CODE` says otherwise). They help the Academy support learners: they are shown to administrators on the learner page (WhatsApp is a chat link) and are columns in the learner export. Learners who signed up before, or with Google, are taken to **My account** after signing in until they have given them, and the dashboard keeps reminding them. **Quick inquiries about the approval:** the pending page, the sign-in message and the sign-up page show the support WhatsApp line (Settings > LAF Academy > Academy support WhatsApp number, default +256 779 795 662) with a chat link. Bono AI (docs/BONO.md) knows the same line.

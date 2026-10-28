@@ -44,7 +44,8 @@ final class LearnerAuth
             return self::$current = null;
         }
         try {
-            $row = Database::one('SELECT id, name, email, phone, country, email_verified_at, is_active, created_at FROM academy_learners WHERE id = ? LIMIT 1', [$id]);
+            $wa = VerificationCode::ready() ? ', whatsapp' : '';
+            $row = Database::one('SELECT id, name, email, phone, country' . $wa . ', email_verified_at, is_active, created_at FROM academy_learners WHERE id = ? LIMIT 1', [$id]);
         } catch (\Throwable) {
             $row = null;
         }
@@ -134,7 +135,60 @@ final class LearnerAuth
     }
 
     /**
-     * @param array{name?:string,email?:string,password?:string,phone?:string,country?:string} $in
+     * The contact details every learner must give (they let the Academy support them): phone, country and WhatsApp number.
+     * @return array{errors:array<string,string>,phone:string,country:string,whatsapp:?string} whatsapp = digits with the country code
+     */
+    public static function contact(string $phoneIn, string $countryIn, string $whatsappIn): array
+    {
+        $errors = [];
+        $phone = trim((string) preg_replace('/[^0-9+()\- ]/', '', $phoneIn));
+        $digits = (string) preg_replace('/\D+/', '', $phone);
+        if (strlen($digits) < 7 || strlen($phone) > 40) {
+            $errors['phone'] = 'Please enter your phone number.';
+        }
+        $country = trim((string) preg_replace('/\s+/u', ' ', strip_tags($countryIn)));
+        if (mb_strlen($country) < 2 || mb_strlen($country) > 80) {
+            $errors['country'] = 'Please enter your country.';
+        }
+        $wa = self::normaliseWhatsApp($whatsappIn);
+        if ($wa === null) {
+            $errors['whatsapp'] = 'Please enter your WhatsApp number with the country code, for example +256 772 123 456.';
+        }
+        return ['errors' => $errors, 'phone' => $phone, 'country' => $country, 'whatsapp' => $wa];
+    }
+
+    /** International digits of a WhatsApp number. A local number starting with 0 gets the default country code (WHATSAPP_COUNTRY_CODE, else 256 = Uganda). */
+    public static function normaliseWhatsApp(string $input): ?string
+    {
+        $n = WhatsAppSender::normalise($input);
+        if ($n === null && str_starts_with((string) preg_replace('/\D+/', '', $input), '0') && !str_starts_with((string) preg_replace('/\D+/', '', $input), '00')) {
+            $d = (string) preg_replace('/\D+/', '', $input);
+            $n = '256' . ltrim($d, '0');
+            $n = strlen($n) >= 8 && strlen($n) <= 15 ? $n : null;
+        }
+        return $n;
+    }
+
+    /** True when the learner still has to give the phone, country or WhatsApp number. */
+    public static function missingContact(array $learner): bool
+    {
+        return trim((string) ($learner['phone'] ?? '')) === '' || trim((string) ($learner['country'] ?? '')) === ''
+            || (VerificationCode::ready() && trim((string) ($learner['whatsapp'] ?? '')) === '');
+    }
+
+    /** The Academy support WhatsApp line: ['display' => '+256 779 795 662', 'digits' => '256779795662', 'url' => 'https://wa.me/...'] or null when switched off. */
+    public static function supportWhatsapp(): ?array
+    {
+        $raw = trim((string) setting('academy_support_whatsapp', '+256779795662'));
+        $digits = (string) preg_replace('/\D+/', '', $raw);
+        if ($digits === '') {
+            return null;
+        }
+        return ['display' => $raw, 'digits' => $digits, 'url' => 'https://wa.me/' . $digits];
+    }
+
+    /**
+     * @param array{name?:string,email?:string,password?:string,phone?:string,country?:string,whatsapp?:string} $in
      * @return array{ok:bool,errors:array<string,string>,learner?:array<string,mixed>,verify:bool}
      */
     public static function register(array $in, string $ip): array
@@ -142,11 +196,11 @@ final class LearnerAuth
         $name = trim((string) preg_replace('/\s+/u', ' ', strip_tags((string) ($in['name'] ?? ''))));
         $email = self::normaliseEmail((string) ($in['email'] ?? ''));
         $password = (string) ($in['password'] ?? '');
-        $phone = trim((string) preg_replace('/[^0-9+()\- ]/', '', (string) ($in['phone'] ?? '')));
-        $country = trim(strip_tags((string) ($in['country'] ?? '')));
-        $waInput = trim((string) ($in['whatsapp'] ?? ''));
-        $wa = $waInput !== '' && WhatsAppSender::enabled() ? WhatsAppSender::normalise($waInput) : null;
-        $errors = [];
+        $c = self::contact((string) ($in['phone'] ?? ''), (string) ($in['country'] ?? ''), (string) ($in['whatsapp'] ?? ''));
+        $phone = $c['phone'];
+        $country = $c['country'];
+        $wa = $c['whatsapp'];
+        $errors = $c['errors'];
         if ($name === '' || mb_strlen($name) < 2 || mb_strlen($name) > 120) {
             $errors['name'] = 'Please enter your full name (it is printed on your certificates).';
         }
@@ -156,12 +210,6 @@ final class LearnerAuth
         $pp = self::passwordProblem($password, $email);
         if ($pp !== null) {
             $errors['password'] = $pp;
-        }
-        if (mb_strlen($phone) > 40) {
-            $errors['phone'] = 'The phone number is too long.';
-        }
-        if ($waInput !== '' && WhatsAppSender::enabled() && $wa === null) {
-            $errors['whatsapp'] = 'Enter your WhatsApp number with the country code, for example +256 772 123 456.';
         }
         if ($errors !== []) {
             return ['ok' => false, 'errors' => $errors, 'verify' => false];
@@ -186,12 +234,12 @@ final class LearnerAuth
             'is_active' => 1,
         ]);
         LearnerRegistry::assign($id);
+        VerificationCode::saveNumber($id, $wa);                                                  // the WhatsApp number is kept for support
         $learner = (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$id]);
         if ($verify && self::emailVerificationOn()) {
             self::$lastCode = null;
             self::sendVerification($learner);
-            if ($wa !== null && self::$lastCode !== null) {
-                VerificationCode::saveNumber($id, $wa);
+            if ($wa !== null && self::$lastCode !== null && WhatsAppSender::enabled()) {
                 VerificationCode::deliver($id, $wa, self::$lastCode);        // the same code, on WhatsApp too
             }
         } elseif (!$verify) {
@@ -335,7 +383,7 @@ final class LearnerAuth
         if (self::requireVerification() && $l['email_verified_at'] === null) {
             return ['ok' => false, 'error' => self::emailVerificationOn()
                 ? 'Your account is waiting for approval. Confirm your e-mail address (open the link or type the code we sent you), or wait for the Academy team to approve it.'
-                : 'Your account is waiting for approval. Approval takes about ' . self::approvalText() . ': please sign in after that.', 'unverified' => true, 'learner' => $l];
+                : 'Your account is waiting for approval. Approval takes about ' . self::approvalText() . ': please sign in after that.' . (($sw = self::supportWhatsapp()) !== null ? ' For quick inquiries about your approval, WhatsApp ' . $sw['display'] . '.' : ''), 'unverified' => true, 'learner' => $l];
         }
         RateLimit::clear($key);
         self::signIn($l);

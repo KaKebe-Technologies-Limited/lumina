@@ -19,7 +19,7 @@ $lid = (int) $l['id']; ?>
                 <?php if (!empty($l['approved_at'])): ?><div><dt>Approved</dt><dd>By an administrator on <?= e(format_datetime($l['approved_at'], 'j M Y, H:i')) ?></dd></div><?php endif; ?>
                 <?php if ($manager): ?><div><dt>Phone</dt><dd><?= e((string) ($l['phone'] ?: '-')) ?></dd></div><div><dt>Country</dt><dd><?= e((string) ($l['country'] ?: '-')) ?></dd></div><?php endif; ?>
                 <?php if ($manager && $l['email_verified_at'] === null): ?><div><dt>Confirmation e-mail</dt><dd><?php if (!empty($l['mail_error'])): ?><span class="badge badge--danger">Not delivered</span> <?= e($l['mail_error']) ?><?php elseif (!empty($l['mail_sent_at'])): ?>Sent <?= e(format_datetime($l['mail_sent_at'], 'j M Y, H:i')) ?> <span class="text-muted">(ask the learner to check the spam folder)</span><?php else: ?>No e-mail was sent yet<?php endif; ?></dd></div><?php endif; ?>
-                <?php if ($manager && !empty($l['whatsapp'])): ?><div><dt>WhatsApp</dt><dd>+<?= e((string) $l['whatsapp']) ?></dd></div><?php endif; ?>
+                <?php if ($manager && !empty($l['whatsapp'])): ?><div><dt>WhatsApp</dt><dd><a href="https://wa.me/<?= e((string) $l['whatsapp']) ?>" target="_blank" rel="noopener">+<?= e((string) $l['whatsapp']) ?></a></dd></div><?php endif; ?>
                 <div><dt>Joined</dt><dd><?= e(format_datetime($l['created_at'], 'j M Y, H:i')) ?></dd></div>
                 <div><dt>Last sign-in</dt><dd><?= $l['last_login_at'] ? e(format_datetime($l['last_login_at'], 'j M Y, H:i')) : 'Never' ?></dd></div>
                 <div><dt>Account</dt><dd><?= (int) $l['is_active'] === 1 ? 'Active' : 'Switched off' ?></dd></div>

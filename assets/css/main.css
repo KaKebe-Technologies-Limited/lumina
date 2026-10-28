@@ -24656,3 +24656,287 @@ fieldset.ac-q legend + * {
 .ac-cert-wait {
   border-left: 3px solid #D6A151;
 }
+
+.bono {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 101;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+.bono__launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.1rem;
+  background: #2C3950;
+  color: #FFFFFF;
+  border: 0;
+  border-radius: 999px;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(23, 32, 54, 0.1), 0 2px 6px rgba(23, 32, 54, 0.06);
+}
+
+.bono__launch:hover, .bono__launch:focus-visible {
+  background: #172036;
+}
+
+@media print {
+  .bono__launch {
+    display: none;
+  }
+}
+
+.bono.is-open .bono__launch {
+  display: none;
+}
+
+.bono__panel {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  width: 380px;
+  max-width: calc(100vw - 2rem);
+  height: 560px;
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+  background: #FFFFFF;
+  border: 1px solid #E4E1DA;
+  border-radius: 20px;
+  box-shadow: 0 18px 44px rgba(23, 32, 54, 0.16), 0 6px 14px rgba(23, 32, 54, 0.08);
+  overflow: hidden;
+}
+
+.bono__panel[hidden] {
+  display: none;
+}
+
+.bono__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #2C3950;
+  color: #FFFFFF;
+}
+
+.bono__avatar {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: #D6A151;
+  color: #2C3950;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+}
+
+.bono__title {
+  flex: 1;
+  display: grid;
+  line-height: 1.2;
+}
+
+.bono__title small {
+  opacity: 0.8;
+  font-size: 0.75rem;
+}
+
+.bono__close {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+  color: #FFFFFF;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.bono__close:hover, .bono__close:focus-visible {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.bono__log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  background: #F1EEE8;
+}
+
+.bono__msg {
+  display: grid;
+  gap: 0.4rem;
+  max-width: 92%;
+}
+
+.bono__msg--user {
+  justify-self: end;
+}
+
+.bono__msg--user .bono__bubble {
+  background: #2C3950;
+  color: #FFFFFF;
+  border-radius: 16px 16px 4px 16px;
+}
+
+.bono__msg--bot {
+  justify-self: start;
+}
+
+.bono__msg--bot .bono__bubble {
+  background: #FFFFFF;
+  color: #1D1E20;
+  border: 1px solid #E4E1DA;
+  border-radius: 16px 16px 16px 4px;
+}
+
+.bono__bubble {
+  margin: 0;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.bono__msg.is-typing .bono__bubble {
+  color: #5A6470;
+  font-style: italic;
+}
+
+.bono__sources {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+}
+
+.bono__sources a {
+  color: #2C3950;
+  text-decoration: underline;
+}
+
+.bono__feedback {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: #5A6470;
+}
+
+.bono__fbtn {
+  padding: 0.15rem 0.6rem;
+  background: #FFFFFF;
+  color: #2C3950;
+  border: 1px solid #E4E1DA;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.bono__fbtn:hover, .bono__fbtn:focus-visible {
+  border-color: #2C3950;
+}
+
+.bono__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.bono__chip {
+  padding: 0.35rem 0.75rem;
+  background: #FFFFFF;
+  color: #2C3950;
+  border: 1px solid #2C3950;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.bono__chip:hover, .bono__chip:focus-visible {
+  background: #2C3950;
+  color: #FFFFFF;
+}
+
+.bono__form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border-top: 1px solid #E4E1DA;
+  background: #FFFFFF;
+}
+
+.bono__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #E4E1DA;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.92rem;
+}
+
+.bono__input:focus {
+  outline: 2px solid #2C3950;
+  outline-offset: 1px;
+}
+
+.bono__send {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: #D6A151;
+  color: #2C3950;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.bono__send:hover, .bono__send:focus-visible {
+  background: #C47E0D;
+}
+
+.bono__note {
+  margin: 0;
+  padding: 0.45rem 0.9rem 0.7rem;
+  font-size: 0.72rem;
+  color: #5A6470;
+  background: #FFFFFF;
+}
+
+.bono__note a {
+  color: #2C3950;
+}
+
+@media (max-width: 480px) {
+  .bono__panel {
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    width: auto;
+    max-width: none;
+    height: 78vh;
+    max-height: 560px;
+  }
+}
+
+@media print {
+  .bono {
+    display: none;
+  }
+}

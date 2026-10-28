@@ -45,6 +45,7 @@ final class SeoController extends Controller
             'Disallow: ' . $base . '/academy/verify/',
             'Disallow: ' . $base . '/academy/reset/',
             'Disallow: ' . $base . '/academy/check-email',
+            'Disallow: ' . $base . '/bono/',
             'Disallow: ' . $base . '/academy/certificate/',
             '',
             'Sitemap: ' . abs_url('sitemap.xml'),

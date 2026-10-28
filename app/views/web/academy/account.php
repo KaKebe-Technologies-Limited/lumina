@@ -4,14 +4,15 @@
     <div class="container container--narrow">
         <form class="ac-form card" method="post" action="<?= e(url('academy/account/profile')) ?>" novalidate>
             <?= csrf_field() ?>
-            <div class="card__header"><h2 class="card__title">My details</h2></div>
+            <div class="card__header" id="details"><h2 class="card__title">My details</h2></div>
             <div class="card__body">
                 <?= partial('partials/form-field', ['name' => 'name', 'label' => 'Full name', 'required' => true, 'maxlength' => 120, 'value' => old('name', $me['name']), 'help' => 'Used on new certificates. Certificates you already earned keep their name.']) ?>
                 <div class="field"><label class="field__label" for="acc-email">E-mail address</label><input class="input" id="acc-email" type="email" value="<?= e($me['email']) ?>" disabled><div class="field__help">To change your e-mail address, write to us and we will help.</div></div>
                 <div class="form-grid">
-                    <?= partial('partials/form-field', ['name' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'maxlength' => 40, 'value' => old('phone', (string) $me['phone'])]) ?>
-                    <?= partial('partials/form-field', ['name' => 'country', 'label' => 'Country', 'maxlength' => 80, 'value' => old('country', (string) $me['country'])]) ?>
+                    <?= partial('partials/form-field', ['name' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'required' => true, 'maxlength' => 40, 'value' => old('phone', (string) $me['phone'])]) ?>
+                    <?= partial('partials/form-field', ['name' => 'country', 'label' => 'Country', 'required' => true, 'maxlength' => 80, 'value' => old('country', (string) $me['country'])]) ?>
                 </div>
+                <?= partial('partials/form-field', ['name' => 'whatsapp', 'label' => 'WhatsApp number', 'type' => 'tel', 'required' => true, 'maxlength' => 24, 'value' => old('whatsapp', !empty($me['whatsapp']) ? '+' . $me['whatsapp'] : ''), 'help' => 'With the country code, for example +256 772 123 456. We use it to support you.']) ?>
                 <button class="btn btn--cta btn--caps" type="submit">Save my details</button>
             </div>
         </form>

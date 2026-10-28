@@ -144,16 +144,16 @@ check('admin pages are closed to the public', in_array($acReq('GET', '/admin/aca
 // ---- sign up, confirm, sign in ----------------------------------------------------------------------------------------------
 $email = 'zz-academy-a@example.test';
 $jA = null;
-$weak = $acPost('/academy/register', ['name' => 'ZZ Academy A', 'email' => $email, 'password' => '12345678', 'agree' => '1'], $jA, '/academy/register', true);
+$weak = $acPost('/academy/register', ['name' => 'ZZ Academy A', 'email' => $email, 'password' => '12345678', 'phone' => '+256700000009', 'country' => 'Uganda', 'whatsapp' => '+256 772 000 009', 'agree' => '1'], $jA, '/academy/register', true);
 check('sign-up: a weak password is refused', str_contains($weak['body'], 'harder to guess') && Database::value('SELECT COUNT(*) FROM academy_learners WHERE email = ?', [$email], 0) === 0);
-$noAgree = $acPost('/academy/register', ['name' => 'ZZ Academy A', 'email' => $email, 'password' => 'Correct horse 77'], $jA, '/academy/register', true);
+$noAgree = $acPost('/academy/register', ['name' => 'ZZ Academy A', 'email' => $email, 'password' => 'Correct horse 77', 'phone' => '+256700000009', 'country' => 'Uganda', 'whatsapp' => '+256 772 000 009'], $jA, '/academy/register', true);
 check('sign-up: the agreement box is required', Database::value('SELECT COUNT(*) FROM academy_learners WHERE email = ?', [$email], 0) === 0 && str_contains($noAgree['body'], 'tick the box'));
-$reg = $acPost('/academy/register', ['name' => 'ZZ Academy A', 'email' => $email, 'password' => 'Correct horse 77', 'agree' => '1'], $jA, '/academy/register', true);
+$reg = $acPost('/academy/register', ['name' => 'ZZ Academy A', 'email' => $email, 'password' => 'Correct horse 77', 'phone' => '+256700000009', 'country' => 'Uganda', 'whatsapp' => '+256 772 000 009', 'agree' => '1'], $jA, '/academy/register', true);
 $row = Database::one('SELECT * FROM academy_learners WHERE email = ?', [$email]);
 check('sign-up: the account exists, is not confirmed and the page asks to check the e-mail', $row !== null && $row['email_verified_at'] === null && str_contains($reg['body'], 'Check your e-mail') && !str_contains((string) $row['password_hash'], 'Correct horse'));
 $mail = $acLastMailTo($email, $mailsBefore);
 check('sign-up: a confirmation e-mail with a link was sent', $mail !== null && preg_match('~/academy/verify/([a-f0-9]{64})~', $mail, $vm) === 1);
-$loginTry = $acPost('/academy/login', ['email' => $email, 'password' => 'Correct horse 77'], $jA, '/academy/login', true);
+$loginTry = $acPost('/academy/login', ['email' => $email, 'password' => 'Correct horse 77', 'phone' => '+256700000009', 'country' => 'Uganda', 'whatsapp' => '+256 772 000 009'], $jA, '/academy/login', true);
 check('sign-in is refused until the address is confirmed', str_contains($loginTry['body'], 'Check your e-mail') && $acReq('GET', '/academy/dashboard', [], $jA)['code'] === 302);
 $ver = $acReq('GET', '/academy/verify/' . str_repeat('a', 64), [], $jA);
 check('a wrong confirmation link does not work', $ver['code'] === 410);
@@ -162,12 +162,12 @@ check('the confirmation link confirms the address and signs the learner in', str
 check('the confirmation link works once only', $acReq('GET', '/academy/verify/' . ($vm[1] ?? 'x'), [], $jA)['code'] === 410);
 $acReq('POST', '/academy/logout', ['_token' => $acToken($acReq('GET', '/academy/dashboard', [], $jA)['body'])], $jA);
 check('sign-out ends the session', $acReq('GET', '/academy/dashboard', [], $jA)['code'] === 302);
-$dup = $acPost('/academy/register', ['name' => 'Someone Else', 'email' => $email, 'password' => 'Another pass 88', 'agree' => '1'], $jA, '/academy/register', true);
+$dup = $acPost('/academy/register', ['name' => 'Someone Else', 'email' => $email, 'password' => 'Another pass 88', 'phone' => '+256700000009', 'country' => 'Uganda', 'whatsapp' => '+256 772 000 009', 'agree' => '1'], $jA, '/academy/register', true);
 check('sign-up with an address that has an account looks the same and creates nothing', str_contains($dup['body'], 'Check your e-mail') && Database::value('SELECT COUNT(*) FROM academy_learners WHERE email = ?', [$email], 0) === 1 && Database::value('SELECT name FROM academy_learners WHERE email = ?', [$email]) === 'ZZ Academy A');
 $bad = $acPost('/academy/login', ['email' => $email, 'password' => 'wrong password'], $jA, '/academy/login', true);
 $none = $acPost('/academy/login', ['email' => 'zz-academy-nobody@example.test', 'password' => 'wrong password'], $jA, '/academy/login', true);
 check('wrong password and unknown address give the same message', str_contains($bad['body'], 'do not match') && str_contains($none['body'], 'do not match'));
-$in = $acPost('/academy/login', ['email' => $email, 'password' => 'Correct horse 77'], $jA, '/academy/login', true);
+$in = $acPost('/academy/login', ['email' => $email, 'password' => 'Correct horse 77', 'phone' => '+256700000009', 'country' => 'Uganda', 'whatsapp' => '+256 772 000 009'], $jA, '/academy/login', true);
 check('sign-in works and shows the dashboard', str_contains($in['body'], 'My learning'));
 check('staff pages stay closed to a learner', in_array($acReq('GET', '/admin', [], $jA)['code'], [302, 401, 403], true));
 $lid = (int) Database::value('SELECT id FROM academy_learners WHERE email = ?', [$email]);
@@ -328,7 +328,7 @@ check('changing the password needs the current one', str_contains($chg['body'], 
 
 // ---- switches and deletion --------------------------------------------------------------------------------------------------
 $acSet('academy_registration_open', '0');
-$closed = $acPost('/academy/register', ['name' => 'ZZ Academy C', 'email' => 'zz-academy-c@example.test', 'password' => 'Closed door 66', 'agree' => '1'], $jC, '/academy/register', true);
+$closed = $acPost('/academy/register', ['name' => 'ZZ Academy C', 'email' => 'zz-academy-c@example.test', 'password' => 'Closed door 66', 'phone' => '+256700000009', 'country' => 'Uganda', 'whatsapp' => '+256 772 000 009', 'agree' => '1'], $jC, '/academy/register', true);
 check('registration can be closed', Database::value("SELECT COUNT(*) FROM academy_learners WHERE email = 'zz-academy-c@example.test'", [], 0) === 0);
 $acSet('academy_registration_open', '1');
 Database::update('academy_courses', ['status' => 'draft'], 'id = ?', [$zzCourse]);

@@ -114,6 +114,10 @@ if (!empty($breadcrumbs) && is_array($breadcrumbs)) {
 <button class="back-to-top" type="button" data-back-to-top aria-label="<?= e(content('global', 'footer.back_to_top')) ?>"><?= icon('arrow-up') ?></button>
 
 <?= partial('partials/pwa-install') ?>
+<?php if (\App\Services\Bono\BonoEngine::enabled()): ?>
+<?= partial('partials/bono') ?>
+<script src="<?= e(asset('js/bono.js')) ?>" defer></script>
+<?php endif; ?>
 <script src="<?= e(asset('js/main.js')) ?>" defer></script>
 <script src="<?= e(asset('js/pwa.js')) ?>" defer></script>
 <?= $this->section('scripts') ?>

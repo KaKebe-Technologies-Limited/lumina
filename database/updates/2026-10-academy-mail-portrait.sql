@@ -97,3 +97,57 @@ SET @lumina_ddl = IF(@lumina_has_idx = 0, 'ALTER TABLE `academy_learners` ADD UN
 PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
+
+-- Bono AI, the support assistant of the public website (docs/BONO.md): what it learned from the site, answers an administrator taught it, and the questions people asked.
+CREATE TABLE IF NOT EXISTS `bono_pages` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `url_hash` CHAR(40) NOT NULL,
+  `url` VARCHAR(500) NOT NULL,
+  `title` VARCHAR(255) NOT NULL DEFAULT '',
+  `content_hash` CHAR(40) NOT NULL DEFAULT '',
+  `indexed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `changed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_bono_pages_url` (`url_hash`),
+  KEY `ix_bono_pages_indexed` (`indexed_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `bono_chunks` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `page_id` INT UNSIGNED NOT NULL,
+  `heading` VARCHAR(255) NOT NULL DEFAULT '',
+  `anchor` VARCHAR(120) NOT NULL DEFAULT '',
+  `body` TEXT NOT NULL,
+  `stems` TEXT NOT NULL,
+  `tf` TEXT NOT NULL,
+  `len` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `ix_bono_chunks_page` (`page_id`),
+  CONSTRAINT `fk_bono_chunks_page` FOREIGN KEY (`page_id`) REFERENCES `bono_pages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `bono_taught` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `question` VARCHAR(300) NOT NULL,
+  `answer` TEXT NOT NULL,
+  `stems` TEXT NOT NULL,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `hits` INT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `bono_log` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `question` VARCHAR(500) NOT NULL,
+  `outcome` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `score` FLOAT NOT NULL DEFAULT 0,
+  `page_url` VARCHAR(500) NULL,
+  `helpful` TINYINT NULL,
+  `handled` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_bono_log_created` (`created_at`),
+  KEY `ix_bono_log_open` (`outcome`, `handled`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

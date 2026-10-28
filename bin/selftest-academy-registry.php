@@ -70,7 +70,7 @@ $post = static function (string $path, array $form, ?string &$jar, string $from)
 $jL = null;
 $jP = null;
 $pw = 'Sentence-for-test-77';
-$reg = $post('/academy/register', ['name' => 'Zed Lre One', 'email' => 'zz-lre-one@example.test', 'password' => $pw, 'agree' => '1'], $jL, '/academy/register');
+$reg = $post('/academy/register', ['name' => 'Zed Lre One', 'email' => 'zz-lre-one@example.test', 'password' => $pw, 'phone' => '+256700000001', 'country' => 'Uganda', 'whatsapp' => '0772 123 456', 'agree' => '1'], $jL, '/academy/register');
 $one = Database::one("SELECT * FROM academy_learners WHERE email = 'zz-lre-one@example.test'");
 check('sign-up: by default administrators approve the accounts: the learner goes to the "application received" page (no e-mail code)', LearnerAuth::signupMode() === 'approval' && $one !== null && in_array($reg['code'], [302, 303], true) && str_contains($reg['head'], 'academy/pending'));
 check('sign-up: in that mode no confirmation link or code is created or e-mailed', $one !== null && $one['token_hash'] === null && $one['code_hash'] === null && ($one['mail_sent_at'] ?? null) === null);
@@ -82,6 +82,17 @@ $flash = $req('GET', '/academy/login', [], $jL)['body'] . $login['body'];
 check('sign-in: before approval the learner is told the account is waiting for approval and to sign in after about 1 hour', !str_contains($login['head'], 'academy/dashboard') && str_contains($flash, 'waiting for approval') && str_contains($flash . $req('GET', '/academy/pending', [], $jL)['body'], 'about 1 hour'));
 $mailsNow = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
 check('sign-up: no e-mail was sent to the learner', array_filter(array_diff($mailsNow, $mailsBeforeLre), static fn(string $f): bool => preg_match('/^To:.*zz-lre-one@/mi', (string) file_get_contents($f)) === 1) === []);
+check('contact: phone, country and WhatsApp are stored; a local WhatsApp number gets the country code', $one !== null && $one['phone'] === '+256700000001' && $one['country'] === 'Uganda' && $one['whatsapp'] === '256772123456');
+check('contact: the pending page gives the support WhatsApp line for quick inquiries about the approval', str_contains($page['body'], 'https://wa.me/256779795662') && str_contains($page['body'], '+256779795662'));
+foreach (['phone' => 'Please enter your phone', 'country' => 'Please enter your country', 'whatsapp' => 'Please enter your WhatsApp'] as $miss => $text) {
+    $form = ['name' => 'Zed Lre Req', 'email' => 'zz-lre-req-' . $miss . '@example.test', 'password' => $pw, 'phone' => '+256700000002', 'country' => 'Kenya', 'whatsapp' => '+254 711 222 333', 'agree' => '1'];
+    $form[$miss] = '';
+    $jR = null;
+    $rr = $post('/academy/register', $form, $jR, '/academy/register');
+    $back = $req('GET', '/academy/register', [], $jR)['body'];
+    check('contact: without the ' . $miss . ' the sign-up is refused with a message and no account is made', Database::value('SELECT COUNT(*) FROM academy_learners WHERE email = ?', [$form['email']], 0) === 0 && str_contains($back . $rr['body'], $text));
+}
+check('contact: WhatsApp numbers are normalised (+, spaces, 00, local 0)', LearnerAuth::normaliseWhatsApp('+254 711-222-333') === '254711222333' && LearnerAuth::normaliseWhatsApp('00256772123456') === '256772123456' && LearnerAuth::normaliseWhatsApp('0772123456') === '256772123456' && LearnerAuth::normaliseWhatsApp('abc') === null && LearnerAuth::normaliseWhatsApp('12') === null);
 $log = Database::one("SELECT * FROM audit_log WHERE action = 'academy.learner.register' AND summary LIKE '%Zed Lre One%' ORDER BY id DESC LIMIT 1");
 check('notice: the new account is written to the activity log (shown on the dashboard)', $log !== null && str_contains((string) $log['summary'], (string) $one['reg_no']) && str_contains((string) $log['summary'], 'waiting for approval'));
 
@@ -89,9 +100,9 @@ check('notice: the new account is written to the activity log (shown on the dash
 \App\Core\Settings::set('academy_signup_mode', 'email');
 \App\Core\Settings::flush();
 $jM = null;
-$post('/academy/register', ['name' => 'Zed Lre Mail', 'email' => 'zz-lre-mail@example.test', 'password' => $pw, 'agree' => '1'], $jM, '/academy/register');
+$post('/academy/register', ['name' => 'Zed Lre Mail', 'email' => 'zz-lre-mail@example.test', 'password' => $pw, 'phone' => '+256700000001', 'country' => 'Uganda', 'whatsapp' => '0772 123 456', 'agree' => '1'], $jM, '/academy/register');
 $mailRow = Database::one("SELECT * FROM academy_learners WHERE email = 'zz-lre-mail@example.test'");
-$regM = $post('/academy/register', ['name' => 'Zed Lre Mail2', 'email' => 'zz-lre-mail2@example.test', 'password' => $pw, 'agree' => '1'], $jM, '/academy/register');
+$regM = $post('/academy/register', ['name' => 'Zed Lre Mail2', 'email' => 'zz-lre-mail2@example.test', 'password' => $pw, 'phone' => '+256700000001', 'country' => 'Uganda', 'whatsapp' => '0772 123 456', 'agree' => '1'], $jM, '/academy/register');
 check('e-mail mode: switched on in the settings, sign-up sends the link / code and goes to the "check your e-mail" page', LearnerAuth::emailVerificationOn() && $mailRow !== null && $mailRow['token_hash'] !== null && str_contains($regM['head'], 'check-email'));
 \App\Core\Settings::reset('academy_signup_mode');
 \App\Core\Settings::flush();
@@ -132,6 +143,20 @@ $ap = $post('/admin/academy/learners-confirm-all', [], $jA, '/admin/academy/lear
 $waitingAfter = (int) Database::value("SELECT COUNT(*) FROM academy_learners WHERE email LIKE 'zz-lre-%' AND is_active = 1 AND email_verified_at IS NULL", [], 0);
 check('approve all: every waiting switched-on learner is approved, a switched-off one is left alone', $waitingAfter === 0 && Database::value('SELECT email_verified_at FROM academy_learners WHERE id = ?', [$off]) === null && Database::value('SELECT approved_at FROM academy_learners WHERE id = ?', [$ids['three']]) !== null);
 
+// ------------------------------------------------------------------------------------------------------------- learners who still lack the details
+$gid = (int) Database::insert('academy_learners', ['name' => 'Zed Lre Gap', 'email' => 'zz-lre-gap@example.test', 'password_hash' => Auth::hashPassword($pw), 'email_verified_at' => date('Y-m-d H:i:s'), 'is_active' => 1]);
+check('contact: a learner without them is recognised', LearnerAuth::missingContact((array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$gid])));
+$jG = null;
+$lg = $post('/academy/login', ['email' => 'zz-lre-gap@example.test', 'password' => $pw], $jG, '/academy/login');
+check('contact: after signing in they are taken to the form to add them first', in_array($lg['code'], [302, 303], true) && str_contains($lg['head'], 'academy/account'));
+$dashG = $req('GET', '/academy/dashboard', [], $jG)['body'];
+check('contact: the dashboard keeps asking until they are given', str_contains($dashG, 'complete my details'));
+$sv = $post('/academy/account/profile', ['name' => 'Zed Lre Gap', 'phone' => '+256700000003', 'country' => 'Uganda', 'whatsapp' => '+256 701 000 004'], $jG, '/academy/account');
+$gr = Database::one('SELECT * FROM academy_learners WHERE id = ?', [$gid]);
+check('contact: saving the details stores them and ends the reminder', $gr['whatsapp'] === '256701000004' && !LearnerAuth::missingContact((array) $gr) && !str_contains($req('GET', '/academy/dashboard', [], $jG)['body'], 'complete my details'));
+$bare = $post('/academy/account/profile', ['name' => 'Zed Lre Gap', 'phone' => '', 'country' => '', 'whatsapp' => ''], $jG, '/academy/account');
+check('contact: the details cannot be emptied again', Database::value('SELECT country FROM academy_learners WHERE id = ?', [$gid]) === 'Uganda');
+
 // ------------------------------------------------------------------------------------------------------------- picture or selfie at sign-up
 $regPage = $req('GET', '/academy/register', [], $jP);
 check('picture: the sign-up form can send a file and offers the picture field with the selfie button', str_contains($regPage['body'], 'enctype="multipart/form-data"') && str_contains($regPage['body'], 'name="photo"') && str_contains($regPage['body'], 'data-selfie-open') && str_contains($regPage['body'], 'academy.js'));
@@ -142,7 +167,7 @@ $postFile = static function (string $email, string $name, string $tmp, string $t
     $hp = $ts . '.' . hash_hmac('sha256', $ts, \App\Core\Config::appKey());
     $ch = curl_init($base . '/academy/register');
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_TIMEOUT => 60, CURLOPT_COOKIEJAR => $jar, CURLOPT_COOKIEFILE => $jar, CURLOPT_FOLLOWLOCATION => false, CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => ['_token' => $tok($page['body']), '_hp_ts' => $hp, 'name' => $name, 'email' => $email, 'password' => 'Sentence-for-test-77', 'agree' => '1', 'photo' => new CURLFile($tmp, $type, 'me.jpg')]]);
+        CURLOPT_POSTFIELDS => ['_token' => $tok($page['body']), '_hp_ts' => $hp, 'name' => $name, 'email' => $email, 'password' => 'Sentence-for-test-77', 'phone' => '+256700000001', 'country' => 'Uganda', 'whatsapp' => '0772 123 456', 'agree' => '1', 'photo' => new CURLFile($tmp, $type, 'me.jpg')]]);
     $raw = (string) curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
     curl_close($ch);

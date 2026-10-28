@@ -8,6 +8,9 @@ use App\Services\Academy\CourseService;
 
 <section class="section ac-dash">
     <div class="container">
+        <?php if (\App\Services\Academy\LearnerAuth::missingContact((array) $me)): ?>
+            <p class="opp-notice" role="status"><?= icon('info', 'icon--sm') ?> Please add your phone number, country and WhatsApp number: <a href="<?= e(url('academy/account#details')) ?>">complete my details</a>.</p>
+        <?php endif; ?>
         <div class="ac-dash__grid">
             <div class="ac-dash__main">
                 <h2 class="ac-block__title">My courses</h2>

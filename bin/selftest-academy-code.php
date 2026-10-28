@@ -142,7 +142,7 @@ $j = null;
 $page = $req('GET', '/academy/check-email', [], $j);
 check('http: the "check your e-mail" page asks for the 6-digit code and hides WhatsApp while it is not set up', $page['code'] === 200 && str_contains($page['body'], 'Type your 6-digit code') && !str_contains($page['body'], 'Get the code on WhatsApp'));
 $reg = $req('GET', '/academy/register', [], $j);
-check('http: the sign-up form has no WhatsApp field while it is not set up', $reg['code'] === 200 && !str_contains($reg['body'], 'name="whatsapp"'));
+check('http: the sign-up form asks for the WhatsApp number (needed for support, mandatory for everyone)', $reg['code'] === 200 && str_contains($reg['body'], 'name="whatsapp"') && str_contains($reg['body'], 'name="phone"') && str_contains($reg['body'], 'name="country"'));
 $wrongPost = $post('/academy/verify/code', ['email' => 'zz-lcd-h@example.test', 'code' => $ch1 === '123456' ? '654321' : '123456'], $j, '/academy/check-email');
 check('http: a wrong code goes back to the page with an error', in_array($wrongPost['code'], [302, 303], true) && str_contains($wrongPost['head'], 'check-email'));
 $okPost = $post('/academy/verify/code', ['email' => 'zz-lcd-h@example.test', 'code' => $ch1], $j, '/academy/check-email');

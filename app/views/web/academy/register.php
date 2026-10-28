@@ -19,9 +19,10 @@
                     <?= partial('partials/form-field', ['name' => 'email', 'label' => 'E-mail address', 'type' => 'email', 'required' => true, 'maxlength' => 190, 'autocomplete' => 'email']) ?>
                     <?= partial('partials/form-field', ['name' => 'password', 'label' => 'Password', 'type' => 'password', 'required' => true, 'maxlength' => 72, 'autocomplete' => 'new-password', 'help' => 'At least 8 characters. A short sentence is easy to remember and hard to guess.']) ?>
                     <div class="form-grid">
-                        <?= partial('partials/form-field', ['name' => 'phone', 'label' => 'Phone (optional)', 'type' => 'tel', 'maxlength' => 40, 'autocomplete' => 'tel']) ?>
-                        <?= partial('partials/form-field', ['name' => 'country', 'label' => 'Country (optional)', 'maxlength' => 80, 'autocomplete' => 'country-name']) ?>
+                        <?= partial('partials/form-field', ['name' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'required' => true, 'maxlength' => 40, 'autocomplete' => 'tel']) ?>
+                        <?= partial('partials/form-field', ['name' => 'country', 'label' => 'Country', 'required' => true, 'maxlength' => 80, 'autocomplete' => 'country-name']) ?>
                     </div>
+                    <?= partial('partials/form-field', ['name' => 'whatsapp', 'label' => 'WhatsApp number', 'type' => 'tel', 'required' => true, 'maxlength' => 24, 'autocomplete' => 'tel', 'help' => 'With the country code, for example +256 772 123 456. We use it to support you.']) ?>
                     <?php if (\App\Services\Academy\LearnerPortrait::ready()): ?>
                     <div class="field ac-selfie<?= error('photo') ? ' field--error' : '' ?>" data-selfie>
                         <label class="field__label" for="reg-photo">Your picture (optional)</label>
@@ -40,14 +41,12 @@
                         <?php if (error('photo')): ?><div class="field__error" role="alert"><?= e((string) error('photo')) ?></div><?php endif; ?>
                     </div>
                     <?php endif; ?>
-                    <?php if (\App\Services\Academy\LearnerAuth::emailVerificationOn() && \App\Services\Academy\WhatsAppSender::enabled() && \App\Services\Academy\VerificationCode::ready()): ?>
-                        <?= partial('partials/form-field', ['name' => 'whatsapp', 'label' => 'WhatsApp number (optional)', 'type' => 'tel', 'maxlength' => 24, 'autocomplete' => 'tel', 'help' => 'We will also send your confirmation code to WhatsApp. Include the country code, for example +256 772 123 456.']) ?>
-                    <?php endif; ?>
                     <div class="field<?= error('agree') ? ' field--error' : '' ?>">
                         <label class="check"><input type="checkbox" name="agree" value="1"<?= old('agree') ? ' checked' : '' ?> required><span><?= e(content('academy', 'auth.consent')) ?></span></label>
                         <?php if (error('agree')): ?><div class="field__error"><?= e((string) error('agree')) ?></div><?php endif; ?>
                     </div>
                     <button class="btn btn--cta btn--caps btn--block" type="submit">Create my account</button>
+                    <?php if (($sw = \App\Services\Academy\LearnerAuth::supportWhatsapp()) !== null): ?><p class="ac-form__alt">Quick inquiries about your approval? <a href="<?= e($sw['url']) ?>" rel="noopener" target="_blank">WhatsApp <?= e($sw['display']) ?></a></p><?php endif; ?>
                     <p class="ac-form__alt">Already have an account? <a href="<?= e(url('academy/login')) ?>">Sign in</a></p>
                 </div>
             </form>

@@ -242,6 +242,7 @@ require __DIR__ . '/selftest-academy-code.php';             // Academy: 6-digit 
 require __DIR__ . '/selftest-academy-mail-portrait.php';   // Academy: administrator sends confirmation e-mails (delivery record, bulk, confirm all) + learner portrait (private by default, consent, public strip; removes its own test data)
 require __DIR__ . '/selftest-academy-google.php';           // Academy: Continue with Google (state, PKCE, ID token checks, create / link / refuse accounts; Google is mocked; removes its own test data)
 require __DIR__ . '/selftest-academy-registry.php';         // Academy: registration numbers, administrator approval (one, all), new-account notice + dashboard tile, Reg no in the list and export (removes its own test data)
+require __DIR__ . '/selftest-bono.php';                      // Bono AI: reading pages, learning, answers, taught answers, Claude (fake), chat endpoints, admin page (empties and refills nothing: run bin/bono-learn.php afterwards)
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);
