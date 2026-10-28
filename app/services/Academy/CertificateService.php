@@ -126,6 +126,23 @@ final class CertificateService
         return ['ok' => true, 'mailed' => $email ? self::email($c) : false];
     }
 
+    /** Hours the learner is asked to wait before looking again (Settings key academy_cert_wait_hours, default 48). */
+    public static function waitHours(): int
+    {
+        return max(1, min(720, (int) setting('academy_cert_wait_hours', '48')));
+    }
+
+    /** The message shown (and e-mailed) when a learner has passed and the certificate waits for the administrator. */
+    public static function waitingNotice(): string
+    {
+        return 'Congratulations, you passed and completed the course! Your certificate is ready to be prepared: it is now waiting for approval and signing by the Academy administrator, and it is shared with you only after that. Please check this page, or your dashboard, again after ' . self::waitHours() . ' hours.';
+    }
+
+    public static function waitingShort(): string
+    {
+        return 'waiting for approval and signing by the Academy team. Check again after ' . self::waitHours() . ' hours.';
+    }
+
     /** How many certificates are approved (available to their learners and to the public check page) and not withdrawn. */
     public static function approvedCount(): int
     {

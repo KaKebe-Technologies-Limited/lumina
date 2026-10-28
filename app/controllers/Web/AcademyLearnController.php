@@ -166,6 +166,10 @@ final class AcademyLearnController extends AcademyBaseController
         }
         CourseService::completeLesson((int) $c['learner']['id'], $lesson);
         $cert = CourseService::checkCompletion((int) $c['learner']['id'], (int) $c['course']['id']);
+        if ($cert !== null && !empty($cert['waiting'])) {
+            Flash::success(CertificateService::waitingNotice());
+            return $this->redirect('academy/courses/' . $c['course']['slug']);
+        }
         if ($cert !== null && !empty($cert['requestable'])) {
             Flash::success('Congratulations! You completed the course. You can now request your certificate.');
             return $this->redirect('academy/courses/' . $c['course']['slug']);
@@ -356,7 +360,7 @@ final class AcademyLearnController extends AcademyBaseController
             if ((int) $attempt['passed'] === 1) {
                 $cert = CourseService::checkCompletion($lid, (int) $c['course']['id']);
                 if ($cert !== null) {
-                    Flash::success(!empty($cert['requestable']) ? 'You passed and completed the course. You can now request your certificate.' : 'You passed and completed the course. Your certificate is ready!');
+                    Flash::success(!empty($cert['waiting']) ? CertificateService::waitingNotice() : (!empty($cert['requestable']) ? 'You passed and completed the course. You can now request your certificate.' : 'You passed and completed the course. Your certificate is ready!'));
                 }
             }
         }

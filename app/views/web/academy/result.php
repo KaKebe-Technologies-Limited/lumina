@@ -26,7 +26,7 @@ $pct = (int) round((float) $attempt['score_pct']);
                     <?php if ($isExam && $passed && $certificate !== null): ?>
                         <a class="btn btn--cta btn--caps" href="<?= e(url('academy/certificate/' . $certificate['code'])) ?>"><?= icon('award', 'icon--sm') ?> Open my certificate</a>
                     <?php elseif ($isExam && $passed && !empty($certificatePending)): ?>
-                        <p class="opp-notice" role="status"><?= icon('clock', 'icon--sm') ?> Your certificate is waiting for approval. You will find it here and in your dashboard as soon as the Academy team approves it.</p>
+                        <p class="opp-notice ac-cert-wait" role="status"><?= icon('clock', 'icon--sm') ?> <?= e(\App\Services\Academy\CertificateService::waitingNotice()) ?></p>
                     <?php elseif ($isExam && $passed && !empty($certificateRequestable)): ?>
                         <form method="post" action="<?= e(url('academy/courses/' . $course['slug'] . '/certificate')) ?>" class="ac-cert-request"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('award', 'icon--sm') ?> Request my certificate</button></form>
                         <p class="text-muted">The Academy team approves your request, then you can download your certificate.</p>

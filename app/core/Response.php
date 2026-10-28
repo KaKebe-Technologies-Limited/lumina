@@ -153,7 +153,7 @@ class Response
             'X-Content-Type-Options' => 'nosniff',
             'X-Frame-Options'        => 'SAMEORIGIN',
             'Referrer-Policy'        => 'strict-origin-when-cross-origin',
-            'Permissions-Policy'     => 'camera=(), microphone=(), geolocation=(), payment=()',
+            'Permissions-Policy'     => 'camera=(self), microphone=(), geolocation=(), payment=()',
         ];
         $ct = $this->headers['Content-Type'] ?? '';
         if (!isset($this->headers['Cache-Control']) && str_starts_with($ct, 'text/html')) {

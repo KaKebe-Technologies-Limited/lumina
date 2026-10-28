@@ -64,3 +64,66 @@
   var print = document.querySelector('[data-ac-print]');
   if (print) print.addEventListener('click', function () { window.print(); });
 })();
+
+/* LAF Academy sign-up: show the chosen picture, or take a selfie with the camera (the picture is saved with the account, private). */
+(function () {
+  'use strict';
+  var box = document.querySelector('[data-selfie]');
+  if (!box) return;
+  var input = box.querySelector('input[type=file]');
+  var open = box.querySelector('[data-selfie-open]');
+  var cam = box.querySelector('[data-selfie-cam]');
+  var video = cam ? cam.querySelector('video') : null;
+  var snap = box.querySelector('[data-selfie-snap]');
+  var cancel = box.querySelector('[data-selfie-cancel]');
+  var preview = box.querySelector('[data-selfie-preview]');
+  var msg = box.querySelector('[data-selfie-msg]');
+  var stream = null;
+  var say = function (t) { if (msg) msg.textContent = t; };
+  var show = function (file) {
+    if (!preview || !file || !window.URL || !URL.createObjectURL) return;
+    preview.src = URL.createObjectURL(file);
+    preview.hidden = false;
+  };
+  var stop = function () {
+    if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+    stream = null;
+    if (video) video.srcObject = null;
+    if (cam) cam.hidden = true;
+  };
+  input.addEventListener('change', function () { if (input.files && input.files[0]) show(input.files[0]); });
+  if (!open || !video || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.DataTransfer || !window.File) return;
+  open.hidden = false;
+  open.addEventListener('click', function () {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } }, audio: false }).then(function (s) {
+      stream = s;
+      video.srcObject = s;
+      cam.hidden = false;
+      say('Look at the camera and press "Take the photo".');
+    }).catch(function () {
+      say('The camera could not be opened (allow it in the browser, or choose a picture from your device instead).');
+    });
+  });
+  if (cancel) cancel.addEventListener('click', function () { stop(); say('You can still attach a picture from your device.'); });
+  if (snap) snap.addEventListener('click', function () {
+    var w = video.videoWidth, h = video.videoHeight;
+    if (!w || !h) return;
+    var side = Math.min(w, h);
+    var out = Math.min(side, 720);
+    var canvas = document.createElement('canvas');
+    canvas.width = out;
+    canvas.height = out;
+    canvas.getContext('2d').drawImage(video, (w - side) / 2, (h - side) / 2, side, side, 0, 0, out, out);
+    canvas.toBlob(function (blob) {
+      if (!blob) { say('The photo could not be taken. Please choose a picture from your device.'); return; }
+      var file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' });
+      var dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      show(file);
+      stop();
+      say('Your selfie is ready. It will be saved with your account.');
+    }, 'image/jpeg', 0.92);
+  });
+  window.addEventListener('pagehide', stop);
+})();

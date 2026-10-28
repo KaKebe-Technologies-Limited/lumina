@@ -120,6 +120,17 @@ final class AcademyMail
         ], ['label' => 'Choose a new password', 'url' => $url]);
     }
 
+    /** The learner passed and the certificate waits for the administrator's approval and signature. */
+    public static function certificateWaiting(array $learner, array $course): bool
+    {
+        return self::send((string) $learner['email'], 'Congratulations: you completed ' . mb_substr((string) $course['title'], 0, 80), [
+            'Congratulations ' . self::first((string) $learner['name']) . '!',
+            'You passed the final exam and completed "' . $course['title'] . '".',
+            'Your certificate is ready to be prepared. It is now waiting for approval and signing by the Academy administrator, and it is shared with you only after that.',
+            'Please check your dashboard again after ' . CertificateService::waitHours() . ' hours: the certificate will be there to open and download.',
+        ], ['label' => 'Open my dashboard', 'url' => abs_url('academy/dashboard')]);
+    }
+
     public static function certificateDeclined(array $learner, array $cert, string $reason): bool
     {
         return self::send((string) $learner['email'], 'About your LAF Academy certificate request', [

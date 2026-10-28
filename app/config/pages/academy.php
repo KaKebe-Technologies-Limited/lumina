@@ -160,7 +160,7 @@ return [
                 ['key' => 'register_title', 'label' => 'Sign-up: heading', 'type' => 'text', 'default' => 'Create your free account'],
                 ['key' => 'register_intro', 'label' => 'Sign-up: intro', 'type' => 'textarea', 'rows' => 2, 'default' => 'Your name is printed on your certificates, so please write it as it should appear.'],
                 ['key' => 'register_closed', 'label' => 'Sign-up: message when sign-ups are switched off', 'type' => 'text', 'default' => 'New sign-ups are closed for now. If you already have an account, please sign in.'],
-                ['key' => 'consent', 'label' => 'Sign-up: agreement text', 'type' => 'text', 'default' => 'I agree that my name and e-mail address are kept to run my learning account and to issue my certificates.'],
+                ['key' => 'consent', 'label' => 'Sign-up: agreement text', 'type' => 'text', 'default' => 'I agree that my name, e-mail address and picture (if I add one) are kept to run my learning account and to issue my certificates.'],
                 ['key' => 'login_title', 'label' => 'Sign-in: heading', 'type' => 'text', 'default' => 'Sign in to your learning account'],
                 ['key' => 'login_intro', 'label' => 'Sign-in: intro', 'type' => 'text', 'default' => 'Welcome back. Continue where you stopped.'],
                 ['key' => 'check_email_title', 'label' => 'After sign-up: heading', 'type' => 'text', 'default' => 'Check your e-mail'],

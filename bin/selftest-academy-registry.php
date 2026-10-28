@@ -67,6 +67,7 @@ $post = static function (string $path, array $form, ?string &$jar, string $from)
     return $req('POST', $path, $form + ['_token' => $tok($page['body']), '_hp_ts' => $hp], $jar);
 };
 $jL = null;
+$jP = null;
 $pw = 'Sentence-for-test-77';
 $reg = $post('/academy/register', ['name' => 'Zed Lre One', 'email' => 'zz-lre-one@example.test', 'password' => $pw, 'agree' => '1'], $jL, '/academy/register');
 $one = Database::one("SELECT * FROM academy_learners WHERE email = 'zz-lre-one@example.test'");
@@ -114,6 +115,43 @@ check('registry: a learner made any other way gets a number when asked', Learner
 $ap = $post('/admin/academy/learners-confirm-all', [], $jA, '/admin/academy/learners');
 $waitingAfter = (int) Database::value("SELECT COUNT(*) FROM academy_learners WHERE email LIKE 'zz-lre-%' AND is_active = 1 AND email_verified_at IS NULL", [], 0);
 check('approve all: every waiting switched-on learner is approved, a switched-off one is left alone', $waitingAfter === 0 && Database::value('SELECT email_verified_at FROM academy_learners WHERE id = ?', [$off]) === null && Database::value('SELECT approved_at FROM academy_learners WHERE id = ?', [$ids['three']]) !== null);
+
+// ------------------------------------------------------------------------------------------------------------- picture or selfie at sign-up
+$regPage = $req('GET', '/academy/register', [], $jP);
+check('picture: the sign-up form can send a file and offers the picture field with the selfie button', str_contains($regPage['body'], 'enctype="multipart/form-data"') && str_contains($regPage['body'], 'name="photo"') && str_contains($regPage['body'], 'data-selfie-open') && str_contains($regPage['body'], 'academy.js'));
+check('picture: the browser may use the camera on this site (Permissions-Policy camera=(self))', str_contains($regPage['head'], 'camera=(self)'));
+$postFile = static function (string $email, string $name, string $tmp, string $type, ?string &$jar) use ($base, $tok, $req): array {
+    $page = $req('GET', '/academy/register', [], $jar);
+    $ts = (string) (time() - 30);
+    $hp = $ts . '.' . hash_hmac('sha256', $ts, \App\Core\Config::appKey());
+    $ch = curl_init($base . '/academy/register');
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_TIMEOUT => 60, CURLOPT_COOKIEJAR => $jar, CURLOPT_COOKIEFILE => $jar, CURLOPT_FOLLOWLOCATION => false, CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => ['_token' => $tok($page['body']), '_hp_ts' => $hp, 'name' => $name, 'email' => $email, 'password' => 'Sentence-for-test-77', 'agree' => '1', 'photo' => new CURLFile($tmp, $type, 'me.jpg')]]);
+    $raw = (string) curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+    return ['code' => $code, 'raw' => $raw];
+};
+$img = sys_get_temp_dir() . '/zz-lre-' . bin2hex(random_bytes(4)) . '.jpg';
+copy(dirname(__DIR__) . '/assets/img/site/photo-02.jpg', $img);
+$jP1 = null;
+$r1 = $postFile('zz-lre-pic@example.test', 'Zed Lre Pic', $img, 'image/jpeg', $jP1);
+$pic = Database::one("SELECT * FROM academy_learners WHERE email = 'zz-lre-pic@example.test'");
+$abs = $pic !== null && (string) ($pic['photo_path'] ?? '') !== '' ? STORAGE_PATH . '/private/' . $pic['photo_path'] : '';
+check('picture: a picture attached at sign-up is saved with the new account, privately (no consent to show it publicly)', in_array($r1['code'], [302, 303], true) && $abs !== '' && is_file($abs) && $pic['photo_consent_at'] === null && preg_match('/^LAF-AC-/', (string) $pic['reg_no']) === 1);
+$bad = sys_get_temp_dir() . '/zz-lre-' . bin2hex(random_bytes(4)) . '.jpg';
+file_put_contents($bad, 'this is not a picture');
+$jP2 = null;
+$r2 = $postFile('zz-lre-bad@example.test', 'Zed Lre Bad', $bad, 'image/jpeg', $jP2);
+$badRow = Database::one("SELECT * FROM academy_learners WHERE email = 'zz-lre-bad@example.test'");
+check('picture: a file that is not a picture never stops the sign-up (the account exists, no picture, the learner is told)', $badRow !== null && in_array($r2['code'], [302, 303], true) && ($badRow['photo_path'] ?? null) === null && str_contains($req('GET', '/academy/check-email', [], $jP2)['body'], 'picture could not be saved'));
+$list = $req('GET', '/admin/academy/learners?q=zz-lre-pic', [], $jA)['body'];
+check('picture: the administrator sees the portrait in the learner list', str_contains($list, '/photo"'));
+@unlink($img);
+@unlink($bad);
+if ($abs !== '') {
+    @unlink($abs);
+}
 
 // ------------------------------------------------------------------------------------------------------------- export + other doors
 $csv = $req('GET', '/admin/academy/learners-export?q=zz-lre', [], $jA)['body'];

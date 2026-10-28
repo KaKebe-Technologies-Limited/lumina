@@ -326,7 +326,13 @@ final class CourseService
             return null;
         }
         if (CertificateService::approvalRequired()) {
-            return ['requestable' => true, 'course_id' => $courseId];
+            // the certificate is filed for the Academy team straight away (they are told); the learner is told it waits for approval and signing
+            $res = CertificateService::request($learner, $done['course']);
+            if ($res['ok'] && $res['waiting']) {
+                AcademyMail::certificateWaiting($learner, $done['course']);
+                return ['requestable' => false, 'waiting' => true, 'course_id' => $courseId];
+            }
+            return ['requestable' => true, 'course_id' => $courseId];        // could not be filed just now: the learner can ask on the page
         }
         $cert = CertificateService::issue($learner, $done['course'], $done['score'], $done['tree']['minutes']);
         if (CertificateService::isApproved($cert)) {

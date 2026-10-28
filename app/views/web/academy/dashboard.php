@@ -26,7 +26,7 @@ use App\Services\Academy\CourseService;
                             <div class="ac-mine__actions">
                                 <?php if ($c['status'] === 'published' && $c['resume_id'] !== null): ?><a class="btn btn--cta btn--caps btn--sm" href="<?= e(url('academy/learn/' . $c['slug'] . '/lesson/' . (int) $c['resume_id'])) ?>"><?= $p['done'] > 0 ? 'Continue' : 'Start' ?></a><?php endif; ?>
                                 <?php if ($c['certificate'] !== null): ?><a class="btn btn--outline btn--caps btn--sm" href="<?= e(url('academy/certificate/' . $c['certificate']['code'])) ?>"><?= icon('award', 'icon--sm') ?> Certificate</a>
-                                <?php elseif (!empty($c['cert_pending'])): ?><span class="opp-badge opp-badge--soon"><?= icon('clock', 'icon--sm') ?> Certificate requested</span>
+                                <?php elseif (!empty($c['cert_pending'])): ?><span class="opp-badge opp-badge--soon"><?= icon('clock', 'icon--sm') ?> Certificate waiting for approval</span>
                                 <?php elseif (!empty($c['cert_requestable'])): ?><form method="post" action="<?= e(url('academy/courses/' . $c['slug'] . '/certificate')) ?>" class="ac-cert-request"><?= csrf_field() ?><button class="btn btn--cta btn--caps btn--sm" type="submit"><?= icon('award', 'icon--sm') ?> Request my certificate</button></form><?php endif; ?>
                             </div>
                         </div>
@@ -49,7 +49,7 @@ use App\Services\Academy\CourseService;
                     <h2 class="ac-panel__title"><?= icon('award', 'icon--sm') ?> My certificates</h2>
                     <?php $waiting = \App\Services\Academy\CertificateService::pendingForLearner((int) $me['id']); ?>
                     <?php if ($certificates === [] && $waiting === []): ?><p class="text-muted">Pass a final exam to earn your first certificate.</p><?php endif; ?>
-                    <?php foreach ($waiting as $wc): ?><p class="text-muted"><?= icon('clock', 'icon--sm') ?> <?= e($wc['course_title']) ?>: waiting for approval</p><?php endforeach; ?>
+                    <?php foreach ($waiting as $wc): ?><p class="text-muted"><?= icon('clock', 'icon--sm') ?> <?= e($wc['course_title']) ?>: <?= e(\App\Services\Academy\CertificateService::waitingShort()) ?></p><?php endforeach; ?>
                     <ul class="ac-minilist">
                         <?php foreach ($certificates as $ce): ?>
                             <li><a href="<?= e(url('academy/certificate/' . $ce['code'])) ?>"><?= e($ce['course_title']) ?></a><span><?= $ce['revoked_at'] !== null ? 'Withdrawn' : e(format_date($ce['issued_at'])) ?></span></li>

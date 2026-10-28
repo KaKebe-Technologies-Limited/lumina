@@ -261,3 +261,11 @@ $cert-orange: #E0642C;
 
 // ---- registration number notice on the "check your e-mail" page
 .ac-regno { padding: $space-3 $space-4; background: $surface-alt; border-left: 3px solid $gold; border-radius: $radius-sm; }
+
+// ---- picture or selfie on the sign-up form
+.ac-selfie__row { display: flex; gap: $space-4; align-items: center; flex-wrap: wrap; }
+.ac-selfie__preview { width: 96px; height: 96px; object-fit: cover; border-radius: 50%; border: 2px solid $line; }
+.ac-selfie__body { display: grid; gap: $space-2; flex: 1; min-width: 14rem; }
+.ac-selfie__cam { margin: $space-3 0; display: grid; gap: $space-2; justify-items: start;
+  video { width: 100%; max-width: 320px; aspect-ratio: 1; object-fit: cover; border-radius: $radius; background: #000; transform: scaleX(-1); } }
+.ac-cert-wait { border-left: 3px solid $gold; }

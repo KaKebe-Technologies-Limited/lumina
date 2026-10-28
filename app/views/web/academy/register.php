@@ -8,7 +8,7 @@
             <p class="opp-note"><?= icon('info', 'icon--sm') ?> <?= e(content('academy', 'auth.register_closed')) ?></p>
             <p class="ac-center"><a class="btn btn--cta btn--caps" href="<?= e(url('academy/login')) ?>">Sign in</a></p>
         <?php else: ?>
-            <form class="ac-form card" method="post" action="<?= e(url('academy/register')) ?>" novalidate>
+            <form class="ac-form card" method="post" action="<?= e(url('academy/register')) ?>" enctype="multipart/form-data" novalidate>
                 <?= csrf_field() ?><?= honeypot_field() ?>
                 <div class="card__body">
                 <?php if (\App\Services\Academy\GoogleSignIn::enabled()): ?>
@@ -22,6 +22,24 @@
                         <?= partial('partials/form-field', ['name' => 'phone', 'label' => 'Phone (optional)', 'type' => 'tel', 'maxlength' => 40, 'autocomplete' => 'tel']) ?>
                         <?= partial('partials/form-field', ['name' => 'country', 'label' => 'Country (optional)', 'maxlength' => 80, 'autocomplete' => 'country-name']) ?>
                     </div>
+                    <?php if (\App\Services\Academy\LearnerPortrait::ready()): ?>
+                    <div class="field ac-selfie<?= error('photo') ? ' field--error' : '' ?>" data-selfie>
+                        <label class="field__label" for="reg-photo">Your picture (optional)</label>
+                        <div class="ac-selfie__row">
+                            <img class="ac-selfie__preview" data-selfie-preview alt="Your picture" width="96" height="96" hidden>
+                            <div class="ac-selfie__body">
+                                <input class="input" type="file" id="reg-photo" name="photo" accept="image/jpeg,image/png,image/webp">
+                                <button class="btn btn--outline btn--sm" type="button" data-selfie-open hidden><?= icon('camera', 'icon--sm') ?> Take a selfie</button>
+                            </div>
+                        </div>
+                        <div class="ac-selfie__cam" data-selfie-cam hidden>
+                            <video autoplay playsinline muted></video>
+                            <div class="ac-selfie__buttons"><button class="btn btn--cta btn--sm" type="button" data-selfie-snap>Take the photo</button> <button class="btn btn--ghost btn--sm" type="button" data-selfie-cancel>Cancel</button></div>
+                        </div>
+                        <div class="field__help" data-selfie-msg>Attach a clear head-and-shoulders photo or take a selfie, so the Academy has a record of every learner. JPG, PNG or WebP, at least 300 x 300 pixels. It is private: only you and the Academy team can see it.</div>
+                        <?php if (error('photo')): ?><div class="field__error" role="alert"><?= e((string) error('photo')) ?></div><?php endif; ?>
+                    </div>
+                    <?php endif; ?>
                     <?php if (\App\Services\Academy\WhatsAppSender::enabled() && \App\Services\Academy\VerificationCode::ready()): ?>
                         <?= partial('partials/form-field', ['name' => 'whatsapp', 'label' => 'WhatsApp number (optional)', 'type' => 'tel', 'maxlength' => 24, 'autocomplete' => 'tel', 'help' => 'We will also send your confirmation code to WhatsApp. Include the country code, for example +256 772 123 456.']) ?>
                     <?php endif; ?>
@@ -36,3 +54,4 @@
         <?php endif; ?>
     </div>
 </section>
+<?php $this->start('scripts'); ?><script src="<?= e(asset('js/academy.js')) ?>" defer></script><?php $this->end(); ?>

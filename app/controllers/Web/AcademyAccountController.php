@@ -51,6 +51,14 @@ final class AcademyAccountController extends AcademyBaseController
         if (!$res['ok']) {
             $this->fail($res['errors'], 'academy/register');
         }
+        // the optional picture (attached or a selfie): kept private; a problem with it never stops the sign-up
+        $photo = $request->file('photo');
+        if ($photo !== null && isset($res['learner']['id'])) {
+            $pr = LearnerPortrait::save((int) $res['learner']['id'], $photo, false);
+            if (!$pr['ok']) {
+                Flash::info('Your account was created, but your picture could not be saved: ' . $pr['error'] . ' You can add it later from your account.');
+            }
+        }
         if ($res['verify']) {
             \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail($request->string('email')));
             \App\Core\Session::put('academy_reg_no', (string) ($res['learner']['reg_no'] ?? ''));

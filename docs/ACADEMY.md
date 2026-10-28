@@ -189,3 +189,13 @@ Behaviour: a new Google user gets an account (name from Google, random locked pa
 ## Taking every certificate back for approval
 
 Certificates already approved can all be put back to "waiting for approval" with one button: Admin > LAF Academy > Certificates > **Take back all N for approval** (shown while approved certificates exist). From then on nobody can open, download or check them until an administrator approves each one (or "Approve all"), and the e-mailed mark is cleared so they can be e-mailed again on approval. E-mails already sent cannot be recalled. It is written to the activity log (`academy.certificates.withdraw_all`). New certificates already wait for approval (Settings > LAF Academy). Code: `CertificateService::withdrawAllApprovals()`.
+
+## When a learner passes: the certificate message
+
+* **At once:** passing the final exam completes the course and **files the certificate for approval automatically** (the Academy team is e-mailed; with "certificate approval" off it is issued and e-mailed as before). The learner sees a success message on the result page, the course page and the dashboard: congratulations, the certificate is **waiting for approval and signing by the Academy administrator, and is shared only after that**, and to **check again after 48 hours**. The same message is e-mailed (`AcademyMail::certificateWaiting`).
+* The wait shown to the learner is the setting `academy_cert_wait_hours` (default 48). Wording: `CertificateService::waitingNotice()` / `waitingShort()`.
+* If filing fails for any reason (very rare), the learner still gets the "Request my certificate" button.
+
+## Picture or selfie at sign-up
+
+The sign-up form has an optional **picture** field: attach a photo, or press **Take a selfie** (camera in the browser; the picture is cropped to a square). It is saved with the new account, **private** (only the learner and the Academy team; no public consent is given at sign-up) and shows in the learner list and the learner page, so the Academy has a record of every learner. A problem with the picture never stops the sign-up (the learner is told and can add it later under My account). The site allows the camera for its own pages (`Permissions-Policy: camera=(self)`); the browser still asks the learner first. Code: `data-selfie` block in `register.php` + the end of `assets/js/academy.js`; storage and checks: `LearnerPortrait`. Tests: `bin/selftest-academy-registry.php`, `bin/selftest-academy.php`.
