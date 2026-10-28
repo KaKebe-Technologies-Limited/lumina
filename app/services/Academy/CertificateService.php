@@ -414,6 +414,14 @@ final class CertificateService
         $pdf->rect(18, 18, $W - 36, $H - 36, 'f');
         $pdf->fill('#FCFAF4');
         $pdf->rect(24, 24, $W - 48, $H - 48, 'f');
+        // the logo, very faint, behind the text (5 % in the template: stored already blended with the paper colour)
+        try {
+            $wm = ASSET_PATH . '/img/brand/watermark-logo.jpg';
+            if (is_file($wm)) {
+                $pdf->image($pdf->addJpeg((string) file_get_contents($wm)), 270.9449, $H - 141.6378 - 300, 300, 300);
+            }
+        } catch (\Throwable) {
+        }
         $pdf->save();
         $pdf->stroke($gold);
         $pdf->lineWidth(2.2);
@@ -526,8 +534,15 @@ final class CertificateService
             $pdf->text($fx, 404, $value, $vf, self::fit($value, $vf, $vs, 150, 9), $navy, 'c');
         }
 
-        // signature (left)
-        $pdf->rawOps("q\n" . $art['signature'] . "\nQ");
+        // signature (left): the founder's real signature while the signatory is the founder
+        $founder = $w['signatory'] === '';
+        $sigFile = ASSET_PATH . '/img/brand/signature-moses.png';
+        if ($founder && is_file($sigFile)) {
+            try {
+                $pdf->image($pdf->addPng((string) file_get_contents($sigFile)), 165.938, $H - 106 - 59.4, 143.124, 59.4);
+            } catch (\Throwable) {
+            }
+        }
         $pdf->save();
         $pdf->stroke($navy);
         $pdf->lineWidth(0.8);
@@ -683,6 +698,7 @@ final class CertificateService
         $o[] = '<rect width="' . $W . '" height="' . $H . '" fill="#FCFAF4"/>';
         $o[] = '<rect x="18" y="18" width="' . ($W - 36) . '" height="' . ($H - 36) . '" fill="' . $navy . '"/>';
         $o[] = '<rect x="24" y="24" width="' . ($W - 48) . '" height="' . ($H - 48) . '" fill="#FCFAF4"/>';
+        $o[] = '<image href="' . $e(asset('img/brand/watermark-logo.jpg')) . '" x="270.9449" y="' . ($H - 141.6378 - 300) . '" width="300" height="300"/>';
         $o[] = '<rect x="32" y="32" width="' . ($W - 64) . '" height="' . ($H - 64) . '" fill="none" stroke="' . $gold . '" stroke-width="2.2"/>';
         $o[] = '<rect x="38" y="38" width="' . ($W - 76) . '" height="' . ($H - 76) . '" fill="none" stroke="' . $gold . '" stroke-width="0.7"/>';
         foreach ([[38.0, 38.0, 1, 1], [$W - 38, 38.0, -1, 1], [38.0, $H - 38, 1, -1], [$W - 38, $H - 38, -1, -1]] as [$ox, $oy, $sx, $sy]) {
@@ -760,8 +776,10 @@ final class CertificateService
             $text($fx, 404, $value, $vf, self::fit($value, $vf, $vs, 150, 9), $navy);
         }
 
-        // signature (left)
-        $o[] = '<g>' . self::opsToSvg($art['signature'], $H) . '</g>';
+        // signature (left): the founder's real signature while the signatory is the founder
+        if ($w['signatory'] === '') {
+            $o[] = '<image href="' . $e(asset('img/brand/signature-moses.png')) . '" x="165.938" y="' . ($H - 106 - 59.4) . '" width="143.124" height="59.4"/>';
+        }
         $line(130, $H - 102, 350, $H - 102, $navy, 0.8);
         $signer = $w['signatory'] !== '' ? $w['signatory'] : 'Moses Komakech';
         $signerTitle = $w['signatory'] !== '' ? ($w['title'] !== '' ? $w['title'] : 'Director') : 'Founder, ' . $w['org'];

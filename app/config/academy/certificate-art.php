@@ -1,5 +1,5 @@
 <?php
-// Static drawing of the LAF Academy certificate (the gold seal with its ribbons, and the founder's signature), copied from the approved template
+// Static drawing of the LAF Academy certificate (the gold seal with its ribbons; the signature and the faint logo are pictures in assets/img/brand), copied from the approved template
 // "LAF_Certificate_Jessa_May_Lumintac_Ramo.pdf" as raw PDF operators in PDF coordinates (origin bottom-left, A4 landscape 841.89 x 595.28 pt).
 // Used by App\Services\Academy\CertificateService::pdf(). Do not edit by hand.
 return [
@@ -61,25 +61,5 @@ n
 396.9449 120.7452 407.69 110 420.9449 110 c
 434.1997 110 444.9449 120.7452 444.9449 134 c
 f*
-ART,
-    'signature' => <<<'ART'
-.121569 .184314 .4 RG
-1 J
-1 j
-1.9 w
-n 148.8947 111.7895 m 154.7368 142.9474 162.5263 160.4737 170.3158 152.6842 c 178.1053 142.9474 178.1053 115.6842 185.8947 127.3684 c 193.6842 142.9474 199.5263 154.6316 207.3158 142.9474 c 213.1579 133.2105 209.2632 117.6316 220.9474 123.4737 c
-S
-1.6 w
-n 220.9474 123.4737 m 232.6316 129.3158 234.5789 142.9474 228.7368 146.8421 c 220.9474 150.7368 226.7895 125.4211 246.2632 129.3158 c
-S
-1.5 w
-n 246.2632 129.3158 m 261.8421 133.2105 263.7895 113.7368 281.3158 121.5263 c 291.0526 125.4211 300.7895 137.1053 316.3684 133.2105 c
-S
-1.2 w
-n 152.7895 109.8421 m 193.6842 104 261.8421 100.1053 326.1053 117.6316 c
-S
-1 w
-n 174.2105 137.1053 m 203.4211 144.8947 242.3684 154.6316 312.4737 146.8421 c
-S
 ART,
 ];
