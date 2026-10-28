@@ -1861,6 +1861,13 @@ PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
 
+-- Migration (idempotent): the stable Google account id of a learner who signed in with Google (docs/ACADEMY.md).
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'google_sub');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_learners` ADD COLUMN `google_sub` VARCHAR(40) NULL AFTER `whatsapp`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 CREATE TABLE IF NOT EXISTS `academy_enrollments` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `learner_id` INT UNSIGNED NOT NULL,

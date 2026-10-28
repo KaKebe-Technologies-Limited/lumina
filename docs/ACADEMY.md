@@ -166,3 +166,14 @@ Deleting a course removes its lessons, quizzes and the learners' progress in it;
 `ClassService`, `ContentInstaller`, `AcademyAccess`. Public controllers `app/controllers/Web/Academy*`, routes `app/routes/web_academy.php`, views `app/views/web/academy/`.
 Admin controllers `app/controllers/Admin/Academy*`, routes `app/routes/admin_academy.php`, views `app/views/admin/academy/`. Styles `scss/pages/_academy.scss`, `scss/admin/_academy.scss`.
 Tests: `bin/selftest-academy.php` (public + learners) and `bin/selftest-academy-admin.php` (admin + facilitator limits), both part of `bin/selftest.php`.
+
+## Continue with Google
+
+Learners can sign in or sign up with a Google account on the Academy sign-in and sign-up pages. No confirmation e-mail is needed (Google has already verified the address), which helps when the mail limit is reached. The button stays hidden until the credentials are in `.env`.
+
+1. https://console.cloud.google.com > create or pick a project > **APIs & Services > OAuth consent screen** (External; app name, support e-mail; publish it to production so any learner can use it).
+2. **Credentials > Create credentials > OAuth client ID > Web application**. Authorised redirect URI, exactly: `https://luminaafricafoundation.com/academy/google/callback` (add your local address, e.g. `http://localhost/lumina/academy/google/callback`, to test).
+3. Put the two values in the live `.env`: `GOOGLE_CLIENT_ID=...apps.googleusercontent.com` and `GOOGLE_CLIENT_SECRET=...`.
+4. Import `database/lumina-live-import.sql` (adds `academy_learners.google_sub`; safe to repeat). Without the column the code still works and matches by e-mail only.
+
+Behaviour: a new Google user gets an account (name from Google, random locked password; "Forgot password" lets them set one later). An existing learner with the same e-mail is confirmed and linked. An address linked to another Google account, a switched-off account, or closed sign-ups are refused. Security: authorization-code flow with PKCE, `state` and `nonce`; issuer, audience, expiry and `email_verified` are checked. Code: `App\Services\Academy\GoogleSignIn`; test: `bin/selftest-academy-google.php`.

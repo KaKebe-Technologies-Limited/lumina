@@ -8,6 +8,7 @@ use App\Core\Flash;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\HttpException;
+use App\Services\Academy\GoogleSignIn;
 use App\Services\Academy\LearnerAuth;
 use App\Services\Academy\LearnerPortrait;
 use App\Services\Academy\VerificationCode;
@@ -156,6 +157,41 @@ final class AcademyAccountController extends AcademyBaseController
             }
             $this->fail(['password' => (string) $res['error']], 'academy/login');
         }
+        return $this->redirect($this->nextAfterLogin());
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- Continue with Google
+
+    public function googleStart(Request $request): Response
+    {
+        $this->gate();
+        if (!GoogleSignIn::enabled()) {
+            Flash::info('Sign in with Google is not available yet. Please use your e-mail and password.');
+            return $this->redirect('academy/login');
+        }
+        if ($this->learner() !== null) {
+            return $this->redirect('academy/dashboard');
+        }
+        $this->rememberNext($request->string('next'));
+        $b = GoogleSignIn::begin();
+        \App\Core\Session::put('academy_google', $b['session']);
+        return $this->redirect($b['url']);
+    }
+
+    public function googleCallback(Request $request): Response
+    {
+        $this->gate();
+        if (!GoogleSignIn::enabled()) {
+            return $this->redirect('academy/login');
+        }
+        $session = (array) \App\Core\Session::pull('academy_google', []);
+        $res = GoogleSignIn::finish($request->query(), $session);
+        if (!$res['ok']) {
+            Flash::error((string) $res['error']);
+            return $this->redirect('academy/login');
+        }
+        LearnerAuth::signIn($res['learner']);
+        Flash::success($res['created'] ? 'Welcome to the LAF Academy! Your account is ready.' : 'You are signed in with Google.');
         return $this->redirect($this->nextAfterLogin());
     }
 
