@@ -56,12 +56,13 @@ final class AcademyLearnersController extends AcademyAdminController
             array_push($params, $like, $like, $like);
         }
         $status = $request->string('status');
+        // the same three groups as the badges in the list: Active (can sign in), E-mail not confirmed, Switched off
         if ($status === 'active') {
-            $where[] = 'l.is_active = 1';
+            $where[] = 'l.is_active = 1 AND l.email_verified_at IS NOT NULL';
         } elseif ($status === 'inactive') {
             $where[] = 'l.is_active = 0';
         } elseif ($status === 'unverified') {
-            $where[] = 'l.email_verified_at IS NULL';
+            $where[] = 'l.is_active = 1 AND l.email_verified_at IS NULL';
         } else {
             $status = '';
         }

@@ -144,6 +144,15 @@ $d = $mk('d', false);
 $mailsBefore = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
 $list = $req('GET', '/admin/academy/learners', [], $jA);
 check('http: the list offers to send confirmation e-mails and to confirm everyone by hand', $list['code'] === 200 && str_contains($list['body'], 'Send confirmation e-mails') && str_contains($list['body'], 'Mark all as confirmed') && str_contains($list['body'], 'No e-mail sent yet'));
+// the Status filter matches the badges: Active = confirmed and on, E-mail not confirmed = on but unconfirmed, Switched off = off
+Database::update('academy_learners', ['is_active' => 0], 'id = ?', [$d]);
+$fActive = $req('GET', '/admin/academy/learners?status=active&q=zz-lmp', [], $jA)['body'];
+$fUnver = $req('GET', '/admin/academy/learners?status=unverified&q=zz-lmp', [], $jA)['body'];
+$fOff = $req('GET', '/admin/academy/learners?status=inactive&q=zz-lmp', [], $jA)['body'];
+check('http: the Status filter "Active" lists only confirmed, switched-on learners (no unconfirmed, no switched-off ones)', str_contains($fActive, 'zz-lmp-b@') && !str_contains($fActive, 'zz-lmp-c@') && !str_contains($fActive, 'zz-lmp-d@'));
+check('http: "E-mail not confirmed" lists only switched-on learners who have not confirmed', str_contains($fUnver, 'zz-lmp-c@') && !str_contains($fUnver, 'zz-lmp-b@') && !str_contains($fUnver, 'zz-lmp-d@'));
+check('http: "Switched off" lists only the switched-off learner', str_contains($fOff, 'zz-lmp-d@') && !str_contains($fOff, 'zz-lmp-b@') && !str_contains($fOff, 'zz-lmp-c@'));
+Database::update('academy_learners', ['is_active' => 1], 'id = ?', [$d]);
 $one = $post('/admin/academy/learners/' . $c . '/send-confirmation', [], $jA, '/admin/academy/learners/' . $c);
 $newMail = array_values(array_diff(glob(STORAGE_PATH . '/mail/*.eml') ?: [], $mailsBefore));
 check('http: the learner page button sends one confirmation e-mail to that learner', in_array($one['code'], [302, 303], true) && count($newMail) === 1 && str_contains($mailText($newMail[0]), 'zz-lmp-c@example.test') && str_contains($mailText($newMail[0]), '/academy/verify/'));

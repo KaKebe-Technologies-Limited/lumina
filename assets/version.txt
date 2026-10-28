@@ -1,1 +1,1 @@
-LUMINA build 28 Oct 2026 (final 5): exports with exporter details, serial number and confidentiality clause; certificates; requests + approval; codes; portraits.
+LUMINA build 28 Oct 2026 (final 6): learner Status filter fixed; exports with details, serial and clause; certificates; requests + approval; codes; portraits.
