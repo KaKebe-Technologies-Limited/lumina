@@ -1899,6 +1899,19 @@ CREATE TABLE IF NOT EXISTS `academy_messages` (
   CONSTRAINT `fk_academy_messages_learner` FOREIGN KEY (`learner_id`) REFERENCES `academy_learners` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Inquiries sent from the public "Message the Academy team" form by people who have no portal yet (docs/ACADEMY.md). Someone who already has an account writes into their own conversation instead.
+CREATE TABLE IF NOT EXISTS `academy_inquiries` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(120) NOT NULL,
+  `email` VARCHAR(190) NOT NULL,
+  `phone` VARCHAR(40) NULL,
+  `message` TEXT NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `handled_at` DATETIME NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_inquiries_open` (`handled_at`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Bono AI, the support assistant of the public website (docs/BONO.md): what it learned from the site, answers an administrator taught it, and the questions people asked.
 CREATE TABLE IF NOT EXISTS `bono_pages` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,

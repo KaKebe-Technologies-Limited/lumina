@@ -23,8 +23,21 @@ final class AcademyMessagesController extends AcademyAdminController
         $this->authorize('academy.manage');
         $q = mb_substr(trim($request->string('q')), 0, 80);
         return $this->render('admin/academy/messages/index', [
-            'rows' => LearnerMessages::inbox(100, $q), 'q' => $q, 'ready' => LearnerMessages::ready(), 'unread' => LearnerMessages::unreadForAdmin(),
+            'rows' => LearnerMessages::inbox(100, $q), 'q' => $q, 'ready' => LearnerMessages::ready(), 'unread' => LearnerMessages::unreadMessages(),
+            'inquiries' => $q === '' ? LearnerMessages::inquiries(100) : [], 'openInquiries' => LearnerMessages::openInquiries(),
         ], ['title' => 'Messages', 'nav' => 'academy_messages', 'breadcrumbs' => $this->crumbs('Messages')]);
+    }
+
+    /** The team dealt with an inquiry from a visitor (answered by e-mail or WhatsApp). */
+    public function inquiryDone(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        if (LearnerMessages::inquiriesReady()) {
+            Database::execute('UPDATE academy_inquiries SET handled_at = ? WHERE id = ? AND handled_at IS NULL', [date('Y-m-d H:i:s'), $id]);
+            $this->audit('academy.inquiry.done', 'academy_inquiry', $id, 'Marked an inquiry from a visitor as dealt with');
+        }
+        Flash::success('The inquiry is marked as dealt with.');
+        return $this->redirect('admin/academy/messages');
     }
 
     /** One conversation: opening it marks the learner's messages as read. */

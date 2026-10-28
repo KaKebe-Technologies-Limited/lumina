@@ -10,6 +10,7 @@ use App\Controllers\Web\AcademyChallengesController;
 use App\Controllers\Web\AcademyController;
 use App\Controllers\Web\AcademyFacilitateController;
 use App\Controllers\Web\AcademyLearnController;
+use App\Controllers\Web\AcademyContactController;
 use App\Controllers\Web\AcademyPortalController;
 
 // ---- public ---------------------------------------------------------------------------------------------------------------
@@ -29,6 +30,8 @@ $router->post('/academy/verify/resend', [AcademyAccountController::class, 'resen
 $router->post('/academy/verify/code', [AcademyAccountController::class, 'verifyCode'])->middleware(['honeypot', 'throttle:20,600'])->name('academy.verify.code');
 $router->post('/academy/verify/whatsapp', [AcademyAccountController::class, 'verifyWhatsApp'])->middleware(['honeypot', 'throttle:8,600'])->name('academy.verify.whatsapp');
 $router->get('/academy/verify/{token}', [AcademyAccountController::class, 'verify'])->middleware('throttle:30,600')->name('academy.verify');
+$router->get('/academy/contact', [AcademyContactController::class, 'form'])->name('academy.contact');
+$router->post('/academy/contact', [AcademyContactController::class, 'send'])->middleware('throttle:20,600')->name('academy.contact.send');
 $router->get('/academy/pending', [AcademyAccountController::class, 'pending'])->name('academy.pending');
 $router->get('/academy/google', [AcademyAccountController::class, 'googleStart'])->middleware('throttle:30,600')->name('academy.google');
 $router->get('/academy/google/callback', [AcademyAccountController::class, 'googleCallback'])->middleware('throttle:30,600')->name('academy.google.callback');

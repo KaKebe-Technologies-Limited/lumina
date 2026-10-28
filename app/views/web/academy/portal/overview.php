@@ -31,7 +31,7 @@ $sw = LearnerAuth::supportWhatsapp();
             <p class="opp-notice ac-notice--yellow" role="status"><?= icon('message-circle', 'icon--sm') ?> You have <strong><?= (int) $unread ?> new message<?= (int) $unread === 1 ? '' : 's' ?></strong> from the Academy team. <a href="<?= e(url('academy/portal/messages')) ?>">Read <?= (int) $unread === 1 ? 'it' : 'them' ?></a></p>
         <?php endif; ?>
 
-        <ul class="ac-stats" aria-label="My learning in numbers">
+        <ul class="ac-pstats" aria-label="My learning in numbers">
             <li><strong><?= (int) $stats['courses'] ?></strong><span>Courses</span></li>
             <li><strong><?= (int) $stats['lessons'] ?></strong><span>Lessons done</span></li>
             <li><strong><?= (int) $stats['completed'] ?></strong><span>Courses completed</span></li>

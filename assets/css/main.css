@@ -23018,19 +23018,28 @@ html.cal-lock {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
   list-style: none;
+  max-width: 62rem;
+  justify-content: center;
 }
 
 @media (min-width: 768px) {
   .ac-stats__list {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
   }
 }
 
 .ac-stats__list li {
-  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 7.5rem;
+  padding: 1rem 0.75rem;
   border-radius: 24px;
   background: #FFFFFF;
   border: 1px solid #E3DDD2;
@@ -23041,14 +23050,17 @@ html.cal-lock {
 .ac-stats__list b {
   display: block;
   font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  font-size: 2.25rem;
-  line-height: 1.1;
+  font-size: clamp(1.9rem, 6vw, 2.6rem);
+  line-height: 1.05;
   color: #2C3950;
+  letter-spacing: -0.01em;
 }
 
 .ac-stats__list span {
   color: #5A6470;
   font-size: 0.9375rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .ac-grid {
@@ -24761,7 +24773,7 @@ fieldset.ac-q legend + * {
   background: #FFF8D6;
 }
 
-.ac-stats {
+.ac-pstats {
   list-style: none;
   margin: 0 0 2rem;
   padding: 0;
@@ -24771,12 +24783,12 @@ fieldset.ac-q legend + * {
 }
 
 @media (min-width: 768px) {
-  .ac-stats {
+  .ac-pstats {
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
-.ac-stats li {
+.ac-pstats li {
   background: #FFFFFF;
   border: 1px solid #E4E1DA;
   border-radius: 12px;
@@ -24786,14 +24798,14 @@ fieldset.ac-q legend + * {
   box-shadow: 0 1px 2px rgba(23, 32, 54, 0.08), 0 1px 3px rgba(23, 32, 54, 0.06);
 }
 
-.ac-stats strong {
+.ac-pstats strong {
   font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 1.9rem;
   color: #2C3950;
   line-height: 1;
 }
 
-.ac-stats span {
+.ac-pstats span {
   color: #5A6470;
   font-size: 0.9375rem;
 }

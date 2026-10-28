@@ -16,6 +16,7 @@
                 <button class="btn btn--cta btn--caps btn--block" type="submit">Sign in</button>
                 <p class="ac-form__alt"><a href="<?= e(url('academy/forgot')) ?>">Forgotten your password?</a></p>
                 <p class="ac-form__alt">New here? <a href="<?= e(url('academy/register')) ?>">Create a free account</a></p>
+                <p class="ac-form__alt">Cannot sign in, or waiting for approval? <a href="<?= e(url('academy/contact')) ?>">Message the Academy team</a></p>
             </div>
         </form>
     </div>

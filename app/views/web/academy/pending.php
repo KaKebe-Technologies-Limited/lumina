@@ -7,6 +7,7 @@
             <p><strong>Thank you for joining the LAF Academy.</strong> Your application is received<?= $regNo !== '' ? ' and your registration number is <strong>' . e($regNo) . '</strong>. Keep it safe.' : '.' ?></p>
             <p>The Academy team approves every new account. <strong>This takes about <?= e($hours) ?>.</strong> Please sign in with your e-mail address and password after <?= e($hours) ?>: you do not need to confirm your e-mail address or type any code.</p>
             <p class="ac-form__alt"><a class="btn btn--cta btn--caps" href="<?= e(url('academy/login')) ?>">Go to my learner portal</a></p>
+            <p class="ac-form__alt"><a class="btn btn--outline btn--caps" href="<?= e(url('academy/contact')) ?>"><?= icon('message-circle', 'icon--sm') ?> Message the Academy team</a></p>
             <?php if (($sw = \App\Services\Academy\LearnerAuth::supportWhatsapp()) !== null): ?>
             <p class="ac-regno">For quick inquiries about your approval, contact <a href="<?= e($sw['url']) ?>" rel="noopener" target="_blank"><strong><?= e($sw['display']) ?></strong> on WhatsApp</a>.</p>
             <?php endif; ?>

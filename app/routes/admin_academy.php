@@ -83,6 +83,7 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->get('/learners-export', [AcademyLearnersController::class, 'export'])->middleware('throttle:10,60')->name('admin.academy.learners.export');
     $router->post('/learners/{id}/reset-link', [AcademyLearnersController::class, 'resetLink'])->middleware('throttle:30,60')->name('admin.academy.learners.reset');
     $router->get('/messages', [AcademyMessagesController::class, 'index'])->name('admin.academy.messages');
+    $router->post('/inquiries/{id}/done', [AcademyMessagesController::class, 'inquiryDone'])->name('admin.academy.inquiries.done');
     $router->get('/learners/{id}/messages', [AcademyMessagesController::class, 'thread'])->name('admin.academy.messages.thread');
     $router->post('/learners/{id}/messages', [AcademyMessagesController::class, 'send'])->middleware('throttle:120,60')->name('admin.academy.messages.send');
     $router->post('/learners/{id}/approve', [AcademyLearnersController::class, 'approve'])->middleware('throttle:120,60')->name('admin.academy.learners.approve');

@@ -231,3 +231,12 @@ After signing in a learner lands in **My portal** (`/academy/dashboard`), a page
 ### The link to the portal
 
 The top bar of every public page shows **My learner portal** to a browser that has (had) a learner account (a small marker cookie `laf_portal`, set at sign-up and sign-in, no personal data; a visitor who never signed in gets no cookie) and **Learner login** to everybody else. The Academy page greets a returning browser with "Welcome back" and a button to the portal. Test: `bin/selftest-academy-portal.php`.
+
+### "Message the Academy team": a message button for people who are not learners yet
+
+`/academy/contact` (linked from the sign-up page, the sign-in page and the "Application received" page) lets anybody who is not signed in, such as a new learner waiting for approval, write to the Academy team: name, e-mail address (and optional phone) and the message (5 an hour per connection, plain text). It lands in **Admin > LAF Academy > Messages**:
+
+* when the e-mail address belongs to a learner, in **that learner's conversation** (marked "[Sent from the contact form]", with the registration number), so the answer is also waiting in their portal after they sign in;
+* otherwise as an **inquiry** in the "Inquiries from visitors" table, with **E-mail** and **WhatsApp** buttons and "Mark as dealt with".
+
+The visitor always sees the same thank-you, so the form never reveals whether an address has an account. Both kinds count in the yellow number on Messages in the admin menu. A signed-in learner is sent to the Messages tab of the portal instead. Table `academy_inquiries`; test: `bin/selftest-academy-portal.php`.

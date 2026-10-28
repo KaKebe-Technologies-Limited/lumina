@@ -76,10 +76,73 @@ final class LearnerMessages
         return self::ready() ? (int) Database::value("SELECT COUNT(*) FROM academy_messages WHERE learner_id = ? AND sender = 'admin' AND read_at IS NULL", [$learnerId], 0) : 0;
     }
 
-    /** Messages from learners the team has not read yet (all learners), for the yellow notification in the admin. */
+    /** What waits for the team (the yellow number in the admin): learners' unread messages + open inquiries from visitors. */
     public static function unreadForAdmin(): int
     {
+        return self::unreadMessages() + self::openInquiries();
+    }
+
+    /** Messages from learners the team has not read yet. */
+    public static function unreadMessages(): int
+    {
         return self::ready() ? (int) Database::value("SELECT COUNT(*) FROM academy_messages WHERE sender = 'learner' AND read_at IS NULL", [], 0) : 0;
+    }
+
+    public static function inquiriesReady(): bool
+    {
+        static $ok = null;
+        if ($ok === null) {
+            try {
+                $ok = (int) Database::value("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'academy_inquiries'", [], 0) === 1;
+            } catch (\Throwable) {
+                $ok = false;
+            }
+        }
+        return $ok;
+    }
+
+    public static function openInquiries(): int
+    {
+        return self::inquiriesReady() ? (int) Database::value('SELECT COUNT(*) FROM academy_inquiries WHERE handled_at IS NULL', [], 0) : 0;
+    }
+
+    /** @return list<array<string,mixed>> inquiries from visitors, open ones first */
+    public static function inquiries(int $limit = 100): array
+    {
+        return self::inquiriesReady() ? Database::all('SELECT * FROM academy_inquiries ORDER BY (handled_at IS NULL) DESC, id DESC LIMIT ' . max(1, min(300, $limit))) : [];
+    }
+
+    /**
+     * A message from the public "Message the Academy team" form (a new or waiting learner, or somebody with a question). The sender's e-mail address finds the account when there is
+     * one: the message then goes into that learner's conversation (the registration number shows in the admin), otherwise it is kept as an inquiry. The answer is always the same
+     * to the visitor, so the form never tells whether an address has an account. @return array{ok:bool,error:?string}
+     */
+    public static function inquire(string $name, string $email, string $phone, string $message): array
+    {
+        $name = trim((string) preg_replace('/\s+/u', ' ', strip_tags($name)));
+        $email = LearnerAuth::normaliseEmail($email);
+        $phone = trim((string) preg_replace('/[^0-9+()\- ]/', '', $phone));
+        $text = self::clean($message);
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 120) {
+            return ['ok' => false, 'error' => 'Please enter your name.'];
+        }
+        if (!\App\Core\Mailer::validEmail($email) || strlen($email) > 190) {
+            return ['ok' => false, 'error' => 'Please enter a valid e-mail address so the team can answer you.'];
+        }
+        if (mb_strlen($text) < 5) {
+            return ['ok' => false, 'error' => 'Please write your message.'];
+        }
+        $learner = self::ready() ? Database::one('SELECT id FROM academy_learners WHERE email = ? LIMIT 1', [$email]) : null;
+        if ($learner !== null) {
+            $head = $phone !== '' ? '[Sent from the contact form, phone ' . $phone . ']' . "\n" : "[Sent from the contact form]\n";
+            $r = self::send((int) $learner['id'], 'learner', $head . $text);
+            return ['ok' => $r['ok'], 'error' => $r['ok'] ? null : $r['error']];
+        }
+        if (!self::inquiriesReady()) {
+            return ['ok' => false, 'error' => 'Messages are not available yet. Please use the WhatsApp line.'];
+        }
+        Database::insert('academy_inquiries', ['name' => mb_substr($name, 0, 120), 'email' => $email, 'phone' => $phone !== '' ? mb_substr($phone, 0, 40) : null, 'message' => $text]);
+        return ['ok' => true, 'error' => null];
     }
 
     /** Unread messages from one learner. */

@@ -36,6 +36,7 @@ use App\Services\Academy\LearnerMessages;
 echo "-- academy portal --\n";
 $clean = static function (): void {
     Database::execute("DELETE FROM academy_learners WHERE email LIKE 'zz-lpo-%'");
+    Database::execute("DELETE FROM academy_inquiries WHERE email LIKE 'zz-lpo-%'");
     Database::execute("DELETE FROM users WHERE email LIKE 'zz-lpo-%'");
     Database::execute("DELETE FROM audit_log WHERE summary LIKE '%zz-lpo-%'");
     Database::execute('DELETE FROM rate_limits');
@@ -198,6 +199,43 @@ for ($i = 0; $i < 17; $i++) {
     $flood = (int) Database::value("SELECT COUNT(*) FROM academy_messages WHERE learner_id = ? AND sender = 'learner'", [$a], 0);
 }
 check('portal: a learner who floods the team is slowed down (15 messages an hour)', $flood <= 2 + 15 && $flood >= 10);
+
+// ------------------------------------------------------------------------------------------------------------- "Message the Academy team": the public form for new and waiting learners
+Database::execute("DELETE FROM academy_inquiries WHERE email LIKE 'zz-lpo-%'");
+Database::execute('DELETE FROM rate_limits');
+check('contact: the inquiries table exists after the schema migration', LearnerMessages::inquiriesReady());
+$jN = null;
+$form = $req('GET', '/academy/contact', [], $jN);
+check('contact: anybody can open the form (name, e-mail, phone, message) and see the support WhatsApp line', $form['code'] === 200 && str_contains($form['body'], 'name="message"') && str_contains($form['body'], 'name="email"') && str_contains($form['body'], 'https://wa.me/256779795662'));
+check('contact: the sign-up, sign-in and "application received" pages link to it', str_contains($req('GET', '/academy/register', [], $jN)['body'], 'academy/contact') && str_contains($req('GET', '/academy/login', [], $jN)['body'], 'academy/contact') && str_contains($req('GET', '/academy/pending', [], $jN)['body'], 'academy/contact'));
+$inqBefore = LearnerMessages::unreadForAdmin();
+$sent = $post('/academy/contact', ['name' => 'Visitor Lpo', 'email' => 'zz-lpo-visitor@example.test', 'phone' => '+256 701 555 666', 'message' => "I want to join the <b>Academy</b>.\nHow long does approval take?"], $jN, '/academy/contact');
+$iq = Database::one("SELECT * FROM academy_inquiries WHERE email = 'zz-lpo-visitor@example.test'");
+check('contact: a visitor with no account becomes an inquiry (plain text), and the page says thank you', in_array($sent['code'], [302, 303], true) && str_contains($sent['head'], 'sent=1') && $iq !== null && $iq['message'] === "I want to join the Academy.\nHow long does approval take?" && $iq['phone'] === '+256 701 555 666' && str_contains($req('GET', '/academy/contact?sent=1', [], $jN)['body'], 'your message was sent'));
+$sentB = $post('/academy/contact', ['name' => 'Zed Lpo a', 'email' => 'ZZ-LPO-A@example.test', 'phone' => '', 'message' => 'I registered yesterday, is my account approved yet?'], $jN, '/academy/contact');
+$inThread = Database::one("SELECT * FROM academy_messages WHERE learner_id = ? AND body LIKE '%registered yesterday%' ORDER BY id DESC LIMIT 1", [$a]);
+check('contact: when the e-mail belongs to a learner the message goes into that learner\'s own conversation (the answer shown to the visitor is the same)', in_array($sentB['code'], [302, 303], true) && str_contains($sentB['head'], 'sent=1') && $inThread !== null && $inThread['sender'] === 'learner' && str_starts_with((string) $inThread['body'], '[Sent from the contact form]')
+    && (int) Database::value("SELECT COUNT(*) FROM academy_inquiries WHERE email = 'zz-lpo-a@example.test'", [], 0) === 0);
+check('contact: both count in the yellow number of the admin menu', LearnerMessages::unreadForAdmin() === $inqBefore + 2 && LearnerMessages::openInquiries() >= 1);
+foreach ([['name' => '', 'email' => 'zz-lpo-x@example.test', 'message' => 'A real question here'], ['name' => 'Name', 'email' => 'not-an-email', 'message' => 'A real question here'], ['name' => 'Name', 'email' => 'zz-lpo-x@example.test', 'message' => 'hi']] as $badForm) {
+    $post('/academy/contact', $badForm + ['phone' => ''], $jN, '/academy/contact');
+}
+check('contact: a missing name, a wrong e-mail address and a too short message are refused', (int) Database::value("SELECT COUNT(*) FROM academy_inquiries WHERE email = 'zz-lpo-x@example.test'", [], 0) === 0);
+$ib = $req('GET', '/admin/academy/messages', [], $jAdmin)['body'];
+check('admin: the Messages page lists the inquiry with E-mail and WhatsApp buttons and "Mark as dealt with"', str_contains($ib, 'Inquiries from visitors') && str_contains($ib, 'Visitor Lpo') && str_contains($ib, 'mailto:zz-lpo-visitor@example.test') && str_contains($ib, 'https://wa.me/256701555666') && str_contains($ib, 'Mark as dealt with'));
+$done = $adminPost('/admin/academy/inquiries/' . (int) $iq['id'] . '/done', [], '/admin/academy/messages');
+check('admin: an inquiry can be marked as dealt with, and the yellow number goes down', Database::value('SELECT handled_at FROM academy_inquiries WHERE id = ?', [(int) $iq['id']]) !== null && LearnerMessages::unreadForAdmin() === $inqBefore + 1);
+Database::execute('DELETE FROM rate_limits');
+for ($i = 0; $i < 7; $i++) {
+    $post('/academy/contact', ['name' => 'Flood Lpo', 'email' => 'zz-lpo-flood@example.test', 'phone' => '', 'message' => 'Question number ' . $i . ' to the team'], $jN, '/academy/contact');
+}
+check('contact: sending many messages in an hour is slowed down (5 an hour)', (int) Database::value("SELECT COUNT(*) FROM academy_inquiries WHERE email = 'zz-lpo-flood@example.test'", [], 0) <= 5);
+check('contact: a signed-in learner is sent to the Messages tab instead', in_array($req('GET', '/academy/contact', [], $jA)['code'], [302, 303], true) && str_contains($req('GET', '/academy/contact', [], $jA)['head'], 'portal/messages'));
+Database::execute("DELETE FROM academy_inquiries WHERE email LIKE 'zz-lpo-%'");
+
+// the number tiles: the portal's and the home page band no longer share a class (they broke each other)
+$homeStats = $req('GET', '/academy', [], $jN)['body'];
+check('stats: the Academy home band keeps its own markup and the portal numbers have their own class', str_contains($homeStats, 'ac-stats__list') && str_contains($req('GET', '/academy/dashboard', [], $jA)['body'], 'class="ac-pstats"') && !str_contains($req('GET', '/academy/dashboard', [], $jA)['body'], 'class="ac-stats"'));
 
 // deleting a learner removes the conversation
 Database::execute('DELETE FROM academy_learners WHERE id = ?', [$b]);

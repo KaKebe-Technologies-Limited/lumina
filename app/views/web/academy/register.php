@@ -47,6 +47,7 @@
                     </div>
                     <button class="btn btn--cta btn--caps btn--block" type="submit">Create my account</button>
                     <?php if (($sw = \App\Services\Academy\LearnerAuth::supportWhatsapp()) !== null): ?><p class="ac-form__alt">Quick inquiries about your approval? <a href="<?= e($sw['url']) ?>" rel="noopener" target="_blank">WhatsApp <?= e($sw['display']) ?></a></p><?php endif; ?>
+                    <p class="ac-form__alt">Questions before you register? <a href="<?= e(url('academy/contact')) ?>">Message the Academy team</a></p>
                     <p class="ac-form__alt">Already have an account? <a href="<?= e(url('academy/login')) ?>">Sign in</a></p>
                 </div>
             </form>
