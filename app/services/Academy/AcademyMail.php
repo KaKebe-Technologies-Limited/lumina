@@ -78,13 +78,17 @@ final class AcademyMail
         }
     }
 
-    public static function verification(array $learner, string $url, ?int $hours = null): bool
+    public static function verification(array $learner, string $url, ?int $hours = null, ?string $code = null): bool
     {
-        return self::send((string) $learner['email'], 'Confirm your e-mail address for the LAF Academy', [
+        $paragraphs = [
             'Hello ' . self::first((string) $learner['name']) . ',',
             'Thank you for joining the LAF Academy. Please confirm that this e-mail address is yours so you can sign in and start learning.',
-            'The link works for ' . ($hours ?? LearnerAuth::VERIFY_HOURS) . ' hours. If you did not create an account, you can ignore this message.',
-        ], ['label' => 'Confirm my e-mail address', 'url' => $url]);
+        ];
+        if ($code !== null) {
+            $paragraphs[] = 'Your confirmation code: ' . $code . '. If the button does not work, open ' . abs_url('academy/check-email') . ' and type this code. It works for ' . VerificationCode::HOURS . ' hours.';
+        }
+        $paragraphs[] = 'The link works for ' . ($hours ?? LearnerAuth::VERIFY_HOURS) . ' hours. If you did not create an account, you can ignore this message.';
+        return self::send((string) $learner['email'], 'Confirm your e-mail address for the LAF Academy' . ($code !== null ? ' (code ' . $code . ')' : ''), $paragraphs, ['label' => 'Confirm my e-mail address', 'url' => $url]);
     }
 
     public static function welcome(array $learner): bool

@@ -25,6 +25,8 @@ $router->get('/academy/register', [AcademyAccountController::class, 'registerFor
 $router->post('/academy/register', [AcademyAccountController::class, 'register'])->middleware(['honeypot', 'throttle:10,600'])->name('academy.register.post');
 $router->get('/academy/check-email', [AcademyAccountController::class, 'checkEmail'])->name('academy.check_email');
 $router->post('/academy/verify/resend', [AcademyAccountController::class, 'resend'])->middleware(['honeypot', 'throttle:6,600'])->name('academy.verify.resend');
+$router->post('/academy/verify/code', [AcademyAccountController::class, 'verifyCode'])->middleware(['honeypot', 'throttle:20,600'])->name('academy.verify.code');
+$router->post('/academy/verify/whatsapp', [AcademyAccountController::class, 'verifyWhatsApp'])->middleware(['honeypot', 'throttle:8,600'])->name('academy.verify.whatsapp');
 $router->get('/academy/verify/{token}', [AcademyAccountController::class, 'verify'])->middleware('throttle:30,600')->name('academy.verify');
 $router->get('/academy/login', [AcademyAccountController::class, 'loginForm'])->name('academy.login');
 $router->post('/academy/login', [AcademyAccountController::class, 'login'])->middleware(['honeypot', 'throttle:20,600'])->name('academy.login.post');

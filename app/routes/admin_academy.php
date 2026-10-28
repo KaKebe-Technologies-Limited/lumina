@@ -83,6 +83,7 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/learners/{id}/reset-link', [AcademyLearnersController::class, 'resetLink'])->middleware('throttle:30,60')->name('admin.academy.learners.reset');
     $router->post('/learners/{id}/verify', [AcademyLearnersController::class, 'verify'])->name('admin.academy.learners.verify');
     $router->post('/learners/{id}/send-confirmation', [AcademyLearnersController::class, 'sendConfirmation'])->middleware('throttle:60,60')->name('admin.academy.learners.send_confirmation');
+    $router->post('/learners/{id}/send-whatsapp', [AcademyLearnersController::class, 'sendWhatsApp'])->middleware('throttle:30,60')->name('admin.academy.learners.send_whatsapp');
     $router->post('/learners-send-confirmations', [AcademyLearnersController::class, 'sendConfirmations'])->middleware('throttle:10,60')->name('admin.academy.learners.send_confirmations');
     $router->post('/learners-confirm-all', [AcademyLearnersController::class, 'confirmAll'])->middleware('throttle:5,60')->name('admin.academy.learners.confirm_all');
     $router->get('/learners/{id}/photo', [AcademyLearnersController::class, 'photo'])->middleware('throttle:300,60')->name('admin.academy.learners.photo');

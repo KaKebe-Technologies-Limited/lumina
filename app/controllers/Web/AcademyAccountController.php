@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\HttpException;
 use App\Services\Academy\LearnerAuth;
 use App\Services\Academy\LearnerPortrait;
+use App\Services\Academy\VerificationCode;
 
 /**
  * LAF Academy learner accounts: sign up, confirm the e-mail address, sign in / out, forgotten password, and "my account" (details, password, delete).
@@ -44,7 +45,7 @@ final class AcademyAccountController extends AcademyBaseController
         }
         $res = LearnerAuth::register([
             'name' => $request->string('name'), 'email' => $request->string('email'), 'password' => $request->string('password'),
-            'phone' => $request->string('phone'), 'country' => $request->string('country'),
+            'phone' => $request->string('phone'), 'country' => $request->string('country'), 'whatsapp' => $request->string('whatsapp'),
         ], $request->ip());
         if (!$res['ok']) {
             $this->fail($res['errors'], 'academy/register');
@@ -63,9 +64,38 @@ final class AcademyAccountController extends AcademyBaseController
         return $this->redirect('academy/login');
     }
 
+    /** The learner types the 6-digit code from the e-mail or WhatsApp message. */
+    public function verifyCode(Request $request): Response
+    {
+        $this->gate();
+        $email = $request->string('email') !== '' ? $request->string('email') : (string) \App\Core\Session::get('academy_check_email', '');
+        $res = VerificationCode::check($email, $request->string('code'), $request->ip());
+        if (!$res['ok']) {
+            \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail($email));
+            $this->fail(['code' => (string) $res['error']], 'academy/check-email#code');
+        }
+        LearnerAuth::signIn($res['learner']);
+        Flash::success('Your account is confirmed. Welcome to the LAF Academy!');
+        return $this->redirect('academy/dashboard');
+    }
+
+    /** Send a code to the WhatsApp number the learner typed. */
+    public function verifyWhatsApp(Request $request): Response
+    {
+        $this->gate();
+        $email = $request->string('email') !== '' ? $request->string('email') : (string) \App\Core\Session::get('academy_check_email', '');
+        $res = VerificationCode::sendWhatsApp($email, $request->string('whatsapp'), $request->ip());
+        \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail($email));
+        if (!$res['ok'] && $res['error'] === 'number') {
+            $this->fail(['whatsapp' => $res['shown']], 'academy/check-email#whatsapp');
+        }
+        $res['ok'] ? Flash::success($res['shown']) : Flash::error($res['shown']);
+        return $this->redirect('academy/check-email#code');
+    }
+
     public function checkEmail(Request $request): Response
     {
-        return $this->renderAcademy('web/academy/check-email', ['email' => (string) \App\Core\Session::get('academy_check_email', '')], [
+        return $this->renderAcademy('web/academy/check-email', ['email' => (string) \App\Core\Session::get('academy_check_email', ''), 'whatsappOn' => \App\Services\Academy\WhatsAppSender::enabled() && VerificationCode::ready(), 'codeOn' => VerificationCode::ready()], [
             'bodyClass' => 'is-academy is-academy-auth',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Check your e-mail', null]],
             'meta' => ['title' => 'Check your e-mail'],

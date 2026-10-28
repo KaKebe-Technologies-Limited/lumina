@@ -242,6 +242,24 @@ final class AcademyLearnersController extends AcademyAdminController
         return $this->redirect('admin/academy/learners?status=unverified');
     }
 
+    /** Send a fresh confirmation code to the learner's WhatsApp number (saved at sign-up or typed by the learner). */
+    public function sendWhatsApp(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        $number = (string) ($l['whatsapp'] ?? '');
+        if (!\App\Services\Academy\WhatsAppSender::enabled()) {
+            Flash::error('WhatsApp is not set up yet. Add the WhatsApp details to the .env file first (docs/ACADEMY.md).');
+        } elseif ($number === '') {
+            Flash::error('This learner has not given a WhatsApp number.');
+        } else {
+            $res = \App\Services\Academy\VerificationCode::deliver($id, $number);
+            $this->audit('academy.learner.send_whatsapp', 'academy_learner', $id, ($res['ok'] ? 'Sent' : 'Could not send') . ' a WhatsApp confirmation code to ' . $l['email']);
+            $res['ok'] ? Flash::success('A confirmation code was sent to the learner on WhatsApp. They type it on the "Check your e-mail" page of the Academy.') : Flash::error('The WhatsApp message could not be sent: ' . (string) $res['error']);
+        }
+        return $this->redirect('admin/academy/learners/' . $id);
+    }
+
     /** For when e-mail cannot be delivered at all: mark every waiting address as confirmed so the learners can sign in. */
     public function confirmAll(Request $request): Response
     {

@@ -24,6 +24,9 @@ final class LearnerAuth
     public const VERIFY_HOURS = 48;
     public const RESET_MINUTES = 60;
 
+    /** The confirmation code made by the last sendVerification() (so the same code can also go to WhatsApp). */
+    public static ?string $lastCode = null;
+
     private static ?array $current = null;
     private static bool $loaded = false;
 
@@ -114,6 +117,8 @@ final class LearnerAuth
         $password = (string) ($in['password'] ?? '');
         $phone = trim((string) preg_replace('/[^0-9+()\- ]/', '', (string) ($in['phone'] ?? '')));
         $country = trim(strip_tags((string) ($in['country'] ?? '')));
+        $waInput = trim((string) ($in['whatsapp'] ?? ''));
+        $wa = $waInput !== '' && WhatsAppSender::enabled() ? WhatsAppSender::normalise($waInput) : null;
         $errors = [];
         if ($name === '' || mb_strlen($name) < 2 || mb_strlen($name) > 120) {
             $errors['name'] = 'Please enter your full name (it is printed on your certificates).';
@@ -127,6 +132,9 @@ final class LearnerAuth
         }
         if (mb_strlen($phone) > 40) {
             $errors['phone'] = 'The phone number is too long.';
+        }
+        if ($waInput !== '' && WhatsAppSender::enabled() && $wa === null) {
+            $errors['whatsapp'] = 'Enter your WhatsApp number with the country code, for example +256 772 123 456.';
         }
         if ($errors !== []) {
             return ['ok' => false, 'errors' => $errors, 'verify' => false];
@@ -152,7 +160,12 @@ final class LearnerAuth
         ]);
         $learner = (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$id]);
         if ($verify) {
+            self::$lastCode = null;
             self::sendVerification($learner);
+            if ($wa !== null && self::$lastCode !== null) {
+                VerificationCode::saveNumber($id, $wa);
+                VerificationCode::deliver($id, $wa, self::$lastCode);        // the same code, on WhatsApp too
+            }
         } else {
             AcademyMail::welcome($learner);
         }
@@ -199,7 +212,9 @@ final class LearnerAuth
         }
         $hours ??= self::VERIFY_HOURS;
         $token = self::issueToken((int) $learner['id'], 'verify', $hours * 60);
-        $ok = AcademyMail::verification($learner, abs_url('academy/verify/' . $token), $hours);
+        $code = VerificationCode::issue((int) $learner['id']);
+        self::$lastCode = $code;
+        $ok = AcademyMail::verification($learner, abs_url('academy/verify/' . $token), $hours, $code);
         self::recordMail((int) $learner['id'], $ok);
         return $ok;
     }
