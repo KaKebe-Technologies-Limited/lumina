@@ -39,6 +39,7 @@ $clean = static function (): void {
     Database::execute('DELETE FROM rate_limits');
 };
 $clean();
+$mailsBeforeLre = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
 
 check('registry: the migration added reg_no, approved_at and approved_by', LearnerRegistry::ready());
 check('registry: the number is LAF-AC-year-six digits', LearnerRegistry::format(123, '2026-10-28 10:00:00') === 'LAF-AC-2026-000123');
@@ -71,15 +72,30 @@ $jP = null;
 $pw = 'Sentence-for-test-77';
 $reg = $post('/academy/register', ['name' => 'Zed Lre One', 'email' => 'zz-lre-one@example.test', 'password' => $pw, 'agree' => '1'], $jL, '/academy/register');
 $one = Database::one("SELECT * FROM academy_learners WHERE email = 'zz-lre-one@example.test'");
-check('sign-up: the account is created at once and the learner is sent to the "check your e-mail" page', $one !== null && in_array($reg['code'], [302, 303], true) && str_contains($reg['head'], 'check-email'));
+check('sign-up: by default administrators approve the accounts: the learner goes to the "application received" page (no e-mail code)', LearnerAuth::signupMode() === 'approval' && $one !== null && in_array($reg['code'], [302, 303], true) && str_contains($reg['head'], 'academy/pending'));
+check('sign-up: in that mode no confirmation link or code is created or e-mailed', $one !== null && $one['token_hash'] === null && $one['code_hash'] === null && ($one['mail_sent_at'] ?? null) === null);
 check('sign-up: a registration number is generated automatically', $one !== null && preg_match('/^LAF-AC-\d{4}-\d{6}$/', (string) $one['reg_no']) === 1 && str_ends_with((string) $one['reg_no'], str_pad((string) $one['id'], 6, '0', STR_PAD_LEFT)));
-$page = $req('GET', '/academy/check-email', [], $jL);
-check('sign-up: the page shows the registration number and says approval does not need the e-mail', $one !== null && str_contains($page['body'], (string) $one['reg_no']) && str_contains($page['body'], 'approves your account'));
+$page = $req('GET', '/academy/pending', [], $jL);
+check('sign-up: the page shows the registration number and says approval takes about 1 hour, sign in after that, no e-mail needed', $one !== null && str_contains($page['body'], (string) $one['reg_no']) && str_contains($page['body'], 'about 1 hour') && str_contains($page['body'], 'do not need to confirm your e-mail'));
 $login = $post('/academy/login', ['email' => 'zz-lre-one@example.test', 'password' => $pw], $jL, '/academy/login');
 $flash = $req('GET', '/academy/login', [], $jL)['body'] . $login['body'];
-check('sign-in: before approval the learner is told the account is waiting for approval', !str_contains($login['head'], 'academy/dashboard') && str_contains($flash, 'waiting for approval'));
+check('sign-in: before approval the learner is told the account is waiting for approval and to sign in after about 1 hour', !str_contains($login['head'], 'academy/dashboard') && str_contains($flash, 'waiting for approval') && str_contains($flash . $req('GET', '/academy/pending', [], $jL)['body'], 'about 1 hour'));
+$mailsNow = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
+check('sign-up: no e-mail was sent to the learner', array_filter(array_diff($mailsNow, $mailsBeforeLre), static fn(string $f): bool => preg_match('/^To:.*zz-lre-one@/mi', (string) file_get_contents($f)) === 1) === []);
 $log = Database::one("SELECT * FROM audit_log WHERE action = 'academy.learner.register' AND summary LIKE '%Zed Lre One%' ORDER BY id DESC LIMIT 1");
 check('notice: the new account is written to the activity log (shown on the dashboard)', $log !== null && str_contains((string) $log['summary'], (string) $one['reg_no']) && str_contains((string) $log['summary'], 'waiting for approval'));
+
+// ------------------------------------------------------------------------------------------------------------- e-mail mode (the toggle for later)
+\App\Core\Settings::set('academy_signup_mode', 'email');
+\App\Core\Settings::flush();
+$jM = null;
+$post('/academy/register', ['name' => 'Zed Lre Mail', 'email' => 'zz-lre-mail@example.test', 'password' => $pw, 'agree' => '1'], $jM, '/academy/register');
+$mailRow = Database::one("SELECT * FROM academy_learners WHERE email = 'zz-lre-mail@example.test'");
+$regM = $post('/academy/register', ['name' => 'Zed Lre Mail2', 'email' => 'zz-lre-mail2@example.test', 'password' => $pw, 'agree' => '1'], $jM, '/academy/register');
+check('e-mail mode: switched on in the settings, sign-up sends the link / code and goes to the "check your e-mail" page', LearnerAuth::emailVerificationOn() && $mailRow !== null && $mailRow['token_hash'] !== null && str_contains($regM['head'], 'check-email'));
+\App\Core\Settings::reset('academy_signup_mode');
+\App\Core\Settings::flush();
+check('settings: the default is "an administrator approves" again once the setting is removed', LearnerAuth::signupMode() === 'approval');
 
 // ------------------------------------------------------------------------------------------------------------- the administrator
 $pwA = 'Admin lre pass 91';

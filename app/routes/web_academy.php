@@ -28,6 +28,7 @@ $router->post('/academy/verify/resend', [AcademyAccountController::class, 'resen
 $router->post('/academy/verify/code', [AcademyAccountController::class, 'verifyCode'])->middleware(['honeypot', 'throttle:20,600'])->name('academy.verify.code');
 $router->post('/academy/verify/whatsapp', [AcademyAccountController::class, 'verifyWhatsApp'])->middleware(['honeypot', 'throttle:8,600'])->name('academy.verify.whatsapp');
 $router->get('/academy/verify/{token}', [AcademyAccountController::class, 'verify'])->middleware('throttle:30,600')->name('academy.verify');
+$router->get('/academy/pending', [AcademyAccountController::class, 'pending'])->name('academy.pending');
 $router->get('/academy/google', [AcademyAccountController::class, 'googleStart'])->middleware('throttle:30,600')->name('academy.google');
 $router->get('/academy/google/callback', [AcademyAccountController::class, 'googleCallback'])->middleware('throttle:30,600')->name('academy.google.callback');
 $router->get('/academy/login', [AcademyAccountController::class, 'loginForm'])->name('academy.login');

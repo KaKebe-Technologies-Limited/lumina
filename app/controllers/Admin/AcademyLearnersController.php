@@ -300,6 +300,7 @@ final class AcademyLearnersController extends AcademyAdminController
         $l = $this->learner($id);
         if (LearnerRegistry::approve($id, Auth::id())) {
             $this->audit('academy.learner.approve', 'academy_learner', $id, 'Approved the account of ' . $l['email'] . ((string) ($l['reg_no'] ?? '') !== '' ? ' (' . $l['reg_no'] . ')' : ''));
+            \App\Services\Academy\AcademyMail::approved($l);        // best effort: the approval does not depend on it
             Flash::success($l['name'] . ' is approved and can sign in now.');
         } else {
             Flash::info('This account is already active.');

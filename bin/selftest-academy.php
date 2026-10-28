@@ -46,7 +46,7 @@ $acSet = static function (string $k, ?string $v): void {
     Settings::flush();
 };
 $acBefore = [];
-foreach (['academy_enabled', 'academy_registration_open', 'academy_require_verification', 'academy_exam_requires_lessons'] as $k) {
+foreach (['academy_enabled', 'academy_registration_open', 'academy_signup_mode', 'academy_exam_requires_lessons'] as $k) {
     $acBefore[$k] = Settings::isCustomised($k) ? (string) setting($k, '') : null;
 }
 $acRestore = static function () use ($acBefore): void {
@@ -128,7 +128,7 @@ $acClean();
 $mailsBefore = $acMails();
 $acSet('academy_enabled', '1');
 $acSet('academy_registration_open', '1');
-$acSet('academy_require_verification', '1');
+$acSet('academy_signup_mode', 'email');
 $acSet('academy_exam_requires_lessons', '1');
 
 // ---- public pages -----------------------------------------------------------------------------------------------------------

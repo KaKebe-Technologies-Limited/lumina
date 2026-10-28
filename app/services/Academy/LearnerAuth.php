@@ -72,9 +72,36 @@ final class LearnerAuth
         self::$loaded = false;
     }
 
+    /** How new learners get in: "approval" (an administrator approves, nothing is e-mailed: the default), "email" (confirm by link or code, or be approved) or "open". */
+    public static function signupMode(): string
+    {
+        $m = (string) setting('academy_signup_mode', 'approval');
+        return in_array($m, ['approval', 'email', 'open'], true) ? $m : 'approval';
+    }
+
+    /** True when a new learner cannot sign in until the e-mail is confirmed or an administrator approves the account. */
     public static function requireVerification(): bool
     {
-        return (string) setting('academy_require_verification', '1') === '1';
+        return self::signupMode() !== 'open';
+    }
+
+    /** True only in "email" mode: confirmation link / 6-digit code are e-mailed (and sent on WhatsApp). */
+    public static function emailVerificationOn(): bool
+    {
+        return self::signupMode() === 'email';
+    }
+
+    /** The approval time shown to learners, in hours. */
+    public static function approvalHours(): int
+    {
+        return max(1, min(48, (int) setting('academy_approval_hours', '1')));
+    }
+
+    /** "1 hour" / "3 hours". */
+    public static function approvalText(): string
+    {
+        $h = self::approvalHours();
+        return $h . ' hour' . ($h === 1 ? '' : 's');
     }
 
     public static function registrationOpen(): bool
@@ -160,14 +187,14 @@ final class LearnerAuth
         ]);
         LearnerRegistry::assign($id);
         $learner = (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$id]);
-        if ($verify) {
+        if ($verify && self::emailVerificationOn()) {
             self::$lastCode = null;
             self::sendVerification($learner);
             if ($wa !== null && self::$lastCode !== null) {
                 VerificationCode::saveNumber($id, $wa);
                 VerificationCode::deliver($id, $wa, self::$lastCode);        // the same code, on WhatsApp too
             }
-        } else {
+        } elseif (!$verify) {
             AcademyMail::welcome($learner);
         }
         LearnerRegistry::announce($id, 'the sign-up form');        // the activity log (dashboard) + an e-mail to the organisation
@@ -306,7 +333,9 @@ final class LearnerAuth
             return ['ok' => false, 'error' => 'That e-mail address and password do not match.', 'unverified' => false, 'learner' => null];
         }
         if (self::requireVerification() && $l['email_verified_at'] === null) {
-            return ['ok' => false, 'error' => 'Your account is waiting for approval. Confirm your e-mail address (open the link or type the code we sent you), or wait for the Academy team to approve it.', 'unverified' => true, 'learner' => $l];
+            return ['ok' => false, 'error' => self::emailVerificationOn()
+                ? 'Your account is waiting for approval. Confirm your e-mail address (open the link or type the code we sent you), or wait for the Academy team to approve it.'
+                : 'Your account is waiting for approval. Approval takes about ' . self::approvalText() . ': please sign in after that.', 'unverified' => true, 'learner' => $l];
         }
         RateLimit::clear($key);
         self::signIn($l);

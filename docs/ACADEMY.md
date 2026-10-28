@@ -199,3 +199,10 @@ Certificates already approved can all be put back to "waiting for approval" with
 ## Picture or selfie at sign-up
 
 The sign-up form has an optional **picture** field: attach a photo, or press **Take a selfie** (camera in the browser; the picture is cropped to a square). It is saved with the new account, **private** (only the learner and the Academy team; no public consent is given at sign-up) and shows in the learner list and the learner page, so the Academy has a record of every learner. A problem with the picture never stops the sign-up (the learner is told and can add it later under My account). The site allows the camera for its own pages (`Permissions-Policy: camera=(self)`); the browser still asks the learner first. Code: `data-selfie` block in `register.php` + the end of `assets/js/academy.js`; storage and checks: `LearnerPortrait`. Tests: `bin/selftest-academy-registry.php`, `bin/selftest-academy.php`.
+
+## How new learners get in (Settings > LAF Academy > "How new learners get in")
+
+* **An administrator approves each account (the default):** no confirmation link or 6-digit code is e-mailed or sent on WhatsApp (e-mail limits do not matter). After sign-up the learner sees **Application received** (`/academy/pending`) with their registration number and "approval takes about 1 hour: sign in after that; you do not need to confirm your e-mail". They cannot sign in until an administrator approves them (Admin > LAF Academy > Learners: **Approve** on a row, **Approve all**). Approving one learner also e-mails them "your account is approved" (best effort; approving never depends on it, and "Approve all" sends no e-mails). The wording of the time is the setting **Approval time shown to new learners** (default 1 hour): it is only text, nothing is approved automatically.
+* **They confirm their e-mail, or an administrator approves them:** the earlier behaviour (link + 6-digit code + optional WhatsApp code). Switch to this when e-mail works (Settings > E-mail).
+* **Nothing:** new learners can sign in at once.
+* "Continue with Google" always signs in at once (Google verified the address). Code: `LearnerAuth::signupMode()`.

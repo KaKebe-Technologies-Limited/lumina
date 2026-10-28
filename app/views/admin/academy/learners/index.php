@@ -10,9 +10,9 @@ if ($manager) {
 <?php if ($manager && !empty($waiting)): ?>
     <div class="alert alert--warning" role="status">
         <strong><?= (int) $waiting ?> learner<?= (int) $waiting === 1 ? ' is' : 's are' ?> waiting for approval.</strong>
-        They can start as soon as they confirm their e-mail address, or as soon as you approve them (no e-mail needed). Use <em>Approve</em> on a row, <em>Approve all</em> below, or send the confirmation e-mail again (25 at a time; those who never received one go first).
+        <?php if (\App\Services\Academy\LearnerAuth::emailVerificationOn()): ?>They can start as soon as they confirm their e-mail address, or as soon as you approve them (no e-mail needed). Use <em>Approve</em> on a row, <em>Approve all</em> below, or send the confirmation e-mail again (25 at a time; those who never received one go first).<?php else: ?>New accounts are approved by you (e-mail codes are switched off: Settings > LAF Academy > How new learners get in). They were told to sign in after <?= e(\App\Services\Academy\LearnerAuth::approvalText()) ?>: use <em>Approve</em> on a row or <em>Approve all</em> below.<?php endif; ?>
         <div class="aac-actions">
-            <form method="post" action="<?= e(url('admin/academy/learners-send-confirmations')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit" data-loading-text="Sending...">Send confirmation e-mails</button></form>
+            <?php if (\App\Services\Academy\LearnerAuth::emailVerificationOn()): ?><form method="post" action="<?= e(url('admin/academy/learners-send-confirmations')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit" data-loading-text="Sending...">Send confirmation e-mails</button></form><?php endif; ?>
             <form method="post" action="<?= e(url('admin/academy/learners-confirm-all')) ?>" class="inline-form" data-confirm="Approve all <?= (int) $waiting ?> waiting learners? They can then sign in without opening an e-mail."><?= csrf_field() ?><button class="btn btn--primary btn--sm" type="submit">Approve all <?= (int) $waiting ?></button></form>
             <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/academy/learners', ['status' => 'unverified'])) ?>">Show only these</a>
         </div>

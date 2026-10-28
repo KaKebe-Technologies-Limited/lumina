@@ -62,7 +62,7 @@ final class AcademyAccountController extends AcademyBaseController
         if ($res['verify']) {
             \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail($request->string('email')));
             \App\Core\Session::put('academy_reg_no', (string) ($res['learner']['reg_no'] ?? ''));
-            return $this->redirect('academy/check-email');
+            return $this->redirect(LearnerAuth::emailVerificationOn() ? 'academy/check-email' : 'academy/pending');
         }
         // no confirmation needed: sign the new learner in at once (an address that already has an account gets no session)
         if (isset($res['learner'])) {
@@ -109,6 +109,16 @@ final class AcademyAccountController extends AcademyBaseController
             'bodyClass' => 'is-academy is-academy-auth',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Check your e-mail', null]],
             'meta' => ['title' => 'Check your e-mail'],
+        ], true);
+    }
+
+    /** After sign-up while administrators approve accounts (no e-mail code): the account is received, sign in after the approval time. */
+    public function pending(Request $request): Response
+    {
+        return $this->renderAcademy('web/academy/pending', ['regNo' => (string) \App\Core\Session::get('academy_reg_no', ''), 'hours' => LearnerAuth::approvalText()], [
+            'bodyClass' => 'is-academy is-academy-auth',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Application received', null]],
+            'meta' => ['title' => 'Application received'],
         ], true);
     }
 
@@ -161,8 +171,9 @@ final class AcademyAccountController extends AcademyBaseController
         if (!$res['ok']) {
             if ($res['unverified']) {
                 \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail($request->string('email')));
+                \App\Core\Session::put('academy_reg_no', (string) ($res['learner']['reg_no'] ?? ''));
                 Flash::warning((string) $res['error']);
-                return $this->redirect('academy/check-email');
+                return $this->redirect(LearnerAuth::emailVerificationOn() ? 'academy/check-email' : 'academy/pending');
             }
             $this->fail(['password' => (string) $res['error']], 'academy/login');
         }

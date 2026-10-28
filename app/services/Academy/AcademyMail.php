@@ -120,6 +120,15 @@ final class AcademyMail
         ], ['label' => 'Choose a new password', 'url' => $url]);
     }
 
+    /** An administrator approved the account (best effort: approval never depends on this e-mail). */
+    public static function approved(array $learner): bool
+    {
+        return self::send((string) $learner['email'], 'Your LAF Academy account is approved', [
+            'Hello ' . self::first((string) $learner['name']) . ',',
+            'Your LAF Academy account is approved' . ((string) ($learner['reg_no'] ?? '') !== '' ? ' (registration number ' . $learner['reg_no'] . ')' : '') . '. You can sign in now with your e-mail address and password.',
+        ], ['label' => 'Sign in', 'url' => abs_url('academy/login')]);
+    }
+
     /** The learner passed and the certificate waits for the administrator's approval and signature. */
     public static function certificateWaiting(array $learner, array $course): bool
     {
