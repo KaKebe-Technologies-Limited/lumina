@@ -44,7 +44,7 @@ final class AcademyCertificatesController extends AcademyAdminController
         $total = (int) Database::value('SELECT COUNT(*) FROM academy_certificates c' . $whereSql, $params, 0);
         $pagination = Pagination::make($total, $request->page(), $this->perPage());
         $rows = Database::all('SELECT c.*, l.email AS learner_email FROM academy_certificates c LEFT JOIN academy_learners l ON l.id = c.learner_id' . $whereSql . ' ORDER BY c.id DESC LIMIT ? OFFSET ?', array_merge($params, [$pagination->perPage, $pagination->offset]));
-        return $this->render('admin/academy/certificates', ['rows' => $rows, 'pagination' => $pagination, 'q' => $q, 'status' => $st, 'total' => $total, 'waiting' => CertificateService::pendingCount(), 'ready' => $ready],
+        return $this->render('admin/academy/certificates', ['rows' => $rows, 'pagination' => $pagination, 'q' => $q, 'status' => $st, 'total' => $total, 'waiting' => CertificateService::pendingCount(), 'approved' => CertificateService::approvedCount(), 'ready' => $ready],
             ['title' => 'Certificates', 'nav' => 'academy_certificates', 'breadcrumbs' => $this->crumbs('Certificates')]);
     }
 
@@ -133,6 +133,16 @@ final class AcademyCertificatesController extends AcademyAdminController
         $this->audit('academy.certificates.approve_all', 'academy_certificate', null, 'Approved all waiting certificates', ['approved' => $n, 'emailed' => $mailed]);
         Flash::success($n . ' certificate' . ($n === 1 ? ' was' : 's were') . ' approved' . ($request->bool('email') ? ' and ' . $mailed . ' e-mailed.' : '.') . (CertificateService::pendingCount() > 0 ? ' More are waiting: press the button again.' : ''));
         return $this->redirect('admin/academy/certificates');
+    }
+
+    /** Take back every approved certificate: all of them wait for approval again before anybody receives them. */
+    public function withdrawAll(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $n = CertificateService::withdrawAllApprovals();
+        $this->audit('academy.certificates.withdraw_all', 'academy_certificate', null, 'Took back every approved certificate: they wait for approval again', ['count' => $n]);
+        Flash::success($n . ' certificate' . ($n === 1 ? ' was' : 's were') . ' taken back. ' . ($n === 1 ? 'It is' : 'They are') . ' waiting for your approval: nobody can open or check ' . ($n === 1 ? 'it' : 'them') . ' until you approve.');
+        return $this->redirect('admin/academy/certificates?status=waiting');
     }
 
     public function revoke(Request $request, int $id): Response

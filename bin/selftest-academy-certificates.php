@@ -233,6 +233,19 @@ if ($oldSetting === null) {
     Settings::set('academy_cert_approval', (string) $oldSetting);
 }
 Settings::flush();
+// ------------------------------------------------------------------------------------------------------------- take every approval back (the button on the certificates page)
+$keep = Database::all('SELECT id, approved_at, approved_by, emailed_at FROM academy_certificates WHERE approved_at IS NOT NULL AND revoked_at IS NULL');
+CertificateService::approve((int) $c['id'], null, false);
+$before = CertificateService::approvedCount();
+$taken = CertificateService::withdrawAllApprovals();
+$after = Database::one('SELECT approved_at, approved_by, emailed_at FROM academy_certificates WHERE id = ?', [(int) $c['id']]);
+check('withdraw all: every approved certificate waits for approval again (count matches)', $taken === $before && $taken >= 1 && CertificateService::approvedCount() === 0 && $after['approved_at'] === null && $after['approved_by'] === null && $after['emailed_at'] === null);
+check('withdraw all: the learner cannot use it and the public check page no longer accepts it', CertificateService::activeFor((int) $la['id'], (int) $course['id']) === null && !CertificateService::isApproved((array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [(int) $c['id']])));
+check('withdraw all: it can be approved again one by one', CertificateService::approve((int) $c['id'], null, false)['ok'] === true && CertificateService::approvedCount() === 1);
+foreach ($keep as $k) {                                                              // put any real data back exactly as it was
+    Database::update('academy_certificates', ['approved_at' => $k['approved_at'], 'approved_by' => $k['approved_by'], 'emailed_at' => $k['emailed_at']], 'id = ?', [(int) $k['id']]);
+}
+
 $cleanup();
 foreach (array_diff(glob(STORAGE_PATH . '/mail/*.eml') ?: [], $mailsBefore) as $f) {
     if (str_contains($mailText($f), 'zz-lce-')) {

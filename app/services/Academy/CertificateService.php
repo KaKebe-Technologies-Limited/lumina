@@ -126,6 +126,36 @@ final class CertificateService
         return ['ok' => true, 'mailed' => $email ? self::email($c) : false];
     }
 
+    /** How many certificates are approved (available to their learners and to the public check page) and not withdrawn. */
+    public static function approvedCount(): int
+    {
+        return self::approvalReady() ? (int) Database::value('SELECT COUNT(*) FROM academy_certificates WHERE approved_at IS NOT NULL AND revoked_at IS NULL', [], 0) : 0;
+    }
+
+    /**
+     * Take every approved certificate back: it waits for approval again (nobody can open it or check it until an administrator approves it) and its "e-mailed" mark
+     * is cleared so it can be e-mailed again on approval. E-mails already sent cannot be recalled. Returns how many were taken back.
+     */
+    public static function withdrawAllApprovals(): int
+    {
+        if (!self::approvalReady()) {
+            return 0;
+        }
+        $n = self::approvedCount();
+        $set = 'approved_at = NULL, approved_by = NULL' . (self::emailedColumn() ? ', emailed_at = NULL' : '');
+        Database::execute('UPDATE academy_certificates SET ' . $set . ' WHERE approved_at IS NOT NULL AND revoked_at IS NULL');
+        return $n;
+    }
+
+    private static function emailedColumn(): bool
+    {
+        try {
+            return (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_certificates' AND column_name = 'emailed_at'", [], 0) === 1;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     /** May this learner request a certificate for the course now? Finished (lessons + exam passed), certificates on for the course, and none exists yet. */
     public static function eligible(int $learnerId, int $courseId): bool
     {

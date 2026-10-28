@@ -1,4 +1,4 @@
-<?php /** Admin > Academy > Certificates. Vars: $rows, $pagination, $q, $status, $total, $waiting (certificates waiting for approval), $ready (approval columns exist). */ ?>
+<?php /** Admin > Academy > Certificates. Vars: $rows, $pagination, $q, $status, $total, $waiting (certificates waiting for approval), $approved (approved ones), $ready (approval columns exist). */ ?>
 <?= partial('partials/admin/page-header', ['title' => 'Certificates', 'subtitle' => 'Every certificate issued. Anyone can check one by its number on the public Academy; a withdrawn certificate says so there.',
     'actions' => [['label' => 'Download CSV', 'url' => url('admin/academy/certificates-export'), 'icon' => 'download', 'class' => 'btn--outline']]]) ?>
 <?php if (!empty($waiting)): ?>
@@ -10,6 +10,16 @@
                 <label class="check"><input type="checkbox" name="email" value="1" checked><span>E-mail each learner</span></label>
                 <button class="btn btn--primary btn--sm" type="submit">Approve all</button></form>
             <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/academy/certificates', ['status' => 'waiting'])) ?>">Show only these</a>
+        </div>
+    </div>
+<?php endif; ?>
+<?php if (!empty($ready) && !empty($approved)): ?>
+    <div class="alert alert--info" role="status">
+        <strong><?= (int) $approved ?> certificate<?= (int) $approved === 1 ? ' is' : 's are' ?> approved and available to the learners.</strong>
+        To make every certificate wait for your approval before anybody receives it, take them all back: learners lose access and the public check page stops accepting them until you approve each one again (e-mails already sent cannot be recalled).
+        <div class="aac-actions">
+            <form method="post" action="<?= e(url('admin/academy/certificates-withdraw-all')) ?>" class="inline-form" data-confirm="Take back all <?= (int) $approved ?> approved certificates? Every one waits for your approval again. Learners cannot open them and the public check page will not accept them until you approve."><?= csrf_field() ?>
+                <button class="btn btn--outline btn--sm" type="submit">Take back all <?= (int) $approved ?> for approval</button></form>
         </div>
     </div>
 <?php endif; ?>

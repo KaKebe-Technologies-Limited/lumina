@@ -185,3 +185,7 @@ Behaviour: a new Google user gets an account (name from Google, random locked pa
 * **Every new account is announced:** it is written to the activity log (shown on the dashboard), an e-mail goes to the organisation address (best effort), and the dashboard tile **Academy learners waiting for approval** counts the waiting ones and opens the list filtered to them (Status: Awaiting approval).
 * The sign-in message for a waiting learner says the account is waiting for approval and can be confirmed by e-mail or approved by the Academy team.
 * Test: `bin/selftest-academy-registry.php`.
+
+## Taking every certificate back for approval
+
+Certificates already approved can all be put back to "waiting for approval" with one button: Admin > LAF Academy > Certificates > **Take back all N for approval** (shown while approved certificates exist). From then on nobody can open, download or check them until an administrator approves each one (or "Approve all"), and the e-mailed mark is cleared so they can be e-mailed again on approval. E-mails already sent cannot be recalled. It is written to the activity log (`academy.certificates.withdraw_all`). New certificates already wait for approval (Settings > LAF Academy). Code: `CertificateService::withdrawAllApprovals()`.
