@@ -45,7 +45,9 @@ use App\Services\Academy\CourseService;
                 </section>
                 <section class="ac-panel" data-reveal>
                     <h2 class="ac-panel__title"><?= icon('award', 'icon--sm') ?> My certificates</h2>
-                    <?php if ($certificates === []): ?><p class="text-muted">Pass a final exam to earn your first certificate.</p><?php endif; ?>
+                    <?php $waiting = \App\Services\Academy\CertificateService::pendingForLearner((int) $me['id']); ?>
+                    <?php if ($certificates === [] && $waiting === []): ?><p class="text-muted">Pass a final exam to earn your first certificate.</p><?php endif; ?>
+                    <?php foreach ($waiting as $wc): ?><p class="text-muted"><?= icon('clock', 'icon--sm') ?> <?= e($wc['course_title']) ?>: waiting for approval</p><?php endforeach; ?>
                     <ul class="ac-minilist">
                         <?php foreach ($certificates as $ce): ?>
                             <li><a href="<?= e(url('academy/certificate/' . $ce['code'])) ?>"><?= e($ce['course_title']) ?></a><span><?= $ce['revoked_at'] !== null ? 'Withdrawn' : e(format_date($ce['issued_at'])) ?></span></li>

@@ -183,13 +183,19 @@ fieldset.ac-q { padding: 0 $space-4 $space-4;
   &__tag { margin-left: .4rem; font-size: $fs-xs; font-style: normal; font-weight: 700; color: $ink-soft; &--ok { color: $success; } } }
 
 // ---- certificate page
-.ac-cert { max-width: 46rem; margin: $space-5 auto; padding: clamp(1.25rem, 4vw, 3rem); text-align: center; background: $surface; border: 4px double $gold-deep; border-radius: 6px; box-shadow: 0 14px 40px rgba($navy, .12);
-  &__org { margin: 0; font-size: $fs-xs; letter-spacing: .18em; text-transform: uppercase; font-weight: 700; color: $gold-text; }
-  &__title { margin: $space-3 0; font-family: $font-display; font-size: fluid(1.7rem, '1.1rem + 2.2vw', 2.7rem); color: $navy; }
+// The on-screen certificate follows the printed design (LAF_Certificate template): navy border, gold inner frame, serif title, orange course name.
+$cert-paper: #FCFAF4;
+$cert-navy: #122040;
+$cert-gold: #C9973F;
+$cert-orange: #E0642C;
+.ac-cert { position: relative; max-width: 46rem; margin: $space-5 auto; padding: clamp(1.5rem, 4vw, 3rem); text-align: center; background: $cert-paper; border: 6px solid $cert-navy; border-radius: 2px; box-shadow: 0 14px 40px rgba($navy, .14);
+  &::before { content: ''; position: absolute; inset: 7px; border: 2px solid $cert-gold; outline: 1px solid $cert-gold; outline-offset: -7px; pointer-events: none; }
+  &__org { margin: 0; font-size: $fs-xs; letter-spacing: .22em; text-transform: uppercase; font-weight: 700; color: $cert-navy; }
+  &__title { margin: $space-3 0; font-family: $font-display; font-weight: 700; font-size: fluid(1.7rem, '1.1rem + 2.2vw', 2.7rem); color: $cert-navy; &::after { content: ''; display: block; width: 8rem; height: 0.4rem; margin: $space-3 auto 0; background: linear-gradient(90deg, transparent 0 40%, $cert-orange 40% 60%, transparent 60%), linear-gradient(0deg, $cert-gold 0 1px, transparent 1px) center / 100% 1px no-repeat; } }
   &__small { margin: 0; font-style: italic; color: $ink-soft; }
-  &__name { margin: $space-3 0; padding-bottom: $space-2; border-bottom: 1px solid $border-strong; font-family: $font-display; font-size: fluid(1.8rem, '1.2rem + 2.4vw', 3rem); font-weight: 700; color: $navy; overflow-wrap: anywhere; }
+  &__name { margin: $space-3 0; padding-bottom: $space-2; border-bottom: 1px solid $cert-gold; font-family: $font-display; font-size: fluid(1.8rem, '1.2rem + 2.4vw', 3rem); font-weight: 700; text-transform: uppercase; color: $cert-navy; overflow-wrap: anywhere; }
   &__text { max-width: 30rem; margin: $space-3 auto; color: $ink; }
-  &__course { margin: $space-3 0; font-family: $font-heading; font-weight: 700; font-size: $fs-xl; color: $navy; }
+  &__course { margin: $space-3 0; font-family: $font-display; font-weight: 700; font-size: $fs-xl; color: #B8480F; }
   &__facts { margin: $space-3 0; color: $ink-soft; font-size: $fs-sm; }
   &__no { margin: $space-4 0 0; font-size: $fs-sm; color: $ink-soft; b { color: $navy; letter-spacing: .06em; } } }
 @media print {

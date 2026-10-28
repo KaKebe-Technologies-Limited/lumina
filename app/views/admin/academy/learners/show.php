@@ -61,7 +61,8 @@ $lid = (int) $l['id']; ?>
     <div class="card__body">
         <?php if ($certs === []): ?><p class="text-muted">No certificate yet.</p><?php endif; ?>
         <ul class="aac-list"><?php foreach ($certs as $c): ?>
-            <li><a href="<?= e(url('academy/certificate/' . $c['code'])) ?>" target="_blank" rel="noopener"><?= e($c['code']) ?></a> <span><?= e($c['course_title']) ?> &middot; <?= e(format_date($c['issued_at'], 'j M Y')) ?><?= $c['revoked_at'] ? ' &middot; withdrawn' : '' ?></span></li>
+            <?php $waitingCert = !\App\Services\Academy\CertificateService::isApproved($c); ?>
+            <li><a href="<?= e($waitingCert ? url('admin/academy/certificates/' . (int) $c['id'] . '/preview') : url('academy/certificate/' . $c['code'])) ?>" target="_blank" rel="noopener"><?= e($c['code']) ?></a> <span><?= e($c['course_title']) ?> &middot; <?= e(format_date($c['issued_at'], 'j M Y')) ?><?= $c['revoked_at'] ? ' &middot; withdrawn' : ($waitingCert ? ' &middot; <a href="' . e(url('admin/academy/certificates', ['status' => 'waiting'])) . '">waiting for approval</a>' : '') ?></span></li>
         <?php endforeach; ?></ul>
         <?php if ($available !== [] || $enrolments !== []): $all = \App\Core\Database::all("SELECT id, title FROM academy_courses WHERE status <> 'archived' ORDER BY title"); ?>
             <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/certificate')) ?>" class="aac-inline" data-confirm="Issue a certificate for this course to <?= e($l['name']) ?> without an exam?"><?= csrf_field() ?>

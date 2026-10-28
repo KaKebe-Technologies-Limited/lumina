@@ -25,6 +25,8 @@ $pct = (int) round((float) $attempt['score_pct']);
                 <div class="ac-result__actions">
                     <?php if ($isExam && $passed && $certificate !== null): ?>
                         <a class="btn btn--cta btn--caps" href="<?= e(url('academy/certificate/' . $certificate['code'])) ?>"><?= icon('award', 'icon--sm') ?> Open my certificate</a>
+                    <?php elseif ($isExam && $passed && !empty($certificatePending)): ?>
+                        <p class="opp-notice" role="status"><?= icon('clock', 'icon--sm') ?> Your certificate is waiting for approval. You will find it here and in your dashboard as soon as the Academy team approves it.</p>
                     <?php elseif ($isExam && $passed): ?>
                         <a class="btn btn--cta btn--caps" href="<?= e(url($base)) ?>">Finish the remaining lessons</a>
                     <?php elseif ($passed && $next !== null): ?>

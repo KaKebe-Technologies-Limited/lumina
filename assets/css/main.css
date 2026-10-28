@@ -24175,30 +24175,51 @@ fieldset.ac-q legend + * {
 }
 
 .ac-cert {
+  position: relative;
   max-width: 46rem;
   margin: 1.5rem auto;
-  padding: clamp(1.25rem, 4vw, 3rem);
+  padding: clamp(1.5rem, 4vw, 3rem);
   text-align: center;
-  background: #F7F3EC;
-  border: 4px double #C47E0D;
-  border-radius: 6px;
-  box-shadow: 0 14px 40px rgba(44, 57, 80, 0.12);
+  background: #FCFAF4;
+  border: 6px solid #122040;
+  border-radius: 2px;
+  box-shadow: 0 14px 40px rgba(44, 57, 80, 0.14);
+}
+
+.ac-cert::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 2px solid #C9973F;
+  outline: 1px solid #C9973F;
+  outline-offset: -7px;
+  pointer-events: none;
 }
 
 .ac-cert__org {
   margin: 0;
   font-size: 0.875rem;
-  letter-spacing: .18em;
+  letter-spacing: .22em;
   text-transform: uppercase;
   font-weight: 700;
-  color: #85560A;
+  color: #122040;
 }
 
 .ac-cert__title {
   margin: 0.75rem 0;
   font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-weight: 700;
   font-size: clamp(1.7rem, 1.1rem + 2.2vw, 2.7rem);
-  color: #2C3950;
+  color: #122040;
+}
+
+.ac-cert__title::after {
+  content: '';
+  display: block;
+  width: 8rem;
+  height: 0.4rem;
+  margin: 0.75rem auto 0;
+  background: linear-gradient(90deg, transparent 0 40%, #E0642C 40% 60%, transparent 60%), linear-gradient(0deg, #C9973F 0 1px, transparent 1px) center/100% 1px no-repeat;
 }
 
 .ac-cert__small {
@@ -24210,11 +24231,12 @@ fieldset.ac-q legend + * {
 .ac-cert__name {
   margin: 0.75rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #CFC7B8;
+  border-bottom: 1px solid #C9973F;
   font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.8rem, 1.2rem + 2.4vw, 3rem);
   font-weight: 700;
-  color: #2C3950;
+  text-transform: uppercase;
+  color: #122040;
   overflow-wrap: anywhere;
 }
 
@@ -24226,10 +24248,10 @@ fieldset.ac-q legend + * {
 
 .ac-cert__course {
   margin: 0.75rem 0;
-  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-weight: 700;
   font-size: 1.75rem;
-  color: #2C3950;
+  color: #B8480F;
 }
 
 .ac-cert__facts {

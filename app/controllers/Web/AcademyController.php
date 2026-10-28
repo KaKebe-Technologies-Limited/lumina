@@ -119,19 +119,21 @@ final class AcademyController extends AcademyBaseController
         $progress = null;
         $resume = null;
         $cert = null;
+        $certPending = null;
         if ($learner !== null) {
             $enrolled = CourseService::enrollment((int) $learner['id'], (int) $course['id']);
             if ($enrolled !== null) {
                 $progress = CourseService::progress((int) $learner['id'], (int) $course['id'], $tree);
                 $resume = CourseService::resumeLessonId($tree, $progress['done_ids'], $enrolled['last_lesson_id'] !== null ? (int) $enrolled['last_lesson_id'] : null);
                 $cert = CertificateService::activeFor((int) $learner['id'], (int) $course['id']);
+                $certPending = $cert === null ? CertificateService::pendingFor((int) $learner['id'], (int) $course['id']) : null;
             }
         }
         $facilitator = $course['facilitator_id'] !== null ? Database::one('SELECT name FROM users WHERE id = ?', [(int) $course['facilitator_id']]) : null;
         $related = array_slice(array_values(array_filter(CourseService::published(['category' => (string) $course['category']]), static fn(array $c): bool => (int) $c['id'] !== (int) $course['id'])), 0, 3);
         $desc = trim((string) $course['summary']) !== '' ? (string) $course['summary'] : excerpt((string) $course['description'], 175);
         return $this->renderAcademy('web/academy/course', [
-            'course' => $course, 'tree' => $tree, 'enrolled' => $enrolled, 'progress' => $progress, 'resume' => $resume, 'certificate' => $cert,
+            'course' => $course, 'tree' => $tree, 'enrolled' => $enrolled, 'progress' => $progress, 'resume' => $resume, 'certificate' => $cert, 'certificatePending' => $certPending,
             'draft' => $draft, 'facilitator' => $facilitator['name'] ?? null, 'related' => $related,
             'outcomes' => CourseService::jsonList($course['outcomes']), 'requirements' => CourseService::jsonList($course['requirements']),
             'resources' => CourseService::resources($course['resources']),
@@ -183,6 +185,9 @@ final class AcademyController extends AcademyBaseController
     {
         $this->gate();
         $cert = CertificateService::find(strtoupper($code));
+        if ($cert !== null && !CertificateService::isApproved($cert)) {
+            $cert = null;                            // waiting for approval: not available, not even to look up
+        }
         if ($cert === null) {
             return $this->renderAcademy('web/academy/certificate', ['cert' => null, 'code' => mb_substr($code, 0, 30), 'wording' => CertificateService::wording()], [
                 'bodyClass' => 'is-academy is-academy-certificate', 'status' => 404,
@@ -201,7 +206,7 @@ final class AcademyController extends AcademyBaseController
     {
         $this->gate();
         $cert = CertificateService::find(strtoupper($code));
-        if ($cert === null || $cert['revoked_at'] !== null) {
+        if ($cert === null || $cert['revoked_at'] !== null || !CertificateService::isApproved($cert)) {
             throw new HttpException(404, 'Not found');
         }
         $pdf = CertificateService::pdf($cert);

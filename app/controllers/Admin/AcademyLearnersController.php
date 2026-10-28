@@ -127,7 +127,7 @@ final class AcademyLearnersController extends AcademyAdminController
             'SELECT a.*, q.title AS quiz_title, q.module_id, c.title AS course_title FROM academy_attempts a JOIN academy_quizzes q ON q.id = a.quiz_id JOIN academy_courses c ON c.id = a.course_id WHERE a.learner_id = ? AND a.submitted_at IS NOT NULL' . $cond . ' ORDER BY a.id DESC LIMIT 30',
             [$id]
         );
-        $certs = AcademyAccess::manager() ? CertificateService::forLearner($id) : [];
+        $certs = AcademyAccess::manager() ? CertificateService::forLearner($id, false) : [];
         [$sc, $sp] = AcademyAccess::courseScope('c');
         $enrolledIds = array_map(static fn(array $e): int => (int) $e['course_id'], Database::all('SELECT course_id FROM academy_enrollments WHERE learner_id = ?', [$id]));
         $available = array_values(array_filter(Database::all("SELECT c.id, c.title FROM academy_courses c WHERE c.status <> 'archived' AND " . $sc . ' ORDER BY c.title', $sp), static fn(array $c): bool => !in_array((int) $c['id'], $enrolledIds, true)));
@@ -353,17 +353,22 @@ final class AcademyLearnersController extends AcademyAdminController
         $this->authorize('academy.manage');
         $l = $this->learner($id);
         $course = CourseService::find($request->int('course_id')) ?? throw new HttpException(404, 'Not found');
-        if (CertificateService::activeFor($id, (int) $course['id']) !== null) {
+        $existing = CertificateService::existingFor($id, (int) $course['id']);
+        if ($existing !== null && CertificateService::isApproved($existing)) {
             Flash::warning('This learner already has a certificate for this course.');
             return $this->redirect('admin/academy/learners/' . $id);
         }
         $tree = CourseService::tree((int) $course['id']);
         $best = $tree['exam'] !== null ? QuizService::passedBest($id, (int) $tree['exam']['id']) : null;
-        $cert = CertificateService::issue($l, $course, $best !== null ? (float) $best['score_pct'] : null, $tree['minutes']);
+        $cert = CertificateService::issue($l, $course, $best !== null ? (float) $best['score_pct'] : null, $tree['minutes'], true);
+        if (!CertificateService::isApproved($cert)) {
+            CertificateService::approve((int) $cert['id'], \App\Core\Auth::id(), false);        // issuing it by hand is the approval
+            $cert = (array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [(int) $cert['id']]);
+        }
         CourseService::enroll($id, (int) $course['id']);
         Database::execute('UPDATE academy_enrollments SET completed_at = COALESCE(completed_at, NOW()) WHERE learner_id = ? AND course_id = ?', [$id, (int) $course['id']]);
         if ($request->bool('notify')) {
-            \App\Services\Academy\AcademyMail::certificate($cert, $l);
+            CertificateService::email($cert);
         }
         $this->audit('academy.certificate.issue', 'academy_certificate', (int) $cert['id'], 'Issued certificate ' . $cert['code'] . ' to ' . $l['email'] . ' by hand');
         Flash::success('Certificate ' . $cert['code'] . ' was issued.');

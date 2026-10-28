@@ -809,6 +809,12 @@ final class PdfWriter
         return $this->pages[$this->cur];
     }
 
+    /** Append raw PDF operators (PDF coordinates, origin bottom-left): used for artwork copied from a design, e.g. the Academy certificate seal. */
+    public function rawOps(string $ops): void
+    {
+        $this->raw($ops);
+    }
+
     private function raw(string $op): void
     {
         $this->page();

@@ -25,6 +25,7 @@ $base = 'academy/learn/' . $course['slug'];
                 <?php if ($passed): ?>
                     <p class="opp-notice ac-ok"><?= icon('check-circle', 'icon--sm') ?> You passed this <?= $isExam ? 'exam' : 'quiz' ?><?= $best !== null ? ' with ' . (int) round((float) $best['score_pct']) . '%' : '' ?>.</p>
                     <?php if ($isExam && $certificate !== null): ?><p><a class="btn btn--cta btn--caps" href="<?= e(url('academy/certificate/' . $certificate['code'])) ?>"><?= icon('award', 'icon--sm') ?> Open my certificate</a></p><?php endif; ?>
+                    <?php if ($isExam && $certificate === null && !empty($certificatePending)): ?><p class="opp-notice" role="status"><?= icon('clock', 'icon--sm') ?> Your certificate is waiting for approval by the Academy team.</p><?php endif; ?>
                 <?php endif; ?>
 
                 <?php if ($locked): ?>

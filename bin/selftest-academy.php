@@ -259,8 +259,14 @@ foreach (QuizService::questions((int) $exam['id']) as $q) {
     $exAnswers[(int) $q['id']] = array_values(array_map(static fn(array $o): int => (int) $o['id'], array_filter($q['options'], static fn(array $o): bool => (int) $o['is_correct'] === 1)));
 }
 $exSub = $acPost('/academy/learn/computer-basics/attempt/' . ($em[1] ?? 0), ['answer' => $exAnswers], $jA, '/academy/learn/computer-basics/attempt/' . ($em[1] ?? 0), true);
+$pend = CertificateService::pendingFor($lid, (int) $course['id']);
+check('approval: passing the exam makes a certificate that waits (not available to the learner, unknown to the public check page and PDF)', $pend !== null && CertificateService::activeFor($lid, (int) $course['id']) === null
+    && $acReq('GET', '/academy/certificate/' . $pend['code'], [], $j0)['code'] === 404 && $acReq('GET', '/academy/certificate/' . $pend['code'] . '/pdf', [], $j0)['code'] === 404);
+check('approval: the dashboard tells the learner it is waiting for approval', str_contains($acReq('GET', '/academy/dashboard', [], $jA)['body'], 'waiting for approval'));
+$mailsBeforeApproval = $acMails();
+CertificateService::approve((int) $pend['id'], null, true);
 $cert = CertificateService::activeFor($lid, (int) $course['id']);
-check('passing the final exam completes the course and issues the certificate', $cert !== null && preg_match('/^LAF-\d{2}-[A-Z2-9]{8}$/', (string) $cert['code']) === 1 && Database::value('SELECT completed_at FROM academy_enrollments WHERE learner_id = ? AND course_id = ?', [$lid, (int) $course['id']]) !== null && str_contains($exSub['body'], 'Open my certificate'));
+check('passing the final exam completes the course and issues the certificate', $cert !== null && preg_match('/^LAF-\d{2}-[A-Z2-9]{8}$/', (string) $cert['code']) === 1 && Database::value('SELECT completed_at FROM academy_enrollments WHERE learner_id = ? AND course_id = ?', [$lid, (int) $course['id']]) !== null && str_contains($exSub['body'], 'waiting for approval'));
 check('the certificate keeps the learner name and the course title as printed', $cert['learner_name'] === 'ZZ Academy A' && $cert['course_title'] === 'Computer Basics and Digital Literacy' && (float) $cert['score_pct'] === 100.0);
 check('a certificate e-mail was sent', ($cm = $acLastMailTo($email, $mailsBefore)) !== null && $acMails() !== $mailsBefore);
 $certPage = $acReq('GET', '/academy/certificate/' . $cert['code'], [], $j0);

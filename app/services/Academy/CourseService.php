@@ -305,7 +305,7 @@ final class CourseService
         if ((int) $course['certificate_enabled'] !== 1) {
             return null;
         }
-        $had = CertificateService::activeFor($learnerId, $courseId);
+        $had = CertificateService::existingFor($learnerId, $courseId);       // approved or waiting for approval: never issue twice
         if ($had !== null) {
             return null;
         }
@@ -314,7 +314,9 @@ final class CourseService
             return null;
         }
         $cert = CertificateService::issue($learner, $course, $score, $tree['minutes']);
-        AcademyMail::certificate($cert, $learner);
+        if (CertificateService::isApproved($cert)) {
+            CertificateService::email($cert);        // approval is switched off: it is ready at once
+        }
         return $cert;
     }
 

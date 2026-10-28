@@ -87,7 +87,7 @@ $registerUrl = url('academy/register', ['next' => 'academy/courses/' . $course['
                         <div class="ac-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= (int) $progress['pct'] ?>" aria-label="Your progress"><span style="width:<?= (int) $progress['pct'] ?>%"></span></div>
                         <p class="ac-enrol__pct"><?= (int) $progress['done'] ?> of <?= (int) $progress['total'] ?> lessons done (<?= (int) $progress['pct'] ?>%)</p>
                         <?php if ($resume !== null): ?><a class="btn btn--cta btn--caps btn--block" href="<?= e(url('academy/learn/' . $course['slug'] . '/lesson/' . $resume)) ?>"><?= $progress['done'] > 0 ? 'Continue learning' : 'Start learning' ?></a><?php endif; ?>
-                        <?php if ($certificate !== null): ?><a class="btn btn--outline btn--caps btn--block" href="<?= e(url('academy/certificate/' . $certificate['code'])) ?>"><?= icon('award', 'icon--sm') ?> My certificate</a><?php endif; ?>
+                        <?php if ($certificate !== null): ?><a class="btn btn--outline btn--caps btn--block" href="<?= e(url('academy/certificate/' . $certificate['code'])) ?>"><?= icon('award', 'icon--sm') ?> My certificate</a><?php elseif (!empty($certificatePending)): ?><p class="ac-enrol__status"><?= icon('clock', 'icon--sm') ?> Certificate waiting for approval</p><?php endif; ?>
                     <?php elseif ($learner !== null): ?>
                         <p class="ac-enrol__status">Free. Start now.</p>
                         <?php if ($tree['lessons'] > 0): ?>

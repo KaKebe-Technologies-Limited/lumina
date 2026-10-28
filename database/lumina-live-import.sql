@@ -2139,6 +2139,28 @@ PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
 
+-- Certificate approval (docs/ACADEMY.md): a certificate earned by passing an exam waits until an administrator approves it. Certificates issued before this
+-- column existed are approved once, at the moment it is added (the UPDATE runs only when the column was missing, never again).
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_certificates' AND column_name = 'approved_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_certificates` ADD COLUMN `approved_at` DATETIME NULL AFTER `issued_at`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'UPDATE `academy_certificates` SET `approved_at` = `issued_at` WHERE `approved_at` IS NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_certificates' AND column_name = 'approved_by');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_certificates` ADD COLUMN `approved_by` INT UNSIGNED NULL AFTER `approved_at`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_certificates' AND column_name = 'emailed_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_certificates` ADD COLUMN `emailed_at` DATETIME NULL AFTER `approved_by`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 -- ---------------------------------------------------------------------------------------------------------------------------------------
 -- AMBASSADORS: people anywhere in the world who offer to raise funds and lobby for the foundation (page /involvement/ambassadors, Admin > Inbox > Ambassadors).
 -- The yearly pledge is money (annual_amount in currency), in-kind items (computers, materials: inkind_items + inkind_notes) and/or something else (other_text).

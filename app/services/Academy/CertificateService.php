@@ -32,6 +32,32 @@ final class CertificateService
         throw new \RuntimeException('Could not make a unique certificate number.');
     }
 
+    /** True when the approval columns exist (the code can be uploaded before the database update: then every certificate counts as approved, as before). */
+    public static function approvalReady(): bool
+    {
+        static $ok = null;
+        if ($ok === null) {
+            try {
+                $ok = (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_certificates' AND column_name IN ('approved_at', 'approved_by', 'emailed_at')", [], 0) === 3;
+            } catch (\Throwable) {
+                $ok = false;
+            }
+        }
+        return $ok;
+    }
+
+    /** Setting: certificates earned by passing an exam wait until an administrator approves them (default). */
+    public static function approvalRequired(): bool
+    {
+        return self::approvalReady() && (string) setting('academy_cert_approval', '1') === '1';
+    }
+
+    /** Approved = available to the learner and checkable by the public. */
+    public static function isApproved(array $cert): bool
+    {
+        return !self::approvalReady() || ($cert['approved_at'] ?? null) !== null;
+    }
+
     public static function find(string $code): ?array
     {
         return preg_match('/^LAF-\d{2}-[A-Z2-9]{8}$/', $code) === 1
@@ -39,25 +65,94 @@ final class CertificateService
             : null;
     }
 
+    private static function approvedSql(string $alias = ''): string
+    {
+        return self::approvalReady() ? ' AND ' . $alias . 'approved_at IS NOT NULL' : '';
+    }
+
+    /** The learner's certificate for the course that is approved and not withdrawn (what the learner may open and download). */
     public static function activeFor(int $learnerId, int $courseId): ?array
+    {
+        return Database::one('SELECT * FROM academy_certificates WHERE learner_id = ? AND course_id = ? AND revoked_at IS NULL' . self::approvedSql() . ' ORDER BY id DESC LIMIT 1', [$learnerId, $courseId]);
+    }
+
+    /** A certificate that exists for the course but still waits for approval. */
+    public static function pendingFor(int $learnerId, int $courseId): ?array
+    {
+        return self::approvalReady()
+            ? Database::one('SELECT * FROM academy_certificates WHERE learner_id = ? AND course_id = ? AND revoked_at IS NULL AND approved_at IS NULL ORDER BY id DESC LIMIT 1', [$learnerId, $courseId])
+            : null;
+    }
+
+    /** Any certificate (approved or waiting) that is not withdrawn: used so the same one is never issued twice. */
+    public static function existingFor(int $learnerId, int $courseId): ?array
     {
         return Database::one('SELECT * FROM academy_certificates WHERE learner_id = ? AND course_id = ? AND revoked_at IS NULL ORDER BY id DESC LIMIT 1', [$learnerId, $courseId]);
     }
 
-    /** @return list<array<string,mixed>> */
-    public static function forLearner(int $learnerId): array
+    /** @return list<array<string,mixed>> approved ones by default (the learner's view); all of them for administrators */
+    public static function forLearner(int $learnerId, bool $approvedOnly = true): array
     {
-        return Database::all('SELECT * FROM academy_certificates WHERE learner_id = ? ORDER BY issued_at DESC', [$learnerId]);
+        return Database::all('SELECT * FROM academy_certificates WHERE learner_id = ?' . ($approvedOnly ? self::approvedSql() : '') . ' ORDER BY issued_at DESC', [$learnerId]);
     }
 
-    /** @return array<string,mixed> the new (or the existing active) certificate */
-    public static function issue(array $learner, array $course, ?float $score, int $minutes): array
+    /** @return list<array<string,mixed>> the learner's certificates that wait for approval */
+    public static function pendingForLearner(int $learnerId): array
     {
-        $existing = self::activeFor((int) $learner['id'], (int) $course['id']);
+        return self::approvalReady() ? Database::all('SELECT * FROM academy_certificates WHERE learner_id = ? AND approved_at IS NULL AND revoked_at IS NULL ORDER BY issued_at DESC', [$learnerId]) : [];
+    }
+
+    public static function pendingCount(): int
+    {
+        return self::approvalReady() ? (int) Database::value('SELECT COUNT(*) FROM academy_certificates WHERE approved_at IS NULL AND revoked_at IS NULL', [], 0) : 0;
+    }
+
+    /**
+     * Approve a waiting certificate: from now on the learner can open and download it and the public check page accepts it. $email also sends the learner the e-mail
+     * with the link to the certificate and the PDF. @return array{ok:bool,mailed:bool}
+     */
+    public static function approve(int $id, ?int $adminId, bool $email): array
+    {
+        $c = Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]);
+        if ($c === null || !self::approvalReady()) {
+            return ['ok' => false, 'mailed' => false];
+        }
+        if ($c['approved_at'] === null) {
+            Database::update('academy_certificates', ['approved_at' => date('Y-m-d H:i:s'), 'approved_by' => $adminId], 'id = ?', [$id]);
+            $c = (array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]);
+        }
+        return ['ok' => true, 'mailed' => $email ? self::email($c) : false];
+    }
+
+    /** E-mail an approved certificate to its learner (link + PDF link). */
+    public static function email(array $cert): bool
+    {
+        if (!self::isApproved($cert) || $cert['revoked_at'] !== null || $cert['learner_id'] === null) {
+            return false;
+        }
+        $l = Database::one('SELECT * FROM academy_learners WHERE id = ?', [(int) $cert['learner_id']]);
+        if ($l === null) {
+            return false;
+        }
+        $ok = AcademyMail::certificate($cert, $l);
+        if ($ok && self::approvalReady()) {
+            Database::update('academy_certificates', ['emailed_at' => date('Y-m-d H:i:s')], 'id = ?', [(int) $cert['id']]);
+        }
+        return $ok;
+    }
+
+    /**
+     * @param bool $approved true when an administrator issues it by hand (that is the approval); false for a certificate earned by passing the exam, which waits for
+     *                       approval while the setting "certificates need approval" is on.
+     * @return array<string,mixed> the new (or the existing) certificate
+     */
+    public static function issue(array $learner, array $course, ?float $score, int $minutes, bool $approved = false): array
+    {
+        $existing = self::existingFor((int) $learner['id'], (int) $course['id']);
         if ($existing !== null) {
             return $existing;
         }
-        $id = Database::insert('academy_certificates', [
+        $row = [
             'code' => self::generateCode(),
             'learner_id' => (int) $learner['id'],
             'course_id' => (int) $course['id'],
@@ -65,7 +160,11 @@ final class CertificateService
             'course_title' => mb_substr((string) $course['title'], 0, 190),
             'score_pct' => $score,
             'hours' => $minutes > 0 ? round($minutes / 60 * 2) / 2 : null,
-        ]);
+        ];
+        if (self::approvalReady() && ($approved || !self::approvalRequired())) {
+            $row['approved_at'] = date('Y-m-d H:i:s');
+        }
+        $id = Database::insert('academy_certificates', $row);
         return (array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]);
     }
 
@@ -83,7 +182,7 @@ final class CertificateService
             'code' => self::generateCode(), 'kind' => 'challenge', 'learner_id' => (int) $learner['id'], 'challenge_id' => (int) $challenge['id'],
             'learner_name' => mb_substr((string) $learner['name'], 0, 120), 'course_title' => mb_substr((string) $challenge['title'], 0, 190),
             'award' => mb_substr($award, 0, 80), 'score_pct' => $score,
-        ]);
+        ] + (self::approvalReady() ? ['approved_at' => date('Y-m-d H:i:s')] : []));
         return (array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]);
     }
 
@@ -160,13 +259,70 @@ final class CertificateService
         return $size;
     }
 
-    /** @param array<string,mixed> $cert a certificate row; returns the PDF bytes */
+    /** "Certificate of completion" as printed: Title Case with "of" in lower case. */
+    private static function headline(string $heading): string
+    {
+        return str_replace([' Of ', ' And '], [' of ', ' and '], mb_convert_case($heading, MB_CASE_TITLE, 'UTF-8'));
+    }
+
+    /** Centred text with extra space between the letters. */
+    private static function tracked(PdfWriter $pdf, float $cx, float $y, string $text, string $font, float $size, string $color, float $track): void
+    {
+        $chars = mb_str_split($text);
+        $total = 0.0;
+        foreach ($chars as $ch) {
+            $total += PdfWriter::textWidth($ch, $font, $size) + $track;
+        }
+        $x = $cx - ($total - $track) / 2;
+        foreach ($chars as $ch) {
+            $pdf->text($x, $y, $ch, $font, $size, $color, 'l');
+            $x += PdfWriter::textWidth($ch, $font, $size) + $track;
+        }
+    }
+
+    /**
+     * Text along a circle (the words round the gold seal). $top: letters stand on the circle and read clockwise over the top;
+     * otherwise they hang inside the bottom of the circle and read left to right. Coordinates in PDF space (origin bottom-left).
+     */
+    private static function arcText(PdfWriter $pdf, float $cx, float $cy, string $text, float $radius, float $size, bool $top, float $track): void
+    {
+        $chars = mb_str_split($text);
+        $adv = [];
+        $total = 0.0;
+        foreach ($chars as $ch) {
+            $w = PdfWriter::textWidth($ch, 'helvetica-bold', $size);
+            $adv[] = $w;
+            $total += $w + $track;
+        }
+        $total -= $track;
+        $pos = 0.0;
+        $ops = [];
+        foreach ($chars as $i => $ch) {
+            $mid = $pos + $adv[$i] / 2;
+            $theta = $top ? ($total / 2 - $mid) / $radius : (-$total / 2 + $mid) / $radius;
+            $pos += $adv[$i] + $track;
+            if ($ch === ' ') {
+                continue;
+            }
+            $c = cos($theta);
+            $s = sin($theta);
+            $ops[] = sprintf('q %.5F %.5F %.5F %.5F %.4F %.4F cm BT /F2 %.2F Tf %.4F %.4F Td (%s) Tj ET Q', $c, $s, -$s, $c, $cx, $cy, $size, -$adv[$i] / 2, $top ? $radius : -$radius, PdfWriter::escape(PdfWriter::toWinAnsi($ch)));
+        }
+        $pdf->rawOps("0.070588 0.12549 0.247059 rg\n" . implode("\n", $ops));
+    }
+
+    /** @param array<string,mixed> $cert a certificate row; returns the PDF bytes (the design of docs: LAF_Certificate template, A4 landscape) */
     public static function pdf(array $cert): string
     {
         $w = self::wording();
-        $navy = '#1F2A44';
-        $gold = '#B7852F';
-        $ink = '#2B2F36';
+        $navy = '#122040';
+        $gold = '#C9973F';
+        $goldText = '#9A6F1C';
+        $orange = '#E0642C';
+        $grey = '#5B6478';
+        $body = '#1B2438';
+        $soft = '#EADFC6';
+        $art = require dirname(__DIR__, 2) . '/config/academy/certificate-art.php';
         $tx = self::texts($cert);
         $pdf = new PdfWriter(['title' => 'Certificate ' . $cert['code'], 'author' => $w['org'], 'subject' => 'LAF Academy ' . strtolower($tx['heading'])]);
         $pdf->addPage(841.89, 595.28);
@@ -174,115 +330,174 @@ final class CertificateService
         $H = $pdf->pageHeight();
         $cx = $W / 2;
 
-        $pdf->fill('#FFFFFF');
+        // paper, navy border, gold double frame
+        $pdf->fill('#FCFAF4');
         $pdf->rect(0, 0, $W, $H, 'f');
-        $pdf->fill('#FBF7EE');
-        $pdf->rect(22, 22, $W - 44, $H - 44, 'f');
+        $pdf->fill($navy);
+        $pdf->rect(18, 18, $W - 36, $H - 36, 'f');
+        $pdf->fill('#FCFAF4');
+        $pdf->rect(24, 24, $W - 48, $H - 48, 'f');
         $pdf->save();
-        $pdf->stroke($navy);
-        $pdf->lineWidth(4);
-        $pdf->rect(18, 18, $W - 36, $H - 36, 's');
         $pdf->stroke($gold);
-        $pdf->lineWidth(1.2);
-        $pdf->rect(30, 30, $W - 60, $H - 60, 's');
+        $pdf->lineWidth(2.2);
+        $pdf->rect(32, 32, $W - 64, $H - 64, 's');
+        $pdf->lineWidth(0.7);
+        $pdf->rect(38, 38, $W - 76, $H - 76, 's');
+        // corner ornaments: three quarter circles and an orange dot
+        $pdf->lineWidth(1);
+        foreach ([[38.0, 38.0, 1, 1], [$W - 38, 38.0, -1, 1], [38.0, $H - 38, 1, -1], [$W - 38, $H - 38, -1, -1]] as [$ox, $oy, $sx, $sy]) {
+            foreach ([14, 22, 30] as $r) {
+                $path = 'n';
+                for ($k = 0; $k <= 16; $k++) {
+                    $a = M_PI / 2 * $k / 16;
+                    $path .= sprintf(' %.3F %.3F %s', $ox + $sx * $r * cos($a), $H - ($oy + $sy * $r * sin($a)), $k === 0 ? 'm' : 'l');
+                }
+                $pdf->rawOps($path . ' S');
+            }
+        }
         $pdf->restore();
-        // corner marks
-        $pdf->fill($gold);
-        foreach ([[30, 30], [$W - 30, 30], [30, $H - 30], [$W - 30, $H - 30]] as [$px, $py]) {
-            $pdf->roundRect($px - 5, $py - 5, 10, 10, 5, 'f');
+        $pdf->fill($orange);
+        foreach ([[44.0, 44.0], [$W - 44, 44.0], [44.0, $H - 44], [$W - 44, $H - 44]] as [$px, $py]) {
+            $pdf->roundRect($px - 2.4, $py - 2.4, 4.8, 4.8, 2.4, 'f');
         }
 
-        // logo
-        $y = 66.0;
+        // logo and organisation
         try {
-            $file = ASSET_PATH . '/img/brand/logo-192.png';
+            $file = ASSET_PATH . '/img/brand/logo-512.png';
             if (is_file($file)) {
-                $img = $pdf->addPng((string) file_get_contents($file));
-                $pdf->image($img, $cx - 27, 48, 54, 54);
-                $y = 122.0;
+                $pdf->image($pdf->addPng((string) file_get_contents($file)), $cx - 34, 54, 68, 68);
             }
         } catch (\Throwable) {
-            $y = 66.0;
+            // no logo: the name below still identifies the issuer
         }
-        $pdf->text($cx, $y + 4, mb_strtoupper($w['org']) . '  -  LAF ACADEMY', 'helvetica-bold', 11, $gold, 'c');
-        $pdf->text($cx, $y + 44, mb_strtoupper($tx['heading']), 'times-bold', 33, $navy, 'c');
+        self::tracked($pdf, $cx, 140, mb_strtoupper($w['org']), 'helvetica-bold', 11, $navy, 2.1);
+        self::tracked($pdf, $cx, 154, 'LAF ACADEMY', 'helvetica-bold', 8.5, $goldText, 3.0);
+
+        // heading with the gold rule and diamond
+        $pdf->text($cx, 205, self::headline($tx['heading']), 'times-bold', 40, $navy, 'c');
         $pdf->save();
         $pdf->stroke($gold);
         $pdf->lineWidth(1);
-        $pdf->line($cx - 90, $y + 58, $cx + 90, $y + 58);
+        $pdf->line($cx - 110, 216, $cx - 10, 216);
+        $pdf->line($cx + 10, 216, $cx + 110, 216);
         $pdf->restore();
-        $pdf->text($cx, $y + 86, $tx['intro'], 'times-italic', 15, $ink, 'c');
+        $pdf->fill($orange);
+        $pdf->rawOps(sprintf('n %.3F %.3F m %.3F %.3F l %.3F %.3F l %.3F %.3F l h f', $cx, $H - 216 + 4.95, $cx + 4.95, $H - 216, $cx, $H - 216 - 4.95, $cx - 4.95, $H - 216));
+        $pdf->text($cx, 240, $tx['intro'], 'times-italic', 13.5, $grey, 'c');
 
-        $name = (string) $cert['learner_name'];
-        $size = self::fit($name, 'times-bold', 40, $W - 200, 20);
-        $pdf->text($cx, $y + 132, $name, 'times-bold', $size, $navy, 'c');
+        // the learner
+        $name = mb_strtoupper((string) $cert['learner_name']);
+        $nsize = self::fit($name, 'times-bold', 43, 640, 12);
+        $pdf->text($cx, 290, $name, 'times-bold', $nsize, $navy, 'c');
         $pdf->save();
-        $pdf->stroke($ink);
-        $pdf->lineWidth(0.6);
-        $nameW = min($W - 200, max(260, PdfWriter::textWidth($name, 'times-bold', $size) + 40));
-        $pdf->line($cx - $nameW / 2, $y + 142, $cx + $nameW / 2, $y + 142);
+        $pdf->stroke($gold);
+        $pdf->lineWidth(0.9);
+        $pdf->line(120, 302, $W - 120, 302);
         $pdf->restore();
 
-        $yy = $y + 172;
-        foreach (self::wrap($tx['statement'], 'times-roman', 15, $W - 260) as $line) {
-            $pdf->text($cx, $yy, $line, 'times-roman', 15, $ink, 'c');
-            $yy += 20;
+        // statement and course (or challenge)
+        $ss = 12.0;
+        $statement = rtrim($tx['statement'], " .");
+        $lines = self::wrap($statement, 'helvetica', $ss, 600);
+        if (count($lines) > 1) {
+            $ss = 10.5;
+            $lines = array_slice(self::wrap($statement, 'helvetica', $ss, 640), 0, 2);
+        }
+        $sy = count($lines) > 1 ? 319.0 : 324.0;
+        foreach ($lines as $line) {
+            $pdf->text($cx, $sy, $line, 'helvetica', $ss, $body, 'c');
+            $sy += 14;
         }
         $title = (string) $cert['course_title'];
-        $tsize = 25.0;
-        $tlines = self::wrap($title, 'helvetica-bold', $tsize, $W - 220);
-        while (count($tlines) > 2 && $tsize > 16) {
-            $tsize -= 1.5;
-            $tlines = self::wrap($title, 'helvetica-bold', $tsize, $W - 220);
-        }
-        $yy += 14;
-        foreach ($tlines as $line) {
-            $pdf->text($cx, $yy, $line, 'helvetica-bold', $tsize, $navy, 'c');
-            $yy += $tsize + 6;
-        }
-        $bits = [];
-        if ($cert['score_pct'] !== null) {
-            $bits[] = $tx['scoreLabel'] . ' ' . rtrim(rtrim(number_format((float) $cert['score_pct'], 1), '0'), '.') . '%';
-        }
-        if ($cert['hours'] !== null) {
-            $bits[] = rtrim(rtrim(number_format((float) $cert['hours'], 1), '0'), '.') . ' learning hours';
-        }
-        $bits[] = 'Issued ' . date('j F Y', (int) strtotime((string) $cert['issued_at']));
-        $pdf->text($cx, $yy + 14, implode('   |   ', $bits), 'helvetica', 11.5, '#4A5360', 'c');
-
-        // signature (left) and QR (right)
-        $by = $H - 92;
-        $pdf->save();
-        $pdf->stroke($ink);
-        $pdf->lineWidth(0.7);
-        $pdf->line(70, $by, 260, $by);
-        $pdf->restore();
-        if ($w['signatory'] !== '') {
-            $pdf->text(70, $by + 14, $w['signatory'], 'helvetica-bold', 11, $ink, 'l');
-            $pdf->text(70, $by + 27, $w['title'], 'helvetica', 10, '#4A5360', 'l');
+        $tsize = self::fit($title, 'times-bold', 25, 640, 17);
+        if (PdfWriter::textWidth($title, 'times-bold', $tsize) > 640) {
+            $tl = self::wrap($title, 'times-bold', 17, 640);
+            $pdf->text($cx, 351, $tl[0], 'times-bold', 17, $orange, 'c');
+            if (isset($tl[1])) {
+                $pdf->text($cx, 367, $tl[1], 'times-bold', 17, $orange, 'c');
+            }
         } else {
-            $pdf->text(70, $by + 14, $w['title'], 'helvetica-bold', 11, $ink, 'l');
+            $pdf->text($cx, 358, $title, 'times-bold', $tsize, $orange, 'c');
         }
 
+        // facts band
+        $pdf->save();
+        $pdf->stroke($soft);
+        $pdf->lineWidth(0.6);
+        $pdf->line(100, 372, 741.89, 372);
+        $pdf->line(100, 412, 741.89, 412);
+        foreach ([260.47, 420.94, 581.42] as $vx) {
+            $pdf->line($vx, 378, $vx, 406);
+        }
+        $pdf->restore();
+        $num = static fn(float $v): string => rtrim(rtrim(number_format($v, 1), '0'), '.');
+        $isChallenge = ($cert['kind'] ?? 'course') === 'challenge';
+        $col1 = $isChallenge
+            ? ['AWARD', trim((string) preg_replace('/^Winner,\s*/', '', (string) ($cert['award'] ?? ''))) ?: '-']
+            : [mb_strtoupper($tx['scoreLabel']), $cert['score_pct'] !== null ? $num((float) $cert['score_pct']) . '%' : '-'];
+        $col2 = $isChallenge
+            ? ['SCORE', $cert['score_pct'] !== null ? $num((float) $cert['score_pct']) . '%' : '-']
+            : ['LEARNING HOURS', $cert['hours'] !== null ? $num((float) $cert['hours']) . ' hours' : '-'];
+        $facts = [
+            [180.2, $col1[0], $col1[1], 'times-bold', 15],
+            [340.7, $col2[0], $col2[1], 'times-bold', 15],
+            [501.2, 'DATE OF ISSUE', date('j F Y', (int) strtotime((string) ($cert['approved_at'] ?? $cert['issued_at']))), 'times-bold', 15],
+            [661.7, 'CERTIFICATE NO.', (string) $cert['code'], 'helvetica-bold', 13],
+        ];
+        foreach ($facts as [$fx, $label, $value, $vf, $vs]) {
+            self::tracked($pdf, $fx, 386, $label, 'helvetica-bold', 7.6, $grey, 1.6);
+            $pdf->text($fx, 404, $value, $vf, self::fit($value, $vf, $vs, 150, 9), $navy, 'c');
+        }
+
+        // signature (left)
+        $pdf->rawOps("q\n" . $art['signature'] . "\nQ");
+        $pdf->save();
+        $pdf->stroke($navy);
+        $pdf->lineWidth(0.8);
+        $pdf->line(130, $H - 102, 350, $H - 102);
+        $pdf->restore();
+        $signer = $w['signatory'] !== '' ? $w['signatory'] : 'Moses Komakech';
+        $signerTitle = $w['signatory'] !== '' ? ($w['title'] !== '' ? $w['title'] : 'Director') : 'Founder, ' . $w['org'];
+        $pdf->text(240, $H - 87, $signer, 'times-bold', 13.5, $navy, 'c');
+        $pdf->text(240, $H - 74, $signerTitle, 'helvetica', 9.5, $grey, 'c');
+
+        // gold seal (centre)
+        $pdf->rawOps("q\n" . $art['seal'] . "\nQ");
+        try {
+            $file = ASSET_PATH . '/img/brand/logo-512.png';
+            if (is_file($file)) {
+                $pdf->image($pdf->addPng((string) file_get_contents($file)), 398.3849, $H - 156.56, 45.12, 45.12);
+            }
+        } catch (\Throwable) {
+        }
+        self::arcText($pdf, 420.9449, 134.0, 'LAF ACADEMY', 29.76, 6.6, true, 0.6);
+        self::arcText($pdf, 420.9449, 134.0, 'VERIFIED ' . "\u{00B7}" . ' AUTHENTIC', 33.68, 5.6, false, 0.5);
+
+        // QR code to the public check page (right)
         $url = self::verifyUrl((string) $cert['code']);
+        $pdf->save();
+        $pdf->fill('#FFFFFF');
+        $pdf->stroke($gold);
+        $pdf->lineWidth(0.7);
+        $pdf->roundRect(622.5, 432.5, 78.0, 78.0, 7, 'b');
+        $pdf->restore();
         try {
             $qr = QrEncoder::encode($url, 'M');
             $n = count($qr['modules']);
-            $mod = 60.0 / $n;
-            $qx = $W - 70 - 60.0;
-            $qy = $H - 150.0;
-            $pdf->fill('#FFFFFF');
-            $pdf->rect($qx - 4, $qy - 4, 68, 68, 'f');
+            $mod = 64.0 / $n;
             $pdf->fill('#000000');
             foreach (QrEncoder::runs($qr['modules']) as [$r, $c, $len]) {
-                $pdf->rect($qx + $c * $mod - 0.01, $qy + $r * $mod - 0.01, $len * $mod + 0.02, $mod + 0.02, 'f');
+                $pdf->rect(629.89 + $c * $mod - 0.01, 439.3 + $r * $mod - 0.01, $len * $mod + 0.02, $mod + 0.02, 'f');
             }
         } catch (\Throwable) {
             // no QR: the printed number and address still verify the certificate
         }
-        $pdf->text($W - 70 - 30, $H - 76, 'Scan to verify', 'helvetica', 8.5, '#4A5360', 'c');
-        $pdf->text($cx, $H - 50, 'Certificate no. ' . $cert['code'], 'helvetica-bold', 10, $navy, 'c');
-        $pdf->text($cx, $H - 38, 'Verify at ' . preg_replace('~^https?://~', '', $url), 'helvetica', 8.5, '#4A5360', 'c');
+        self::tracked($pdf, 661.7, 520, 'SCAN TO VERIFY', 'helvetica-bold', 6.6, $navy, 1.3);
+        $pdf->text(661.7, 530, (string) $cert['code'], 'helvetica', 6, $grey, 'c');
+
+        // footer
+        $host = (string) parse_url(abs_url(''), PHP_URL_HOST);
+        $pdf->text($cx, 545, $w['org'] . ' ' . "\u{00B7}" . ' Gulu City, Northern Uganda ' . "\u{00B7}" . ' ' . $host . ' ' . "\u{00B7}" . ' Verify this certificate at ' . preg_replace('~^https?://~', '', $url), 'helvetica', 6.6, $grey, 'c');
         return $pdf->output();
     }
 }
