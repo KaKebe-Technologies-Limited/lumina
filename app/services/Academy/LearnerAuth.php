@@ -191,13 +191,60 @@ final class LearnerAuth
         Database::update('academy_learners', ['token_hash' => null, 'token_kind' => null, 'token_expires_at' => null], 'id = ?', [$learnerId]);
     }
 
-    public static function sendVerification(array $learner): bool
+    /** $hours: how long the link works (default VERIFY_HOURS); $limit false for an administrator who presses the button. */
+    public static function sendVerification(array $learner, ?int $hours = null, bool $limit = true): bool
     {
-        if (!RateLimit::attempt('academy-verify-mail:' . sha1((string) $learner['email']), 5, 3600)) {
+        if ($limit && !RateLimit::attempt('academy-verify-mail:' . sha1((string) $learner['email']), 5, 3600)) {
             return false;
         }
-        $token = self::issueToken((int) $learner['id'], 'verify', self::VERIFY_HOURS * 60);
-        return AcademyMail::verification($learner, abs_url('academy/verify/' . $token));
+        $hours ??= self::VERIFY_HOURS;
+        $token = self::issueToken((int) $learner['id'], 'verify', $hours * 60);
+        $ok = AcademyMail::verification($learner, abs_url('academy/verify/' . $token), $hours);
+        self::recordMail((int) $learner['id'], $ok);
+        return $ok;
+    }
+
+    /** True when the delivery-record columns exist (the code can be uploaded before the database update). */
+    public static function mailColumns(): bool
+    {
+        static $ok = null;
+        if ($ok === null) {
+            try {
+                $ok = (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name IN ('mail_sent_at', 'mail_error')", [], 0) === 2;
+            } catch (\Throwable) {
+                $ok = false;
+            }
+        }
+        return $ok;
+    }
+
+    /** Remember whether the last e-mail to this learner was accepted for delivery (and why not). Never breaks the caller. */
+    public static function recordMail(int $learnerId, bool $ok): void
+    {
+        if (!self::mailColumns()) {
+            return;
+        }
+        try {
+            Database::update('academy_learners', [
+                'mail_sent_at' => $ok ? date('Y-m-d H:i:s') : null,
+                'mail_error' => $ok ? null : mb_substr((string) (AcademyMail::lastError() ?? 'The e-mail could not be sent.'), 0, 190),
+            ], 'id = ?', [$learnerId]);
+        } catch (\Throwable) {
+        }
+    }
+
+    /**
+     * Administrator button: send a fresh confirmation link (valid 7 days) to one learner. No per-address rate limit.
+     * @return array{ok:bool,error:?string}
+     */
+    public static function sendConfirmation(int $learnerId): array
+    {
+        $l = Database::one('SELECT * FROM academy_learners WHERE id = ? AND is_active = 1 AND email_verified_at IS NULL LIMIT 1', [$learnerId]);
+        if ($l === null) {
+            return ['ok' => false, 'error' => 'This learner is already confirmed or the account is switched off.'];
+        }
+        $ok = self::sendVerification($l, 168, false);
+        return ['ok' => $ok, 'error' => $ok ? null : (AcademyMail::lastError() ?? 'The e-mail could not be sent.')];
     }
 
     /** Re-send the confirmation link (the screen says the same thing whether or not the address exists). */
@@ -277,7 +324,7 @@ final class LearnerAuth
             return;
         }
         $token = self::issueToken((int) $l['id'], 'reset', self::RESET_MINUTES);
-        AcademyMail::passwordReset($l, abs_url('academy/reset/' . $token));
+        self::recordMail((int) $l['id'], AcademyMail::passwordReset($l, abs_url('academy/reset/' . $token)));
     }
 
     public static function resetTokenValid(string $token): bool

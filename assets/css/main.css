@@ -24441,3 +24441,84 @@ fieldset.ac-q legend + * {
   margin: .35rem 0 0;
   font-size: 0.9375rem;
 }
+
+.ac-portrait {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .ac-portrait {
+    grid-template-columns: auto 1fr;
+    gap: 1.5rem;
+  }
+}
+
+.ac-portrait__img {
+  display: block;
+  width: 7.5rem;
+  height: 7.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 1px 2px rgba(23, 32, 54, 0.08), 0 1px 3px rgba(23, 32, 54, 0.06);
+  background: #EEF1F6;
+}
+
+.ac-portrait__img--empty {
+  display: grid;
+  place-items: center;
+  color: #2C3950;
+}
+
+.ac-portrait__body {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ac-portrait__remove {
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.ac-learners {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem 1.5rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ac-learners__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 8rem;
+  text-align: center;
+}
+
+.ac-learners__img {
+  width: 6.5rem;
+  height: 6.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 6px 18px rgba(23, 32, 54, 0.1), 0 2px 6px rgba(23, 32, 54, 0.06);
+  background: #EEF1F6;
+  margin-bottom: 0.5rem;
+}
+
+.ac-learners__name {
+  font-weight: 700;
+  color: #2C3950;
+}
+
+.ac-learners__country {
+  font-size: 0.875rem;
+  color: #5A6470;
+}

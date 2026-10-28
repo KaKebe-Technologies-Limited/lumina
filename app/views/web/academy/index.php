@@ -124,6 +124,19 @@ $cta = content_btn('academy', 'cta.button');
     <p class="ac-center"><a class="btn btn--outline btn--caps" href="<?= e(url('academy/winners')) ?>">All winners</a></p>
 <?php section_end(); endif; ?>
 
+<?php $showcase = \App\Services\Academy\LearnerPortrait::showcase(12); if ($showcase): ?>
+<section class="section section--sm" aria-labelledby="ac-learners-title">
+    <div class="container">
+        <header class="section-head section-head--center"><span class="eyebrow">Our learners</span><h2 class="section-head__title" id="ac-learners-title">Meet some of our learners</h2></header>
+        <ul class="ac-learners">
+            <?php foreach ($showcase as $p): ?>
+                <li class="ac-learners__item"><img class="ac-learners__img" src="<?= e(url('academy/learners/' . $p['id'] . '/photo')) ?>" alt="<?= e($p['first']) ?>, a LAF Academy learner" width="120" height="120" loading="lazy"><span class="ac-learners__name"><?= e($p['first']) ?></span><?php if ($p['country'] !== ''): ?><span class="ac-learners__country"><?= e($p['country']) ?></span><?php endif; ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+</section>
+<?php endif; ?>
+
 <?php section_begin('academy', 'facilitate', ['class' => 'section--tint', 'labelledby' => 'ac-fac-title']); ?>
     <?= partial('partials/section-head', ['eyebrow' => (string) content('academy', 'facilitate.eyebrow'), 'title' => (string) content('academy', 'facilitate.title'), 'lead' => (string) content('academy', 'facilitate.intro'), 'align' => 'center', 'id' => 'ac-fac-title']) ?>
     <p class="ac-center"><a class="btn btn--cta btn--caps" href="<?= e(url('academy/facilitate')) ?>"><?= e(content('academy', 'facilitate.button')) ?></a></p>

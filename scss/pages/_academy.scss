@@ -231,3 +231,15 @@ fieldset.ac-q { padding: 0 $space-4 $space-4;
   &__meta { margin: 0; font-size: $fs-sm; color: $ink-soft; }
   &__cert { margin: .35rem 0 0; font-size: $fs-sm; }
 }
+
+// ---- learner portrait (My account) and the public "Meet some of our learners" strip -----------------------------------------------------
+.ac-portrait { display: grid; gap: $space-4; align-items: start; margin-bottom: $space-4; @include respond(md) { grid-template-columns: auto 1fr; gap: $space-5; }
+  &__img { display: block; width: 7.5rem; height: 7.5rem; border-radius: 50%; object-fit: cover; border: 3px solid $white; box-shadow: $shadow-sm; background: $tint-cool;
+    &--empty { display: grid; place-items: center; color: $navy; } }
+  &__body { display: grid; gap: $space-3; }
+  &__remove { margin-top: $space-3; text-align: center; } }
+.ac-learners { display: flex; flex-wrap: wrap; justify-content: center; gap: $space-5 $space-5; margin: $space-5 0 0; padding: 0; list-style: none;
+  &__item { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; width: 8rem; text-align: center; }
+  &__img { width: 6.5rem; height: 6.5rem; border-radius: 50%; object-fit: cover; border: 3px solid $white; box-shadow: $shadow; background: $tint-cool; margin-bottom: $space-2; }
+  &__name { font-weight: 700; color: $navy; }
+  &__country { font-size: $fs-xs; color: $ink-soft; } }

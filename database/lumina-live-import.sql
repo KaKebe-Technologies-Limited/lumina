@@ -1826,6 +1826,28 @@ CREATE TABLE IF NOT EXISTS `academy_learners` (
   KEY `ix_academy_learners_token` (`token_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Migration (idempotent): e-mail delivery record + learner portrait (docs/ACADEMY.md). Databases created earlier get the columns here.
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'mail_sent_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_learners` ADD COLUMN `mail_sent_at` DATETIME NULL AFTER `token_expires_at`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'mail_error');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_learners` ADD COLUMN `mail_error` VARCHAR(190) NULL AFTER `mail_sent_at`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'photo_path');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_learners` ADD COLUMN `photo_path` VARCHAR(255) NULL AFTER `mail_error`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'photo_consent_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_learners` ADD COLUMN `photo_consent_at` DATETIME NULL AFTER `photo_path`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 CREATE TABLE IF NOT EXISTS `academy_enrollments` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `learner_id` INT UNSIGNED NOT NULL,

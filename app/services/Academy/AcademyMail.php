@@ -13,6 +13,14 @@ use App\Core\Mailer;
  */
 final class AcademyMail
 {
+    private static ?string $lastError = null;
+
+    /** Why the last e-mail of this class could not be sent (null after a success). Shown to administrators only. */
+    public static function lastError(): ?string
+    {
+        return self::$lastError;
+    }
+
     private static function site(): string
     {
         return trim((string) setting('site_name', 'Lumina Africa Foundation')) ?: 'Lumina Africa Foundation';
@@ -60,19 +68,22 @@ final class AcademyMail
             $opts['reply_to'] = $support;
         }
         try {
-            return Mailer::send($to, $subject, $text, $opts);
+            $ok = Mailer::send($to, $subject, $text, $opts);
+            self::$lastError = $ok ? null : (Mailer::lastError() ?: 'The mail server did not accept the message.');
+            return $ok;
         } catch (\Throwable $e) {
             Log::error('Academy e-mail failed: ' . $e->getMessage());
+            self::$lastError = 'The e-mail could not be sent.';
             return false;
         }
     }
 
-    public static function verification(array $learner, string $url): bool
+    public static function verification(array $learner, string $url, ?int $hours = null): bool
     {
         return self::send((string) $learner['email'], 'Confirm your e-mail address for the LAF Academy', [
             'Hello ' . self::first((string) $learner['name']) . ',',
             'Thank you for joining the LAF Academy. Please confirm that this e-mail address is yours so you can sign in and start learning.',
-            'The link works for ' . LearnerAuth::VERIFY_HOURS . ' hours. If you did not create an account, you can ignore this message.',
+            'The link works for ' . ($hours ?? LearnerAuth::VERIFY_HOURS) . ' hours. If you did not create an account, you can ignore this message.',
         ], ['label' => 'Confirm my e-mail address', 'url' => $url]);
     }
 

@@ -54,8 +54,9 @@ use App\Services\Academy\CourseService;
                 </section>
                 <section class="ac-panel" data-reveal>
                     <h2 class="ac-panel__title"><?= icon('user', 'icon--sm') ?> My account</h2>
+                    <?php $mine = \App\Services\Academy\LearnerPortrait::of((int) $me['id']); if (!empty($mine['photo_path'])): ?><img class="ac-learners__img" src="<?= e(url('academy/account/photo')) ?>?v=<?= e(substr(md5((string) $mine['photo_path']), 0, 8)) ?>" alt="My picture" width="104" height="104"><?php endif; ?>
                     <p><?= e($me['email']) ?></p>
-                    <p><a href="<?= e(url('academy/account')) ?>">Change my details or password</a></p>
+                    <p><a href="<?= e(url('academy/account')) ?>">Change my details, picture or password</a></p>
                     <form method="post" action="<?= e(url('academy/logout')) ?>"><?= csrf_field() ?><button class="btn btn--ghost btn--sm" type="submit">Sign out</button></form>
                 </section>
             </aside>

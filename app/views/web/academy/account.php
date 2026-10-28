@@ -1,4 +1,4 @@
-<?php /** My account. Vars: $me. */ ?>
+<?php /** My account. Vars: $me, $portrait (photo_path, photo_consent_at), $portraitReady. */ ?>
 <?= partial('partials/page-hero', ['title' => 'My account', 'eyebrow' => 'LAF Academy', 'lead' => 'Your details, your password, and the option to delete your account.']) ?>
 <section class="section ac-auth">
     <div class="container container--narrow">
@@ -15,6 +15,31 @@
                 <button class="btn btn--cta btn--caps" type="submit">Save my details</button>
             </div>
         </form>
+
+        <?php if (!empty($portraitReady)): $hasPhoto = !empty($portrait['photo_path']); ?>
+        <form class="ac-form card" id="portrait" method="post" action="<?= e(url('academy/account/photo')) ?>" enctype="multipart/form-data" novalidate>
+            <?= csrf_field() ?>
+            <div class="card__header"><h2 class="card__title">My picture</h2></div>
+            <div class="card__body">
+                <div class="ac-portrait">
+                    <?php if ($hasPhoto): ?><img class="ac-portrait__img" src="<?= e(url('academy/account/photo')) ?>?v=<?= e(substr(md5((string) $portrait['photo_path']), 0, 8)) ?>" alt="My picture" width="120" height="120"><?php else: ?><span class="ac-portrait__img ac-portrait__img--empty" aria-hidden="true"><?= icon('user', 'icon--lg') ?></span><?php endif; ?>
+                    <div class="ac-portrait__body">
+                        <div class="field<?= error('photo') ? ' field--error' : '' ?>">
+                            <label class="field__label" for="acc-photo"><?= $hasPhoto ? 'Replace my picture' : 'Add my picture' ?></label>
+                            <input class="input" type="file" id="acc-photo" name="photo" accept="image/jpeg,image/png,image/webp">
+                            <div class="field__help">A clear head-and-shoulders photo of you, JPG, PNG or WebP, at least 300 x 300 pixels. It is cropped to a square.</div>
+                            <?php if (error('photo')): ?><div class="field__error" role="alert"><?= e((string) error('photo')) ?></div><?php endif; ?>
+                        </div>
+                        <label class="check"><input type="checkbox" name="consent" value="1"<?= !empty($portrait['photo_consent_at']) ? ' checked' : '' ?>><span>You may show my picture and first name on the public LAF Academy page. Leave this unticked to keep it private: then only I and the Academy team see it.</span></label>
+                    </div>
+                </div>
+                <button class="btn btn--cta btn--caps" type="submit">Save my picture</button>
+            </div>
+        </form>
+        <?php if ($hasPhoto): ?>
+        <form method="post" action="<?= e(url('academy/account/photo/remove')) ?>" class="ac-portrait__remove" data-confirm="Remove your picture?"><?= csrf_field() ?><button class="btn btn--ghost btn--sm" type="submit">Remove my picture</button></form>
+        <?php endif; ?>
+        <?php endif; ?>
 
         <form class="ac-form card" method="post" action="<?= e(url('academy/account/password')) ?>" novalidate>
             <?= csrf_field() ?>

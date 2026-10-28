@@ -23,3 +23,7 @@
 .aac-script { font-family: $font-mono; font-size: .9rem; line-height: 1.55; min-height: 24rem; tab-size: 2; }
 .aac-example { padding: $space-3; border-radius: $radius-sm; background: $surface; overflow: auto; font-size: .85rem; }
 .aac-inline form { margin: 0; }
+
+// learner portrait: small round picture in the list, larger on the learner page
+.aac-avatar { float: left; width: 2.5rem; height: 2.5rem; margin: 0 $space-3 0 0; border-radius: 50%; object-fit: cover; background: $tint-cool; }
+.aac-portrait { display: grid; justify-items: start; gap: $space-2; margin-bottom: $space-4; &__img { width: 7.5rem; height: 7.5rem; border-radius: 50%; object-fit: cover; border: 3px solid $white; box-shadow: $shadow-sm; } }

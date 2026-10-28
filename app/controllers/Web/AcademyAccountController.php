@@ -7,7 +7,9 @@ use App\Core\Database;
 use App\Core\Flash;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\HttpException;
 use App\Services\Academy\LearnerAuth;
+use App\Services\Academy\LearnerPortrait;
 
 /**
  * LAF Academy learner accounts: sign up, confirm the e-mail address, sign in / out, forgotten password, and "my account" (details, password, delete).
@@ -187,7 +189,7 @@ final class AcademyAccountController extends AcademyBaseController
         if ($l === null) {
             return $this->loginRedirect();
         }
-        return $this->renderAcademy('web/academy/account', ['me' => $l], [
+        return $this->renderAcademy('web/academy/account', ['me' => $l, 'portrait' => LearnerPortrait::of((int) $l['id']), 'portraitReady' => LearnerPortrait::ready()], [
             'bodyClass' => 'is-academy is-academy-account',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['My account', null]],
             'meta' => ['title' => 'My account'],
@@ -212,6 +214,57 @@ final class AcademyAccountController extends AcademyBaseController
         LearnerAuth::flush();
         Flash::success('Your details were saved. Certificates you already earned keep the name they were issued with.');
         return $this->redirect('academy/account');
+    }
+
+    public function photo(Request $request): Response
+    {
+        $l = $this->learner();
+        if ($l === null) {
+            throw new HttpException(404, 'Not found');
+        }
+        return (LearnerPortrait::download((int) $l['id']) ?? throw new HttpException(404, 'Not found'))->header('Cache-Control', 'private, no-store');
+    }
+
+    public function savePhoto(Request $request): Response
+    {
+        $l = $this->learner();
+        if ($l === null) {
+            return $this->loginRedirect();
+        }
+        $consent = $request->bool('consent');
+        $file = $request->file('photo');
+        if ($file === null) {
+            // no new file: only the consent choice changed
+            LearnerPortrait::setConsent((int) $l['id'], $consent);
+            Flash::success($consent ? 'Your picture may now be shown on the Academy page.' : 'Your picture is private again.');
+            return $this->redirect('academy/account#portrait');
+        }
+        $r = LearnerPortrait::save((int) $l['id'], $file, $consent);
+        if (!$r['ok']) {
+            $this->fail(['photo' => $r['error']], 'academy/account#portrait');
+        }
+        Flash::success($consent ? 'Your picture was saved and may be shown on the Academy page.' : 'Your picture was saved. Only you and the Academy team can see it.');
+        return $this->redirect('academy/account#portrait');
+    }
+
+    public function removePhoto(Request $request): Response
+    {
+        $l = $this->learner();
+        if ($l === null) {
+            return $this->loginRedirect();
+        }
+        LearnerPortrait::remove((int) $l['id']);
+        Flash::success('Your picture was removed.');
+        return $this->redirect('academy/account#portrait');
+    }
+
+    /** A learner's picture, only when they agreed that it may be shown. */
+    public function publicPhoto(Request $request, int $id): Response
+    {
+        if (!LearnerPortrait::isPublic($id)) {
+            throw new HttpException(404, 'Not found');
+        }
+        return (LearnerPortrait::download($id) ?? throw new HttpException(404, 'Not found'))->header('Cache-Control', 'public, max-age=300');
     }
 
     public function changePassword(Request $request): Response

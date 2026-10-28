@@ -54,6 +54,12 @@ Two abilities (Admin > Roles): **`academy.teach`** (the built-in role **Facilita
 their courses (read the progress, enrol / remove in their own courses). They see none of: other courses, the starter courses installer, certificates, facilitator accounts,
 learner deletion, exports, settings. Every controller checks ownership (`AcademyAccess`), not only the menu.
 
+## Confirmation e-mails and learner portraits
+
+* **Delivery record.** `academy_learners.mail_sent_at` / `mail_error` remember whether the last confirmation or password e-mail was accepted by the mail server (and why not). The learner list shows "Link sent 27 Oct", "Could not send: ..." or "No e-mail sent yet" next to "E-mail not confirmed".
+* **Admin buttons** (Admin > Academy > Learners, administrators only): **Send confirmation e-mail** on a learner (a fresh link, valid 7 days, no per-address limit), **Send confirmation e-mails** on the list (25 learners per press, those never e-mailed first, stops after 3 refusals in a row because mail hosts limit how many e-mails an hour), **Mark all as confirmed** (for when e-mail cannot reach people at all) and the existing "Mark e-mail as confirmed".
+* **Portrait.** My account > My picture: JPG / PNG / WebP, at least 300 x 300, cropped square, stored privately in `storage/private/academy/learners/`. Private by default (the learner and the Academy team see it). With the consent box ticked the picture and the FIRST name and country appear in "Meet some of our learners" on the Academy page (`/academy/learners/{id}/photo` answers 404 without consent). Administrators can remove a portrait. Columns `photo_path`, `photo_consent_at` (the code works without them until the database update is imported).
+
 ## Starter courses
 
 `app/config/academy/courses/NN-slug.php` (41 files; format and writing rules in `docs/ACADEMY-CONTENT.md`; check with `php bin/academy-validate-content.php`). Install from

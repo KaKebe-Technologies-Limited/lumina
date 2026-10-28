@@ -6,16 +6,24 @@ $lid = (int) $l['id']; ?>
     <section class="card" aria-labelledby="ln-info">
         <div class="card__header"><h2 class="card__title" id="ln-info">Details</h2></div>
         <div class="card__body">
+            <?php $port = \App\Services\Academy\LearnerPortrait::of($lid); if (!empty($port['photo_path'])): ?>
+                <div class="aac-portrait">
+                    <img class="aac-portrait__img" src="<?= e(url('admin/academy/learners/' . $lid . '/photo')) ?>" alt="Portrait of <?= e($l['name']) ?>" width="120" height="120">
+                    <p class="text-muted"><?= !empty($port['photo_consent_at']) ? 'The learner agreed to show it on the public Academy page.' : 'Private: only the learner and the Academy team can see it.' ?></p>
+                    <?php if ($manager): ?><form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/photo-remove')) ?>" class="inline-form" data-confirm="Remove this portrait?"><?= csrf_field() ?><button class="btn btn--ghost btn--sm" type="submit">Remove the portrait</button></form><?php endif; ?>
+                </div>
+            <?php endif; ?>
             <dl class="aac-facts">
                 <div><dt>E-mail</dt><dd><?= e($l['email']) ?> <?= $l['email_verified_at'] ? '<span class="badge badge--success">confirmed</span>' : '<span class="badge badge--warning">not confirmed</span>' ?></dd></div>
                 <?php if ($manager): ?><div><dt>Phone</dt><dd><?= e((string) ($l['phone'] ?: '-')) ?></dd></div><div><dt>Country</dt><dd><?= e((string) ($l['country'] ?: '-')) ?></dd></div><?php endif; ?>
+                <?php if ($manager && $l['email_verified_at'] === null): ?><div><dt>Confirmation e-mail</dt><dd><?php if (!empty($l['mail_error'])): ?><span class="badge badge--danger">Not delivered</span> <?= e($l['mail_error']) ?><?php elseif (!empty($l['mail_sent_at'])): ?>Sent <?= e(format_datetime($l['mail_sent_at'], 'j M Y, H:i')) ?> <span class="text-muted">(ask the learner to check the spam folder)</span><?php else: ?>No e-mail was sent yet<?php endif; ?></dd></div><?php endif; ?>
                 <div><dt>Joined</dt><dd><?= e(format_datetime($l['created_at'], 'j M Y, H:i')) ?></dd></div>
                 <div><dt>Last sign-in</dt><dd><?= $l['last_login_at'] ? e(format_datetime($l['last_login_at'], 'j M Y, H:i')) : 'Never' ?></dd></div>
                 <div><dt>Account</dt><dd><?= (int) $l['is_active'] === 1 ? 'Active' : 'Switched off' ?></dd></div>
             </dl>
             <?php if ($manager): ?>
                 <div class="aac-actions">
-                    <?php if ($l['email_verified_at'] === null): ?><form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/verify')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit">Mark e-mail as confirmed</button></form><?php endif; ?>
+                    <?php if ($l['email_verified_at'] === null): ?><form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/send-confirmation')) ?>" class="inline-form" data-confirm="E-mail a new confirmation link to <?= e($l['email']) ?>?"><?= csrf_field() ?><button class="btn btn--primary btn--sm" type="submit">Send confirmation e-mail</button></form><form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/verify')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit">Mark e-mail as confirmed</button></form><?php endif; ?>
                     <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/reset-link')) ?>" class="inline-form" data-confirm="E-mail a link to choose a new password to <?= e($l['email']) ?>?"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit"><?= icon('mail', 'icon--sm') ?> Send a password link</button></form>
                     <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/toggle')) ?>" class="inline-form" data-confirm="<?= (int) $l['is_active'] === 1 ? 'Switch this account off? The learner can no longer sign in (progress and certificates are kept).' : 'Switch this account on again?' ?>"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit"><?= (int) $l['is_active'] === 1 ? 'Switch the account off' : 'Switch the account on' ?></button></form>
                     <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/delete')) ?>" class="inline-form" data-confirm="Delete this learner account and all progress? Certificates already issued stay valid. This cannot be undone."><?= csrf_field() ?><button class="btn btn--ghost btn--sm btn-danger-hover" type="submit"><?= icon('trash', 'icon--sm') ?> Delete</button></form>

@@ -16,6 +16,7 @@ use App\Services\Academy\AcademyAccess;
 use App\Services\Academy\CertificateService;
 use App\Services\Academy\CourseService;
 use App\Services\Academy\LearnerAuth;
+use App\Services\Academy\LearnerPortrait;
 use App\Services\Academy\QuizService;
 
 /**
@@ -78,8 +79,9 @@ final class AcademyLearnersController extends AcademyAdminController
         [$where, $params, $f] = $this->filters($request);
         $total = (int) Database::value('SELECT COUNT(*) FROM academy_learners l' . $where, $params, 0);
         $pagination = Pagination::make($total, $request->page(), $this->perPage());
+        $extra = (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '');
         $rows = Database::all(
-            'SELECT l.id, l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.last_login_at, l.created_at, '
+            'SELECT l.id, l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.last_login_at, l.created_at' . $extra . ', '
             . '(SELECT COUNT(*) FROM academy_enrollments e WHERE e.learner_id = l.id) AS courses, '
             . '(SELECT COUNT(*) FROM academy_certificates c WHERE c.learner_id = l.id AND c.revoked_at IS NULL) AS certificates '
             . 'FROM academy_learners l' . $where . ' ORDER BY l.id DESC LIMIT ? OFFSET ?',
@@ -88,6 +90,7 @@ final class AcademyLearnersController extends AcademyAdminController
         [$sc, $sp] = AcademyAccess::courseScope('c');
         return $this->render('admin/academy/learners/index', [
             'rows' => $rows, 'pagination' => $pagination, 'f' => $f, 'total' => $total, 'manager' => AcademyAccess::manager(),
+            'waiting' => AcademyAccess::manager() ? (int) Database::value('SELECT COUNT(*) FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NULL', [], 0) : 0,
             'courses' => Database::all('SELECT c.id, c.title FROM academy_courses c WHERE ' . $sc . ' ORDER BY c.title', $sp),
         ], ['title' => 'Learners', 'nav' => 'academy_learners', 'breadcrumbs' => $this->crumbs('Learners')]);
     }
@@ -167,7 +170,9 @@ final class AcademyLearnersController extends AcademyAdminController
         }
         $token = bin2hex(random_bytes(32));
         Database::update('academy_learners', ['token_hash' => hash('sha256', $token), 'token_kind' => 'reset', 'token_expires_at' => date('Y-m-d H:i:s', time() + 7 * 86400)], 'id = ?', [$id]);
-        return \App\Services\Academy\AcademyMail::passwordReset($l, abs_url('academy/reset/' . $token));
+        $ok = \App\Services\Academy\AcademyMail::passwordReset($l, abs_url('academy/reset/' . $token));
+        LearnerAuth::recordMail($id, $ok);
+        return $ok;
     }
 
     public function resetLink(Request $request, int $id): Response
@@ -176,7 +181,92 @@ final class AcademyLearnersController extends AcademyAdminController
         $l = $this->learner($id);
         $ok = $this->sendResetLink($id);
         $this->audit('academy.learner.reset_link', 'academy_learner', $id, 'Sent a password link to ' . $l['email']);
-        $ok ? Flash::success('A link to choose a new password was e-mailed to ' . $l['email'] . '. It works for 7 days.') : Flash::error('The e-mail could not be sent. Check the e-mail settings (Settings > E-mail).');
+        $ok ? Flash::success('A link to choose a new password was e-mailed to ' . $l['email'] . '. It works for 7 days.') : Flash::error('The e-mail could not be sent' . $this->why() . '. Check the e-mail settings (Settings > E-mail).');
+        return $this->redirect('admin/academy/learners/' . $id);
+    }
+
+    /** " (reason)" for a flash message, from the last failed e-mail. */
+    private function why(): string
+    {
+        $e = \App\Services\Academy\AcademyMail::lastError();
+        return $e !== null && $e !== '' ? ' (' . $e . ')' : '';
+    }
+
+    /** Button on the learner page: e-mail a fresh confirmation link (valid 7 days). */
+    public function sendConfirmation(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        $res = LearnerAuth::sendConfirmation($id);
+        $this->audit('academy.learner.send_confirmation', 'academy_learner', $id, ($res['ok'] ? 'Sent' : 'Could not send') . ' a confirmation e-mail to ' . $l['email']);
+        $res['ok']
+            ? Flash::success('A confirmation e-mail was sent to ' . $l['email'] . '. The link works for 7 days. If it does not arrive, ask the learner to look in the spam folder, or use "Mark e-mail as confirmed".')
+            : Flash::error('The confirmation e-mail could not be sent: ' . (string) $res['error']);
+        return $this->redirect('admin/academy/learners/' . $id);
+    }
+
+    /** Button on the list: send the confirmation e-mail to the next 25 learners who still have to confirm (those never sent one first). */
+    public function sendConfirmations(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $order = LearnerAuth::mailColumns() ? 'ORDER BY (mail_sent_at IS NULL) DESC, id ASC' : 'ORDER BY id ASC';
+        $skip = LearnerAuth::mailColumns() ? ' AND (mail_sent_at IS NULL OR mail_sent_at < (NOW() - INTERVAL 1 DAY))' : '';
+        $rows = Database::all('SELECT id FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NULL' . $skip . ' ' . $order . ' LIMIT 25');
+        $sent = 0;
+        $failed = 0;
+        $row = 0;
+        $firstError = null;
+        foreach ($rows as $r) {
+            $res = LearnerAuth::sendConfirmation((int) $r['id']);
+            if ($res['ok']) {
+                $sent++;
+                $row = 0;
+            } else {
+                $failed++;
+                $firstError ??= (string) $res['error'];
+                if (++$row >= 3) {
+                    break;                       // the mail server is refusing everything: stop instead of trying all of them
+                }
+            }
+        }
+        Mailer::closeConnection();
+        $left = (int) Database::value('SELECT COUNT(*) FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NULL', [], 0);
+        $this->audit('academy.learner.send_confirmations', 'academy_learner', null, 'Sent confirmation e-mails in bulk', ['sent' => $sent, 'failed' => $failed]);
+        if ($rows === []) {
+            Flash::info('Nobody needs a confirmation e-mail right now (everyone was e-mailed in the last day, or has confirmed).');
+        } elseif ($failed === 0) {
+            Flash::success($sent . ' confirmation e-mail' . ($sent === 1 ? '' : 's') . ' sent. ' . $left . ' learner' . ($left === 1 ? ' is' : 's are') . ' still not confirmed: press the button again for the next batch.');
+        } else {
+            Flash::error($sent . ' sent, ' . $failed . ' could not be sent' . ($firstError ? ' (' . $firstError . ')' : '') . '. Check Settings > E-mail, wait a little (mail hosts limit how many e-mails an hour) and try again.');
+        }
+        return $this->redirect('admin/academy/learners?status=unverified');
+    }
+
+    /** For when e-mail cannot be delivered at all: mark every waiting address as confirmed so the learners can sign in. */
+    public function confirmAll(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $n = (int) Database::value('SELECT COUNT(*) FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NULL', [], 0);
+        Database::execute('UPDATE academy_learners SET email_verified_at = NOW(), token_hash = NULL, token_kind = NULL, token_expires_at = NULL WHERE is_active = 1 AND email_verified_at IS NULL');
+        $this->audit('academy.learner.confirm_all', 'academy_learner', null, 'Marked every waiting e-mail address as confirmed', ['count' => $n]);
+        Flash::success($n . ' learner' . ($n === 1 ? ' was' : 's were') . ' marked as confirmed. They can sign in now.');
+        return $this->redirect('admin/academy/learners');
+    }
+
+    /** The learner's portrait (administrators and facilitators who may see this learner). */
+    public function photo(Request $request, int $id): Response
+    {
+        $this->learner($id);
+        return LearnerPortrait::download($id) ?? throw new HttpException(404, 'Not found');
+    }
+
+    public function photoRemove(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        LearnerPortrait::remove($id);
+        $this->audit('academy.learner.photo_remove', 'academy_learner', $id, 'Removed the portrait of ' . $l['email']);
+        Flash::success('The portrait was removed.');
         return $this->redirect('admin/academy/learners/' . $id);
     }
 

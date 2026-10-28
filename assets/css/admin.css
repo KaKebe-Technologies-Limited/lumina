@@ -23539,3 +23539,29 @@ body.admin.fs-printpage .fs-stars__off {
 .aac-inline form {
   margin: 0;
 }
+
+.aac-avatar {
+  float: left;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 0.75rem 0 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #EEF1F6;
+}
+
+.aac-portrait {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.aac-portrait__img {
+  width: 7.5rem;
+  height: 7.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 1px 2px rgba(23, 32, 54, 0.08), 0 1px 3px rgba(23, 32, 54, 0.06);
+}

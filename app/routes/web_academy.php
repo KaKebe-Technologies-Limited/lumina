@@ -36,6 +36,10 @@ $router->post('/academy/reset/{token}', [AcademyAccountController::class, 'reset
 $router->get('/academy/account', [AcademyAccountController::class, 'account'])->name('academy.account');
 $router->post('/academy/account/profile', [AcademyAccountController::class, 'updateProfile'])->middleware('throttle:20,600')->name('academy.account.profile');
 $router->post('/academy/account/password', [AcademyAccountController::class, 'changePassword'])->middleware('throttle:10,600')->name('academy.account.password');
+$router->get('/academy/account/photo', [AcademyAccountController::class, 'photo'])->middleware('throttle:120,60')->name('academy.account.photo');
+$router->post('/academy/account/photo', [AcademyAccountController::class, 'savePhoto'])->middleware('throttle:10,600')->name('academy.account.photo.save');
+$router->post('/academy/account/photo/remove', [AcademyAccountController::class, 'removePhoto'])->middleware('throttle:10,600')->name('academy.account.photo.remove');
+$router->get('/academy/learners/{id}/photo', [AcademyAccountController::class, 'publicPhoto'])->middleware('throttle:300,60')->name('academy.learner.photo');
 $router->post('/academy/account/delete', [AcademyAccountController::class, 'deleteAccount'])->middleware('throttle:5,600')->name('academy.account.delete');
 
 // ---- learning -------------------------------------------------------------------------------------------------------------
