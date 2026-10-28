@@ -13,19 +13,7 @@
         <?php else: $revoked = $cert['revoked_at'] !== null; ?>
             <p class="opp-notice <?= $revoked ? 'opp-notice--closed' : 'ac-ok' ?>" role="status"><?= icon($revoked ? 'alert-triangle' : 'check-circle', 'icon--sm') ?>
                 <?= $revoked ? 'This certificate was withdrawn on ' . e(format_date($cert['revoked_at'])) . '.' : 'This is a genuine certificate issued by the LAF Academy.' ?></p>
-            <div class="ac-cert" aria-label="Certificate">
-                <p class="ac-cert__org"><?= e($wording['org']) ?> &middot; LAF Academy</p>
-                <?php $tx = \App\Services\Academy\CertificateService::texts($cert); ?><h2 class="ac-cert__title"><?= e($tx['heading']) ?></h2>
-                <p class="ac-cert__small"><?= e($tx['intro']) ?></p>
-                <p class="ac-cert__name"><?= e($cert['learner_name']) ?></p>
-                <p class="ac-cert__text"><?= e($tx['statement']) ?></p>
-                <p class="ac-cert__course"><?= e($cert['course_title']) ?></p>
-                <p class="ac-cert__facts">
-                    <?php if ($cert['score_pct'] !== null): ?><?= e($tx['scoreLabel']) ?> <?= e(rtrim(rtrim(number_format((float) $cert['score_pct'], 1), '0'), '.')) ?>% &nbsp;|&nbsp; <?php endif; ?>
-                    <?php if ($cert['hours'] !== null): ?><?= e(rtrim(rtrim(number_format((float) $cert['hours'], 1), '0'), '.')) ?> learning hours &nbsp;|&nbsp; <?php endif; ?>
-                    Issued <?= e(format_date($cert['issued_at'])) ?></p>
-                <p class="ac-cert__no">Certificate no. <b><?= e($cert['code']) ?></b></p>
-            </div>
+            <div class="ac-cert-svg" aria-label="Certificate"><?= \App\Services\Academy\CertificateService::svg($cert) ?></div>
             <?php if (!$revoked): ?>
                 <p class="ac-center">
                     <a class="btn btn--cta btn--caps" href="<?= e(url('academy/certificate/' . $cert['code'] . '/pdf')) ?>" target="_blank" rel="noopener"><?= icon('download', 'icon--sm') ?> Download the PDF</a>

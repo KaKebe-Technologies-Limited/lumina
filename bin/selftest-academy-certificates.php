@@ -75,6 +75,13 @@ $ch = CertificateService::pdf(['code' => 'LAF-26-CHALLENG', 'kind' => 'challenge
     'issued_at' => date('Y-m-d H:i:s'), 'approved_at' => date('Y-m-d H:i:s'), 'revoked_at' => null]);
 check('pdf: a challenge certificate uses the same design', str_starts_with($ch, '%PDF-') && str_contains($ch, '%%EOF'));
 
+$svg = CertificateService::svg($c + ['revoked_at' => null]);
+check('svg: the check page shows the same design as the PDF (seal, signature, QR, facts band, number, name)', str_starts_with($svg, '<svg') && str_contains($svg, 'viewBox="0 0 841.89 595.28"') && str_contains($svg, (string) $c['code']) && str_contains($svg, 'ZZ LCE A')
+    && str_contains($svg, 'SCAN TO VERIFY') && str_contains($svg, 'LEARNING HOURS') && substr_count($svg, '<path') > 15 && str_contains($svg, '<image'));
+$xss = CertificateService::svg(['code' => 'LAF-26-XSSXSSXS', 'kind' => 'course', 'learner_name' => '<script>alert(1)</script> "Q"', 'course_title' => '<img src=x onerror=alert(1)>', 'score_pct' => null, 'hours' => null,
+    'issued_at' => date('Y-m-d H:i:s'), 'approved_at' => null, 'revoked_at' => null]);
+check('svg: a name or course title with markup is escaped (no script or tag injection)', !str_contains($xss, '<script') && !str_contains($xss, '<img src=x') && str_contains($xss, '&lt;SCRIPT&gt;'));
+
 // ------------------------------------------------------------------------------------------------------------- over HTTP
 $base = 'http://localhost/' . basename(dirname(__DIR__));
 $req = static function (string $method, string $path, array $form = [], ?string &$jar = null) use ($base): array {

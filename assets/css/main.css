@@ -24271,6 +24271,19 @@ fieldset.ac-q legend + * {
   letter-spacing: .06em;
 }
 
+.ac-cert-svg {
+  max-width: 62rem;
+  margin: 1.5rem auto;
+  box-shadow: 0 14px 40px rgba(44, 57, 80, 0.16);
+  background: #FCFAF4;
+}
+
+.ac-cert-svg svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 @media print {
   body.is-academy-certificate .page-hero, body.is-academy-certificate .topbar, body.is-academy-certificate .site-header, body.is-academy-certificate .site-footer, body.is-academy-certificate .back-to-top, body.is-academy-certificate .ac-center, body.is-academy-certificate .opp-notice, body.is-academy-certificate .skip-link, body.is-academy-certificate .breadcrumbs {
     display: none !important;
@@ -24278,7 +24291,7 @@ fieldset.ac-q legend + * {
   body.is-academy-certificate .section {
     padding: 0;
   }
-  .ac-cert {
+  .ac-cert, .ac-cert-svg {
     box-shadow: none;
     margin: 0 auto;
     page-break-inside: avoid;

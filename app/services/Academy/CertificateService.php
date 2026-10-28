@@ -577,4 +577,244 @@ final class CertificateService
         $pdf->text($cx, 545, $w['org'] . ' ' . "\u{00B7}" . ' Gulu City, Northern Uganda ' . "\u{00B7}" . ' ' . $host . ' ' . "\u{00B7}" . ' Verify this certificate at ' . preg_replace('~^https?://~', '', $url), 'helvetica', 6.6, $grey, 'c');
         return $pdf->output();
     }
+
+    /** PDF drawing operators (the seal and the signature of the template) as SVG shapes; $H is the page height used to turn PDF y (up) into SVG y (down). */
+    private static function opsToSvg(string $ops, float $H): string
+    {
+        $out = '';
+        $d = '';
+        $fill = '#000000';
+        $stroke = '#000000';
+        $lw = 1.0;
+        $st = [];
+        $hex = static function (array $rgb): string {
+            return sprintf('#%02x%02x%02x', (int) round($rgb[0] * 255), (int) round($rgb[1] * 255), (int) round($rgb[2] * 255));
+        };
+        foreach (preg_split('/\s+/', trim($ops)) ?: [] as $t) {
+            if ($t === '') {
+                continue;
+            }
+            if (is_numeric($t)) {
+                $st[] = (float) $t;
+                continue;
+            }
+            switch ($t) {
+                case 'rg':
+                    $fill = $hex(array_slice($st, -3));
+                    break;
+                case 'RG':
+                    $stroke = $hex(array_slice($st, -3));
+                    break;
+                case 'w':
+                    $lw = (float) end($st);
+                    break;
+                case 'm':
+                case 'l':
+                    $p = array_slice($st, -2);
+                    $d .= ($t === 'm' ? 'M' : 'L') . sprintf('%.3F %.3F ', $p[0], $H - $p[1]);
+                    break;
+                case 'c':
+                    $p = array_slice($st, -6);
+                    $d .= sprintf('C%.3F %.3F %.3F %.3F %.3F %.3F ', $p[0], $H - $p[1], $p[2], $H - $p[3], $p[4], $H - $p[5]);
+                    break;
+                case 'h':
+                    $d .= 'Z ';
+                    break;
+                case 'f*':
+                case 'f':
+                    if ($d !== '') {
+                        $out .= '<path d="' . trim($d) . '" fill="' . $fill . '" fill-rule="evenodd"/>';
+                    }
+                    $d = '';
+                    break;
+                case 'S':
+                    if ($d !== '') {
+                        $out .= '<path d="' . trim($d) . '" fill="none" stroke="' . $stroke . '" stroke-width="' . $lw . '" stroke-linecap="round" stroke-linejoin="round"/>';
+                    }
+                    $d = '';
+                    break;
+                case 'n':
+                    $d = '';
+                    break;
+                default:
+                    break;          // J, j and any other state operator: not needed for the drawing
+            }
+            $st = [];
+        }
+        return $out;
+    }
+
+    /**
+     * The certificate as an SVG picture (same design and positions as the PDF), for the check page on screen: sharp at any size, prints well, and opens on every
+     * phone (a PDF does not show inside a page on many of them). Every learner-supplied text is escaped.
+     * @param array<string,mixed> $cert a certificate row
+     */
+    public static function svg(array $cert): string
+    {
+        $w = self::wording();
+        $navy = '#122040';
+        $gold = '#C9973F';
+        $goldText = '#9A6F1C';
+        $orange = '#E0642C';
+        $grey = '#5B6478';
+        $body = '#1B2438';
+        $soft = '#EADFC6';
+        $art = require dirname(__DIR__, 2) . '/config/academy/certificate-art.php';
+        $tx = self::texts($cert);
+        $W = 841.89;
+        $H = 595.28;
+        $cx = $W / 2;
+        $e = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $fam = [
+            'times-bold' => "font-family=\"'Times New Roman',Times,'Liberation Serif',serif\" font-weight=\"700\"",
+            'times-italic' => "font-family=\"'Times New Roman',Times,'Liberation Serif',serif\" font-style=\"italic\"",
+            'helvetica' => "font-family=\"Helvetica,Arial,'Liberation Sans',sans-serif\"",
+            'helvetica-bold' => "font-family=\"Helvetica,Arial,'Liberation Sans',sans-serif\" font-weight=\"700\"",
+        ];
+        $o = [];
+        $text = static function (float $x, float $y, string $t, string $font, float $size, string $fill, float $track = 0.0) use (&$o, $e, $fam): void {
+            $o[] = sprintf('<text x="%.2F" y="%.2F" text-anchor="middle" %s font-size="%.2F" fill="%s"%s>%s</text>', $x + $track / 2, $y, $fam[$font], $size, $fill, $track > 0 ? ' letter-spacing="' . $track . '"' : '', $e($t));
+        };
+        $line = static function (float $x1, float $y1, float $x2, float $y2, string $stroke, float $lw) use (&$o): void {
+            $o[] = sprintf('<line x1="%.2F" y1="%.2F" x2="%.2F" y2="%.2F" stroke="%s" stroke-width="%s"/>', $x1, $y1, $x2, $y2, $stroke, $lw);
+        };
+
+        // paper, navy border, gold double frame, corner ornaments
+        $o[] = '<rect width="' . $W . '" height="' . $H . '" fill="#FCFAF4"/>';
+        $o[] = '<rect x="18" y="18" width="' . ($W - 36) . '" height="' . ($H - 36) . '" fill="' . $navy . '"/>';
+        $o[] = '<rect x="24" y="24" width="' . ($W - 48) . '" height="' . ($H - 48) . '" fill="#FCFAF4"/>';
+        $o[] = '<rect x="32" y="32" width="' . ($W - 64) . '" height="' . ($H - 64) . '" fill="none" stroke="' . $gold . '" stroke-width="2.2"/>';
+        $o[] = '<rect x="38" y="38" width="' . ($W - 76) . '" height="' . ($H - 76) . '" fill="none" stroke="' . $gold . '" stroke-width="0.7"/>';
+        foreach ([[38.0, 38.0, 1, 1], [$W - 38, 38.0, -1, 1], [38.0, $H - 38, 1, -1], [$W - 38, $H - 38, -1, -1]] as [$ox, $oy, $sx, $sy]) {
+            foreach ([14, 22, 30] as $r) {
+                $o[] = sprintf('<path d="M%.2F %.2F A%d %d 0 0 %d %.2F %.2F" fill="none" stroke="%s" stroke-width="1"/>', $ox + $sx * $r, $oy, $r, $r, $sx * $sy > 0 ? 1 : 0, $ox, $oy + $sy * $r, $gold);
+            }
+            $o[] = sprintf('<circle cx="%.2F" cy="%.2F" r="2.4" fill="%s"/>', $ox + $sx * 6, $oy + $sy * 6, $orange);
+        }
+
+        // logo and organisation
+        $logo = asset('img/brand/logo-512.png');
+        $o[] = '<image href="' . $e($logo) . '" x="' . ($cx - 34) . '" y="54" width="68" height="68"/>';
+        $text($cx, 140, mb_strtoupper($w['org']), 'helvetica-bold', 11, $navy, 2.1);
+        $text($cx, 154, 'LAF ACADEMY', 'helvetica-bold', 8.5, $goldText, 3.0);
+
+        // heading, gold rule and diamond
+        $text($cx, 205, self::headline($tx['heading']), 'times-bold', 40, $navy);
+        $line($cx - 110, 216, $cx - 10, 216, $gold, 1);
+        $line($cx + 10, 216, $cx + 110, 216, $gold, 1);
+        $o[] = sprintf('<path d="M%.2F %.2F L%.2F %.2F L%.2F %.2F L%.2F %.2F Z" fill="%s"/>', $cx, 216 - 4.95, $cx + 4.95, 216, $cx, 216 + 4.95, $cx - 4.95, 216, $orange);
+        $text($cx, 240, $tx['intro'], 'times-italic', 13.5, $grey);
+
+        // the learner
+        $name = mb_strtoupper((string) $cert['learner_name']);
+        $text($cx, 290, $name, 'times-bold', self::fit($name, 'times-bold', 43, 640, 12), $navy);
+        $line(120, 302, $W - 120, 302, $gold, 0.9);
+
+        // statement and course
+        $ss = 12.0;
+        $statement = rtrim($tx['statement'], ' .');
+        $lines = self::wrap($statement, 'helvetica', $ss, 600);
+        if (count($lines) > 1) {
+            $ss = 10.5;
+            $lines = array_slice(self::wrap($statement, 'helvetica', $ss, 640), 0, 2);
+        }
+        $sy = count($lines) > 1 ? 319.0 : 324.0;
+        foreach ($lines as $ln) {
+            $text($cx, $sy, $ln, 'helvetica', $ss, $body);
+            $sy += 14;
+        }
+        $title = (string) $cert['course_title'];
+        $tsize = self::fit($title, 'times-bold', 25, 640, 17);
+        if (PdfWriter::textWidth($title, 'times-bold', $tsize) > 640) {
+            $tl = self::wrap($title, 'times-bold', 17, 640);
+            $text($cx, 351, $tl[0], 'times-bold', 17, $orange);
+            if (isset($tl[1])) {
+                $text($cx, 367, $tl[1], 'times-bold', 17, $orange);
+            }
+        } else {
+            $text($cx, 358, $title, 'times-bold', $tsize, $orange);
+        }
+
+        // facts band
+        $line(100, 372, 741.89, 372, $soft, 0.6);
+        $line(100, 412, 741.89, 412, $soft, 0.6);
+        foreach ([260.47, 420.94, 581.42] as $vx) {
+            $line($vx, 378, $vx, 406, $soft, 0.6);
+        }
+        $num = static fn(float $v): string => rtrim(rtrim(number_format($v, 1), '0'), '.');
+        $isChallenge = ($cert['kind'] ?? 'course') === 'challenge';
+        $col1 = $isChallenge
+            ? ['AWARD', trim((string) preg_replace('/^Winner,\s*/', '', (string) ($cert['award'] ?? ''))) ?: '-']
+            : [mb_strtoupper($tx['scoreLabel']), $cert['score_pct'] !== null ? $num((float) $cert['score_pct']) . '%' : '-'];
+        $col2 = $isChallenge
+            ? ['SCORE', $cert['score_pct'] !== null ? $num((float) $cert['score_pct']) . '%' : '-']
+            : ['LEARNING HOURS', $cert['hours'] !== null ? $num((float) $cert['hours']) . ' hours' : '-'];
+        $facts = [
+            [180.2, $col1[0], $col1[1], 'times-bold', 15],
+            [340.7, $col2[0], $col2[1], 'times-bold', 15],
+            [501.2, 'DATE OF ISSUE', date('j F Y', (int) strtotime((string) ($cert['approved_at'] ?? $cert['issued_at']))), 'times-bold', 15],
+            [661.7, 'CERTIFICATE NO.', (string) $cert['code'], 'helvetica-bold', 13],
+        ];
+        foreach ($facts as [$fx, $label, $value, $vf, $vs]) {
+            $text($fx, 386, $label, 'helvetica-bold', 7.6, $grey, 1.6);
+            $text($fx, 404, $value, $vf, self::fit($value, $vf, $vs, 150, 9), $navy);
+        }
+
+        // signature (left)
+        $o[] = '<g>' . self::opsToSvg($art['signature'], $H) . '</g>';
+        $line(130, $H - 102, 350, $H - 102, $navy, 0.8);
+        $signer = $w['signatory'] !== '' ? $w['signatory'] : 'Moses Komakech';
+        $signerTitle = $w['signatory'] !== '' ? ($w['title'] !== '' ? $w['title'] : 'Director') : 'Founder, ' . $w['org'];
+        $text(240, $H - 87, $signer, 'times-bold', 13.5, $navy);
+        $text(240, $H - 74, $signerTitle, 'helvetica', 9.5, $grey);
+
+        // gold seal (centre) with the words round it
+        $o[] = '<g>' . self::opsToSvg($art['seal'], $H) . '</g>';
+        $o[] = '<image href="' . $e($logo) . '" x="398.3849" y="' . ($H - 156.56) . '" width="45.12" height="45.12"/>';
+        $scy = $H - 134.0;
+        foreach ([['LAF ACADEMY', 29.76, 6.6, true, 0.6], ["VERIFIED \u{00B7} AUTHENTIC", 33.68, 5.6, false, 0.5]] as [$arc, $radius, $asize, $top, $atrack]) {
+            $chars = mb_str_split($arc);
+            $adv = [];
+            $total = 0.0;
+            foreach ($chars as $ch) {
+                $adv[] = PdfWriter::textWidth($ch, 'helvetica-bold', $asize);
+                $total += end($adv) + $atrack;
+            }
+            $total -= $atrack;
+            $pos = 0.0;
+            foreach ($chars as $i => $ch) {
+                $mid = $pos + $adv[$i] / 2;
+                $theta = $top ? ($total / 2 - $mid) / $radius : (-$total / 2 + $mid) / $radius;
+                $pos += $adv[$i] + $atrack;
+                if ($ch === ' ') {
+                    continue;
+                }
+                $o[] = sprintf('<text transform="translate(420.9449 %.4F) rotate(%.3F)" x="%.3F" y="%.2F" %s font-size="%.2F" fill="%s">%s</text>', $scy, -$theta * 180 / M_PI, -$adv[$i] / 2, $top ? -$radius : $radius, $fam['helvetica-bold'], $asize, $navy, $e($ch));
+            }
+        }
+
+        // QR code to this check page (right)
+        $url = self::verifyUrl((string) $cert['code']);
+        $o[] = '<rect x="622.5" y="432.5" width="78" height="78" rx="7" fill="#FFFFFF" stroke="' . $gold . '" stroke-width="0.7"/>';
+        try {
+            $qr = QrEncoder::encode($url, 'M');
+            $n = count($qr['modules']);
+            $mod = 64.0 / $n;
+            $q = '';
+            foreach (QrEncoder::runs($qr['modules']) as [$r, $c, $len]) {
+                $q .= sprintf('M%.3F %.3Fh%.3Fv%.3Fh-%.3FZ', 629.89 + $c * $mod, 439.3 + $r * $mod, $len * $mod + 0.02, $mod + 0.02, $len * $mod + 0.02);
+            }
+            $o[] = '<path d="' . $q . '" fill="#000000"/>';
+        } catch (\Throwable) {
+            // no QR: the printed number and address still verify the certificate
+        }
+        $text(661.7, 520, 'SCAN TO VERIFY', 'helvetica-bold', 6.6, $navy, 1.3);
+        $text(661.7, 530, (string) $cert['code'], 'helvetica', 6, $grey);
+
+        // footer
+        $host = (string) parse_url(abs_url(''), PHP_URL_HOST);
+        $text($cx, 545, $w['org'] . ' ' . "\u{00B7}" . ' Gulu City, Northern Uganda ' . "\u{00B7}" . ' ' . $host . ' ' . "\u{00B7}" . ' Verify this certificate at ' . preg_replace('~^https?://~', '', $url), 'helvetica', 6.6, $grey);
+
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 841.89 595.28" role="img" aria-label="' . $e($tx['heading'] . ': ' . $cert['learner_name'] . ', ' . $cert['course_title']) . '">' . implode('', $o) . '</svg>';
+    }
 }
