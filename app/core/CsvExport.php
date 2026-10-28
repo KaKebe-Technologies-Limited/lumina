@@ -36,10 +36,15 @@ final class CsvExport
         return ($s !== '' && in_array($s[0], ['=', '+', '-', '@', "\t", "\r"], true)) ? "'" . $s : $s;
     }
 
-    /** @param string[] $header  @param iterable<array> $rows lists or assoc arrays of scalars */
-    public static function response(string $filename, array $header, iterable $rows): Response
+    /**
+     * The download of an export. CSV by default (plain data); with "?format=xlsx|docx|pdf" in the address the same data comes as an Excel workbook, a Word document or a
+     * PDF with the standard letterhead (App\Services\Export\Exporter). $meta: title (otherwise made from the file name), csv_only (a CSV that is meant to be imported
+     * again), notes (extra lines under the title).
+     * @param string[] $header  @param iterable<array> $rows lists or assoc arrays of scalars  @param array{title?:string,csv_only?:bool,notes?:list<string>} $meta
+     */
+    public static function response(string $filename, array $header, iterable $rows, array $meta = []): Response
     {
-        return Response::csv($filename, $header, $rows);
+        return \App\Services\Export\Exporter::response($filename, $header, $rows, $meta);
     }
 
     /** Write a UTF-8 (BOM) CSV to a stream/path; used by Response::csv() and by tests. */

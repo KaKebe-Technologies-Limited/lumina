@@ -96,7 +96,7 @@ $tz = date_default_timezone_get();
                             <div class="btn-row">
                                 <a class="btn btn--outline btn--sm" href="<?= e(url('admin/events/' . (int) $event['id'] . '/registrations')) ?>"><?= icon('users', 'icon--sm') ?> Manage registrations</a>
                                 <?php if (can('export.csv') && $stats['total'] > 0): ?>
-                                    <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/events/' . (int) $event['id'] . '/registrations/export')) ?>"><?= icon('download', 'icon--sm') ?> Export CSV</a>
+                                    <?= partial('partials/admin/export-menu', ['url' => url('admin/events/' . (int) $event['id'] . '/registrations/export'), 'label' => 'Export registrations', 'class' => 'btn--ghost', 'small' => true]) ?>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>

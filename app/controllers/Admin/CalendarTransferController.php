@@ -152,7 +152,7 @@ final class CalendarTransferController extends AdminController
             ['Example: volunteer orientation', 'meeting', '2030-01-15', '', 'no', '10:00', '12:00', 'Gulu City', 'none', '', 'yes', 'Replace this row with your own dates.', '', '', ''],
             ['Example: monthly planning call', 'meeting', '2030-01-05', '', 'no', '15:00', '16:00', '', 'monthly', '2030-12-31', 'no', '', '', '', ''],
         ];
-        return CsvExport::response('lumina-calendar-import-template.csv', CalendarWriter::CSV_COLUMNS, $rows);
+        return CsvExport::response('lumina-calendar-import-template.csv', CalendarWriter::CSV_COLUMNS, $rows, ['csv_only' => true]);
     }
 
     // ------------------------------------------------------------------ reading the file

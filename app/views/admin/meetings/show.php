@@ -157,7 +157,7 @@ $pageActions[] = ['label' => 'All meetings', 'url' => url('admin/meetings'), 'cl
                 <h2 class="card__title" id="ma-people-title">People <span class="ma-count"><?= (int) $s['total'] ?></span></h2>
                 <div class="btn-row">
                     <?php if ($isScheduled && ($n['unsent'] + $n['failed']) > 0): ?><button class="btn btn--outline btn--sm" type="button" data-ma-queue="invite_pending" data-label="Send to everyone still pending"><?= icon('send', 'icon--sm') ?> Send to everyone still pending</button><?php endif; ?>
-                    <?php if ((int) $s['total'] > 0): ?><a class="btn btn--ghost btn--sm" href="<?= e(url('admin/meetings/' . $id . '/attendees.csv')) ?>"><?= icon('download', 'icon--sm') ?> Export CSV</a><?php endif; ?>
+                    <?php if ((int) $s['total'] > 0): ?><?= partial('partials/admin/export-menu', ['url' => url('admin/meetings/' . $id . '/attendees.csv'), 'label' => 'Export attendees', 'class' => 'btn--ghost', 'small' => true]) ?><?php endif; ?>
                 </div>
             </div>
             <div class="card__body">

@@ -34,7 +34,7 @@ $this->start('scripts'); ?>
             <a class="cal-tabs__item<?= $view === 'list' ? ' is-active' : '' ?>" href="<?= e(url('admin/calendar', ['view' => 'list'])) ?>"<?= $view === 'list' ? ' aria-current="page"' : '' ?>><?= icon('list', 'icon--sm') ?> List &amp; search</a>
             <?php if (can('meetings.manage')): ?><a class="cal-tabs__item" href="<?= e(url('admin/meetings')) ?>"><?= icon('users', 'icon--sm') ?> Meetings</a><?php endif; ?>
             <span class="cal-tabs__spacer"></span>
-            <a class="cal-tabs__link" href="<?= e(url('admin/calendar/export.csv')) ?>"><?= icon('download', 'icon--sm') ?> Export CSV</a>
+            <?= partial('partials/admin/export-menu', ['url' => url('admin/calendar/export.csv'), 'label' => 'Export', 'class' => 'btn--ghost', 'small' => true]) ?>
             <a class="cal-tabs__link" href="<?= e(url('admin/calendar/import')) ?>"><?= icon('upload', 'icon--sm') ?> Import CSV</a>
         </nav>
 

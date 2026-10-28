@@ -344,4 +344,12 @@
     // keep long forms' success feedback visible: scroll the first error into view
     const firstError = $('.field--error');
     if (firstError) firstError.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+
+    // "Export" menus close when the page is clicked elsewhere or Escape is pressed
+    document.addEventListener('click', function (e) {
+        document.querySelectorAll('details.export-menu[open]').forEach(function (d) { if (!d.contains(e.target)) { d.removeAttribute('open'); } });
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { document.querySelectorAll('details.export-menu[open]').forEach(function (d) { d.removeAttribute('open'); }); }
+    });
 })();

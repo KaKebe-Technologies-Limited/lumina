@@ -135,7 +135,7 @@ $s = $result['summary'] ?? null;
             <div class="card__header"><h2 class="card__title" id="exp-title">Export</h2></div>
             <div class="card__body">
                 <p>Download every entry (<?= (int) $allCount ?>, including the holidays and days that came with the site) as a spreadsheet file. Descriptions are plain text. Opening it in Excel is safe: cells that start with =, +, - or @ are protected.</p>
-                <p><a class="btn btn--primary" href="<?= e(url('admin/calendar/export.csv')) ?>"><?= icon('download', 'icon--sm') ?> Download all as CSV</a></p>
+                <p><?= partial('partials/admin/export-menu', ['url' => url('admin/calendar/export.csv'), 'label' => 'Export all', 'class' => 'btn--primary']) ?></p>
                 <p class="text-muted">The export is recorded in the activity log. You added <?= (int) $ownCount ?> <?= $ownCount === 1 ? 'entry' : 'entries' ?> yourselves.</p>
                 <p class="cal-note-inline"><?= icon('info', 'icon--sm') ?> Only the simple repeats (none, daily, weekly, monthly, yearly) are part of the CSV format, and the repeat settings such as "every 2 weeks on Monday" are not saved in it. Importing this file again skips what is already in the calendar (the holidays included) and cannot restore Easter or Islamic holidays or special repeats: keep it as a copy to read, not as a backup to restore.</p>
             </div>

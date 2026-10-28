@@ -13,7 +13,9 @@
     <?php if (!empty($actions)): ?>
         <div class="page-header__actions">
             <?php foreach ($actions as $a): ?>
-                <?php if (($a['method'] ?? '') === 'post'): ?>
+                <?php if (($a['method'] ?? '') !== 'post' && ($a['icon'] ?? '') === 'download' && stripos((string) $a['url'], 'export') !== false && stripos((string) $a['url'], 'template') === false): ?>
+                    <?= partial('partials/admin/export-menu', ['url' => (string) $a['url'], 'label' => (string) $a['label'], 'class' => (string) ($a['class'] ?? 'btn--outline')]) ?>
+                <?php elseif (($a['method'] ?? '') === 'post'): ?>
                     <form method="post" action="<?= e($a['url']) ?>"<?= !empty($a['confirm']) ? ' data-confirm="' . e($a['confirm']) . '"' : '' ?>>
                         <?= csrf_field() ?>
                         <button class="btn <?= e($a['class'] ?? 'btn--outline') ?>" type="submit"><?= !empty($a['icon']) ? icon($a['icon'], 'icon--sm') . ' ' : '' ?><?= e($a['label']) ?></button>

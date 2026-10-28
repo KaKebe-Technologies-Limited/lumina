@@ -1667,6 +1667,53 @@ body.admin-nav-open .admin-backdrop {
   gap: 0.5rem;
 }
 
+.export-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.export-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.export-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.export-menu__caret {
+  font-size: 0.7em;
+  margin-left: 0.1rem;
+}
+
+.export-menu__list {
+  position: absolute;
+  z-index: 30;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 11rem;
+  padding: 0.5rem;
+  background: #FFFFFF;
+  border: 1px solid #E3DDD2;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(23, 32, 54, 0.1), 0 2px 6px rgba(23, 32, 54, 0.06);
+}
+
+.export-menu__item {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  color: #1D1E20;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.export-menu__item:hover, .export-menu__item:focus-visible {
+  background: #F7F3EC;
+  color: #2C3950;
+}
+
 .admin .badge {
   font-size: 0.74rem;
   padding: 0.15rem 0.6rem;
