@@ -82,6 +82,7 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->get('/learners-export', [AcademyLearnersController::class, 'export'])->middleware('throttle:10,60')->name('admin.academy.learners.export');
     $router->post('/learners/{id}/reset-link', [AcademyLearnersController::class, 'resetLink'])->middleware('throttle:30,60')->name('admin.academy.learners.reset');
     $router->post('/learners/{id}/verify', [AcademyLearnersController::class, 'verify'])->name('admin.academy.learners.verify');
+    $router->post('/learners/{id}/approve-certificates', [AcademyLearnersController::class, 'approveCertificates'])->middleware('throttle:60,60')->name('admin.academy.learners.approve_certificates');
     $router->post('/learners/{id}/send-confirmation', [AcademyLearnersController::class, 'sendConfirmation'])->middleware('throttle:60,60')->name('admin.academy.learners.send_confirmation');
     $router->post('/learners/{id}/send-whatsapp', [AcademyLearnersController::class, 'sendWhatsApp'])->middleware('throttle:30,60')->name('admin.academy.learners.send_whatsapp');
     $router->post('/learners-send-confirmations', [AcademyLearnersController::class, 'sendConfirmations'])->middleware('throttle:10,60')->name('admin.academy.learners.send_confirmations');
@@ -96,6 +97,7 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->get('/certificates-export', [AcademyCertificatesController::class, 'export'])->middleware('throttle:10,60')->name('admin.academy.certificates.export');
     $router->get('/certificates/{id}/preview', [AcademyCertificatesController::class, 'preview'])->middleware('throttle:60,60')->name('admin.academy.certificates.preview');
     $router->post('/certificates/{id}/approve', [AcademyCertificatesController::class, 'approve'])->name('admin.academy.certificates.approve');
+    $router->post('/certificates/{id}/decline', [AcademyCertificatesController::class, 'decline'])->middleware('throttle:60,60')->name('admin.academy.certificates.decline');
     $router->post('/certificates/{id}/email', [AcademyCertificatesController::class, 'email'])->middleware('throttle:60,60')->name('admin.academy.certificates.email');
     $router->post('/certificates-approve-all', [AcademyCertificatesController::class, 'approveAll'])->middleware('throttle:10,60')->name('admin.academy.certificates.approve_all');
     $router->post('/certificates/{id}/revoke', [AcademyCertificatesController::class, 'revoke'])->name('admin.academy.certificates.revoke');

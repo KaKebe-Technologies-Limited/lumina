@@ -37,6 +37,10 @@
                     <?php if ($isWaiting): ?>
                         <a class="btn btn--ghost btn--icon" href="<?= e(url('admin/academy/certificates/' . $id . '/preview')) ?>" target="_blank" rel="noopener" title="Look at the PDF" aria-label="Preview: <?= e($c['code']) ?>"><?= icon('eye', 'icon--sm') ?></a>
                         <form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/approve')) ?>" class="inline-form"><?= csrf_field() ?><input type="hidden" name="back" value="<?= e($status) ?>"><button class="btn btn--primary btn--sm" type="submit">Approve</button><button class="btn btn--outline btn--sm" type="submit" name="email" value="1">Approve and e-mail</button></form>
+                        <details class="aac-edit"><summary class="btn btn--ghost btn--sm">Decline</summary>
+                            <form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/decline')) ?>" class="aac-edit__form" data-confirm="Decline the request for <?= e($c['code']) ?>?"><?= csrf_field() ?><input type="hidden" name="back" value="<?= e($status) ?>">
+                                <div class="field"><label class="field__label" for="dc-<?= $id ?>">Message to the learner (optional)</label><input class="input" id="dc-<?= $id ?>" name="reason" maxlength="300"></div>
+                                <button class="btn btn--primary btn--sm" type="submit">Decline and tell the learner</button></form></details>
                     <?php endif; ?>
                     <?php if (!$c['revoked_at'] && !$isWaiting): ?>
                         <a class="btn btn--ghost btn--icon" href="<?= e(url('academy/certificate/' . $c['code'] . '/pdf')) ?>" target="_blank" rel="noopener" title="Open the PDF" aria-label="PDF: <?= e($c['code']) ?>"><?= icon('download', 'icon--sm') ?></a>

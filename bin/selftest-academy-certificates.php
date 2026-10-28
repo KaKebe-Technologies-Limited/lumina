@@ -156,6 +156,48 @@ CertificateService::revoke((int) $cb['id'], 'selftest');
 check('email: a withdrawn certificate is not e-mailed', CertificateService::email((array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [(int) $cb['id']])) === false);
 CertificateService::reinstate((int) $cb['id']);
 
+// ------------------------------------------------------------------------------------------------------------- learner requests a certificate after passing
+Database::execute('UPDATE academy_courses SET certificate_enabled = 1 WHERE id = ?', [(int) $course['id']]);
+$enrol = static fn(array $l, bool $completed): int => (int) Database::insert('academy_enrollments', ['learner_id' => (int) $l['id'], 'course_id' => (int) $course['id'], 'completed_at' => $completed ? date('Y-m-d H:i:s') : null]);
+$lg = $mk('g');
+$lh = $mk('h');
+$li = $mk('i');
+$enrol($lg, true);
+$enrol($lh, false);
+$enrol($li, true);
+check('request: only a learner who finished the course may request (not one who is still learning, not one who never enrolled)', CertificateService::eligible((int) $lg['id'], (int) $course['id']) && !CertificateService::eligible((int) $lh['id'], (int) $course['id']) && !CertificateService::eligible((int) $la['id'] + 999999, (int) $course['id']));
+$notEnough = CertificateService::request($lh, $course);
+check('request: a learner who has not finished is told to finish the lessons and pass the exam, and nothing is created', $notEnough['ok'] === false && str_contains((string) $notEnough['error'], 'Finish') && (int) Database::value('SELECT COUNT(*) FROM academy_certificates WHERE learner_id = ?', [(int) $lh['id']], 9) === 0);
+Database::execute('DELETE FROM rate_limits');
+$mailsBeforeReq = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
+$rg = CertificateService::request($lg, $course);
+$newReq = array_values(array_diff(glob(STORAGE_PATH . '/mail/*.eml') ?: [], $mailsBeforeReq));
+check('request: the request creates a certificate that waits, and the Academy team is e-mailed', $rg['ok'] && $rg['waiting'] && !CertificateService::isApproved($rg['cert']) && count($newReq) === 1 && str_contains($mailText($newReq[0]), 'Certificate request') && str_contains($mailText($newReq[0]), 'ZZ Lce g'));
+$again = CertificateService::request($lg, $course);
+check('request: asking again says it is already waiting and makes no second certificate', $again['ok'] === false && $again['waiting'] && (int) Database::value('SELECT COUNT(*) FROM academy_certificates WHERE learner_id = ?', [(int) $lg['id']], 9) === 1 && !CertificateService::eligible((int) $lg['id'], (int) $course['id']));
+
+$lgList = $req('GET', '/admin/academy/learners?q=zz-lce-g', [], $jA);
+check('http: the learner list shows "1 waiting" and an "Approve certificate" button on that learner', $lgList['code'] === 200 && str_contains($lgList['body'], '1 waiting') && str_contains($lgList['body'], 'Approve certificate'));
+$lgPage = $req('GET', '/admin/academy/learners/' . $lg['id'], [], $jA);
+check('http: the learner page offers Approve, Approve and e-mail, Preview and Decline for the waiting certificate', $lgPage['code'] === 200 && str_contains($lgPage['body'], 'Waiting for approval') && str_contains($lgPage['body'], 'Approve and e-mail') && str_contains($lgPage['body'], 'Decline') && str_contains($lgPage['body'], '/preview'));
+check('http: an editor cannot approve or decline from the learner page (403)', $post('/admin/academy/learners/' . $lg['id'] . '/approve-certificates', [], $jE, '/admin')['code'] === 403 && $post('/admin/academy/certificates/' . $rg['cert']['id'] . '/decline', [], $jE, '/admin')['code'] === 403);
+$mailsBeforeAp = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
+$apLearner = $post('/admin/academy/learners/' . $lg['id'] . '/approve-certificates', ['email' => '1'], $jA, '/admin/academy/learners/' . $lg['id']);
+$apMail = array_values(array_diff(glob(STORAGE_PATH . '/mail/*.eml') ?: [], $mailsBeforeAp));
+check('http: "Approve and e-mail" on the learner approves their certificate, e-mails the learner and records who approved', in_array($apLearner['code'], [302, 303], true) && CertificateService::activeFor((int) $lg['id'], (int) $course['id']) !== null
+    && (int) Database::value('SELECT approved_by FROM academy_certificates WHERE id = ?', [(int) $rg['cert']['id']], 0) === $adminId && count($apMail) === 1 && str_contains($mailText($apMail[0]), 'zz-lce-g@example.test'));
+check('http: the learner now finds nothing waiting on the list', !str_contains($req('GET', '/admin/academy/learners?q=zz-lce-g', [], $jA)['body'], '1 waiting'));
+
+// decline: the request is removed, the learner is told why and can ask again
+$ri = CertificateService::request($li, $course);
+$mailsBeforeDec = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
+$dec = $post('/admin/academy/certificates/' . $ri['cert']['id'] . '/decline', ['reason' => 'Please finish the practice task first', 'back' => 'learner:' . $li['id']], $jA, '/admin/academy/learners/' . $li['id']);
+$decMail = array_values(array_diff(glob(STORAGE_PATH . '/mail/*.eml') ?: [], $mailsBeforeDec));
+check('http: "Decline" removes the request and e-mails the learner the reason, then the learner may request again', in_array($dec['code'], [302, 303], true) && str_contains($dec['head'], 'admin/academy/learners/' . $li['id'])
+    && Database::value('SELECT 1 FROM academy_certificates WHERE id = ?', [(int) $ri['cert']['id']]) === null && count($decMail) === 1 && str_contains($mailText($decMail[0]), 'practice task') && CertificateService::eligible((int) $li['id'], (int) $course['id']));
+check('decline: an approved certificate cannot be declined', CertificateService::decline((int) $rg['cert']['id'], 'x') === false && CertificateService::activeFor((int) $lg['id'], (int) $course['id']) !== null);
+Database::execute('DELETE FROM academy_enrollments WHERE learner_id IN (?, ?, ?)', [(int) $lg['id'], (int) $lh['id'], (int) $li['id']]);
+
 // ------------------------------------------------------------------------------------------------------------- approval switched off, and by hand
 Settings::set('academy_cert_approval', '0');
 Settings::flush();

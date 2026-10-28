@@ -79,7 +79,8 @@ final class AcademyLearnersController extends AcademyAdminController
         [$where, $params, $f] = $this->filters($request);
         $total = (int) Database::value('SELECT COUNT(*) FROM academy_learners l' . $where, $params, 0);
         $pagination = Pagination::make($total, $request->page(), $this->perPage());
-        $extra = (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '');
+        $extra = (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '')
+            . (CertificateService::approvalReady() ? ', (SELECT COUNT(*) FROM academy_certificates cw WHERE cw.learner_id = l.id AND cw.approved_at IS NULL AND cw.revoked_at IS NULL) AS certs_waiting' : '');
         $rows = Database::all(
             'SELECT l.id, l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.last_login_at, l.created_at' . $extra . ', '
             . '(SELECT COUNT(*) FROM academy_enrollments e WHERE e.learner_id = l.id) AS courses, '
@@ -240,6 +241,21 @@ final class AcademyLearnersController extends AcademyAdminController
             Flash::error($sent . ' sent, ' . $failed . ' could not be sent' . ($firstError ? ' (' . $firstError . ')' : '') . '. Check Settings > E-mail, wait a little (mail hosts limit how many e-mails an hour) and try again.');
         }
         return $this->redirect('admin/academy/learners?status=unverified');
+    }
+
+    /** The button on a learner: approve the certificate(s) of this learner that are waiting (optionally e-mailing them). */
+    public function approveCertificates(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        $n = CertificateService::approveForLearner($id, Auth::id(), $request->bool('email'));
+        $this->audit('academy.certificate.approve_learner', 'academy_learner', $id, 'Approved ' . $n . ' certificate(s) of ' . $l['email'] . ($request->bool('email') ? ' and e-mailed them' : ''));
+        if ($n === 0) {
+            Flash::info('This learner has no certificate waiting for approval.');
+        } else {
+            Flash::success($n . ' certificate' . ($n === 1 ? ' was' : 's were') . ' approved' . ($request->bool('email') ? ' and e-mailed to the learner.' : ': the learner can download ' . ($n === 1 ? 'it' : 'them') . ' now.'));
+        }
+        return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
     }
 
     /** Send a fresh confirmation code to the learner's WhatsApp number (saved at sign-up or typed by the learner). */

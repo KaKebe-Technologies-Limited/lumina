@@ -47,6 +47,7 @@ $router->post('/academy/account/delete', [AcademyAccountController::class, 'dele
 // ---- learning -------------------------------------------------------------------------------------------------------------
 $router->get('/academy/dashboard', [AcademyLearnController::class, 'dashboard'])->name('academy.dashboard');
 $router->post('/academy/courses/{slug}/enroll', [AcademyLearnController::class, 'enroll'])->middleware('throttle:30,600')->name('academy.enroll');
+$router->post('/academy/courses/{slug}/certificate', [AcademyLearnController::class, 'requestCertificate'])->middleware('throttle:20,600')->name('academy.certificate.request');
 $router->post('/academy/courses/{slug}/leave', [AcademyLearnController::class, 'unenroll'])->middleware('throttle:10,600')->name('academy.leave');
 $router->get('/academy/learn/{slug}', [AcademyLearnController::class, 'resume'])->name('academy.learn');
 $router->get('/academy/learn/{slug}/lesson/{id}', [AcademyLearnController::class, 'lesson'])->name('academy.lesson');

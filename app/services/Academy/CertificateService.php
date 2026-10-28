@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Services\Academy;
 
 use App\Core\Database;
+use App\Core\Mailer;
+use App\Core\RateLimit;
 use App\Services\Membership\Card\PdfWriter;
 use App\Services\Membership\Card\QrEncoder;
 
@@ -122,6 +124,81 @@ final class CertificateService
             $c = (array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]);
         }
         return ['ok' => true, 'mailed' => $email ? self::email($c) : false];
+    }
+
+    /** May this learner request a certificate for the course now? Finished (lessons + exam passed), certificates on for the course, and none exists yet. */
+    public static function eligible(int $learnerId, int $courseId): bool
+    {
+        $course = CourseService::find($courseId);
+        if ($course === null || (int) $course['certificate_enabled'] !== 1 || self::existingFor($learnerId, $courseId) !== null) {
+            return false;
+        }
+        $enr = CourseService::enrollment($learnerId, $courseId);
+        return $enr !== null && $enr['completed_at'] !== null;
+    }
+
+    /**
+     * The learner asks for the certificate after passing. With approval on it waits for the Academy team (who are told by e-mail); with approval off it is issued and
+     * e-mailed at once. @return array{ok:bool,error:?string,cert:?array<string,mixed>,waiting:bool}
+     */
+    public static function request(array $learner, array $course): array
+    {
+        $lid = (int) $learner['id'];
+        $cid = (int) $course['id'];
+        if (!RateLimit::attempt('academy-cert-request:' . $lid, 10, 3600)) {
+            return ['ok' => false, 'error' => 'You asked several times already. Please wait a little.', 'cert' => null, 'waiting' => false];
+        }
+        $existing = self::existingFor($lid, $cid);
+        if ($existing !== null) {
+            return ['ok' => false, 'error' => self::isApproved($existing) ? 'You already have this certificate.' : 'Your request is already waiting for approval.', 'cert' => $existing, 'waiting' => !self::isApproved($existing)];
+        }
+        if ((int) $course['certificate_enabled'] !== 1) {
+            return ['ok' => false, 'error' => 'This course does not give a certificate.', 'cert' => null, 'waiting' => false];
+        }
+        $enr = CourseService::enrollment($lid, $cid);
+        // finished = recorded as completed (lessons done + exam passed, noted at the time), or the conditions hold right now (this also records it)
+        if ($enr === null || ($enr['completed_at'] === null && CourseService::completion($lid, $cid) === null)) {
+            return ['ok' => false, 'error' => 'Finish every lesson and pass the final exam first, then you can request your certificate.', 'cert' => null, 'waiting' => false];
+        }
+        $tree = CourseService::tree($cid);
+        $best = $tree['exam'] !== null ? QuizService::passedBest($lid, (int) $tree['exam']['id']) : null;
+        $cert = self::issue($learner, $course, $best !== null ? (float) $best['score_pct'] : null, (int) $tree['minutes']);
+        if (self::isApproved($cert)) {
+            self::email($cert);
+            return ['ok' => true, 'error' => null, 'cert' => $cert, 'waiting' => false];
+        }
+        try {
+            Mailer::notify('Certificate request: ' . mb_substr((string) $learner['name'], 0, 60) . ' - ' . mb_substr((string) $course['title'], 0, 80),
+                $learner['name'] . ' (' . $learner['email'] . ") passed \"" . $course['title'] . "\" and asked for the certificate.\n\nApprove it here: " . abs_url('admin/academy/certificates?status=waiting'), (string) $learner['email']);
+        } catch (\Throwable) {
+            // the request is saved: the team still sees it on the Certificates page
+        }
+        return ['ok' => true, 'error' => null, 'cert' => $cert, 'waiting' => true];
+    }
+
+    /** Approve every certificate of one learner that is waiting. @return int how many were approved */
+    public static function approveForLearner(int $learnerId, ?int $adminId, bool $email): int
+    {
+        $n = 0;
+        foreach (self::pendingForLearner($learnerId) as $c) {
+            $n += self::approve((int) $c['id'], $adminId, $email)['ok'] ? 1 : 0;
+        }
+        return $n;
+    }
+
+    /** Decline a waiting request: it is removed (the learner can ask again later) and the learner is told why. @return bool true when a waiting certificate was declined */
+    public static function decline(int $id, string $reason): bool
+    {
+        $c = Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]);
+        if ($c === null || !self::approvalReady() || $c['approved_at'] !== null) {
+            return false;
+        }
+        Database::execute('DELETE FROM academy_certificates WHERE id = ? AND approved_at IS NULL', [$id]);
+        $l = $c['learner_id'] !== null ? Database::one('SELECT * FROM academy_learners WHERE id = ?', [(int) $c['learner_id']]) : null;
+        if ($l !== null) {
+            AcademyMail::certificateDeclined($l, $c, mb_substr(trim($reason), 0, 300));
+        }
+        return true;
     }
 
     /** E-mail an approved certificate to its learner (link + PDF link). */

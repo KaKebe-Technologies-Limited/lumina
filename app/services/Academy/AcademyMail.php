@@ -120,6 +120,15 @@ final class AcademyMail
         ], ['label' => 'Choose a new password', 'url' => $url]);
     }
 
+    public static function certificateDeclined(array $learner, array $cert, string $reason): bool
+    {
+        return self::send((string) $learner['email'], 'About your LAF Academy certificate request', [
+            'Hello ' . self::first((string) $learner['name']) . ',',
+            'Thank you for asking for your certificate for "' . $cert['course_title'] . '". The Academy team could not approve it yet.',
+            $reason !== '' ? 'Message from the team: ' . $reason : 'Please check that you finished every lesson and passed the final exam, then request it again, or write to us.',
+        ], ['label' => 'Open the Academy', 'url' => abs_url('academy/dashboard')]);
+    }
+
     public static function certificate(array $cert, array $learner): bool
     {
         return self::send((string) $learner['email'], 'Your LAF Academy certificate: ' . mb_substr((string) $cert['course_title'], 0, 80), [

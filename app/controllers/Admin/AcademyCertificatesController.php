@@ -82,7 +82,28 @@ final class AcademyCertificatesController extends AcademyAdminController
         } else {
             Flash::success('Certificate ' . $c['code'] . ' was approved: the learner can download it now.');
         }
-        return $this->redirect('admin/academy/certificates' . ($request->string('back') === 'waiting' ? '?status=waiting' : ''));
+        return $this->backTo($request);
+    }
+
+    /** Back to the page the button was on: the learner's page ("learner:12"), the waiting list ("waiting") or the certificate list. */
+    private function backTo(Request $request): Response
+    {
+        $b = $request->string('back');
+        if (preg_match('/^learner:(\d+)$/', $b, $m) === 1) {
+            return $this->redirect('admin/academy/learners/' . (int) $m[1]);
+        }
+        return $this->redirect('admin/academy/certificates' . ($b === 'waiting' ? '?status=waiting' : ''));
+    }
+
+    /** Decline a waiting request (it is removed; the learner may ask again) and tell the learner why. */
+    public function decline(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $c = Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]) ?? throw new HttpException(404, 'Not found');
+        $ok = CertificateService::decline($id, $request->string('reason'));
+        $this->audit('academy.certificate.decline', 'academy_certificate', $id, ($ok ? 'Declined' : 'Could not decline') . ' the certificate request ' . $c['code']);
+        $ok ? Flash::success('The request was declined and the learner was told. They can request the certificate again later.') : Flash::error('Only a request that is still waiting can be declined.');
+        return $this->backTo($request);
     }
 
     /** Send (or send again) the e-mail with the link and PDF of an approved certificate. */

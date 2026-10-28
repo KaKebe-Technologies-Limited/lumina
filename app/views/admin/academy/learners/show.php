@@ -60,6 +60,20 @@ $lid = (int) $l['id']; ?>
     <div class="card__header"><h2 class="card__title" id="ln-cert">Certificates</h2></div>
     <div class="card__body">
         <?php if ($certs === []): ?><p class="text-muted">No certificate yet.</p><?php endif; ?>
+        <?php $waitingHere = array_values(array_filter($certs, static fn(array $x): bool => !\App\Services\Academy\CertificateService::isApproved($x) && $x['revoked_at'] === null)); ?>
+        <?php if ($waitingHere !== []): ?>
+            <div class="alert alert--warning" role="status"><strong>Waiting for approval: <?= count($waitingHere) ?> certificate<?= count($waitingHere) === 1 ? '' : 's' ?>.</strong> The learner asked for <?= count($waitingHere) === 1 ? 'it' : 'them' ?> after passing.
+                <div class="aac-actions">
+                    <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/approve-certificates')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--primary btn--sm" type="submit">Approve</button><button class="btn btn--outline btn--sm" type="submit" name="email" value="1">Approve and e-mail</button></form>
+                    <?php foreach ($waitingHere as $wc): ?>
+                        <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/academy/certificates/' . (int) $wc['id'] . '/preview')) ?>" target="_blank" rel="noopener">Preview <?= e($wc['code']) ?></a>
+                        <details class="aac-edit"><summary class="btn btn--outline btn--sm">Decline</summary>
+                            <form method="post" action="<?= e(url('admin/academy/certificates/' . (int) $wc['id'] . '/decline')) ?>" class="aac-edit__form" data-confirm="Decline this request?"><?= csrf_field() ?><input type="hidden" name="back" value="learner:<?= $lid ?>">
+                                <div class="field"><label class="field__label" for="dc-<?= (int) $wc['id'] ?>">Message to the learner (optional)</label><input class="input" id="dc-<?= (int) $wc['id'] ?>" name="reason" maxlength="300"></div>
+                                <button class="btn btn--primary btn--sm" type="submit">Decline and tell the learner</button></form></details>
+                    <?php endforeach; ?>
+                </div></div>
+        <?php endif; ?>
         <ul class="aac-list"><?php foreach ($certs as $c): ?>
             <?php $waitingCert = !\App\Services\Academy\CertificateService::isApproved($c); ?>
             <li><a href="<?= e($waitingCert ? url('admin/academy/certificates/' . (int) $c['id'] . '/preview') : url('academy/certificate/' . $c['code'])) ?>" target="_blank" rel="noopener"><?= e($c['code']) ?></a> <span><?= e($c['course_title']) ?> &middot; <?= e(format_date($c['issued_at'], 'j M Y')) ?><?= $c['revoked_at'] ? ' &middot; withdrawn' : ($waitingCert ? ' &middot; <a href="' . e(url('admin/academy/certificates', ['status' => 'waiting'])) . '">waiting for approval</a>' : '') ?></span></li>

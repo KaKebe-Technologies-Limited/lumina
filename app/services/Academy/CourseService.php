@@ -275,11 +275,10 @@ final class CourseService
     }
 
     /**
-     * Called after a lesson is finished and after an exam attempt: when every lesson is done and the final exam (if there is one) is passed, mark the course
-     * completed and issue the certificate (once). Returns the certificate row when one was issued by this call.
-     * @return array<string,mixed>|null
+     * Has the learner finished the course (every lesson done and the final exam, if there is one, passed)? Marks the enrolment as completed the first time.
+     * @return array{course:array<string,mixed>,tree:array<string,mixed>,score:?float}|null null while the course is not finished
      */
-    public static function checkCompletion(int $learnerId, int $courseId): ?array
+    public static function completion(int $learnerId, int $courseId): ?array
     {
         $course = self::find($courseId);
         $enr = self::enrollment($learnerId, $courseId);
@@ -302,18 +301,34 @@ final class CourseService
         if ($enr['completed_at'] === null) {
             Database::update('academy_enrollments', ['completed_at' => date('Y-m-d H:i:s')], 'id = ?', [(int) $enr['id']]);
         }
-        if ((int) $course['certificate_enabled'] !== 1) {
+        return ['course' => $course, 'tree' => $tree, 'score' => $score];
+    }
+
+    /**
+     * Called after a lesson is finished and after an exam attempt. When the course is finished it is marked completed, and then:
+     *  - certificates need approval (the default): nothing is issued; the learner REQUESTS the certificate (CertificateService::request) and the Academy team approves it.
+     *    This returns ['requestable' => true, 'course_id' => ...] so the page can tell the learner.
+     *  - approval is switched off: the certificate is issued and e-mailed at once and its row is returned.
+     * Returns null when nothing new happened (not finished yet, certificates off for the course, or one exists already).
+     * @return array<string,mixed>|null
+     */
+    public static function checkCompletion(int $learnerId, int $courseId): ?array
+    {
+        $done = self::completion($learnerId, $courseId);
+        if ($done === null || (int) $done['course']['certificate_enabled'] !== 1) {
             return null;
         }
-        $had = CertificateService::existingFor($learnerId, $courseId);       // approved or waiting for approval: never issue twice
-        if ($had !== null) {
+        if (CertificateService::existingFor($learnerId, $courseId) !== null) {      // approved or waiting for approval: never twice
             return null;
         }
         $learner = Database::one('SELECT * FROM academy_learners WHERE id = ?', [$learnerId]);
         if ($learner === null) {
             return null;
         }
-        $cert = CertificateService::issue($learner, $course, $score, $tree['minutes']);
+        if (CertificateService::approvalRequired()) {
+            return ['requestable' => true, 'course_id' => $courseId];
+        }
+        $cert = CertificateService::issue($learner, $done['course'], $done['score'], $done['tree']['minutes']);
         if (CertificateService::isApproved($cert)) {
             CertificateService::email($cert);        // approval is switched off: it is ready at once
         }
@@ -326,7 +341,7 @@ final class CourseService
     public static function dashboard(int $learnerId): array
     {
         $rows = Database::all(
-            'SELECT e.*, c.slug, c.title, c.icon, c.category, c.level, c.status, c.summary FROM academy_enrollments e JOIN academy_courses c ON c.id = e.course_id WHERE e.learner_id = ? ORDER BY e.enrolled_at DESC',
+            'SELECT e.*, c.slug, c.title, c.icon, c.category, c.level, c.status, c.summary, c.certificate_enabled FROM academy_enrollments e JOIN academy_courses c ON c.id = e.course_id WHERE e.learner_id = ? ORDER BY e.enrolled_at DESC',
             [$learnerId]
         );
         foreach ($rows as &$r) {
@@ -335,6 +350,9 @@ final class CourseService
             $r['progress'] = self::progress($learnerId, (int) $r['course_id'], $tree);
             $r['resume_id'] = self::resumeLessonId($tree, $r['progress']['done_ids'], $r['last_lesson_id'] !== null ? (int) $r['last_lesson_id'] : null);
             $r['certificate'] = CertificateService::activeFor($learnerId, (int) $r['course_id']);
+            $r['cert_pending'] = $r['certificate'] === null ? CertificateService::pendingFor($learnerId, (int) $r['course_id']) : null;
+            $r['cert_requestable'] = $r['certificate'] === null && $r['cert_pending'] === null && $r['completed_at'] !== null && (int) $r['certificate_enabled'] === 1
+                && CertificateService::existingFor($learnerId, (int) $r['course_id']) === null;
         }
         unset($r);
         return $rows;

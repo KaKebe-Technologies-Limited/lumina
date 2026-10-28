@@ -120,6 +120,7 @@ final class AcademyController extends AcademyBaseController
         $resume = null;
         $cert = null;
         $certPending = null;
+        $certRequestable = false;
         if ($learner !== null) {
             $enrolled = CourseService::enrollment((int) $learner['id'], (int) $course['id']);
             if ($enrolled !== null) {
@@ -127,13 +128,14 @@ final class AcademyController extends AcademyBaseController
                 $resume = CourseService::resumeLessonId($tree, $progress['done_ids'], $enrolled['last_lesson_id'] !== null ? (int) $enrolled['last_lesson_id'] : null);
                 $cert = CertificateService::activeFor((int) $learner['id'], (int) $course['id']);
                 $certPending = $cert === null ? CertificateService::pendingFor((int) $learner['id'], (int) $course['id']) : null;
+                $certRequestable = CertificateService::eligible((int) $learner['id'], (int) $course['id']);
             }
         }
         $facilitator = $course['facilitator_id'] !== null ? Database::one('SELECT name FROM users WHERE id = ?', [(int) $course['facilitator_id']]) : null;
         $related = array_slice(array_values(array_filter(CourseService::published(['category' => (string) $course['category']]), static fn(array $c): bool => (int) $c['id'] !== (int) $course['id'])), 0, 3);
         $desc = trim((string) $course['summary']) !== '' ? (string) $course['summary'] : excerpt((string) $course['description'], 175);
         return $this->renderAcademy('web/academy/course', [
-            'course' => $course, 'tree' => $tree, 'enrolled' => $enrolled, 'progress' => $progress, 'resume' => $resume, 'certificate' => $cert, 'certificatePending' => $certPending,
+            'course' => $course, 'tree' => $tree, 'enrolled' => $enrolled, 'progress' => $progress, 'resume' => $resume, 'certificate' => $cert, 'certificatePending' => $certPending, 'certificateRequestable' => $certRequestable,
             'draft' => $draft, 'facilitator' => $facilitator['name'] ?? null, 'related' => $related,
             'outcomes' => CourseService::jsonList($course['outcomes']), 'requirements' => CourseService::jsonList($course['requirements']),
             'resources' => CourseService::resources($course['resources']),

@@ -57,6 +57,26 @@ final class AcademyLearnController extends AcademyBaseController
         return $this->redirect('academy/learn/' . $course['slug'] . '/lesson/' . $resume);
     }
 
+    /** After finishing the course and passing the exam: ask for the certificate (the Academy team approves it; with approval off it is issued at once). */
+    public function requestCertificate(Request $request, string $slug): Response
+    {
+        $l = $this->learner();
+        if ($l === null) {
+            return $this->loginRedirect();
+        }
+        $course = CourseService::bySlug($slug, true) ?? throw new HttpException(404, 'Not found');
+        $res = CertificateService::request($l, $course);
+        if (!$res['ok']) {
+            $res['waiting'] ? Flash::info((string) $res['error']) : Flash::error((string) $res['error']);
+        } elseif ($res['waiting']) {
+            Flash::success('Your certificate request was sent. The Academy team will approve it soon, and you will be able to download it here.');
+        } else {
+            Flash::success('Your certificate is ready!');
+            return $this->redirect('academy/certificate/' . $res['cert']['code']);
+        }
+        return $this->redirect('academy/courses/' . $course['slug']);
+    }
+
     public function unenroll(Request $request, string $slug): Response
     {
         $l = $this->learner();
@@ -146,13 +166,13 @@ final class AcademyLearnController extends AcademyBaseController
         }
         CourseService::completeLesson((int) $c['learner']['id'], $lesson);
         $cert = CourseService::checkCompletion((int) $c['learner']['id'], (int) $c['course']['id']);
-        if ($cert !== null && CertificateService::isApproved($cert)) {
-            Flash::success('Congratulations! You completed the course and your certificate is ready.');
-            return $this->redirect('academy/certificate/' . $cert['code']);
+        if ($cert !== null && !empty($cert['requestable'])) {
+            Flash::success('Congratulations! You completed the course. You can now request your certificate.');
+            return $this->redirect('academy/courses/' . $c['course']['slug']);
         }
         if ($cert !== null) {
-            Flash::success('Congratulations! You completed the course. Your certificate will be available as soon as the Academy team approves it.');
-            return $this->redirect('academy/courses/' . $c['course']['slug']);
+            Flash::success('Congratulations! You completed the course and your certificate is ready.');
+            return $this->redirect('academy/certificate/' . $cert['code']);
         }
         $next = CourseService::nextLessonId($c['tree'], $id);
         if ($next !== null) {
@@ -244,7 +264,8 @@ final class AcademyLearnController extends AcademyBaseController
             'course' => $c['course'], 'tree' => $c['tree'], 'progress' => $c['progress'], 'quiz' => $quiz, 'isExam' => $isExam, 'can' => $can, 'locked' => $locked,
             'questions' => QuizService::questionCount($id), 'history' => QuizService::history($lid, $id), 'best' => QuizService::best($lid, $id),
             'passed' => QuizService::passedBest($lid, $id) !== null, 'openAttempt' => $open['id'] ?? null,
-            'certificate' => CertificateService::activeFor($lid, (int) $c['course']['id']), 'certificatePending' => CertificateService::pendingFor($lid, (int) $c['course']['id']), 'quizState' => $this->quizStates($c),
+            'certificate' => CertificateService::activeFor($lid, (int) $c['course']['id']), 'certificatePending' => CertificateService::pendingFor($lid, (int) $c['course']['id']),
+            'certificateRequestable' => CertificateService::eligible($lid, (int) $c['course']['id']), 'quizState' => $this->quizStates($c),
         ], [
             'bodyClass' => 'is-academy is-academy-learn is-academy-quiz',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], [(string) $c['course']['title'], url('academy/courses/' . $c['course']['slug'])], [(string) $quiz['title'], null]],
@@ -297,7 +318,8 @@ final class AcademyLearnController extends AcademyBaseController
         return $this->renderAcademy('web/academy/result', [
             'course' => $c['course'], 'tree' => $c['tree'], 'progress' => $c['progress'], 'quiz' => $quiz, 'attempt' => $attempt, 'isExam' => $quiz['module_id'] === null,
             'review' => QuizService::review($attempt, (int) $quiz['id']), 'can' => QuizService::canStart($lid, $quiz), 'next' => $next,
-            'certificate' => CertificateService::activeFor($lid, (int) $c['course']['id']), 'certificatePending' => CertificateService::pendingFor($lid, (int) $c['course']['id']), 'quizState' => $this->quizStates($c),
+            'certificate' => CertificateService::activeFor($lid, (int) $c['course']['id']), 'certificatePending' => CertificateService::pendingFor($lid, (int) $c['course']['id']),
+            'certificateRequestable' => CertificateService::eligible($lid, (int) $c['course']['id']), 'quizState' => $this->quizStates($c),
         ], ['bodyClass' => 'is-academy is-academy-learn is-academy-result', 'breadcrumbs' => $crumbs, 'meta' => ['title' => 'Result: ' . $quiz['title']]], true);
     }
 
@@ -334,7 +356,7 @@ final class AcademyLearnController extends AcademyBaseController
             if ((int) $attempt['passed'] === 1) {
                 $cert = CourseService::checkCompletion($lid, (int) $c['course']['id']);
                 if ($cert !== null) {
-                    Flash::success(CertificateService::isApproved($cert) ? 'You passed and completed the course. Your certificate is ready!' : 'You passed and completed the course. Your certificate will be available as soon as the Academy team approves it.');
+                    Flash::success(!empty($cert['requestable']) ? 'You passed and completed the course. You can now request your certificate.' : 'You passed and completed the course. Your certificate is ready!');
                 }
             }
         }
