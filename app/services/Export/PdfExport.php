@@ -99,7 +99,9 @@ final class PdfExport
         $firstBlock = self::headerBlock($letter, $d, $W - 2 * $M - 66, $fs);
         $firstTop = self::tableTop($firstBlock, $M);
         $nextTop = $M + 34.0;
-        $bottom = $H - 40.0;
+        $clauseLines = self::wrap($d->clause, $usable, 6.4, 'helvetica');
+        $footH = ($d->clause !== '' ? count($clauseLines) * 8.0 : 0.0) + 34.0;
+        $bottom = $H - $footH - 8.0;
 
         // ---- paginate
         $pages = [[]];
@@ -173,9 +175,9 @@ final class PdfExport
             }
             if ($pi === $totalPages - 1) {
                 $note = $d->truncated ? 'Only the first ' . count($d->rows) . ' of ' . $d->total . ' records are shown. Use the CSV export for the full list.' : count($d->rows) . ' record' . (count($d->rows) === 1 ? '' : 's');
-                $pdf->text($M, min($y + 14.0, $H - 46.0), $note, 'helvetica', 7.5, self::GREY, 'l');
+                $pdf->text($M, min($y + 14.0, $bottom + 4.0), $note, 'helvetica', 7.5, self::GREY, 'l');
             }
-            self::drawFooter($pdf, $letter, $W, $H, $M, $pi + 1, $totalPages);
+            self::drawFooter($pdf, $letter, $W, $H, $M, $pi + 1, $totalPages, $d->clause !== '' ? $clauseLines : [], $footH, $d->serial);
         }
         return $pdf->output();
     }
@@ -269,16 +271,22 @@ final class PdfExport
         $pdf->restore();
     }
 
-    private static function drawFooter(PdfWriter $pdf, array $l, float $W, float $H, float $M, int $page, int $pages): void
+    /** @param list<string> $clause */
+    private static function drawFooter(PdfWriter $pdf, array $l, float $W, float $H, float $M, int $page, int $pages, array $clause, float $footH, string $serial = ''): void
     {
         $pdf->save();
         $pdf->stroke(self::LINE);
         $pdf->lineWidth(0.6);
-        $pdf->line($M, $H - 30.0, $W - $M, $H - 30.0);
+        $pdf->line($M, $H - $footH + 4.0, $W - $M, $H - $footH + 4.0);
         $pdf->restore();
+        $cy = $H - $footH + 13.0;
+        foreach ($clause as $cl) {
+            $pdf->text($M, $cy, $cl, 'helvetica', 6.4, self::NAVY, 'l');
+            $cy += 8.0;
+        }
         $left = $l['org'] . ($l['website'] !== '' ? '  |  ' . $l['website'] : '') . ($l['email'] !== '' ? '  |  ' . explode(', ', $l['email'])[0] : '');
         $pdf->text($M, $H - 18.0, $left, 'helvetica', 7, self::GREY, 'l');
-        $pdf->text($W - $M, $H - 18.0, 'Page ' . $page . ' of ' . $pages, 'helvetica', 7, self::GREY, 'r');
+        $pdf->text($W - $M, $H - 18.0, ($serial !== '' ? 'Serial no. ' . $serial . '   |   ' : '') . 'Page ' . $page . ' of ' . $pages, 'helvetica', 7, self::GREY, 'r');
     }
 
     /** @return list<string> */

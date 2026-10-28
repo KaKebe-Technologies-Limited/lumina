@@ -22,3 +22,10 @@ Every admin export goes through `CsvExport::response()`, which hands over to `Ap
 ## Code
 
 `App\Core\ZipWriter` (pure-PHP ZIP container for the Office files, no ZipArchive needed), `App\Services\Export\{Exporter, ExportDocument, Letterhead, XlsxExport, DocxExport, PdfExport}` (the PDF uses the membership card's `PdfWriter`). Tests: `bin/selftest-exports.php` (writers, valid XML, ZIP and CRC, formats on real admin addresses, the menu).
+
+## Who, serial number, confidentiality (Excel, Word, PDF)
+
+* **Who downloaded it:** "Exported by NAME (Role) on DATE", then "Account: e-mail | User no. N | From IP" (`Exporter::exportedBy()`), printed under the title in every format.
+* **Document serial number:** every Excel / Word / PDF download gets a unique `LAF-EXP-YYMMDD-XXXXXX` (`Exporter::serial()`), printed under the title and in the footer, and written to the activity log (`export.download`: serial, person, format, records, file name), so a printed or forwarded copy can be traced back to the person who downloaded it.
+* **No. column:** a running number (1, 2, 3 ...) in front of every row (not in the CSV, which stays plain data).
+* **Confidentiality clause** in the footer of every page / sheet: "CONFIDENTIAL: this information is for use or consumption within <organisation> only, and must not be copied, shared or used outside the organisation unless authorised otherwise." (`ExportDocument::clauseFor()`).

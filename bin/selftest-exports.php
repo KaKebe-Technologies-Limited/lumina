@@ -158,6 +158,33 @@ foreach (['/admin/audit-log/export' => 'activity log', '/admin/donations/export'
     $x = $req($path . '?format=xlsx', $jA);
     check('http: the ' . $label . ' export also comes as PDF and Excel', $r['code'] === 200 && str_starts_with($r['body'], '%PDF-') && $x['code'] === 200 && str_starts_with($x['body'], 'PK'), $path . ' ' . $r['code'] . '/' . $x['code']);
 }
+// who downloaded it, the serial number, the "No." column and the confidentiality clause, in every format
+$inflateAll = static function (string $pdfBytes): string {
+    $all = '';
+    if (preg_match_all('/stream\r?\n(.*?)\r?\nendstream/s', $pdfBytes, $mm) > 0) {
+        foreach ($mm[1] as $st) {
+            $z = @gzuncompress($st);
+            $all .= $z !== false ? $z : '';
+        }
+    }
+    return $all;
+};
+$ox = $req('/admin/academy/learners-export?format=xlsx&q=zz-exp', $jA);
+$oxSheet = (string) ($unzip($ox['body'])['xl/worksheets/sheet1.xml'] ?? '');
+check('excel: the sheet says who exported it (name, role, e-mail, user number, address), the document serial number, a "No." column and the confidentiality clause', str_contains($oxSheet, 'Exported by ZZ Exp Admin (') && str_contains($oxSheet, 'Account: zz-exp-admin@example.test') && str_contains($oxSheet, 'User no. ')
+    && preg_match('/Document serial no\.: (LAF-EXP-\d{6}-[A-Z2-9]{6})/', $oxSheet, $sm) === 1 && str_contains($oxSheet, '>No.<') && str_contains($oxSheet, 'CONFIDENTIAL: this information is for use or consumption within ' . $lh['org'] . ' only'));
+$serial1 = $sm[1] ?? '';
+$ow = $req('/admin/academy/learners-export?format=docx&q=zz-exp', $jA);
+$owp = $unzip($ow['body']);
+check('word: the same details in the page, the "No." column, and the clause plus serial number in the footer on every page', str_contains((string) ($owp['word/document.xml'] ?? ''), 'Exported by ZZ Exp Admin (') && str_contains((string) ($owp['word/document.xml'] ?? ''), '>No.<')
+    && str_contains((string) ($owp['word/footer1.xml'] ?? ''), 'CONFIDENTIAL: this information is for use or consumption within') && str_contains((string) ($owp['word/footer1.xml'] ?? ''), 'Serial no. LAF-EXP-'));
+$op = $req('/admin/academy/learners-export?format=pdf&q=zz-exp', $jA);
+$opText = $inflateAll($op['body']);
+check('pdf: the same details on the first page and the clause and serial number in the footer', str_contains($opText, 'Exported by ZZ Exp Admin \(') && str_contains($opText, 'CONFIDENTIAL: this information is for use or consumption within') && str_contains($opText, 'Serial no. LAF-EXP-') && str_contains($opText, '(No.)'));
+$logRow = Database::one("SELECT * FROM audit_log WHERE action = 'export.download' AND entity_id = ? LIMIT 1", [$serial1]);
+check('audit: every Excel / Word / PDF download is written to the activity log with its serial number, the person, the format and the number of records', $logRow !== null && str_contains((string) $logRow['user_name'], 'zz-exp-admin@example.test') && str_contains((string) $logRow['summary'], $serial1) && str_contains((string) $logRow['details'], '"format":"xlsx"'));
+check('serial: two downloads never share a serial number', $serial1 !== '' && preg_match('/Document serial no\.: (LAF-EXP-\d{6}-[A-Z2-9]{6})/', (string) ($unzip($req('/admin/academy/learners-export?format=xlsx&q=zz-exp', $jA)['body'])['xl/worksheets/sheet1.xml'] ?? ''), $sm2) === 1 && $sm2[1] !== $serial1);
+Database::execute("DELETE FROM audit_log WHERE action = 'export.download' AND user_name LIKE '%zz-exp-%'");
 $tpl = $req('/admin/calendar/import-template.csv?format=pdf', $jA);
 check('http: a CSV meant for importing (the calendar template) always stays CSV', $tpl['code'] === 200 && str_contains($tpl['head'], 'text/csv') && !str_starts_with($tpl['body'], '%PDF'));
 $ex = $req('/admin/academy/learners-export?format=pdf');

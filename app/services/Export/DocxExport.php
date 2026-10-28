@@ -74,7 +74,7 @@ final class DocxExport
         $body .= $tbl;
         $count = count($d->rows);
         $body .= '<w:p><w:pPr><w:spacing w:before="120" w:after="0"/></w:pPr>' . self::run($d->truncated ? 'Only the first ' . $count . ' of ' . $d->total . ' records are shown. Use the CSV export for the full list.' : $count . ' record' . ($count === 1 ? '' : 's'), 'Calibri', 16, '5B6478', false) . '</w:p>';
-        $body .= '<w:sectPr><w:headerReference w:type="default" r:id="rId1"/><w:footerReference w:type="default" r:id="rId2"/><w:pgSz w:w="' . $pw . '" w:h="' . $ph . '"' . ($landscape ? ' w:orient="landscape"' : '') . '/><w:pgMar w:top="1900" w:right="' . $margin . '" w:bottom="900" w:left="' . $margin . '" w:header="500" w:footer="400" w:gutter="0"/></w:sectPr>';
+        $body .= '<w:sectPr><w:headerReference w:type="default" r:id="rId1"/><w:footerReference w:type="default" r:id="rId2"/><w:pgSz w:w="' . $pw . '" w:h="' . $ph . '"' . ($landscape ? ' w:orient="landscape"' : '') . '/><w:pgMar w:top="1900" w:right="' . $margin . '" w:bottom="1100" w:left="' . $margin . '" w:header="500" w:footer="400" w:gutter="0"/></w:sectPr>';
         $document = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n" . '<w:document ' . self::W . '><w:body>' . $body . '</w:body></w:document>';
 
         // ---- header: logo + organisation block
@@ -97,9 +97,11 @@ final class DocxExport
             . '<w:tr><w:tc><w:tcPr><w:tcW w:w="' . $c1 . '" w:type="dxa"/></w:tcPr>' . $logoCell . '</w:tc><w:tc><w:tcPr><w:tcW w:w="' . ($usable - $c1) . '" w:type="dxa"/></w:tcPr>' . $lines . '</w:tc></w:tr></w:tbl>'
             . '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="1" w:color="C9973F"/></w:pBdr><w:spacing w:before="40" w:after="0"/></w:pPr></w:p></w:hdr>';
 
-        $footer = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n" . '<w:ftr ' . self::W . '><w:p><w:pPr><w:pBdr><w:top w:val="single" w:sz="4" w:space="4" w:color="E4E1DA"/></w:pBdr><w:tabs><w:tab w:val="right" w:pos="' . $usable . '"/></w:tabs></w:pPr>'
+        $footer = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n" . '<w:ftr ' . self::W . '>'
+            . ($d->clause !== '' ? '<w:p><w:pPr><w:pBdr><w:top w:val="single" w:sz="4" w:space="4" w:color="E4E1DA"/></w:pBdr><w:spacing w:before="0" w:after="40"/></w:pPr>' . self::run($d->clause, 'Calibri', 13, '122040', false) . '</w:p>' : '')
+            . '<w:p><w:pPr>' . ($d->clause === '' ? '<w:pBdr><w:top w:val="single" w:sz="4" w:space="4" w:color="E4E1DA"/></w:pBdr>' : '') . '<w:tabs><w:tab w:val="right" w:pos="' . $usable . '"/></w:tabs></w:pPr>'
             . self::run($l['org'] . ($l['website'] !== '' ? '  |  ' . $l['website'] : ''), 'Calibri', 14, '5B6478', false)
-            . '<w:r><w:tab/></w:r>' . self::run('Page ', 'Calibri', 14, '5B6478', false)
+            . '<w:r><w:tab/></w:r>' . self::run(($d->serial !== '' ? 'Serial no. ' . $d->serial . '   |   ' : '') . 'Page ', 'Calibri', 14, '5B6478', false)
             . '<w:fldSimple w:instr=" PAGE "><w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:color w:val="5B6478"/><w:sz w:val="14"/></w:rPr><w:t>1</w:t></w:r></w:fldSimple>'
             . self::run(' of ', 'Calibri', 14, '5B6478', false)
             . '<w:fldSimple w:instr=" NUMPAGES "><w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:color w:val="5B6478"/><w:sz w:val="14"/></w:rPr><w:t>1</w:t></w:r></w:fldSimple></w:p></w:ftr>';

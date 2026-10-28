@@ -84,6 +84,10 @@ final class XlsxExport
             $r++;
         }
         $last = $r - 1;
+        if ($d->clause !== '') {
+            $r++;
+            $rowsXml[] = '<row r="' . $r . '">' . self::str($r, 1, $d->clause, 7) . '</row>';
+        }
         $colsXml = '';
         for ($c = 0; $c < $cols; $c++) {
             $colsXml .= '<col min="' . ($c + 1) . '" max="' . ($c + 1) . '" width="' . round(max(9, min(60, $widths[$c] ?? 12)) * 1.05, 1) . '" customWidth="1"/>';
@@ -92,7 +96,7 @@ final class XlsxExport
         $sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n"
             . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
             . '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'
-            . '<dimension ref="A1:' . $lastCol . max($last, 1) . '"/>'
+            . '<dimension ref="A1:' . $lastCol . max($d->clause !== '' ? $last + 2 : $last, 1) . '"/>'
             . '<sheetViews><sheetView workbookViewId="0" showGridLines="0"><pane ySplit="' . $headerRow . '" topLeftCell="A' . ($headerRow + 1) . '" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A' . ($headerRow + 1) . '" sqref="A' . ($headerRow + 1) . '"/></sheetView></sheetViews>'
             . '<sheetFormatPr defaultRowHeight="15"/>'
             . '<cols>' . $colsXml . '</cols>'
@@ -100,7 +104,7 @@ final class XlsxExport
             . ($d->rows !== [] ? '<autoFilter ref="A' . $headerRow . ':' . $lastCol . $last . '"/>' : '')
             . '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>'
             . '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>'
-            . '<headerFooter><oddFooter>&amp;L' . self::esc($l['org']) . '&amp;RPage &amp;P of &amp;N</oddFooter></headerFooter>'
+            . '<headerFooter><oddFooter>&amp;L&amp;8' . self::esc($l['org']) . '&amp;C&amp;8Confidential: ' . self::esc($l['org']) . ' use only&amp;R&amp;8' . ($d->serial !== '' ? 'Serial ' . self::esc($d->serial) . ' - ' : '') . 'Page &amp;P of &amp;N</oddFooter></headerFooter>'
             . ($logo !== null ? '<drawing r:id="rId1"/>' : '')
             . '</worksheet>';
 

@@ -19,7 +19,15 @@ final class ExportDocument
         public readonly string $generated = '',
         public readonly bool $truncated = false,
         public readonly int $total = 0,
+        public readonly string $clause = '',
+        public readonly string $serial = '',
     ) {
+    }
+
+    /** The confidentiality statement printed in the footer of every PDF, Word and Excel export. */
+    public static function clauseFor(string $org): string
+    {
+        return 'CONFIDENTIAL: this information is for use or consumption within ' . $org . ' only, and must not be copied, shared or used outside the organisation unless authorised otherwise.';
     }
 
     public function columns(): int

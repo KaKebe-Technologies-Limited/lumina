@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services\Export;
 
 use App\Core\Auth;
+use App\Core\AuditLog;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -77,18 +78,28 @@ final class Exporter
                 $list[] = array_map([self::class, 'cell'], array_values((array) $row));
             }
         }
-        $user = Auth::user();
-        $by = is_array($user) && trim((string) ($user['name'] ?? '')) !== '' ? ' by ' . trim((string) $user['name']) : '';
+        $letter = Letterhead::get();
+        [$generated, $account] = self::exportedBy();
+        $serial = self::serial();
+        $title = (string) ($meta['title'] ?? self::titleFromFilename($filename));
+        // a "No." (serial number) column in front of every row
+        $numbered = [];
+        foreach ($list as $i => $row) {
+            $numbered[] = array_merge([(string) ($i + 1)], $row);
+        }
         $doc = new ExportDocument(
-            (string) ($meta['title'] ?? self::titleFromFilename($filename)),
-            array_map('strval', array_values($header)),
-            $list,
-            Letterhead::get(),
-            array_merge(self::filterNotes(), $meta['notes'] ?? []),
-            'Exported' . $by . ' on ' . ExportDocument::now(),
+            $title,
+            array_merge(['No.'], array_map('strval', array_values($header))),
+            $numbered,
+            $letter,
+            array_values(array_filter(array_merge(['Document serial no.: ' . $serial, $account], self::filterNotes(), $meta['notes'] ?? []))),
+            $generated,
             $total > self::MAX_ROWS,
             $total,
+            ExportDocument::clauseFor($letter['org']),
+            $serial,
         );
+        AuditLog::record('export.download', 'export', $serial, 'Downloaded "' . mb_substr($title, 0, 80) . '" as ' . strtoupper($ext) . ' (serial ' . $serial . ')', ['serial' => $serial, 'format' => $ext, 'records' => $total, 'file' => $filename]);
         $bytes = match ($format) {
             'xlsx' => XlsxExport::render($doc),
             'docx' => DocxExport::render($doc),
@@ -101,6 +112,38 @@ final class Exporter
             'Cache-Control'       => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+    }
+
+    /** A unique number for this download, printed on the document and written to the activity log: LAF-EXP-YYMMDD-XXXXXX. */
+    public static function serial(): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $s = '';
+        for ($i = 0; $i < 6; $i++) {
+            $s .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+        return 'LAF-EXP-' . date('ymd') . '-' . $s;
+    }
+
+    /**
+     * Who is downloading, for the "Exported by" lines: the signed-in administrator's name, role, e-mail and user number, and the address the request came from.
+     * @return array{0:string,1:string} [ "Exported by NAME (Role) on DATE", "Account: e-mail | User no. 12 | From 1.2.3.4" ]
+     */
+    public static function exportedBy(): array
+    {
+        $u = Auth::user();
+        $when = ExportDocument::now();
+        if (!is_array($u)) {
+            return ['Exported on ' . $when, ''];
+        }
+        $name = trim((string) ($u['name'] ?? '')) ?: 'Unknown user';
+        $role = trim(\App\Core\Roles::name((string) ($u['role'] ?? '')));
+        $bits = array_filter([
+            trim((string) ($u['email'] ?? '')) !== '' ? 'Account: ' . trim((string) $u['email']) : '',
+            isset($u['id']) ? 'User no. ' . (int) $u['id'] : '',
+            ($ip = (string) (Request::current()?->ip() ?? '')) !== '' ? 'From ' . $ip : '',
+        ]);
+        return ['Exported by ' . $name . ($role !== '' ? ' (' . $role . ')' : '') . ' on ' . $when, implode('   |   ', $bits)];
     }
 
     private static function cell(mixed $v): string
