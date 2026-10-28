@@ -1216,6 +1216,17 @@ body.admin-nav-open .admin-sidebar {
   color: #D6A151;
 }
 
+.admin-nav__badge--yellow {
+  background: #FFD21F;
+  color: #172036;
+  box-shadow: 0 0 0 2px rgba(255, 210, 31, 0.35);
+}
+
+.admin-nav__link.is-active .admin-nav__badge--yellow {
+  background: #FFD21F;
+  color: #172036;
+}
+
 .admin-backdrop {
   position: fixed;
   inset: 0;

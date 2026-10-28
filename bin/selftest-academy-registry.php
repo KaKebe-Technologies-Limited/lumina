@@ -116,6 +116,7 @@ $page = $req('GET', '/admin/login', [], $jA);
 $r = $req('POST', '/admin/login', ['_token' => $tok($page['body']), 'email' => 'zz-lre-admin@example.test', 'password' => $pwA], $jA);
 check('admin: the test administrator can sign in', in_array($r['code'], [302, 303], true));
 $dash = $req('GET', '/admin', [], $jA)['body'];
+check('sidebar: a yellow notification with the number of new learners waiting for approval sits on Academy > Learners', (int) preg_match('~admin/academy/learners"[^>]*>.*?admin-nav__badge admin-nav__badge--yellow"[^>]*><span class="visually-hidden">New: </span>(\d+)</span>~s', $dash, $mb) === 1 && (int) $mb[1] === LearnerRegistry::waiting() && (int) $mb[1] >= 1);
 check('dashboard: the tile "Academy learners waiting for approval" shows the waiting learners', str_contains($dash, 'Academy learners waiting for approval') && str_contains($dash, 'new this week'));
 $list = $req('GET', '/admin/academy/learners?q=zz-lre', [], $jA)['body'];
 check('list: shows the registration number, "Awaiting approval" and an Approve button on the row', str_contains($list, (string) $one['reg_no']) && str_contains($list, 'Awaiting approval') && str_contains($list, '/approve"'));

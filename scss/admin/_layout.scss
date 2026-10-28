@@ -76,6 +76,9 @@
         text-align: center;
     }
     &__link.is-active &__badge { background: $navy-dark; color: $gold; }
+    // a bright yellow "new" notification (Academy > Learners: new learners waiting for approval)
+    &__badge--yellow { background: #FFD21F; color: $navy-dark; box-shadow: 0 0 0 2px rgba(#FFD21F, 0.35); }
+    &__link.is-active &__badge--yellow { background: #FFD21F; color: $navy-dark; }
 }
 
 .admin-backdrop {

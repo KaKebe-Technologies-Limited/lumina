@@ -1,1 +1,1 @@
-LUMINA build 29 Oct 2026 (final 12): Bono AI support assistant; mandatory phone, country and WhatsApp number; sign-up without e-mail codes; pass message; picture or selfie; registration numbers; Continue with Google.
+LUMINA build 29 Oct 2026 (final 13): yellow notification for new learners; Bono AI; mandatory phone, country and WhatsApp; sign-up without e-mail codes; pass message; picture or selfie; registration numbers; Continue with Google.

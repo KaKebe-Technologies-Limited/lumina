@@ -67,6 +67,7 @@ final class AdminNav
                     'icon'   => (string) ($it['icon'] ?? 'circle'),
                     'order'  => (int) ($it['order'] ?? 100),
                     'badge'  => ($badge === null || $badge === 0 || $badge === '0' || $badge === '') ? null : $badge,
+                    'tone'   => (string) ($it['badge_tone'] ?? ''),            // '' (gold) | 'yellow' (a bright yellow "new" notification)
                     'active' => false,
                 ];
             }

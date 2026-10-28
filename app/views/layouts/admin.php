@@ -47,7 +47,7 @@ $logoUrl = logo_url(38);
                                 <a class="admin-nav__link<?= $it['active'] ? ' is-active' : '' ?>" href="<?= e($it['url']) ?>"<?= $it['active'] ? ' aria-current="page"' : '' ?>>
                                     <?= icon($it['icon']) ?>
                                     <span><?= e($it['label']) ?></span>
-                                    <?php if ($it['badge'] !== null): ?><span class="admin-nav__badge"><?= e($it['badge']) ?></span><?php endif; ?>
+                                    <?php if ($it['badge'] !== null): ?><span class="admin-nav__badge<?= ($it['tone'] ?? '') === 'yellow' ? ' admin-nav__badge--yellow' : '' ?>"<?= ($it['tone'] ?? '') === 'yellow' ? ' title="New: waiting for approval"' : '' ?>><span class="visually-hidden">New: </span><?= e($it['badge']) ?></span><?php endif; ?>
                                 </a>
                             </li>
                         <?php endforeach; ?>
