@@ -120,6 +120,16 @@ final class AcademyMail
         ], ['label' => 'Choose a new password', 'url' => $url]);
     }
 
+    /** The same words as a message the team wrote in the portal, as an e-mail (only when the administrator ticks "also send by e-mail"). */
+    public static function teamMessage(array $learner, string $text): bool
+    {
+        return self::send((string) $learner['email'], 'A message from the LAF Academy team', [
+            'Hello ' . self::first((string) $learner['name']) . ',',
+            $text,
+            'You can read this message and answer it in your learner portal.',
+        ], ['label' => 'Open my messages', 'url' => abs_url('academy/portal/messages')]);
+    }
+
     /** An administrator approved the account (best effort: approval never depends on this e-mail). */
     public static function approved(array $learner): bool
     {

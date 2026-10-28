@@ -283,10 +283,10 @@ final class AcademyAccountController extends AcademyBaseController
         if ($l === null) {
             return $this->loginRedirect();
         }
-        return $this->renderAcademy('web/academy/account', ['me' => $l, 'portrait' => LearnerPortrait::of((int) $l['id']), 'portraitReady' => LearnerPortrait::ready()], [
+        return $this->renderAcademy('web/academy/account', ['me' => $l, 'portrait' => LearnerPortrait::of((int) $l['id']), 'portraitReady' => LearnerPortrait::ready(), 'unread' => \App\Services\Academy\LearnerMessages::unreadForLearner((int) $l['id'])], [
             'bodyClass' => 'is-academy is-academy-account',
-            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['My account', null]],
-            'meta' => ['title' => 'My account'],
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['My portal', url('academy/dashboard')], ['Profile', null]],
+            'meta' => ['title' => 'My profile | My portal'],
         ], true);
     }
 
@@ -304,7 +304,12 @@ final class AcademyAccountController extends AcademyBaseController
         if ($c['errors'] !== []) {
             $this->fail($c['errors'], 'academy/account#details');
         }
-        Database::update('academy_learners', ['name' => $name, 'phone' => mb_substr($c['phone'], 0, 40), 'country' => mb_substr($c['country'], 0, 80)], 'id = ?', [(int) $l['id']]);
+        $upd = ['name' => $name, 'phone' => mb_substr($c['phone'], 0, 40), 'country' => mb_substr($c['country'], 0, 80)];
+        if (LearnerAuth::bioReady()) {
+            $bio = trim((string) preg_replace('/\s+/u', ' ', strip_tags($request->string('bio'))));
+            $upd['bio'] = $bio !== '' ? mb_substr($bio, 0, 600) : null;
+        }
+        Database::update('academy_learners', $upd, 'id = ?', [(int) $l['id']]);
         \App\Services\Academy\VerificationCode::saveNumber((int) $l['id'], $c['whatsapp']);
         LearnerAuth::flush();
         Flash::success('Your details were saved. Certificates you already earned keep the name they were issued with.');
@@ -369,14 +374,14 @@ final class AcademyAccountController extends AcademyBaseController
             return $this->loginRedirect();
         }
         if ($request->string('new_password') !== $request->string('new_password_confirm')) {
-            $this->fail(['new_password_confirm' => 'The two passwords are not the same.'], 'academy/account');
+            $this->fail(['new_password_confirm' => 'The two passwords are not the same.'], 'academy/portal/security');
         }
         $res = \App\Services\Academy\LearnerAuth::changePassword((int) $l['id'], $request->string('current_password'), $request->string('new_password'));
         if (!$res['ok']) {
-            $this->fail(['current_password' => (string) $res['error']], 'academy/account');
+            $this->fail(['current_password' => (string) $res['error']], 'academy/portal/security');
         }
         Flash::success('Your password was changed.');
-        return $this->redirect('academy/account');
+        return $this->redirect('academy/portal/security');
     }
 
     public function deleteAccount(Request $request): Response
@@ -387,7 +392,7 @@ final class AcademyAccountController extends AcademyBaseController
         }
         $row = Database::one('SELECT password_hash FROM academy_learners WHERE id = ?', [(int) $l['id']]);
         if ($row === null || !\App\Core\Auth::verifyPassword($request->string('password'), (string) $row['password_hash']) || strtoupper(trim($request->string('confirm'))) !== 'DELETE') {
-            $this->fail(['confirm' => 'Type DELETE and enter your password to delete the account.'], 'academy/account');
+            $this->fail(['confirm' => 'Type DELETE and enter your password to delete the account.'], 'academy/portal/security');
         }
         LearnerAuth::deleteAccount((int) $l['id']);
         Flash::success('Your account and your learning records were deleted.');

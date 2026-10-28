@@ -10,6 +10,7 @@ use App\Controllers\Web\AcademyChallengesController;
 use App\Controllers\Web\AcademyController;
 use App\Controllers\Web\AcademyFacilitateController;
 use App\Controllers\Web\AcademyLearnController;
+use App\Controllers\Web\AcademyPortalController;
 
 // ---- public ---------------------------------------------------------------------------------------------------------------
 $router->get('/academy', [AcademyController::class, 'index'])->name('academy.index');
@@ -48,7 +49,12 @@ $router->get('/academy/learners/{id}/photo', [AcademyAccountController::class, '
 $router->post('/academy/account/delete', [AcademyAccountController::class, 'deleteAccount'])->middleware('throttle:5,600')->name('academy.account.delete');
 
 // ---- learning -------------------------------------------------------------------------------------------------------------
-$router->get('/academy/dashboard', [AcademyLearnController::class, 'dashboard'])->name('academy.dashboard');
+$router->get('/academy/dashboard', [AcademyPortalController::class, 'overview'])->name('academy.dashboard');
+$router->get('/academy/portal/courses', [AcademyPortalController::class, 'courses'])->name('academy.portal.courses');
+$router->get('/academy/portal/certificates', [AcademyPortalController::class, 'certificates'])->name('academy.portal.certificates');
+$router->get('/academy/portal/messages', [AcademyPortalController::class, 'messages'])->name('academy.portal.messages');
+$router->post('/academy/portal/messages', [AcademyPortalController::class, 'sendMessage'])->middleware('throttle:30,600')->name('academy.portal.messages.send');
+$router->get('/academy/portal/security', [AcademyPortalController::class, 'security'])->name('academy.portal.security');
 $router->post('/academy/courses/{slug}/enroll', [AcademyLearnController::class, 'enroll'])->middleware('throttle:30,600')->name('academy.enroll');
 $router->post('/academy/courses/{slug}/certificate', [AcademyLearnController::class, 'requestCertificate'])->middleware('throttle:20,600')->name('academy.certificate.request');
 $router->post('/academy/courses/{slug}/leave', [AcademyLearnController::class, 'unenroll'])->middleware('throttle:10,600')->name('academy.leave');

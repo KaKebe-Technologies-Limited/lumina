@@ -23623,3 +23623,75 @@ body.admin.fs-printpage .fs-stars__off {
   border: 3px solid #FFFFFF;
   box-shadow: 0 1px 2px rgba(23, 32, 54, 0.08), 0 1px 3px rgba(23, 32, 54, 0.06);
 }
+
+.aac-chat {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 560px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.aac-chat__day {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #5A6470;
+}
+
+.aac-chat__new {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #2C3950;
+  background: #FFF8D6;
+  border-radius: 99px;
+  padding: 0.2rem 0.7rem;
+  justify-self: center;
+}
+
+.aac-chat__msg {
+  display: grid;
+  gap: 0.2rem;
+  max-width: 80%;
+}
+
+.aac-chat__msg--team {
+  justify-self: end;
+  text-align: right;
+}
+
+.aac-chat__msg--team .aac-chat__bubble {
+  background: #2C3950;
+  color: #FFFFFF;
+  border-radius: 16px 16px 4px 16px;
+}
+
+.aac-chat__msg--learner {
+  justify-self: start;
+}
+
+.aac-chat__msg--learner .aac-chat__bubble {
+  background: #F1EEE8;
+  color: #1D1E20;
+  border: 1px solid #E4E1DA;
+  border-radius: 16px 16px 16px 4px;
+}
+
+.aac-chat__bubble {
+  margin: 0;
+  padding: 0.6rem 0.85rem;
+  line-height: 1.5;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.aac-chat__meta {
+  font-size: 0.875rem;
+  color: #5A6470;
+}
+
+tr.is-unread td {
+  background: #FFFBEA;
+}

@@ -22,22 +22,6 @@ final class AcademyLearnController extends AcademyBaseController
 {
     // ------------------------------------------------------------------------------------------------------------- dashboard / enrol
 
-    public function dashboard(Request $request): Response
-    {
-        $l = $this->learner();
-        if ($l === null) {
-            return $this->loginRedirect();
-        }
-        $courses = CourseService::dashboard((int) $l['id']);
-        return $this->renderAcademy('web/academy/dashboard', [
-            'me' => $l, 'courses' => $courses, 'classes' => ClassService::nextForLearner((int) $l['id']), 'certificates' => CertificateService::forLearner((int) $l['id']),
-        ], [
-            'bodyClass' => 'is-academy is-academy-dashboard',
-            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['My learning', null]],
-            'meta' => ['title' => 'My learning'],
-        ], true);
-    }
-
     public function enroll(Request $request, string $slug): Response
     {
         $l = $this->learner();

@@ -44,7 +44,7 @@ final class LearnerAuth
             return self::$current = null;
         }
         try {
-            $wa = VerificationCode::ready() ? ', whatsapp' : '';
+            $wa = (VerificationCode::ready() ? ', whatsapp' : '') . (LearnerRegistry::ready() ? ', reg_no' : '') . (self::bioReady() ? ', bio' : '');
             $row = Database::one('SELECT id, name, email, phone, country' . $wa . ', email_verified_at, is_active, created_at FROM academy_learners WHERE id = ? LIMIT 1', [$id]);
         } catch (\Throwable) {
             $row = null;
@@ -245,6 +245,7 @@ final class LearnerAuth
         } elseif (!$verify) {
             AcademyMail::welcome($learner);
         }
+        self::rememberPortal();
         LearnerRegistry::announce($id, 'the sign-up form');        // the activity log (dashboard) + an e-mail to the organisation
         return ['ok' => true, 'errors' => [], 'learner' => $learner, 'verify' => $verify];
     }
@@ -390,8 +391,53 @@ final class LearnerAuth
         return ['ok' => true, 'error' => null, 'unverified' => false, 'learner' => $l];
     }
 
+    public static function bioReady(): bool
+    {
+        static $ok = null;
+        if ($ok === null) {
+            try {
+                $ok = (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'bio'", [], 0) === 1;
+            } catch (\Throwable) {
+                $ok = false;
+            }
+        }
+        return $ok;
+    }
+
+    /** How complete the learner's profile is, and what is missing. @return array{pct:int,missing:list<string>} */
+    public static function completeness(array $learner, bool $hasPhoto): array
+    {
+        $checks = [
+            'your full name' => trim((string) ($learner['name'] ?? '')) !== '',
+            'your phone number' => trim((string) ($learner['phone'] ?? '')) !== '',
+            'your country' => trim((string) ($learner['country'] ?? '')) !== '',
+            'your WhatsApp number' => !VerificationCode::ready() || trim((string) ($learner['whatsapp'] ?? '')) !== '',
+            'a short bio' => !self::bioReady() || trim((string) ($learner['bio'] ?? '')) !== '',
+            'your picture' => $hasPhoto || !LearnerPortrait::ready(),
+        ];
+        $missing = array_keys(array_filter($checks, static fn(bool $ok): bool => !$ok));
+        return ['pct' => (int) round(100 * (count($checks) - count($missing)) / count($checks)), 'missing' => $missing];
+    }
+
+    /** A small marker cookie (no personal data) that tells the website this browser has a learner account, so every page can offer "Go to my portal". */
+    public static function rememberPortal(): void
+    {
+        if (PHP_SAPI === 'cli' || headers_sent()) {
+            return;
+        }
+        $path = rtrim(base_path(), '/') . '/';
+        setcookie('laf_portal', '1', ['expires' => time() + 400 * 86400, 'path' => $path === '' ? '/' : $path, 'secure' => \App\Core\Request::current()?->isSecure() ?? false, 'httponly' => true, 'samesite' => 'Lax']);
+    }
+
+    /** True when this browser has (had) a learner account. */
+    public static function knowsPortal(): bool
+    {
+        return (string) (\App\Core\Request::current()?->cookie('laf_portal') ?? '') === '1';
+    }
+
     public static function signIn(array $learner): void
     {
+        self::rememberPortal();
         Session::regenerate();
         Session::put(self::SESSION_KEY, (int) $learner['id']);
         Database::update('academy_learners', ['last_login_at' => date('Y-m-d H:i:s')], 'id = ?', [(int) $learner['id']]);

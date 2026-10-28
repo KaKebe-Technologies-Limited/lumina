@@ -44,6 +44,10 @@ final class DashboardController extends AdminController
         if ($tile = \App\Services\Academy\LearnerRegistry::dashboardTile()) {
             $tiles[] = $tile;
         }
+        // LAF Academy messages: learners' unread messages to the team (a yellow tile; hidden when there are none)
+        if (can('academy.manage') && ($mu = \App\Services\Academy\LearnerMessages::unreadForAdmin()) > 0) {
+            $tiles[] = ['icon' => 'message-circle', 'value' => number_format($mu), 'label' => 'New messages from Academy learners', 'url' => 'admin/academy/messages', 'alert' => true];
+        }
         // Meetings (docs/MEETINGS.md): "Meetings this week" and "New meeting requests"; empty when the user may not manage meetings
         foreach (\App\Services\Meetings\MeetingService::dashboardTiles() as $tile) {
             $tiles[] = $tile;

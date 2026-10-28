@@ -26,6 +26,9 @@ if ($tbType === 'whatsapp') {
 }
 $tbShowLink = $tbHref !== '' && $tbLabel !== '';
 $tbClock = \App\Core\SiteClock::forView();
+// the learner portal: "My learner portal" for a browser that has (had) a learner account (a small marker cookie set at sign-in), otherwise "Learner login"
+$tbPortal = (string) setting('academy_enabled', '1') === '1';
+$tbKnows = $tbPortal && \App\Services\Academy\LearnerAuth::knowsPortal();
 if (!$tbShowAddress && !$tbShowEmail && !$tbShowPhone && !$tbShowLink && $tbClock === null) {
     return;
 }
@@ -48,6 +51,7 @@ if (!$tbShowAddress && !$tbShowEmail && !$tbShowPhone && !$tbShowLink && $tbCloc
         <div class="topbar__group">
             <?php if ($tbShowEmail): ?><a class="topbar__item topbar__item--email" href="mailto:<?= e($tbEmail) ?>"><?= icon('mail') ?><span><?= e($tbEmail) ?></span></a><?php endif; ?>
             <?php if ($tbShowPhone): ?><a class="topbar__item topbar__item--phone" href="<?= e(phone_href($tbPhone)) ?>"><?= icon('phone') ?><span><?= e($tbPhone) ?></span></a><?php endif; ?>
+            <?php if ($tbPortal): ?><a class="topbar__item topbar__item--portal" href="<?= e(url($tbKnows ? 'academy/dashboard' : 'academy/login')) ?>"><?= icon('user') ?><span><?= $tbKnows ? 'My learner portal' : 'Learner login' ?></span></a><?php endif; ?>
             <?php if ($tbShowLink): ?><a class="topbar__item topbar__item--link" href="<?= e($tbHref) ?>"<?= is_external($tbHref) ? ' target="_blank" rel="noopener noreferrer"' : '' ?>><?= icon($tbIcon) ?><span><?= e($tbLabel) ?></span></a><?php endif; ?>
         </div>
     </div>

@@ -27,3 +27,14 @@
 // learner portrait: small round picture in the list, larger on the learner page
 .aac-avatar { float: left; width: 2.5rem; height: 2.5rem; margin: 0 $space-3 0 0; border-radius: 50%; object-fit: cover; background: $tint-cool; }
 .aac-portrait { display: grid; justify-items: start; gap: $space-2; margin-bottom: $space-4; &__img { width: 7.5rem; height: 7.5rem; border-radius: 50%; object-fit: cover; border: 3px solid $white; box-shadow: $shadow-sm; } }
+
+// ---- Messages with learners (Admin > LAF Academy > Messages)
+.aac-chat { display: grid; gap: $space-3; max-height: 560px; overflow-y: auto; padding: $space-2; }
+.aac-chat__day { margin: $space-2 0 0; text-align: center; font-size: $fs-xs; color: $ink-soft; }
+.aac-chat__new { margin: $space-2 0 0; text-align: center; font-size: $fs-xs; font-weight: 700; color: $navy; background: #FFF8D6; border-radius: 99px; padding: 0.2rem 0.7rem; justify-self: center; }
+.aac-chat__msg { display: grid; gap: 0.2rem; max-width: 80%; }
+.aac-chat__msg--team { justify-self: end; text-align: right; .aac-chat__bubble { background: $navy; color: $white; border-radius: 16px 16px 4px 16px; } }
+.aac-chat__msg--learner { justify-self: start; .aac-chat__bubble { background: $surface-alt; color: $ink; border: 1px solid $line; border-radius: 16px 16px 16px 4px; } }
+.aac-chat__bubble { margin: 0; padding: 0.6rem 0.85rem; line-height: 1.5; text-align: left; overflow-wrap: anywhere; }
+.aac-chat__meta { font-size: $fs-xs; color: $ink-soft; }
+tr.is-unread td { background: #FFFBEA; }

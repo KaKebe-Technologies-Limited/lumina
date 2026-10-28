@@ -212,3 +212,22 @@ The sign-up form has an optional **picture** field: attach a photo, or press **T
 The sign-up form (and **My account**) requires the **phone number, country and WhatsApp number** (the WhatsApp number with the country code; a local number starting with 0 gets +256 unless `WHATSAPP_COUNTRY_CODE` says otherwise). They help the Academy support learners: they are shown to administrators on the learner page (WhatsApp is a chat link) and are columns in the learner export. Learners who signed up before, or with Google, are taken to **My account** after signing in until they have given them, and the dashboard keeps reminding them. **Quick inquiries about the approval:** the pending page, the sign-in message and the sign-up page show the support WhatsApp line (Settings > LAF Academy > Academy support WhatsApp number, default +256 779 795 662) with a chat link. Bono AI (docs/BONO.md) knows the same line.
 
 **Sidebar notification:** Admin > LAF Academy > Learners shows a bright yellow number: the new learners waiting for approval (administrators only; it disappears at zero and counts down as you approve). The same number is on the dashboard tile.
+
+## The learner portal
+
+After signing in a learner lands in **My portal** (`/academy/dashboard`), a page with tabs:
+
+* **Overview**: numbers (courses, lessons done, courses completed, certificates), "Continue learning", the first three courses with progress bars, a profile-completeness meter, the latest message, next virtual classes, certificates and the support WhatsApp line.
+* **My courses**: every course with a progress bar, start and finish dates, Continue / Start, and the certificate status (ready, waiting for approval and signing, or "Request my certificate"), split into In progress and Completed.
+* **Certificates**: ready ones (open and download the PDF), those waiting for approval and signing (with the 48-hour message), withdrawn ones.
+* **Messages**: the conversation with the Academy team. A learner writes (plain text, 2000 characters, 15 messages an hour) and reads the team's answers; a yellow number on the tab and a yellow notice on the Overview show new messages from the team, and opening the tab marks them read.
+* **Profile** (`/academy/account`): name, **bio**, phone, WhatsApp, country (required), and the picture (private by default, optional consent to show it on the public Academy page).
+* **Security**: change the password, sign out, delete the account.
+
+### Messages between the team and each learner
+
+`App\Services\Academy\LearnerMessages`, table `academy_messages` (one conversation per learner, deleted with the learner). **Admin > LAF Academy > Messages** is the inbox (learners with unread messages first, searchable by name, e-mail or registration number); the **Message** button on every learner (list and learner page) opens the conversation; the team's text is plain, sent in the portal and optionally also by e-mail (the "also send by e-mail" box is off by default because e-mail is limited). A **yellow number** on Messages in the admin menu and a dashboard tile count the learners' unread messages. Sending is recorded in the activity log without the text.
+
+### The link to the portal
+
+The top bar of every public page shows **My learner portal** to a browser that has (had) a learner account (a small marker cookie `laf_portal`, set at sign-up and sign-in, no personal data; a visitor who never signed in gets no cookie) and **Learner login** to everybody else. The Academy page greets a returning browser with "Welcome back" and a button to the portal. Test: `bin/selftest-academy-portal.php`.

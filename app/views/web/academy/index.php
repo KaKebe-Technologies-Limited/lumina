@@ -25,6 +25,9 @@ $steps = array_values(array_filter(content_list('academy', 'steps.items'), stati
 $why = array_values(array_filter(content_list('academy', 'why.items'), static fn(array $s): bool => trim((string) ($s['title'] ?? '')) !== ''));
 $cta = content_btn('academy', 'cta.button');
 ?>
+<?php if ($learner === null && \App\Services\Academy\LearnerAuth::knowsPortal()): ?>
+    <p class="opp-notice ac-welcome-back" role="status"><?= icon('user', 'icon--sm') ?> <strong>Welcome back!</strong> You already have an Academy account: <a class="btn btn--cta btn--sm" href="<?= e(url('academy/dashboard')) ?>">Go to my learner portal</a></p>
+<?php endif; ?>
 <?= partial('partials/page-hero', [
     'title'   => content('academy', 'hero.title'),
     'eyebrow' => content('academy', 'hero.eyebrow'),

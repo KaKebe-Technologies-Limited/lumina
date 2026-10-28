@@ -15,6 +15,9 @@ return [
         ['key' => 'academy_learners',     'label' => 'Learners',        'url' => 'admin/academy/learners',     'icon' => 'users',     'can' => 'academy.teach',  'order' => 40,
             // the number of new learners waiting for approval (administrators only; a facilitator sees no count of other people's learners)
             'badge' => static fn(): int => can('academy.manage') ? \App\Services\Academy\LearnerRegistry::waiting() : 0, 'badge_tone' => 'yellow'],
+        // learners' unread messages (administrators only): a yellow number
+        ['key' => 'academy_messages',     'label' => 'Messages',        'url' => 'admin/academy/messages',     'icon' => 'message-circle', 'can' => 'academy.manage', 'order' => 45,
+            'badge' => static fn(): int => can('academy.manage') ? \App\Services\Academy\LearnerMessages::unreadForAdmin() : 0, 'badge_tone' => 'yellow'],
         ['key' => 'academy_certificates', 'label' => 'Certificates',    'url' => 'admin/academy/certificates', 'icon' => 'award',     'can' => 'academy.manage', 'order' => 50, 'badge' => null],
         ['key' => 'academy_challenges',   'label' => 'Challenges',      'url' => 'admin/academy/challenges',   'icon' => 'target',    'can' => 'academy.teach',  'order' => 35, 'badge' => null],
         ['key' => 'academy_applications', 'label' => 'Facilitator applications', 'url' => 'admin/academy/facilitator-applications', 'icon' => 'user-plus', 'can' => 'academy.manage', 'order' => 55, 'badge' => null],

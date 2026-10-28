@@ -1868,6 +1868,28 @@ PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
 
+-- Migration (idempotent): the learner's short bio shown in the portal and to the Academy team (docs/ACADEMY.md).
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'bio');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_learners` ADD COLUMN `bio` VARCHAR(600) NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
+-- Messages between the Academy team and each learner (one conversation per learner, shown in the learner portal and under Admin > LAF Academy > Messages).
+CREATE TABLE IF NOT EXISTS `academy_messages` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `learner_id` INT UNSIGNED NOT NULL,
+  `sender` ENUM('admin','learner') NOT NULL,
+  `admin_id` INT UNSIGNED NULL,
+  `body` TEXT NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `read_at` DATETIME NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_messages_learner` (`learner_id`, `id`),
+  KEY `ix_academy_messages_unread` (`sender`, `read_at`),
+  CONSTRAINT `fk_academy_messages_learner` FOREIGN KEY (`learner_id`) REFERENCES `academy_learners` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Bono AI, the support assistant of the public website (docs/BONO.md): what it learned from the site, answers an administrator taught it, and the questions people asked.
 CREATE TABLE IF NOT EXISTS `bono_pages` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,

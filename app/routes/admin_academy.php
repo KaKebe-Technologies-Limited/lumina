@@ -13,6 +13,7 @@ use App\Controllers\Admin\AcademyCoursesController;
 use App\Controllers\Admin\AcademyCurriculumController;
 use App\Controllers\Admin\AcademyFacilitatorsController;
 use App\Controllers\Admin\AcademyLearnersController;
+use App\Controllers\Admin\AcademyMessagesController;
 use App\Controllers\Admin\AcademyPartnersController;
 
 $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:academy.teach']], function ($router) {
@@ -81,6 +82,9 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/learners', [AcademyLearnersController::class, 'store'])->name('admin.academy.learners.store');
     $router->get('/learners-export', [AcademyLearnersController::class, 'export'])->middleware('throttle:10,60')->name('admin.academy.learners.export');
     $router->post('/learners/{id}/reset-link', [AcademyLearnersController::class, 'resetLink'])->middleware('throttle:30,60')->name('admin.academy.learners.reset');
+    $router->get('/messages', [AcademyMessagesController::class, 'index'])->name('admin.academy.messages');
+    $router->get('/learners/{id}/messages', [AcademyMessagesController::class, 'thread'])->name('admin.academy.messages.thread');
+    $router->post('/learners/{id}/messages', [AcademyMessagesController::class, 'send'])->middleware('throttle:120,60')->name('admin.academy.messages.send');
     $router->post('/learners/{id}/approve', [AcademyLearnersController::class, 'approve'])->middleware('throttle:120,60')->name('admin.academy.learners.approve');
     $router->post('/learners/{id}/verify', [AcademyLearnersController::class, 'verify'])->name('admin.academy.learners.verify');
     $router->post('/learners/{id}/approve-certificates', [AcademyLearnersController::class, 'approveCertificates'])->middleware('throttle:60,60')->name('admin.academy.learners.approve_certificates');

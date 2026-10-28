@@ -85,7 +85,8 @@ final class AcademyLearnersController extends AcademyAdminController
         [$where, $params, $f] = $this->filters($request);
         $total = (int) Database::value('SELECT COUNT(*) FROM academy_learners l' . $where, $params, 0);
         $pagination = Pagination::make($total, $request->page(), $this->perPage());
-        $extra = (LearnerRegistry::ready() ? ', l.reg_no, l.approved_at' : '') . (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '')
+        $extra = (\App\Services\Academy\LearnerMessages::ready() ? ", (SELECT COUNT(*) FROM academy_messages mu WHERE mu.learner_id = l.id AND mu.sender = 'learner' AND mu.read_at IS NULL) AS msg_unread" : '')
+            . (LearnerRegistry::ready() ? ', l.reg_no, l.approved_at' : '') . (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '')
             . (CertificateService::approvalReady() ? ', (SELECT COUNT(*) FROM academy_certificates cw WHERE cw.learner_id = l.id AND cw.approved_at IS NULL AND cw.revoked_at IS NULL) AS certs_waiting' : '');
         $rows = Database::all(
             'SELECT l.id, l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.last_login_at, l.created_at' . $extra . ', '
