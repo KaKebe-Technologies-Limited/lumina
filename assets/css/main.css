@@ -24606,3 +24606,10 @@ fieldset.ac-q legend + * {
   height: 1px;
   background: #E4E1DA;
 }
+
+.ac-regno {
+  padding: 0.75rem 1rem;
+  background: #F1EEE8;
+  border-left: 3px solid #D6A151;
+  border-radius: 6px;
+}

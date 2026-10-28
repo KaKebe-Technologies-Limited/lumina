@@ -1,1 +1,1 @@
-LUMINA build 28 Oct 2026 (final 7): Continue with Google on the Academy sign-in and sign-up pages; learner Status filter fixed; exports with details, serial and clause; certificates; requests + approval; codes; portraits.
+LUMINA build 28 Oct 2026 (final 8): Academy registration numbers, administrator approval (no e-mail needed), new-account notices and dashboard tile; Continue with Google; Status filter; exports; certificates.

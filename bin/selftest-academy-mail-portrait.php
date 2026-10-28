@@ -143,7 +143,7 @@ $c = $mk('c', false);                      // waiting, never e-mailed
 $d = $mk('d', false);
 $mailsBefore = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
 $list = $req('GET', '/admin/academy/learners', [], $jA);
-check('http: the list offers to send confirmation e-mails and to confirm everyone by hand', $list['code'] === 200 && str_contains($list['body'], 'Send confirmation e-mails') && str_contains($list['body'], 'Mark all as confirmed') && str_contains($list['body'], 'No e-mail sent yet'));
+check('http: the list offers to send confirmation e-mails and to approve everyone at once', $list['code'] === 200 && str_contains($list['body'], 'Send confirmation e-mails') && str_contains($list['body'], 'Approve all ') && str_contains($list['body'], 'No e-mail sent yet'));
 // the Status filter matches the badges: Active = confirmed and on, E-mail not confirmed = on but unconfirmed, Switched off = off
 Database::update('academy_learners', ['is_active' => 0], 'id = ?', [$d]);
 $fActive = $req('GET', '/admin/academy/learners?status=active&q=zz-lmp', [], $jA)['body'];

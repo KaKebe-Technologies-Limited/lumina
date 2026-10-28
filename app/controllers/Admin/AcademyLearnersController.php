@@ -16,6 +16,7 @@ use App\Services\Academy\AcademyAccess;
 use App\Services\Academy\CertificateService;
 use App\Services\Academy\CourseService;
 use App\Services\Academy\LearnerAuth;
+use App\Services\Academy\LearnerRegistry;
 use App\Services\Academy\LearnerPortrait;
 use App\Services\Academy\QuizService;
 
@@ -52,11 +53,15 @@ final class AcademyLearnersController extends AcademyAdminController
         $q = mb_substr(trim($request->string('q')), 0, 80);
         if ($q !== '') {
             $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
-            $where[] = '(l.name LIKE ? OR l.email LIKE ? OR l.phone LIKE ?)';
+            $reg = LearnerRegistry::ready();
+            $where[] = '(l.name LIKE ? OR l.email LIKE ? OR l.phone LIKE ?' . ($reg ? ' OR l.reg_no LIKE ?' : '') . ')';
             array_push($params, $like, $like, $like);
+            if ($reg) {
+                $params[] = $like;
+            }
         }
         $status = $request->string('status');
-        // the same three groups as the badges in the list: Active (can sign in), E-mail not confirmed, Switched off
+        // the same three groups as the badges in the list: Active (can sign in), Awaiting approval (e-mail not confirmed, not approved), Switched off
         if ($status === 'active') {
             $where[] = 'l.is_active = 1 AND l.email_verified_at IS NOT NULL';
         } elseif ($status === 'inactive') {
@@ -80,7 +85,7 @@ final class AcademyLearnersController extends AcademyAdminController
         [$where, $params, $f] = $this->filters($request);
         $total = (int) Database::value('SELECT COUNT(*) FROM academy_learners l' . $where, $params, 0);
         $pagination = Pagination::make($total, $request->page(), $this->perPage());
-        $extra = (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '')
+        $extra = (LearnerRegistry::ready() ? ', l.reg_no, l.approved_at' : '') . (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '')
             . (CertificateService::approvalReady() ? ', (SELECT COUNT(*) FROM academy_certificates cw WHERE cw.learner_id = l.id AND cw.approved_at IS NULL AND cw.revoked_at IS NULL) AS certs_waiting' : '');
         $rows = Database::all(
             'SELECT l.id, l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.last_login_at, l.created_at' . $extra . ', '
@@ -92,7 +97,7 @@ final class AcademyLearnersController extends AcademyAdminController
         [$sc, $sp] = AcademyAccess::courseScope('c');
         return $this->render('admin/academy/learners/index', [
             'rows' => $rows, 'pagination' => $pagination, 'f' => $f, 'total' => $total, 'manager' => AcademyAccess::manager(),
-            'waiting' => AcademyAccess::manager() ? (int) Database::value('SELECT COUNT(*) FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NULL', [], 0) : 0,
+            'waiting' => AcademyAccess::manager() ? LearnerRegistry::waiting() : 0,
             'courses' => Database::all('SELECT c.id, c.title FROM academy_courses c WHERE ' . $sc . ' ORDER BY c.title', $sp),
         ], ['title' => 'Learners', 'nav' => 'academy_learners', 'breadcrumbs' => $this->crumbs('Learners')]);
     }
@@ -102,14 +107,14 @@ final class AcademyLearnersController extends AcademyAdminController
         $this->authorize('academy.manage');
         [$where, $params] = $this->filters($request);
         $rows = Database::all(
-            'SELECT l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.created_at, l.last_login_at, '
+            'SELECT ' . (LearnerRegistry::ready() ? 'l.reg_no' : 'NULL AS reg_no') . ', l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.created_at, l.last_login_at, '
             . '(SELECT COUNT(*) FROM academy_enrollments e WHERE e.learner_id = l.id) AS courses, (SELECT COUNT(*) FROM academy_enrollments e2 WHERE e2.learner_id = l.id AND e2.completed_at IS NOT NULL) AS completed, '
             . '(SELECT COUNT(*) FROM academy_certificates c WHERE c.learner_id = l.id AND c.revoked_at IS NULL) AS certificates FROM academy_learners l' . $where . ' ORDER BY l.id',
             $params
         );
         $this->audit('academy.learners.export', 'academy_learner', null, 'Downloaded the learner list', ['rows' => count($rows)]);
-        return CsvExport::response('academy-learners-' . date('Y-m-d') . '.csv', ['Name', 'Email', 'Phone', 'Country', 'Email confirmed', 'Active', 'Joined', 'Last sign-in', 'Courses', 'Completed', 'Certificates'],
-            array_map(static fn(array $r): array => [$r['name'], $r['email'], $r['phone'], $r['country'], $r['email_verified_at'] ? 'yes' : 'no', $r['is_active'] ? 'yes' : 'no', $r['created_at'], $r['last_login_at'], $r['courses'], $r['completed'], $r['certificates']], $rows));
+        return CsvExport::response('academy-learners-' . date('Y-m-d') . '.csv', ['Reg no', 'Name', 'Email', 'Phone', 'Country', 'Email confirmed / approved', 'Active', 'Joined', 'Last sign-in', 'Courses', 'Completed', 'Certificates'],
+            array_map(static fn(array $r): array => [$r['reg_no'], $r['name'], $r['email'], $r['phone'], $r['country'], $r['email_verified_at'] ? 'yes' : 'no', $r['is_active'] ? 'yes' : 'no', $r['created_at'], $r['last_login_at'], $r['courses'], $r['completed'], $r['certificates']], $rows));
     }
 
     public function show(Request $request, int $id): Response
@@ -158,6 +163,7 @@ final class AcademyLearnersController extends AcademyAdminController
             'name' => trim(strip_tags((string) $valid['name'])), 'email' => $email, 'password_hash' => Auth::hashPassword(Auth::generatePassword(24)),
             'phone' => trim((string) $valid['phone']) ?: null, 'country' => trim(strip_tags((string) $valid['country'])) ?: null, 'email_verified_at' => date('Y-m-d H:i:s'), 'is_active' => 1,
         ]);
+        LearnerRegistry::assign($id);
         $this->audit('academy.learner.create', 'academy_learner', $id, 'Added learner ' . $email);
         $sent = $request->bool('send_link') ? $this->sendResetLink($id) : false;
         Flash::success('The learner account was created.' . ($request->bool('send_link') ? ($sent ? ' An e-mail with a link to choose a password was sent.' : ' The e-mail could not be sent: use "Send a password link" on the next page when e-mail works.') : ''));
@@ -277,15 +283,28 @@ final class AcademyLearnersController extends AcademyAdminController
         return $this->redirect('admin/academy/learners/' . $id);
     }
 
-    /** For when e-mail cannot be delivered at all: mark every waiting address as confirmed so the learners can sign in. */
+    /** For when e-mail cannot be delivered at all: approve every waiting learner so they can sign in without waiting for an e-mail. */
     public function confirmAll(Request $request): Response
     {
         $this->authorize('academy.manage');
-        $n = (int) Database::value('SELECT COUNT(*) FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NULL', [], 0);
-        Database::execute('UPDATE academy_learners SET email_verified_at = NOW(), token_hash = NULL, token_kind = NULL, token_expires_at = NULL WHERE is_active = 1 AND email_verified_at IS NULL');
-        $this->audit('academy.learner.confirm_all', 'academy_learner', null, 'Marked every waiting e-mail address as confirmed', ['count' => $n]);
-        Flash::success($n . ' learner' . ($n === 1 ? ' was' : 's were') . ' marked as confirmed. They can sign in now.');
+        $n = LearnerRegistry::approveAll(Auth::id());
+        $this->audit('academy.learner.approve_all', 'academy_learner', null, 'Approved every learner who was waiting', ['count' => $n]);
+        Flash::success($n . ' learner' . ($n === 1 ? ' was' : 's were') . ' approved. They can sign in now.');
         return $this->redirect('admin/academy/learners');
+    }
+
+    /** The "Approve" button: the learner can sign in now, whether or not the e-mail ever arrives. */
+    public function approve(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        if (LearnerRegistry::approve($id, Auth::id())) {
+            $this->audit('academy.learner.approve', 'academy_learner', $id, 'Approved the account of ' . $l['email'] . ((string) ($l['reg_no'] ?? '') !== '' ? ' (' . $l['reg_no'] . ')' : ''));
+            Flash::success($l['name'] . ' is approved and can sign in now.');
+        } else {
+            Flash::info('This account is already active.');
+        }
+        return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
     }
 
     /** The learner's portrait (administrators and facilitators who may see this learner). */
@@ -309,7 +328,7 @@ final class AcademyLearnersController extends AcademyAdminController
     {
         $this->authorize('academy.manage');
         $l = $this->learner($id);
-        Database::update('academy_learners', ['email_verified_at' => date('Y-m-d H:i:s'), 'token_hash' => null, 'token_kind' => null, 'token_expires_at' => null], 'id = ?', [$id]);
+        LearnerRegistry::approve($id, Auth::id());
         $this->audit('academy.learner.verify', 'academy_learner', $id, 'Confirmed the e-mail address of ' . $l['email']);
         Flash::success('The e-mail address was marked as confirmed.');
         return $this->redirect('admin/academy/learners/' . $id);

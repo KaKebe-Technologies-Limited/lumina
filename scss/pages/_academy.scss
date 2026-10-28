@@ -258,3 +258,6 @@ $cert-orange: #E0642C;
   &:hover, &:focus-visible { background: #F8F9FA; box-shadow: $shadow-sm; color: #202124; } }
 .ac-or { display: flex; align-items: center; gap: $space-3; margin: $space-4 0; font-size: $fs-xs; color: $ink-soft; text-align: center;
   &::before, &::after { content: ''; flex: 1; height: 1px; background: $line; } }
+
+// ---- registration number notice on the "check your e-mail" page
+.ac-regno { padding: $space-3 $space-4; background: $surface-alt; border-left: 3px solid $gold; border-radius: $radius-sm; }

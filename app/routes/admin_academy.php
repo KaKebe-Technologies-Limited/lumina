@@ -81,6 +81,7 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/learners', [AcademyLearnersController::class, 'store'])->name('admin.academy.learners.store');
     $router->get('/learners-export', [AcademyLearnersController::class, 'export'])->middleware('throttle:10,60')->name('admin.academy.learners.export');
     $router->post('/learners/{id}/reset-link', [AcademyLearnersController::class, 'resetLink'])->middleware('throttle:30,60')->name('admin.academy.learners.reset');
+    $router->post('/learners/{id}/approve', [AcademyLearnersController::class, 'approve'])->middleware('throttle:120,60')->name('admin.academy.learners.approve');
     $router->post('/learners/{id}/verify', [AcademyLearnersController::class, 'verify'])->name('admin.academy.learners.verify');
     $router->post('/learners/{id}/approve-certificates', [AcademyLearnersController::class, 'approveCertificates'])->middleware('throttle:60,60')->name('admin.academy.learners.approve_certificates');
     $router->post('/learners/{id}/send-confirmation', [AcademyLearnersController::class, 'sendConfirmation'])->middleware('throttle:60,60')->name('admin.academy.learners.send_confirmation');

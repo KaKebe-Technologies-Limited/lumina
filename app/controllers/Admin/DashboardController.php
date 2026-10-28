@@ -40,6 +40,10 @@ final class DashboardController extends AdminController
         if ($tile = \App\Services\Calendar\CalendarService::dashboardTile()) {
             $tiles[] = $tile;
         }
+        // LAF Academy (docs/ACADEMY.md): new learners waiting for approval (null unless the user manages the Academy)
+        if ($tile = \App\Services\Academy\LearnerRegistry::dashboardTile()) {
+            $tiles[] = $tile;
+        }
         // Meetings (docs/MEETINGS.md): "Meetings this week" and "New meeting requests"; empty when the user may not manage meetings
         foreach (\App\Services\Meetings\MeetingService::dashboardTiles() as $tile) {
             $tiles[] = $tile;

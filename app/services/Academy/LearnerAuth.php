@@ -158,6 +158,7 @@ final class LearnerAuth
             'email_verified_at' => $verify ? null : date('Y-m-d H:i:s'),
             'is_active' => 1,
         ]);
+        LearnerRegistry::assign($id);
         $learner = (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$id]);
         if ($verify) {
             self::$lastCode = null;
@@ -169,6 +170,7 @@ final class LearnerAuth
         } else {
             AcademyMail::welcome($learner);
         }
+        LearnerRegistry::announce($id, 'the sign-up form');        // the activity log (dashboard) + an e-mail to the organisation
         return ['ok' => true, 'errors' => [], 'learner' => $learner, 'verify' => $verify];
     }
 
@@ -304,7 +306,7 @@ final class LearnerAuth
             return ['ok' => false, 'error' => 'That e-mail address and password do not match.', 'unverified' => false, 'learner' => null];
         }
         if (self::requireVerification() && $l['email_verified_at'] === null) {
-            return ['ok' => false, 'error' => 'Please confirm your e-mail address first: open the link we sent you.', 'unverified' => true, 'learner' => $l];
+            return ['ok' => false, 'error' => 'Your account is waiting for approval. Confirm your e-mail address (open the link or type the code we sent you), or wait for the Academy team to approve it.', 'unverified' => true, 'learner' => $l];
         }
         RateLimit::clear($key);
         self::signIn($l);

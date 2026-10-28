@@ -213,6 +213,9 @@ final class GoogleSignIn
             $id = Database::insert('academy_learners', $row);
             $l = (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$id]);
             $created = true;
+            LearnerRegistry::assign($id);
+            $l = (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$id]);
+            LearnerRegistry::announce($id, 'Google');
             AcademyMail::welcome($l);
         } else {
             if ((int) $l['is_active'] !== 1) {

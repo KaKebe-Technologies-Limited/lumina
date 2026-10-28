@@ -53,6 +53,7 @@ final class AcademyAccountController extends AcademyBaseController
         }
         if ($res['verify']) {
             \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail($request->string('email')));
+            \App\Core\Session::put('academy_reg_no', (string) ($res['learner']['reg_no'] ?? ''));
             return $this->redirect('academy/check-email');
         }
         // no confirmation needed: sign the new learner in at once (an address that already has an account gets no session)
@@ -96,7 +97,7 @@ final class AcademyAccountController extends AcademyBaseController
 
     public function checkEmail(Request $request): Response
     {
-        return $this->renderAcademy('web/academy/check-email', ['email' => (string) \App\Core\Session::get('academy_check_email', ''), 'whatsappOn' => \App\Services\Academy\WhatsAppSender::enabled() && VerificationCode::ready(), 'codeOn' => VerificationCode::ready()], [
+        return $this->renderAcademy('web/academy/check-email', ['regNo' => (string) \App\Core\Session::get('academy_reg_no', ''), 'email' => (string) \App\Core\Session::get('academy_check_email', ''), 'whatsappOn' => \App\Services\Academy\WhatsAppSender::enabled() && VerificationCode::ready(), 'codeOn' => VerificationCode::ready()], [
             'bodyClass' => 'is-academy is-academy-auth',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Check your e-mail', null]],
             'meta' => ['title' => 'Check your e-mail'],

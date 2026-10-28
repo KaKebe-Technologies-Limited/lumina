@@ -177,3 +177,11 @@ Learners can sign in or sign up with a Google account on the Academy sign-in and
 4. Import `database/lumina-live-import.sql` (adds `academy_learners.google_sub`; safe to repeat). Without the column the code still works and matches by e-mail only.
 
 Behaviour: a new Google user gets an account (name from Google, random locked password; "Forgot password" lets them set one later). An existing learner with the same e-mail is confirmed and linked. An address linked to another Google account, a switched-off account, or closed sign-ups are refused. Security: authorization-code flow with PKCE, `state` and `nonce`; issuer, audience, expiry and `email_verified` are checked. Code: `App\Services\Academy\GoogleSignIn`; test: `bin/selftest-academy-google.php`.
+
+## Registration numbers and approval
+
+* **Registration number:** every learner gets one automatically when the account exists, however it was made (sign-up form, Continue with Google, or an administrator): `LAF-AC-<year>-<account number, 6 digits>`, for example `LAF-AC-2026-000123`. Older learners got theirs from the schema migration. It is shown to the learner after sign-up, in the admin list (also searchable and in the CSV / Excel / Word / PDF exports) and on the learner page (`App\Services\Academy\LearnerRegistry`).
+* **Acceptance does not depend on e-mail:** a new learner can start when the e-mail address is confirmed (link, 6-digit code, Google) **or** when an administrator approves the account. **Approve** is on every waiting row of Admin > LAF Academy > Learners, on the learner page ("Approve (no e-mail needed)") and, for everyone at once, "Approve all". The approval time and the administrator are recorded (`approved_at`, `approved_by`) and written to the activity log.
+* **Every new account is announced:** it is written to the activity log (shown on the dashboard), an e-mail goes to the organisation address (best effort), and the dashboard tile **Academy learners waiting for approval** counts the waiting ones and opens the list filtered to them (Status: Awaiting approval).
+* The sign-in message for a waiting learner says the account is waiting for approval and can be confirmed by e-mail or approved by the Academy team.
+* Test: `bin/selftest-academy-registry.php`.
