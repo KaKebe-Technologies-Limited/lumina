@@ -144,6 +144,7 @@ if ((string) ($pRow['photo_path'] ?? '') !== '') {
     @unlink(STORAGE_PATH . '/private/' . $pRow['photo_path']);
 }
 $compact = $req('GET', '/academy/portal/courses', [], $jA)['body'];
+check('portal: the form cards of Profile and Security get room for the title and space between them (portal.css, not main.css)', str_contains((string) file_get_contents(dirname(__DIR__) . '/assets/css/portal.min.css'), '.ac-form.card .card__header{padding:1.5rem 1.5rem 0') && str_contains((string) file_get_contents(dirname(__DIR__) . '/assets/css/portal.min.css'), '.ac-form.card{margin:0 0 1.5rem'));
 check('portal: the other tabs load the same portal stylesheet and keep the compact header', str_contains($compact, 'css/portal.min.css') && str_contains($compact, 'ac-portal__head'));
 
 $allOk = true;

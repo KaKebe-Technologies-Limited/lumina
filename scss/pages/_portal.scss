@@ -99,3 +99,13 @@
 .ac-chat__meta { font-size: $fs-xs; color: $ink-soft; }
 .ac-chat__form { padding: $space-4 $space-5; border-top: 1px solid $line; background: $white; }
 .ac-chat__actions { display: flex; align-items: center; gap: $space-4; flex-wrap: wrap; }
+
+// ---- the form cards of Profile and Security: the card title needs room inside the rounded border, and the cards need space between them
+.ac-form.card { margin: 0 0 $space-5; overflow: hidden;
+  .card__header { padding: $space-5 $space-5 0; border: 0; background: transparent; }
+  .card__title { margin: 0; font-family: $font-heading; font-size: 1.3rem; font-weight: 700; line-height: 1.25; color: $navy; }
+  .card__body { padding: $space-4 $space-5 $space-5; }
+  .field { margin-bottom: $space-4; }
+  .btn { margin-top: $space-2; } }
+.ac-form.card.ac-danger { border-color: rgba(#B3261E, 0.4); .card__title { color: #B3261E; } }
+.ac-form .ac-portrait { margin-bottom: $space-4; }
