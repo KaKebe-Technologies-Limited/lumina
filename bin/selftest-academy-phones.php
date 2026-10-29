@@ -96,6 +96,65 @@ $again = LearnerPhones::repair(true, 'zz-ph-%@example.test');
 check('repair: running it again changes nothing (idempotent)', $again['phones'] === 0 && $again['whatsapp'] === 0 && $row($ng)['phone'] === '+2348031112222');
 $clean();
 
+// ---- the reports show the code of the learner's country ---------------------------------------------------------------------------------
+check('reports: a local number gets the code of the learner\'s country', LearnerPhones::display('0803 123 4567', 'Nigeria') === '+2348031234567' && LearnerPhones::display('0772123456', 'Uganda') === '+256772123456' && LearnerPhones::display('7911 123456', 'United Kingdom') === '+447911123456');
+check('reports: a number that already has + is shown as saved; an unknown country is never guessed', LearnerPhones::display('+254 711 222 333', 'Uganda') === '+254 711 222 333' && LearnerPhones::display('0700 000 000', 'Atlantis') === '0700 000 000' && LearnerPhones::display('0700 000 000', null) === '0700 000 000' && LearnerPhones::display('', 'Kenya') === '');
+check('reports: 00-numbers become +; the country code column', LearnerPhones::display('00254711222333', null) === '+254711222333' && LearnerPhones::dialCode('Kenya') === '+254' && LearnerPhones::dialCode('uk') === '+44' && LearnerPhones::dialCode('Atlantis') === '' && LearnerPhones::dialCode(null) === '');
+$mkr = static function (string $key, string $country, string $phone, string $wa) use ($hash): int {
+    return Database::insert('academy_learners', ['name' => 'ZZ Ph ' . $key, 'email' => 'zz-ph-' . $key . '@example.test', 'password_hash' => $hash, 'email_verified_at' => date('Y-m-d H:i:s'), 'phone' => $phone, 'country' => $country, 'whatsapp' => $wa]);
+};
+$rep1 = $mkr('rep1', 'Nigeria', '0803 111 2222', '2348031112222');
+$rep2 = $mkr('rep2', 'Kenya', '0711 222 333', '254711222333');
+$basep = 'http://localhost/' . basename(dirname(__DIR__));
+if (@file_get_contents($basep . '/academy') === false) {
+    check('web server reachable for the report checks', false, 'start Apache');
+} else {
+    $jarp = tempnam(sys_get_temp_dir(), 'phj');
+    $rq = static function (string $method, string $path, array $form = []) use ($basep, $jarp): array {
+        $ch = curl_init($basep . $path);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_TIMEOUT => 30, CURLOPT_COOKIEJAR => $jarp, CURLOPT_COOKIEFILE => $jarp, CURLOPT_FOLLOWLOCATION => false]);
+        if ($method === 'POST') {
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($form));
+        }
+        $raw = (string) curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $hs = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        curl_close($ch);
+        return ['code' => $code, 'body' => substr($raw, $hs)];
+    };
+    $tk = static fn(string $html): string => preg_match('/name="_token" value="([^"]+)"/', $html, $m) === 1 ? $m[1] : '';
+    $apw = 'Phones admin pass 44';
+    \App\Models\User::create(['name' => 'ZZ Ph Admin', 'email' => 'zz-ph-admin@example.test', 'password_hash' => \App\Core\Auth::hashPassword($apw), 'role' => 'admin', 'is_active' => 1, 'must_change_password' => 0]);
+    Database::execute('DELETE FROM rate_limits');
+    $pg = $rq('GET', '/admin/login');
+    $rq('POST', '/admin/login', ['_token' => $tk($pg['body']), 'email' => 'zz-ph-admin@example.test', 'password' => $apw]);
+    $csv = $rq('GET', '/admin/academy/learners-export?q=zz-ph-rep');
+    $lines = array_values(array_filter(preg_split('/\r?\n/', ltrim($csv['body'], "\xEF\xBB\xBF")) ?: []));
+    $head = $lines !== [] ? str_getcsv($lines[0]) : [];
+    check('report: the learners CSV has the "Country code" column next to Country, then Phone and WhatsApp', $csv['code'] === 200 && array_slice($head, 3, 4) === ['Country', 'Country code', 'Phone', 'WhatsApp'], json_encode($head));
+    $byEmail = [];
+    foreach (array_slice($lines, 1) as $ln) {
+        $c = str_getcsv($ln);
+        $byEmail[$c[2] ?? ''] = $c;
+    }
+    $n = $byEmail['zz-ph-rep1@example.test'] ?? [];
+    $k = $byEmail['zz-ph-rep2@example.test'] ?? [];
+    check('report: a Nigerian shows country code +234 and the phone with the code, a Kenyan +254', trim((string) ($n[4] ?? '')) === '+234' && trim((string) ($n[5] ?? '')) === '+2348031112222' && trim((string) ($k[4] ?? '')) === '+254' && trim((string) ($k[5] ?? '')) === '+254711222333', json_encode([$n, $k]));
+    $cert = $rq('GET', '/admin/academy/certificates-export');
+    $chead = str_getcsv((string) (preg_split('/\r?\n/', ltrim($cert['body'], "\xEF\xBB\xBF"))[0] ?? ''));
+    check('report: the certificates CSV also has Country, Country code, Phone and WhatsApp', $cert['code'] === 200 && array_slice($chead, 3, 4) === ['Country', 'Country code', 'Phone', 'WhatsApp'], json_encode($chead));
+    $pdf = $rq('GET', '/admin/academy/learners-export?format=pdf');
+    $xl = $rq('GET', '/admin/academy/learners-export?format=xlsx');
+    $dc = $rq('GET', '/admin/academy/certificates-export?format=docx');
+    check('report: the Excel, Word and PDF versions of the reports still download with the new columns', $pdf['code'] === 200 && str_starts_with($pdf['body'], '%PDF') && $xl['code'] === 200 && str_starts_with($xl['body'], 'PK') && $dc['code'] === 200 && str_starts_with($dc['body'], 'PK'), $pdf['code'] . '/' . $xl['code'] . '/' . $dc['code']);
+    $one = $rq('GET', '/admin/academy/learners/' . $rep1);
+    check('screen: the learner page shows the phone with the country code and the code beside the country', $one['code'] === 200 && str_contains($one['body'], '+2348031112222') && str_contains($one['body'], '(+234)'), (string) $one['code']);
+    Database::execute("DELETE FROM users WHERE email = 'zz-ph-admin@example.test'");
+    Database::execute('DELETE FROM rate_limits');
+    @unlink($jarp);
+}
+$clean();
 // ---- the sign-up page and the WhatsApp group ----------------------------------------------------------------------------------------
 $base = 'http://localhost/' . basename(dirname(__DIR__));
 $get = static function (string $path) use ($base): string {

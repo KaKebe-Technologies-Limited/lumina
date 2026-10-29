@@ -40,7 +40,7 @@ PESAPAL_CONSUMER_SECRET=your secret from the Pesapal dashboard</pre>
                 <label class="check" style="display:flex;gap:.75rem;align-items:flex-start">
                     <input type="checkbox" name="donations" value="1"<?= $donationsOn ? ' checked' : '' ?>>
                     <span><strong>Donate page: "Give online" form</strong><br>
-                        <span class="text-muted">Donors pay by card or mobile money on <a href="<?= e(url('donate')) ?>" target="_blank" rel="noopener">/donate</a>. Paid gifts become "Received" donations with a receipt number.</span><br>
+                        <span class="text-muted">Donors pay by card or mobile money on <a href="<?= e(url('donate')) ?>" target="_blank" rel="noopener">/donate</a>. Paid gifts become "Received" donations with a receipt number. To make Pesapal REPLACE your external donation link, choose "Pesapal only" in <a href="<?= e(url('admin/settings') . '#tab-donations') ?>">Settings &gt; Donations</a><?= $donateMethod === 'pesapal' ? ' (chosen now)' : '' ?>.</span><br>
                         <?php if ($donationsOn && $hasKeys): ?><span class="badge badge--success badge--dot">Visible to visitors</span>
                         <?php elseif ($donationsOn): ?><span class="badge badge--warning badge--dot">Ticked, but hidden: the keys are missing</span>
                         <?php else: ?><span class="badge badge--neutral badge--dot">Off: the form is hidden</span><?php endif; ?></span>

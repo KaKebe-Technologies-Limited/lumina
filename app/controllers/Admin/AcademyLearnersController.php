@@ -116,8 +116,8 @@ final class AcademyLearnersController extends AcademyAdminController
             $params
         );
         $this->audit('academy.learners.export', 'academy_learner', null, 'Downloaded the learner list', ['rows' => count($rows)]);
-        return CsvExport::response('academy-learners-' . date('Y-m-d') . '.csv', ['Reg no', 'Name', 'Email', 'Phone', 'WhatsApp', 'Country', 'Email confirmed / approved', 'Active', 'Joined', 'Last sign-in', 'Courses', 'Completed', 'Certificates'],
-            array_map(static fn(array $r): array => [$r['reg_no'], $r['name'], $r['email'], $r['phone'], $r['whatsapp'] !== null && $r['whatsapp'] !== '' ? '+' . $r['whatsapp'] : '', $r['country'], $r['email_verified_at'] ? 'yes' : 'no', $r['is_active'] ? 'yes' : 'no', $r['created_at'], $r['last_login_at'], $r['courses'], $r['completed'], $r['certificates']], $rows));
+        return CsvExport::response('academy-learners-' . date('Y-m-d') . '.csv', ['Reg no', 'Name', 'Email', 'Country', 'Country code', 'Phone', 'WhatsApp', 'Email confirmed / approved', 'Active', 'Joined', 'Last sign-in', 'Courses', 'Completed', 'Certificates'],
+            array_map(static fn(array $r): array => [$r['reg_no'], $r['name'], $r['email'], $r['country'], \App\Services\Academy\LearnerPhones::dialCode($r['country']), \App\Services\Academy\LearnerPhones::display($r['phone'], $r['country']), $r['whatsapp'] !== null && $r['whatsapp'] !== '' ? '+' . $r['whatsapp'] : '', $r['email_verified_at'] ? 'yes' : 'no', $r['is_active'] ? 'yes' : 'no', $r['created_at'], $r['last_login_at'], $r['courses'], $r['completed'], $r['certificates']], $rows));
     }
 
     public function show(Request $request, int $id): Response

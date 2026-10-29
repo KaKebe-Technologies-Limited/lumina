@@ -27,7 +27,7 @@ $links = array_values(array_filter(preg_split('/\s+/', (string) $app['links']) ?
             <div class="card__body"><dl class="dl">
                 <div><dt>Name</dt><dd><?= e($app['name']) ?></dd></div>
                 <div><dt>E-mail</dt><dd><a href="mailto:<?= e($app['email']) ?>"><?= e($app['email']) ?></a></dd></div>
-                <?php if ($app['phone']): ?><div><dt>Phone</dt><dd><?= e($app['phone']) ?></dd></div><?php endif; ?>
+                <?php if ($app['phone']): ?><div><dt>Phone</dt><dd><?= e(\App\Services\Academy\LearnerPhones::display($app['phone'], $app['country'] ?? null)) ?></dd></div><?php endif; ?>
                 <?php if ($app['country']): ?><div><dt>Country</dt><dd><?= e($app['country']) ?></dd></div><?php endif; ?>
                 <?php if ($app['headline']): ?><div><dt>Role</dt><dd><?= e($app['headline']) ?></dd></div><?php endif; ?>
                 <?php if ($app['availability']): ?><div><dt>Availability</dt><dd><?= e($app['availability']) ?></dd></div><?php endif; ?>

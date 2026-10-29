@@ -30,7 +30,7 @@ final class CsvExport
         }
         // A strictly phone-shaped value ("+256 700 123456") is plain text, not a formula, and an apostrophe in front of every
         // international number would show up literally in Excel / Sheets: it gets a leading space instead.
-        if (preg_match('/^\+[0-9][0-9 ().\-]{5,24}$/', $s) === 1) {
+        if (preg_match('/^\+[0-9][0-9 ().\-]{5,24}$/', $s) === 1 || preg_match('/^\+[0-9]{1,4}$/', $s) === 1) {      // the second form: a bare country code such as "+256"
             return ' ' . $s;
         }
         return ($s !== '' && in_array($s[0], ['=', '+', '-', '@', "\t", "\r"], true)) ? "'" . $s : $s;

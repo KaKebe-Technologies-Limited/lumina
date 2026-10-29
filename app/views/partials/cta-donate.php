@@ -10,7 +10,7 @@ if (!section_on('global', 'cta')) {
 $title = $title ?? (string) content('global', 'cta.title');
 $text = $text ?? (string) content('global', 'cta.text');
 $primaryUrl = trim((string) content('global', 'cta.primary_url'));
-$primaryHref = $primaryUrl !== '' ? link_url($primaryUrl) : (string) setting('donate_url', '');
+$primaryHref = $primaryUrl !== '' ? link_url($primaryUrl) : donate_online_url();
 $primaryLabel = trim((string) content('global', 'cta.primary_label'));
 $secondary = content_btn('global', 'cta.secondary');
 ?>

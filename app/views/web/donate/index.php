@@ -9,7 +9,7 @@
 use App\Controllers\Web\HomeSupport as H;
 
 $heroImg = content_img('donate', 'hero.image');
-$donateUrl = trim((string) setting('donate_url', ''));
+$donateUrl = donate_online_url();
 $heroUrl = H::href('donate', 'hero.cta_url', $donateUrl);
 $heroLabel = trim((string) content('donate', 'hero.cta_label'));
 $actions = $heroUrl !== '' && $heroLabel !== '' ? [['label' => $heroLabel, 'url' => $heroUrl, 'class' => 'btn--cta btn--caps']] : [];

@@ -30,7 +30,7 @@ final class DonateController extends Controller
 
     public function index(Request $request): Response
     {
-        $hasMethod = trim((string) setting('donate_url', '')) !== ''
+        $hasMethod = trim((string) setting('donate_url', '')) !== '' || PesapalPayments::donationsEnabled()
             || trim((string) setting('donate_bank_details', '')) !== ''
             || trim((string) setting('donate_mobile_money', '')) !== ''
             || trim((string) setting('donate_paypal_email', '')) !== '';

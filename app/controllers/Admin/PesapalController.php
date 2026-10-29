@@ -25,6 +25,7 @@ final class PesapalController extends AdminController
         return $this->render('admin/pesapal/index', [
             'tables'    => $tables,
             'donationsOn' => PesapalPayments::donationsSwitch(),
+            'donateMethod' => PesapalPayments::donateMethod(),
             'shopOn'    => \App\Services\Shop\ShopSettings::bool('shop_pay_pesapal_enabled'),
             'shopOpen'  => \App\Services\Shop\ShopSettings::bool('shop_open'),
             'canShop'   => can('shop.settings'),
@@ -44,12 +45,14 @@ final class PesapalController extends AdminController
     public function options(Request $request): Response
     {
         $this->authorize('inbox.manage');
-        $changes = ['pesapal_donations_enabled' => $request->bool('donations') ? '1' : '0'];
+        // the tick box and Settings > Donations > "How online donations are taken" are the same choice: ticked = Pesapal is offered (kept as "only Pesapal" if that was chosen), unticked = the link only
+        $method = PesapalPayments::donateMethod();
+        $changes = ['donate_method' => $request->bool('donations') ? ($method === 'link' ? 'both' : $method) : 'link'];
         if (can('shop.settings')) {
             $changes['shop_pay_pesapal_enabled'] = $request->bool('shop') ? '1' : '0';
         }
         \App\Core\Settings::setMany($changes);
-        AuditLog::record('pesapal.options', 'settings', null, 'Pesapal offered on: ' . implode(', ', array_keys(array_filter(['donations' => $changes['pesapal_donations_enabled'] === '1', 'shop' => ($changes['shop_pay_pesapal_enabled'] ?? '0') === '1']))) ?: 'nowhere');
+        AuditLog::record('pesapal.options', 'settings', null, 'Pesapal offered on: ' . implode(', ', array_keys(array_filter(['donations' => $changes['donate_method'] !== 'link', 'shop' => ($changes['shop_pay_pesapal_enabled'] ?? '0') === '1']))) ?: 'nowhere');
         Flash::success('Saved. Pesapal is now offered on the places you ticked.');
         return $this->redirect('admin/pesapal');
     }

@@ -261,10 +261,23 @@ final class PesapalPayments
         return PesapalClient::hasKeys();
     }
 
-    /** The owner's switch (Admin > Pesapal payments): the Donate page's "Give online" form. On unless switched off. */
+    /** The owner's choice (Settings > Donations > "How online donations are taken", or the tick box on Admin > Pesapal payments): both | pesapal | link. */
+    public static function donateMethod(): string
+    {
+        $m = (string) \App\Core\Settings::get('donate_method', 'both');
+        return in_array($m, ['both', 'pesapal', 'link'], true) ? $m : 'both';
+    }
+
+    /** Is the Donate page's "Give online" form switched on (any choice but "link only")? */
     public static function donationsSwitch(): bool
     {
-        return (string) \App\Core\Settings::get('pesapal_donations_enabled', '1') !== '0';
+        return self::donateMethod() !== 'link';
+    }
+
+    /** Does Pesapal REPLACE the online donation link (choice "pesapal" and the gateway is ready)? Then the donate buttons open the form of this site. */
+    public static function donationsOnSite(): bool
+    {
+        return self::donateMethod() === 'pesapal' && self::ready();
     }
 
     /** Is online giving available to visitors? keys + the switch. */

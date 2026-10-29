@@ -51,10 +51,11 @@ final class AcademyCertificatesController extends AcademyAdminController
     public function export(Request $request): Response
     {
         $this->authorize('academy.manage');
-        $rows = Database::all('SELECT c.*, l.email AS learner_email FROM academy_certificates c LEFT JOIN academy_learners l ON l.id = c.learner_id ORDER BY c.id');
+        $wa = \App\Services\Academy\VerificationCode::ready() ? 'l.whatsapp' : 'NULL';
+        $rows = Database::all('SELECT c.*, l.email AS learner_email, l.phone AS learner_phone, l.country AS learner_country, ' . $wa . ' AS learner_whatsapp FROM academy_certificates c LEFT JOIN academy_learners l ON l.id = c.learner_id ORDER BY c.id');
         $this->audit('academy.certificates.export', 'academy_certificate', null, 'Downloaded the certificate list', ['rows' => count($rows)]);
-        return CsvExport::response('academy-certificates-' . date('Y-m-d') . '.csv', ['Number', 'Learner', 'Email', 'Course', 'Score %', 'Hours', 'Issued', 'Status'],
-            array_map(static fn(array $r): array => [$r['code'], $r['learner_name'], $r['learner_email'], $r['course_title'], $r['score_pct'], $r['hours'], $r['issued_at'], $r['revoked_at'] ? 'withdrawn' : 'valid'], $rows));
+        return CsvExport::response('academy-certificates-' . date('Y-m-d') . '.csv', ['Number', 'Learner', 'Email', 'Country', 'Country code', 'Phone', 'WhatsApp', 'Course', 'Score %', 'Hours', 'Issued', 'Status'],
+            array_map(static fn(array $r): array => [$r['code'], $r['learner_name'], $r['learner_email'], $r['learner_country'], \App\Services\Academy\LearnerPhones::dialCode($r['learner_country']), \App\Services\Academy\LearnerPhones::display($r['learner_phone'], $r['learner_country']), (string) ($r['learner_whatsapp'] ?? '') !== '' ? '+' . $r['learner_whatsapp'] : '', $r['course_title'], $r['score_pct'], $r['hours'], $r['issued_at'], $r['revoked_at'] ? 'withdrawn' : 'valid'], $rows));
     }
 
     /** Open the PDF of any certificate, also one that still waits for approval (to look at it before approving). */

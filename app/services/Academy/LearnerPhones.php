@@ -41,6 +41,34 @@ final class LearnerPhones
         return self::fit($dial . $d);
     }
 
+    /**
+     * A number as the REPORTS show it: with the country code of the learner's country ("+256772123456"), whatever way it was saved. Numbers that already start with + are
+     * shown as saved. With an unknown country and no + the number is shown as it is: a report never guesses a country.
+     */
+    public static function display(?string $phone, ?string $country): string
+    {
+        $p = trim((string) $phone);
+        if ($p === '') {
+            return '';
+        }
+        if (str_starts_with($p, '+')) {
+            return $p;
+        }
+        $dial = trim((string) $country) === '' ? null : Countries::dial((string) $country);
+        if ($dial === null && !str_starts_with((string) preg_replace('/\D+/', '', $p), '00')) {
+            return $p;
+        }
+        $intl = self::international($p, $dial);
+        return $intl === null ? $p : '+' . $intl;
+    }
+
+    /** "+256" for a country, '' when we do not know it. */
+    public static function dialCode(?string $country): string
+    {
+        $d = trim((string) $country) === '' ? null : Countries::dial((string) $country);
+        return $d === null ? '' : '+' . $d;
+    }
+
     /** The code used when the learner's country is unknown: WHATSAPP_COUNTRY_CODE from .env, else 256 (Uganda). */
     public static function fallbackDial(): string
     {

@@ -15,7 +15,7 @@
 
 $heroImg = content_img('projects', 'hero.image');
 $ctaBtn = content_btn('projects', 'hero.cta');
-$ctaHref = trim((string) content('projects', 'hero.cta_url')) !== '' ? $ctaBtn['url'] : link_url((string) setting('donate_url', ''));
+$ctaHref = trim((string) content('projects', 'hero.cta_url')) !== '' ? $ctaBtn['url'] : link_url(donate_online_url());
 $actions = [];
 if (trim((string) content('projects', 'hero.cta_label')) !== '' && $ctaHref !== '') {
     $actions[] = ['label' => (string) content('projects', 'hero.cta_label'), 'url' => $ctaHref, 'class' => 'btn--cta btn--caps'];

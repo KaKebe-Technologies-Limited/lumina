@@ -29,7 +29,7 @@ if (!empty($images) && is_array($images)) {
         $dpImages = $dpOwn;
     }
 }
-$dpOnline = trim((string) setting('donate_url', ''));
+$dpOnline = donate_online_url();
 $dpOnlineLabel = trim((string) content('global', 'donate_panel.online_label'));
 $dpNote = trim((string) content('global', 'donate_panel.note'));
 $dpId = 'donate-panel-' . substr(md5((string) $dpTitle), 0, 5);

@@ -59,6 +59,9 @@ return [
             'icon'  => 'heart',
             'help'  => 'Used by the Donate page and the donate buttons.',
             'fields' => [
+                'donate_method'       => ['label' => 'How online donations are taken', 'type' => 'select', 'default' => 'both', 'rules' => 'required|in:both,pesapal,link',
+                    'options' => ['both' => 'Both: the link below AND Pesapal on this site (card and mobile money)', 'pesapal' => 'Pesapal only: the donate buttons open the "Give online" form of this site (replaces the link below)', 'link' => 'The online donation link below only (no Pesapal form)'],
+                    'help' => 'Pesapal needs its keys in the server .env file (Admin > Pesapal payments says if it is ready). While Pesapal is not ready, the link below is used.'],
                 'donate_url'          => ['label' => 'Online donation link', 'type' => 'url', 'default' => 'https://gofund.me/676b7a086', 'rules' => 'nullable|url', 'help' => 'Currently a GoFundMe campaign.'],
                 'donate_intro'        => ['label' => 'Donation intro text', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:1000'],
                 'donate_bank_details' => ['label' => 'Bank transfer details', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:2000', 'help' => 'Leave empty until the foundation confirms its official account details.'],

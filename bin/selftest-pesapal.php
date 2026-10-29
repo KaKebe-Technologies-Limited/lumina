@@ -285,20 +285,41 @@ if (isset($probe) && $probe['code'] === 200) {
     check('admin: a payment row is listed', str_contains($page['body'], 'LAFD0-SELFTEST'));
     $r = $adminReq('POST', '/admin/pesapal/' . $dRow . '/check', ['_token' => $tok($page['body'])]);
     check('admin: "Check with Pesapal" on a row that never reached Pesapal explains itself (redirect, no 500)', in_array($r['code'], [302, 303], true), (string) $r['code']);
+    $st = $adminReq('GET', '/admin/settings');
+    check('Settings > Donations has the "How online donations are taken" choice with Pesapal only', $st['code'] === 200 && str_contains($st['body'], 'name="donate_method"') && str_contains($st['body'], 'Pesapal only'), (string) $st['code']);
     // where Pesapal is offered: the owner's tick boxes
-    $donBefore = Settings::get('pesapal_donations_enabled', '1');
+    $donBefore = Settings::get('donate_method', 'both');
     $page = $adminReq('GET', '/admin/pesapal');
     check('admin: the page has the "Where Pesapal is offered" tick boxes', str_contains($page['body'], 'Where Pesapal is offered') && str_contains($page['body'], 'name="donations"') && str_contains($page['body'], 'name="shop"'));
     $adminReq('POST', '/admin/pesapal/options', ['_token' => $tok($page['body']), 'shop' => '1']);
     Settings::flush();
-    check('options: ticking only the shop switches online giving off and the shop method on', Settings::get('pesapal_donations_enabled', '1') === '0' && Settings::get('shop_pay_pesapal_enabled', '0') === '1' && !PesapalPayments::donationsEnabled());
+    check('options: ticking only the shop switches online giving off and the shop method on', Settings::get('donate_method', 'both') === 'link' && Settings::get('shop_pay_pesapal_enabled', '0') === '1' && !PesapalPayments::donationsEnabled());
     $page = $adminReq('GET', '/admin/pesapal');
     $adminReq('POST', '/admin/pesapal/options', ['_token' => $tok($page['body']), 'donations' => '1']);
     Settings::flush();
-    check('options: ticking only donations switches online giving on and the shop method off', Settings::get('pesapal_donations_enabled', '1') === '1' && Settings::get('shop_pay_pesapal_enabled', '0') === '0' && PesapalPayments::donationsEnabled());
+    check('options: ticking only donations switches online giving on and the shop method off', Settings::get('donate_method', 'both') === 'both' && Settings::get('shop_pay_pesapal_enabled', '0') === '0' && PesapalPayments::donationsEnabled());
     $r = $adminReq('POST', '/admin/pesapal/options', ['donations' => '1']);
     check('options: without the CSRF token nothing is saved (403)', $r['code'] === 403, (string) $r['code']);
-    Settings::set('pesapal_donations_enabled', (string) $donBefore);
+    // "Pesapal only" (chosen in Settings > Donations) stays chosen when the donations box is ticked again, and replaces the external link
+    Settings::set('donate_method', 'pesapal');
+    $page = $adminReq('GET', '/admin/pesapal');
+    $adminReq('POST', '/admin/pesapal/options', ['_token' => $tok($page['body']), 'donations' => '1']);
+    Settings::flush();
+    check('options: with "Pesapal only" chosen, saving the tick box keeps it', Settings::get('donate_method', 'both') === 'pesapal');
+    $ext = trim((string) Settings::get('donate_url', ''));
+    check('donate buttons: "Pesapal only" sends them to the Give online form of this site, not to the external link', donate_online_url() === abs_url('donate') . '#give-online' && ($ext === '' || donate_online_url() !== $ext), donate_online_url());
+    putenv('PESAPAL_CONSUMER_KEY');
+    putenv('PESAPAL_CONSUMER_SECRET');
+    check('donate buttons: "Pesapal only" but no keys: the external link is used and the form is hidden', donate_online_url() === $ext && !PesapalPayments::donationsEnabled());
+    putenv('PESAPAL_CONSUMER_KEY=selftest-key');
+    putenv('PESAPAL_CONSUMER_SECRET=selftest-secret');
+    Settings::set('donate_method', 'both');
+    check('donate buttons: "Both" keeps the external link as the main button and shows the form too', donate_online_url() === $ext && PesapalPayments::donationsEnabled());
+    Settings::set('donate_method', 'link');
+    check('donate buttons: "Link only" hides the form', donate_online_url() === $ext && !PesapalPayments::donationsEnabled());
+    Settings::set('donate_method', 'nonsense');
+    check('donate buttons: a wrong value falls back to "both"', PesapalPayments::donateMethod() === 'both');
+    Settings::set('donate_method', (string) $donBefore);
     // tables missing (the database update was not imported yet): a clear message, never a 500
     Database::execute('RENAME TABLE pesapal_payments TO zz_pesapal_payments_off');
     try {

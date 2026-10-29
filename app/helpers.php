@@ -350,6 +350,20 @@ function setting(string $key, mixed $default = null): mixed
 }
 
 /**
+ * Where the "Donate" buttons lead: the "Give online" form of this site when Pesapal replaces the online donation link (Settings > Donations), else the online donation link.
+ */
+function donate_online_url(): string
+{
+    try {
+        if (\App\Services\Pesapal\PesapalPayments::donationsOnSite()) {
+            return abs_url('donate') . '#give-online';
+        }
+    } catch (\Throwable) {
+    }
+    return trim((string) setting('donate_url', ''));
+}
+
+/**
  * The Google Analytics measurement ID to use on THIS request: '' when none is set, and always '' on the personal meeting links (/meeting/{token}...) and on the
  * membership pages whose address is a credential (/membership/me/{token}, /membership/verify/{token}, /membership/confirmation/{ref}?t=...): their
  * address holds the only credential and must never reach a third party. Decided by PATH on the server, so it also covers the error pages
