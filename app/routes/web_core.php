@@ -43,3 +43,10 @@ $router->post('/involvement/ambassadors', [AmbassadorsController::class, 'submit
 $router->get('/donate', [DonateController::class, 'index'])->name('donate')->middleware('page.published:donate');
 $router->post('/donate/pledge', [DonateController::class, 'pledge'])->name('donate.pledge')
     ->middleware(['page.published:donate', 'honeypot', 'throttle:5,600']);
+
+// Pesapal (docs/PESAPAL.md): give online, the customer's return page and Pesapal's server-to-server notification (IPN, exempt from CSRF: Pesapal calls it, and it believes nothing it is told: the payment is asked of Pesapal)
+$router->post('/donate/online', [DonateController::class, 'online'])->name('donate.online')
+    ->middleware(['page.published:donate', 'honeypot', 'throttle:8,600']);
+$router->get('/pay/pesapal/return', [\App\Controllers\Web\PesapalController::class, 'returned'])->name('pesapal.return')->middleware('throttle:60,600');
+$router->get('/pay/pesapal/ipn', [\App\Controllers\Web\PesapalController::class, 'ipn'])->name('pesapal.ipn')->middleware(['csrf.exempt', 'throttle:240,60']);
+$router->post('/pay/pesapal/ipn', [\App\Controllers\Web\PesapalController::class, 'ipn'])->name('pesapal.ipn.post')->middleware(['csrf.exempt', 'throttle:240,60']);

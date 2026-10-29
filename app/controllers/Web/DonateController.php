@@ -12,6 +12,8 @@ use App\Core\Response;
 use App\Core\ValidationException;
 use App\Core\Validator;
 use App\Models\Donation;
+use App\Services\Pesapal\PesapalPayments;
+use App\Services\Shop\Money;
 
 /**
  * GET /donate and POST /donate/pledge  - OWNER: B1 "web-core".
@@ -21,6 +23,8 @@ use App\Models\Donation;
  */
 final class DonateController extends Controller
 {
+    use GatewayRedirects;
+
     private const CURRENCIES = ['UGX', 'USD', 'EUR', 'GBP'];
     private const METHODS = ['bank', 'mobile_money', 'paypal', 'other'];
 
@@ -37,6 +41,7 @@ final class DonateController extends Controller
             'currencies'       => array_combine(self::CURRENCIES, self::CURRENCIES),
             'selectedCurrency' => in_array($selectedCurrency, self::CURRENCIES, true) ? $selectedCurrency : 'UGX',
             'methods'          => $this->methodLabels(),
+            'giveOnline'       => PesapalPayments::ready(),
         ], [
             'breadcrumbs' => [[HomeSupport::navLabel('donate', 'Donate'), null]],
         ]);
@@ -103,6 +108,67 @@ final class DonateController extends Controller
 
         Flash::success((string) content('donate', 'pledge.success'));
         return $this->redirect('donate');
+    }
+
+    /**
+     * POST /donate/online: a donor who pays NOW through Pesapal (card, mobile money). The donation is recorded first (pledged, source "online"); it only becomes
+     * "received" when PesapalPayments::settle() has confirmed the money with Pesapal. Nothing the browser says about the result is trusted.
+     */
+    public function online(Request $request): Response
+    {
+        if (!PesapalPayments::ready()) {
+            Flash::error('Online giving is not switched on yet. Please use one of the other ways to give.');
+            return $this->redirect('donate');
+        }
+        $input = $request->all();
+        $rawAmount = is_scalar($input['give_amount'] ?? null) ? (string) $input['give_amount'] : '';
+        $parsed = self::parseAmount($rawAmount);
+        $currency = is_scalar($input['give_currency'] ?? null) ? strtoupper((string) $input['give_currency']) : '';
+        $min = $currency === 'UGX' ? 1000 : 1;
+        $errors = [];
+        $name = trim((string) ($input['give_name'] ?? ''));
+        $email = trim((string) ($input['give_email'] ?? ''));
+        $phone = trim((string) ($input['give_phone'] ?? ''));
+        if ($name === '' || mb_strlen($name) > 150) {
+            $errors['give_name'] = 'Please type your name.';
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190) {
+            $errors['give_email'] = 'Please type a valid e-mail address (your receipt goes there).';
+        }
+        if ($phone !== '' && preg_match('/^[0-9+()\s.-]{6,40}$/', $phone) !== 1) {
+            $errors['give_phone'] = 'Please type a valid phone number or leave it empty.';
+        }
+        if (!in_array($currency, self::CURRENCIES, true)) {
+            $errors['give_currency'] = 'Please choose a currency.';
+        }
+        if ($parsed === null || $parsed === '' || (float) $parsed < $min || (float) $parsed > 100000000) {
+            $errors['give_amount'] = $parsed === null || $parsed === '' ? 'Please type the amount with digits only.' : 'The smallest online gift is ' . number_format($min) . ' ' . ($currency ?: 'UGX') . '.';
+        }
+        $minor = $errors === [] ? Money::parse($parsed) : null;
+        if ($errors === [] && ($minor === null || $minor < 1)) {
+            $errors['give_amount'] = 'Please type the amount with digits only.';
+        }
+        if ($errors !== []) {
+            throw new ValidationException($errors, self::scrubOld($request->all()), 'give-online');
+        }
+        $donationId = Donation::create([
+            'donor_name'   => $name,
+            'donor_email'  => $email,
+            'donor_phone'  => $phone === '' ? null : $phone,
+            'amount'       => round((float) $parsed, 2),
+            'currency'     => $currency,
+            'method'       => 'pesapal',
+            'status'       => 'pledged',
+            'source'       => 'online',
+            'is_anonymous' => $request->bool('give_anonymous') ? 1 : 0,
+            'ip'           => $request->ip(),
+        ]);
+        $r = PesapalPayments::begin('donation', $donationId, (int) $minor, $currency, 'Donation to Lumina Africa Foundation', ['name' => $name, 'email' => $email, 'phone' => $phone]);
+        if (!$r['ok']) {
+            Flash::error('We could not open the secure payment page just now. Nothing was charged. Please try again in a minute, or use one of the other ways to give.');
+            return $this->redirect('donate');
+        }
+        return $this->sendToGateway((string) $r['link']);
     }
 
     /**

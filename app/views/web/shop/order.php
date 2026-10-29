@@ -65,7 +65,7 @@ $tone = $cancelled ? 'danger' : ($isPaid ? 'success' : ($o['payment_status'] ===
 
                         <?php if ($o['payment_status'] === 'review'): ?><p class="sh-alert sh-alert--info"><?= icon('info', 'icon--sm') ?> <span><?= e(content('shop', 'order.review_note')) ?></span></p><?php endif; ?>
                         <?php if ($o['payment_status'] === 'failed'): ?><p class="sh-alert sh-alert--error" role="status"><?= icon('alert-circle', 'icon--sm') ?> <span><?= e(content('shop', 'order.failed_note')) ?></span></p><?php endif; ?>
-                        <?php if ($pay['awaiting_verification'] || ($o['payment_status'] === 'pending' && $o['payment_method'] === 'flutterwave')): ?><p class="sh-alert sh-alert--info" role="status"><?= icon('clock', 'icon--sm') ?> <span><?= e(content('shop', 'order.pending_note')) ?></span></p><?php endif; ?>
+                        <?php if ($pay['awaiting_verification'] || ($o['payment_status'] === 'pending' && in_array($o['payment_method'], ['flutterwave', 'pesapal'], true))): ?><p class="sh-alert sh-alert--info" role="status"><?= icon('clock', 'icon--sm') ?> <span><?= e(content('shop', 'order.pending_note')) ?></span></p><?php endif; ?>
 
                         <?php if ($pay['details'] !== []): ?>
                             <dl class="sh-paydetails">

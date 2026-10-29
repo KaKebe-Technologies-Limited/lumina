@@ -13,14 +13,15 @@ namespace App\Services\Shop;
  *                          the transaction ID on the confirmation page; staff VERIFY and mark the order paid.
  *   bank         manual    BANK TRANSFER: same idea with the bank details and an optional transfer reference.
  *   flutterwave  online    CARD (Visa / Mastercard) + MOBILE MONEY through the Flutterwave hosted checkout (a full-page redirect).
+ *   pesapal      online    CARD + MOBILE MONEY + BANK through the Pesapal hosted checkout (docs/PESAPAL.md); needs PESAPAL_CONSUMER_KEY / _SECRET in .env.
  *
  * A method is OFFERED at checkout only when it is enabled AND usable (ready): momo needs a number, bank an account number, flutterwave a
  * secret key, book needs every cart item to allow booking. list() explains what is missing (`problems`) for the admin checklist.
  */
 final class PaymentMethods
 {
-    public const KEYS = ['book', 'cod', 'momo', 'bank', 'flutterwave'];
-    public const KINDS = ['book' => 'deferred', 'cod' => 'deferred', 'momo' => 'manual', 'bank' => 'manual', 'flutterwave' => 'online'];
+    public const KEYS = ['book', 'cod', 'momo', 'bank', 'flutterwave', 'pesapal'];
+    public const KINDS = ['book' => 'deferred', 'cod' => 'deferred', 'momo' => 'manual', 'bank' => 'manual', 'flutterwave' => 'online', 'pesapal' => 'online'];
 
     public static function isKey(string $key): bool
     {
@@ -101,6 +102,11 @@ final class PaymentMethods
             case 'bank':
                 if (ShopSettings::str('shop_bank_account_number') === '') {
                     $p[] = 'Add the bank account number.';
+                }
+                break;
+            case 'pesapal':
+                if (!\App\Services\Pesapal\PesapalClient::hasKeys()) {
+                    $p[] = 'Put the Pesapal consumer key and secret in the server .env file (PESAPAL_CONSUMER_KEY and PESAPAL_CONSUMER_SECRET), then use Admin > Pesapal to test the connection.';
                 }
                 break;
             case 'flutterwave':

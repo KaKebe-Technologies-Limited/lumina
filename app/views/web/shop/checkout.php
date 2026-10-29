@@ -40,7 +40,7 @@ $labels = ['name' => 'name_label', 'email' => 'email_label', 'phone' => 'phone_l
 $fieldIds = ['name' => 'f-name', 'email' => 'f-email', 'phone' => 'f-phone', 'address' => 'f-address', 'note' => 'f-note', 'consent' => 'f-consent', 'payment' => 'pay-group', 'delivery' => 'delivery-group'];
 $payLabelKey = 'place_label';
 foreach ($methods as $m) {
-    if ($m['key'] === $selected && $m['key'] === 'flutterwave') {
+    if ($m['key'] === $selected && in_array($m['key'], ['flutterwave', 'pesapal'], true)) {
         $payLabelKey = 'place_pay_label';
     }
 }
@@ -115,7 +115,7 @@ foreach ($methods as $m) {
                             <div class="sh-pay<?= $selected === $m['key'] ? ' is-on' : '' ?>">
                                 <label class="sh-pick" for="<?= e($mid) ?>">
                                     <input type="radio" id="<?= e($mid) ?>" name="payment" value="<?= e($m['key']) ?>"<?= $selected === $m['key'] ? ' checked' : '' ?> data-shop-pay="<?= e($m['key']) ?>">
-                                    <span class="sh-pick__icon"><?= icon($m['key'] === 'flutterwave' ? 'shield' : ($m['key'] === 'bank' ? 'banknote' : ($m['key'] === 'momo' ? 'smartphone' : ($m['key'] === 'book' ? 'calendar' : 'hand-heart')))) ?></span>
+                                    <span class="sh-pick__icon"><?= icon(in_array($m['key'], ['flutterwave', 'pesapal'], true) ? 'shield' : ($m['key'] === 'bank' ? 'banknote' : ($m['key'] === 'momo' ? 'smartphone' : ($m['key'] === 'book' ? 'calendar' : 'hand-heart')))) ?></span>
                                     <span class="sh-pick__text"><strong><?= e($m['label']) ?></strong><?php if ($m['instructions'] !== ''): ?><span class="sh-pick__sub"><?= e($m['instructions']) ?></span><?php endif; ?></span>
                                 </label>
                                 <?php $payDetails = in_array($m['key'], ['momo', 'bank'], true) ? PaymentMethods::details($m['key']) : []; ?>

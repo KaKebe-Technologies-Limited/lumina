@@ -90,6 +90,13 @@ final class ShopCheckoutController extends Controller
         }
         $order = (array) $res['order'];
         CartService::clear();
+        if ($method === 'pesapal') {
+            $r = \App\Services\Pesapal\PesapalShop::begin($order);
+            if ($r['ok']) {
+                return $this->sendToGateway((string) $r['link']);
+            }
+            Log::warning('Shop: the Pesapal payment page could not be opened', ['order' => $order['order_number'], 'error' => (string) ($r['error'] ?? '')]);
+        }
         if ($method === 'flutterwave') {
             $r = OnlinePayment::begin($order);
             if ($r['ok']) {

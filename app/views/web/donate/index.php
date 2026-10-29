@@ -132,6 +132,39 @@ $cards = content_list('donate', 'support.items'); $supportUrl = H::href('donate'
     <?php endif; ?>
 <?php section_end(); ?>
 
+<?php /* ------------------------------------------------------------------ GIVE ONLINE (Pesapal) */ ?>
+<?php if (!empty($giveOnline)): ?>
+<section class="section donate-give" id="give-online" aria-labelledby="give-online-title">
+    <div class="container container--narrow">
+        <div class="section__head" style="text-align:center">
+            <span class="eyebrow">Give online</span>
+            <h2 id="give-online-title">Give now with <span class="text-accent">card or mobile money</span></h2>
+            <p class="lead">Pay securely through Pesapal with Visa, Mastercard, MTN Mobile Money or Airtel Money. You will get a receipt by e-mail.</p>
+        </div>
+        <form class="form-card ia-form" method="post" action="<?= e(url('donate/online')) ?>" novalidate>
+            <?= partial('web/inner-a/_error_summary', ['title' => 'Please check the form', 'fields' => [
+                'give_name' => ['id' => 'f-give_name', 'label' => 'Name'], 'give_email' => ['id' => 'f-give_email', 'label' => 'E-mail'], 'give_phone' => ['id' => 'f-give_phone', 'label' => 'Phone'],
+                'give_amount' => ['id' => 'f-give_amount', 'label' => 'Amount'], 'give_currency' => ['id' => 'f-give_currency', 'label' => 'Currency'],
+            ], 'sid' => 'give-online']) ?>
+            <?= csrf_field() ?>
+            <?= honeypot_field() ?>
+            <div class="form-grid">
+                <?= partial('partials/form-field', ['name' => 'give_name', 'label' => 'Your name', 'required' => true, 'autocomplete' => 'name', 'maxlength' => 150]) ?>
+                <?= partial('partials/form-field', ['name' => 'give_email', 'label' => 'E-mail (for your receipt)', 'type' => 'email', 'required' => true, 'autocomplete' => 'email', 'maxlength' => 190]) ?>
+                <?= partial('partials/form-field', ['name' => 'give_phone', 'label' => 'Phone (optional)', 'type' => 'tel', 'autocomplete' => 'tel', 'maxlength' => 40]) ?>
+                <?= partial('partials/form-field', ['name' => 'give_amount', 'label' => 'Amount', 'required' => true, 'attrs' => ['inputmode' => 'decimal'], 'maxlength' => 15]) ?>
+                <?= partial('partials/form-field', ['name' => 'give_currency', 'label' => 'Currency', 'type' => 'select', 'required' => true, 'options' => $currencies, 'value' => $selectedCurrency]) ?>
+                <?= partial('partials/form-field', ['name' => 'give_anonymous', 'label' => 'Please keep my gift anonymous (do not show my name publicly)', 'type' => 'checkbox', 'class' => 'field--full']) ?>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn--cta btn--caps btn--lg" type="submit" data-loading-text="Opening the secure page..."><?= icon('lock', 'icon--sm') ?> Give securely</button>
+                <span class="form-note">You will be taken to Pesapal's secure page to finish. We never see your card details.</span>
+            </div>
+        </form>
+    </div>
+</section>
+<?php endif; ?>
+
 <?php /* ------------------------------------------------------------------ PLEDGE FORM */ ?>
 <?php
 $fieldMeta = [

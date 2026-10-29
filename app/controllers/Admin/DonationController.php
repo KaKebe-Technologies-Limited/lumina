@@ -33,7 +33,7 @@ final class DonationController extends InboxController
         'amount_low'  => 'd.amount ASC, d.id ASC',
     ];
     public const METHOD_LABELS = [
-        'gofundme' => 'GoFundMe', 'bank' => 'Bank transfer', 'mobile_money' => 'Mobile money', 'paypal' => 'PayPal', 'cash' => 'Cash', 'other' => 'Other',
+        'gofundme' => 'GoFundMe', 'bank' => 'Bank transfer', 'mobile_money' => 'Mobile money', 'paypal' => 'PayPal', 'cash' => 'Cash', 'other' => 'Other', 'pesapal' => 'Pesapal (online)',
     ];
     public const CURRENCIES = ['UGX', 'USD', 'EUR', 'GBP', 'KES', 'TZS', 'RWF'];
 

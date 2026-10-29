@@ -20,7 +20,7 @@ $selOptions = is_array($selOptions) ? $selOptions : $options;
 $modeNow = (string) old('shop_flw_mode', $mode);
 $mismatch = $keyMode !== 'unknown' && $keyMode !== $mode;
 $momoDetail = static fn(string $k): string => (string) old($k, ShopSettings::str($k));
-$icons = ['book' => 'calendar', 'cod' => 'hand-heart', 'momo' => 'smartphone', 'bank' => 'banknote', 'flutterwave' => 'credit-card'];
+$icons = ['book' => 'calendar', 'cod' => 'hand-heart', 'momo' => 'smartphone', 'bank' => 'banknote', 'flutterwave' => 'credit-card', 'pesapal' => 'credit-card'];
 $this->start('scripts'); ?>
 <script src="<?= e(asset('js/admin-shop-payments.js')) ?>" defer></script>
 <?php $this->end(); ?>

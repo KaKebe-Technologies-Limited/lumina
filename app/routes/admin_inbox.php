@@ -71,4 +71,9 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth']], function ($route
     $router->post('/donations/{id}/status', [DonationController::class, 'status'])->name('admin.donations.status');
     $router->get('/donations/{id}/receipt', [DonationController::class, 'receipt'])->name('admin.donations.receipt');
     $router->post('/donations/{id}/delete', [DonationController::class, 'destroy'])->name('admin.donations.delete');
+
+    // ---- Pesapal payments (docs/PESAPAL.md)
+    $router->get('/pesapal', [\App\Controllers\Admin\PesapalController::class, 'index'])->name('admin.pesapal');
+    $router->post('/pesapal/test', [\App\Controllers\Admin\PesapalController::class, 'test'])->middleware('throttle:10,600')->name('admin.pesapal.test');
+    $router->post('/pesapal/{id}/check', [\App\Controllers\Admin\PesapalController::class, 'check'])->middleware('throttle:30,600')->where('id', '[0-9]+')->name('admin.pesapal.check');
 });

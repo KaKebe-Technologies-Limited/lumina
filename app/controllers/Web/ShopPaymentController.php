@@ -34,7 +34,7 @@ final class ShopPaymentController extends Controller
         if ($order === null) {
             $this->abort(404);
         }
-        $r = OnlinePayment::begin($order);
+        $r = ($order['payment_method'] ?? '') === 'pesapal' ? \App\Services\Pesapal\PesapalShop::begin($order) : OnlinePayment::begin($order);
         if ($r['ok']) {
             return $this->sendToGateway((string) $r['link']);        // an interstitial, not a 302: the CSP form-action would block a redirect after a POST
         }
