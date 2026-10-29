@@ -195,6 +195,49 @@ if ($abs !== '') {
     @unlink($abs);
 }
 
+// ------------------------------------------------------------------------------------------------------------- reject an application
+check('reject: the rejection columns exist after the schema migration', LearnerRegistry::rejectReady());
+$rjId = (int) Database::insert('academy_learners', ['name' => 'Zed Lre Reject', 'email' => 'zz-lre-reject@example.test', 'password_hash' => Auth::hashPassword($pw), 'phone' => '+256700000020', 'country' => 'Uganda', 'whatsapp' => '256772000020', 'email_verified_at' => null, 'is_active' => 1]);
+LearnerRegistry::assign($rjId);
+$rjList = $req('GET', '/admin/academy/learners?q=zz-lre-reject', [], $jA)['body'];
+check('reject: a waiting learner has a Reject button next to Approve in the list', str_contains($rjList, 'admin/academy/learners/' . $rjId . '/reject') && str_contains($rjList, '>Reject</button>') && str_contains($rjList, '>Approve</button>'));
+$rjShow = $req('GET', '/admin/academy/learners/' . $rjId, [], $jA)['body'];
+check('reject: the learner page has "Reject this application" with a reason box and an optional e-mail', str_contains($rjShow, 'Reject this application') && str_contains($rjShow, 'name="reason"') && str_contains($rjShow, 'Also e-mail them'));
+$editorJar = null;
+$ed = $post('/admin/academy/learners/' . $rjId . '/reject', ['reason' => 'x'], $editorJar, '/admin/login');
+check('reject: only an administrator can reject (a visitor is turned away and nothing changes)', Database::value('SELECT rejected_at FROM academy_learners WHERE id = ?', [$rjId]) === null);
+$rj = $post('/admin/academy/learners/' . $rjId . '/reject', ['reason' => 'We could not verify your details.'], $jA, '/admin/academy/learners/' . $rjId);
+$rjRow = Database::one('SELECT * FROM academy_learners WHERE id = ?', [$rjId]);
+check('reject: the application is rejected: switched off, with the time, the administrator and the reason; it leaves the waiting list', in_array($rj['code'], [302, 303], true) && (int) $rjRow['is_active'] === 0 && $rjRow['rejected_at'] !== null && (int) $rjRow['rejected_by'] === $adm && $rjRow['reject_reason'] === 'We could not verify your details.');
+check('reject: it is recorded in the activity log', Database::value("SELECT COUNT(*) FROM audit_log WHERE action = 'academy.learner.reject' AND summary LIKE '%zz-lre-reject@%'", [], 0) > 0);
+$after = $req('GET', '/admin/academy/learners?q=zz-lre-reject', [], $jA)['body'];
+check('reject: the list shows a red "Rejected" badge with the reason and "Approve after all"', str_contains($after, 'badge--danger">Rejected') && str_contains($after, 'We could not verify') && str_contains($after, 'Approve after all'));
+$fRej = $req('GET', '/admin/academy/learners?status=rejected&q=zz-lre', [], $jA)['body'];
+$fOff = $req('GET', '/admin/academy/learners?status=inactive&q=zz-lre-reject', [], $jA)['body'];
+check('reject: the Status filter has "Rejected"; "Switched off" does not list rejected applicants', str_contains($fRej, 'zz-lre-reject@') && !str_contains($fOff, 'zz-lre-reject@'));
+$jRj = null;
+$lgRj = $post('/academy/login', ['email' => 'zz-lre-reject@example.test', 'password' => $pw], $jRj, '/academy/login');
+$ctPage = $req('GET', '/academy/contact', [], $jRj);
+check('reject: the applicant who tries to sign in is told it was not approved, with the reason, and is sent to the contact form to appeal', in_array($lgRj['code'], [302, 303], true) && str_contains($lgRj['head'], 'academy/contact') && str_contains($ctPage['body'], 'not approved') && str_contains($ctPage['body'], 'We could not verify your details.'));
+$badPw = $post('/academy/login', ['email' => 'zz-lre-reject@example.test', 'password' => 'wrong password 12'], $jRj, '/academy/login');
+check('reject: with a wrong password nothing is revealed (the usual message)', !str_contains($badPw['head'], 'academy/contact') && !str_contains($req('GET', '/academy/login', [], $jRj)['body'] . $badPw['body'], 'not approved'));
+$appeal = $post('/academy/contact', ['name' => 'Zed Lre Reject', 'email' => 'zz-lre-reject@example.test', 'phone' => '', 'message' => 'Please look at my application again, I can send my ID.'], $jRj, '/academy/contact');
+check('reject: the applicant can appeal through the contact form: it reaches the team in their conversation', (int) Database::value("SELECT COUNT(*) FROM academy_messages WHERE learner_id = ? AND sender = 'learner' AND body LIKE '%look at my application%'", [$rjId], 0) === 1);
+$again = $post('/admin/academy/learners/' . $rjId . '/reject', ['reason' => 'again'], $jA, '/admin/academy/learners/' . $rjId);
+check('reject: an application that is already rejected cannot be rejected twice (the first reason stays)', Database::value('SELECT reject_reason FROM academy_learners WHERE id = ?', [$rjId]) === 'We could not verify your details.');
+$re = $post('/admin/academy/learners/' . $rjId . '/approve', ['back' => 'list'], $jA, '/admin/academy/learners?q=zz-lre-reject');
+$reRow = Database::one('SELECT * FROM academy_learners WHERE id = ?', [$rjId]);
+check('reject: "Approve after all" reconsiders it: the account is on again, approved, and the rejection is cleared', (int) $reRow['is_active'] === 1 && $reRow['email_verified_at'] !== null && $reRow['approved_at'] !== null && $reRow['rejected_at'] === null && $reRow['reject_reason'] === null);
+$jOk = null;
+$lgOk = $post('/academy/login', ['email' => 'zz-lre-reject@example.test', 'password' => $pw], $jOk, '/academy/login');
+check('reject: and the learner can sign in now', in_array($lgOk['code'], [302, 303], true) && str_contains($lgOk['head'], 'academy/'));
+$apprLearner = Database::one("SELECT id FROM academy_learners WHERE email = 'zz-lre-one@example.test'");
+check('reject: an approved learner cannot be rejected', !LearnerRegistry::reject((int) $apprLearner['id'], 1, 'no') && Database::value('SELECT rejected_at FROM academy_learners WHERE id = ?', [(int) $apprLearner['id']]) === null);
+$gjId = (int) Database::insert('academy_learners', ['name' => 'Zed Lre GReject', 'email' => 'zz-lre-greject@example.test', 'password_hash' => Auth::hashPassword($pw), 'email_verified_at' => null, 'is_active' => 1]);
+LearnerRegistry::reject($gjId, 1, '');
+$g = \App\Services\Academy\GoogleSignIn::account(['email' => 'zz-lre-greject@example.test', 'sub' => 'zz-lre-gsub', 'name' => 'Zed']);
+check('reject: signing in with Google does not get a rejected applicant in', !$g['ok'] && str_contains((string) $g['error'], 'not approved'));
+
 // ------------------------------------------------------------------------------------------------------------- export + other doors
 $csv = $req('GET', '/admin/academy/learners-export?q=zz-lre', [], $jA)['body'];
 check('export: the learner list has a Reg no column with the numbers', str_contains($csv, 'Reg no') && str_contains($csv, (string) $one['reg_no']));

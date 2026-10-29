@@ -1903,6 +1903,23 @@ CREATE TABLE IF NOT EXISTS `academy_inquiries` (
   KEY `ix_academy_inquiries_open` (`handled_at`, `id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Migration (idempotent): an administrator can reject an application (docs/ACADEMY.md): when, by whom and the reason shown to the applicant.
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'rejected_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_learners` ADD COLUMN `rejected_at` DATETIME NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'rejected_by');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_learners` ADD COLUMN `rejected_by` INT UNSIGNED NULL AFTER `rejected_at`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'reject_reason');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_learners` ADD COLUMN `reject_reason` VARCHAR(300) NULL AFTER `rejected_by`', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 -- Bono AI, the support assistant of the public website (docs/BONO.md): what it learned from the site, answers an administrator taught it, and the questions people asked.
 CREATE TABLE IF NOT EXISTS `bono_pages` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,

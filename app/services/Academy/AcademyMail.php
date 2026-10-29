@@ -130,6 +130,16 @@ final class AcademyMail
         ], ['label' => 'Open my messages', 'url' => abs_url('academy/portal/messages')]);
     }
 
+    /** The application was rejected (only when the administrator ticks "also e-mail"; best effort). */
+    public static function rejected(array $learner, string $reason): bool
+    {
+        return self::send((string) $learner['email'], 'About your LAF Academy application', [
+            'Hello ' . self::first((string) $learner['name']) . ',',
+            'Thank you for applying to the LAF Academy. We could not approve your application' . ($reason !== '' ? ': ' . $reason : '.'),
+            'If you think this is a mistake, please write to the Academy team and we will look at it again.',
+        ], ['label' => 'Message the Academy team', 'url' => abs_url('academy/contact')]);
+    }
+
     /** An administrator approved the account (best effort: approval never depends on this e-mail). */
     public static function approved(array $learner): bool
     {

@@ -86,6 +86,7 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/inquiries/{id}/done', [AcademyMessagesController::class, 'inquiryDone'])->name('admin.academy.inquiries.done');
     $router->get('/learners/{id}/messages', [AcademyMessagesController::class, 'thread'])->name('admin.academy.messages.thread');
     $router->post('/learners/{id}/messages', [AcademyMessagesController::class, 'send'])->middleware('throttle:120,60')->name('admin.academy.messages.send');
+    $router->post('/learners/{id}/reject', [AcademyLearnersController::class, 'reject'])->middleware('throttle:120,60')->name('admin.academy.learners.reject');
     $router->post('/learners/{id}/approve', [AcademyLearnersController::class, 'approve'])->middleware('throttle:120,60')->name('admin.academy.learners.approve');
     $router->post('/learners/{id}/verify', [AcademyLearnersController::class, 'verify'])->name('admin.academy.learners.verify');
     $router->post('/learners/{id}/approve-certificates', [AcademyLearnersController::class, 'approveCertificates'])->middleware('throttle:60,60')->name('admin.academy.learners.approve_certificates');

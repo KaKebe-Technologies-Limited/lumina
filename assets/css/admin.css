@@ -23695,3 +23695,25 @@ body.admin.fs-printpage .fs-stars__off {
 tr.is-unread td {
   background: #FFFBEA;
 }
+
+.aac-reject {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(180, 35, 24, 0.35);
+  border-radius: 12px;
+  background: rgba(180, 35, 24, 0.04);
+}
+
+.aac-reject summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+}
+
+.aac-reject summary::-webkit-details-marker {
+  display: none;
+}
+
+.aac-reject form {
+  margin-top: 0.75rem;
+}

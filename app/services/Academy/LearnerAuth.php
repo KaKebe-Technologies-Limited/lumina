@@ -376,6 +376,10 @@ final class LearnerAuth
         // always verify against a hash so the answer takes the same time whether or not the address exists
         $hash = $l['password_hash'] ?? '$2y$10$abcdefghijklmnopqrstuuJ0zH2o9B5uD2o1cE8o8R7oR0b5eI1xW';
         $ok = Auth::verifyPassword($password, (string) $hash) && $l !== null && (int) $l['is_active'] === 1;
+        if (!$ok && $l !== null && (int) $l['is_active'] !== 1 && ($l['rejected_at'] ?? null) !== null && Auth::verifyPassword($password, (string) $l['password_hash'])) {
+            return ['ok' => false, 'error' => 'Your application was not approved' . (trim((string) ($l['reject_reason'] ?? '')) !== '' ? ': ' . trim((string) $l['reject_reason']) : '.')
+                . ' If you think this is a mistake, please message the Academy team and we will look at it again.', 'unverified' => false, 'learner' => null, 'rejected' => true];
+        }
         if (!$ok) {
             RateLimit::hit($key, 900);
             RateLimit::hit('academy-login-ip:' . $ip, 900);

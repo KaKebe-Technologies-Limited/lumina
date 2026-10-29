@@ -38,3 +38,8 @@
 .aac-chat__bubble { margin: 0; padding: 0.6rem 0.85rem; line-height: 1.5; text-align: left; overflow-wrap: anywhere; }
 .aac-chat__meta { font-size: $fs-xs; color: $ink-soft; }
 tr.is-unread td { background: #FFFBEA; }
+
+// ---- reject an application (learner page)
+.aac-reject { margin-top: $space-4; padding: $space-3 $space-4; border: 1px solid rgba($danger, 0.35); border-radius: $radius; background: rgba($danger, 0.04);
+  summary { cursor: pointer; list-style: none; display: inline-flex; &::-webkit-details-marker { display: none; } }
+  form { margin-top: $space-3; } }

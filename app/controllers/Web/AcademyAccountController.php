@@ -175,6 +175,10 @@ final class AcademyAccountController extends AcademyBaseController
                 Flash::warning((string) $res['error']);
                 return $this->redirect(LearnerAuth::emailVerificationOn() ? 'academy/check-email' : 'academy/pending');
             }
+            if (!empty($res['rejected'])) {
+                Flash::error((string) $res['error']);
+                return $this->redirect('academy/contact');
+            }
             $this->fail(['password' => (string) $res['error']], 'academy/login');
         }
         if (LearnerAuth::missingContact((array) $res['learner'])) {

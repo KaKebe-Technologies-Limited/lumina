@@ -65,7 +65,9 @@ final class AcademyLearnersController extends AcademyAdminController
         if ($status === 'active') {
             $where[] = 'l.is_active = 1 AND l.email_verified_at IS NOT NULL';
         } elseif ($status === 'inactive') {
-            $where[] = 'l.is_active = 0';
+            $where[] = 'l.is_active = 0' . (LearnerRegistry::rejectReady() ? ' AND l.rejected_at IS NULL' : '');
+        } elseif ($status === 'rejected' && LearnerRegistry::rejectReady()) {
+            $where[] = 'l.rejected_at IS NOT NULL';
         } elseif ($status === 'unverified') {
             $where[] = 'l.is_active = 1 AND l.email_verified_at IS NULL';
         } else {
@@ -85,7 +87,7 @@ final class AcademyLearnersController extends AcademyAdminController
         [$where, $params, $f] = $this->filters($request);
         $total = (int) Database::value('SELECT COUNT(*) FROM academy_learners l' . $where, $params, 0);
         $pagination = Pagination::make($total, $request->page(), $this->perPage());
-        $extra = (\App\Services\Academy\LearnerMessages::ready() ? ", (SELECT COUNT(*) FROM academy_messages mu WHERE mu.learner_id = l.id AND mu.sender = 'learner' AND mu.read_at IS NULL) AS msg_unread" : '')
+        $extra = (LearnerRegistry::rejectReady() ? ', l.rejected_at, l.reject_reason' : '') . (\App\Services\Academy\LearnerMessages::ready() ? ", (SELECT COUNT(*) FROM academy_messages mu WHERE mu.learner_id = l.id AND mu.sender = 'learner' AND mu.read_at IS NULL) AS msg_unread" : '')
             . (LearnerRegistry::ready() ? ', l.reg_no, l.approved_at' : '') . (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '')
             . (CertificateService::approvalReady() ? ', (SELECT COUNT(*) FROM academy_certificates cw WHERE cw.learner_id = l.id AND cw.approved_at IS NULL AND cw.revoked_at IS NULL) AS certs_waiting' : '');
         $rows = Database::all(
@@ -292,6 +294,22 @@ final class AcademyLearnersController extends AcademyAdminController
         $this->audit('academy.learner.approve_all', 'academy_learner', null, 'Approved every learner who was waiting', ['count' => $n]);
         Flash::success($n . ' learner' . ($n === 1 ? ' was' : 's were') . ' approved. They can sign in now.');
         return $this->redirect('admin/academy/learners');
+    }
+
+    /** The "Reject" button: the application is declined, the learner cannot sign in and is told why (and can appeal through the contact form). */
+    public function reject(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        $reason = $request->string('reason');
+        if (LearnerRegistry::reject($id, Auth::id(), $reason)) {
+            $this->audit('academy.learner.reject', 'academy_learner', $id, 'Rejected the application of ' . $l['email'] . ((string) ($l['reg_no'] ?? '') !== '' ? ' (' . $l['reg_no'] . ')' : ''), ['reason' => mb_substr(trim($reason), 0, 300)]);
+            $mailed = $request->bool('email') ? \App\Services\Academy\AcademyMail::rejected($l, trim($reason)) : null;
+            Flash::success('The application of ' . $l['name'] . ' was rejected. They cannot sign in; if they try, they are told' . (trim($reason) !== '' ? ' the reason you gave' : '') . ' and can message the team.' . ($mailed === null ? '' : ($mailed ? ' They were also e-mailed.' : ' The e-mail could not be sent.')));
+        } else {
+            Flash::info('This application cannot be rejected (it is already approved or rejected).');
+        }
+        return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
     }
 
     /** The "Approve" button: the learner can sign in now, whether or not the e-mail ever arrives. */

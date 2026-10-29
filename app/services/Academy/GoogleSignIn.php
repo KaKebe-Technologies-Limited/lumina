@@ -219,7 +219,7 @@ final class GoogleSignIn
             AcademyMail::welcome($l);
         } else {
             if ((int) $l['is_active'] !== 1) {
-                return ['ok' => false, 'error' => 'This account is switched off. Please contact the Academy team.', 'learner' => null, 'created' => false];
+                return ['ok' => false, 'error' => ($l['rejected_at'] ?? null) !== null ? 'Your application was not approved. Please message the Academy team if you think this is a mistake.' : 'This account is switched off. Please contact the Academy team.', 'learner' => null, 'created' => false];
             }
             $upd = [];
             if ($l['email_verified_at'] === null) {

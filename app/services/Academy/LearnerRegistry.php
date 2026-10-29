@@ -34,6 +34,38 @@ final class LearnerRegistry
         return $ok;
     }
 
+    /** True when the rejection columns exist (the code can be uploaded before the database update: Reject is then hidden). */
+    public static function rejectReady(): bool
+    {
+        static $ok = null;
+        if ($ok === null) {
+            try {
+                $ok = (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name IN ('rejected_at', 'rejected_by', 'reject_reason')", [], 0) === 3;
+            } catch (\Throwable) {
+                $ok = false;
+            }
+        }
+        return $ok;
+    }
+
+    /**
+     * Reject an application: the account is switched off, marked as rejected (when, by whom, why) and cannot sign in; at the next sign-in attempt the applicant is told, with
+     * the reason, and can write to the Academy team to appeal. Only a learner who is not approved yet can be rejected.
+     */
+    public static function reject(int $id, ?int $by, string $reason): bool
+    {
+        if (!self::rejectReady()) {
+            return false;
+        }
+        $l = Database::one('SELECT id, email_verified_at, rejected_at FROM academy_learners WHERE id = ?', [$id]);
+        if ($l === null || $l['rejected_at'] !== null || $l['email_verified_at'] !== null) {
+            return false;
+        }
+        $reason = trim((string) preg_replace('/\s+/u', ' ', strip_tags($reason)));
+        Database::update('academy_learners', ['is_active' => 0, 'rejected_at' => date('Y-m-d H:i:s'), 'rejected_by' => $by, 'reject_reason' => $reason !== '' ? mb_substr($reason, 0, 300) : null, 'token_hash' => null, 'token_kind' => null, 'token_expires_at' => null], 'id = ?', [$id]);
+        return true;
+    }
+
     public static function format(int $id, string $createdAt): string
     {
         $year = (int) substr($createdAt, 0, 4);
@@ -88,11 +120,14 @@ final class LearnerRegistry
     /** Administrator approval: the learner can sign in now, whether or not the e-mail ever arrives. */
     public static function approve(int $id, ?int $by): bool
     {
-        $l = Database::one('SELECT id, name, email, email_verified_at FROM academy_learners WHERE id = ?', [$id]);
+        $l = Database::one('SELECT * FROM academy_learners WHERE id = ?', [$id]);
         if ($l === null || $l['email_verified_at'] !== null) {
             return false;
         }
         $upd = ['email_verified_at' => date('Y-m-d H:i:s'), 'token_hash' => null, 'token_kind' => null, 'token_expires_at' => null];
+        if (self::rejectReady() && $l['rejected_at'] !== null) {
+            $upd += ['is_active' => 1, 'rejected_at' => null, 'rejected_by' => null, 'reject_reason' => null];        // reconsidered: the account is on again
+        }
         if (self::ready()) {
             $upd['approved_at'] = date('Y-m-d H:i:s');
             $upd['approved_by'] = $by;

@@ -23,7 +23,8 @@ $lid = (int) $l['id']; ?>
                 <?php if ($manager && !empty($l['whatsapp'])): ?><div><dt>WhatsApp</dt><dd><a href="https://wa.me/<?= e((string) $l['whatsapp']) ?>" target="_blank" rel="noopener">+<?= e((string) $l['whatsapp']) ?></a></dd></div><?php endif; ?>
                 <div><dt>Joined</dt><dd><?= e(format_datetime($l['created_at'], 'j M Y, H:i')) ?></dd></div>
                 <div><dt>Last sign-in</dt><dd><?= $l['last_login_at'] ? e(format_datetime($l['last_login_at'], 'j M Y, H:i')) : 'Never' ?></dd></div>
-                <div><dt>Account</dt><dd><?= (int) $l['is_active'] === 1 ? 'Active' : 'Switched off' ?></dd></div>
+                <div><dt>Account</dt><dd><?= !empty($l['rejected_at']) ? '<span class="badge badge--danger">Rejected</span> ' . e(format_datetime($l['rejected_at'], 'j M Y, H:i')) : ((int) $l['is_active'] === 1 ? 'Active' : 'Switched off') ?></dd></div>
+                <?php if (!empty($l['rejected_at']) && !empty($l['reject_reason'])): ?><div><dt>Reason given</dt><dd><?= e((string) $l['reject_reason']) ?></dd></div><?php endif; ?>
             </dl>
             <?php if ($manager): ?>
                 <div class="aac-actions">
@@ -33,6 +34,27 @@ $lid = (int) $l['id']; ?>
                     <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/toggle')) ?>" class="inline-form" data-confirm="<?= (int) $l['is_active'] === 1 ? 'Switch this account off? The learner can no longer sign in (progress and certificates are kept).' : 'Switch this account on again?' ?>"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit"><?= (int) $l['is_active'] === 1 ? 'Switch the account off' : 'Switch the account on' ?></button></form>
                     <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/delete')) ?>" class="inline-form" data-confirm="Delete this learner account and all progress? Certificates already issued stay valid. This cannot be undone."><?= csrf_field() ?><button class="btn btn--ghost btn--sm btn-danger-hover" type="submit"><?= icon('trash', 'icon--sm') ?> Delete</button></form>
                 </div>
+                <?php if (\App\Services\Academy\LearnerRegistry::rejectReady()): ?>
+                    <?php if (!empty($l['rejected_at'])): ?>
+                        <div class="aac-reject">
+                            <p>This application was <strong>rejected</strong>. The learner cannot sign in; if they try, they see the reason and can message the team.</p>
+                            <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/approve')) ?>" class="inline-form" data-confirm="Approve <?= e($l['name']) ?> after all? The rejection is removed and they can sign in."><?= csrf_field() ?><button class="btn btn--primary btn--sm" type="submit">Approve after all</button></form>
+                        </div>
+                    <?php elseif ($l['email_verified_at'] === null && (int) $l['is_active'] === 1): ?>
+                        <details class="aac-reject">
+                            <summary class="btn btn--ghost btn--sm btn-danger-hover">Reject this application</summary>
+                            <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/reject')) ?>" novalidate>
+                                <?= csrf_field() ?>
+                                <div class="field">
+                                    <label class="field__label" for="rj-reason">Reason (shown to the applicant when they try to sign in)</label>
+                                    <textarea class="textarea" id="rj-reason" name="reason" rows="3" maxlength="300" placeholder="For example: we could not verify your details."></textarea>
+                                </div>
+                                <label class="check"><input type="checkbox" name="email" value="1"><span>Also e-mail them (uses your e-mail allowance: leave it off when e-mail is limited)</span></label>
+                                <p><button class="btn btn--primary btn--sm" type="submit" data-confirm="Reject this application? The learner cannot sign in. You can approve them again later.">Reject the application</button></p>
+                            </form>
+                        </details>
+                    <?php endif; ?>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </section>
