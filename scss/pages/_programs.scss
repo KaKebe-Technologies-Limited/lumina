@@ -510,3 +510,6 @@
     &__dir { display: inline-flex; align-items: center; gap: $space-2; font-family: $font-heading-caps; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: $ink-soft; }
     &__title { font-family: $font-display; font-size: 1.2rem; font-weight: 600; line-height: 1.25; color: $navy; }
 }
+
+// the banner stays short on phones and tablets: the vision quote only shows beside the title on large screens
+.page-programs .programs-hero__panel { display: none; @include respond(lg) { display: block; } }

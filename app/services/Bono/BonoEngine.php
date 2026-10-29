@@ -76,9 +76,9 @@ final class BonoEngine
             $best = 0.0;
             foreach (array_keys($alts) as $a) {
                 if (!isset($dfCache[$a])) {
-                    $dfCache[$a] = (int) Database::value('SELECT COUNT(*) FROM bono_chunks WHERE stems LIKE ?', [$like($a)], 0);
+                    $dfCache[$a] = (int) Database::value('SELECT COUNT(*) FROM bono_chunks WHERE stems LIKE ?', [$like((string) $a)], 0);
                     $conds[] = 'c.stems LIKE ?';
-                    $params[] = $like($a);
+                    $params[] = $like((string) $a);
                 }
                 $best = max($best, log(1 + ($n - $dfCache[$a] + 0.5) / ($dfCache[$a] + 0.5)) * $alts[$a]);
             }

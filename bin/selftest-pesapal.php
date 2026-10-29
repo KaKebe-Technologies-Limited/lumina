@@ -249,6 +249,55 @@ if ($base === '' || (($probe = $http('GET', '/donate'))['code'] ?? 0) !== 200) {
     check('the admin Pesapal page needs a login', in_array($r['code'], [301, 302, 303, 401, 403], true), (string) $r['code']);
 }
 
+// ---- the admin pages, signed in (a missing method or table here would be a 500 in production) --------------------------------
+if (isset($probe) && $probe['code'] === 200) {
+    $jar = tempnam(sys_get_temp_dir(), 'pesj');
+    $adminReq = static function (string $method, string $path, array $form = []) use ($base, $jar): array {
+        $ch = curl_init($base . $path);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_TIMEOUT => 30, CURLOPT_COOKIEJAR => $jar, CURLOPT_COOKIEFILE => $jar, CURLOPT_FOLLOWLOCATION => false, CURLOPT_SSL_VERIFYPEER => false]);
+        if ($method === 'POST') {
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($form));
+        }
+        $raw = (string) curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $hs = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        curl_close($ch);
+        return ['code' => $code, 'body' => substr($raw, $hs), 'loc' => preg_match('/^location:\s*(\S+)/mi', substr($raw, 0, $hs), $m) === 1 ? $m[1] : ''];
+    };
+    $tok = static fn(string $html): string => preg_match('/name="_token" value="([^"]+)"/', $html, $m) === 1 ? $m[1] : '';
+    $pw = 'Pesapal test pass 91';
+    \App\Models\User::create(['name' => 'ZZ Pesapal Admin', 'email' => 'zz-pesapal-admin@example.test', 'password_hash' => \App\Core\Auth::hashPassword($pw), 'role' => 'admin', 'is_active' => 1, 'must_change_password' => 0]);
+    Database::execute('DELETE FROM rate_limits');
+    $page = $adminReq('GET', '/admin/login');
+    $adminReq('POST', '/admin/login', ['_token' => $tok($page['body']), 'email' => 'zz-pesapal-admin@example.test', 'password' => $pw]);
+    $r = $adminReq('GET', '/admin/pesapal');
+    check('admin: /admin/pesapal opens (200), shows the connection and says the keys are missing', $r['code'] === 200 && str_contains($r['body'], 'Pesapal payments') && str_contains($r['body'], 'Keys missing'), (string) $r['code']);
+    $r = $adminReq('GET', '/admin/shop/payments');
+    check('admin: Shop > Payments opens (200) and lists the Pesapal method', $r['code'] === 200 && str_contains($r['body'], 'Pesapal'), (string) $r['code']);
+    $r = $adminReq('GET', '/admin');
+    check('admin: the dashboard shows the Pesapal entry in the menu', $r['code'] === 200 && str_contains($r['body'], 'admin/pesapal'), (string) $r['code']);
+    $page = $adminReq('GET', '/admin/pesapal');
+    $r = $adminReq('POST', '/admin/pesapal/test', ['_token' => $tok($page['body'])]);
+    check('admin: "Test connection" without keys answers with a redirect back and a message, never a 500', in_array($r['code'], [302, 303], true), (string) $r['code']);
+    $dRow = Database::insert('pesapal_payments', ['merchant_reference' => 'LAFD0-SELFTEST', 'purpose' => 'donation', 'ref_id' => 999999, 'amount_minor' => 1000, 'currency' => 'UGX', 'status' => 'pending', 'payer_name' => 'ZZ', 'payer_email' => 'zz-pesapal@example.test']);
+    $page = $adminReq('GET', '/admin/pesapal');
+    check('admin: a payment row is listed', str_contains($page['body'], 'LAFD0-SELFTEST'));
+    $r = $adminReq('POST', '/admin/pesapal/' . $dRow . '/check', ['_token' => $tok($page['body'])]);
+    check('admin: "Check with Pesapal" on a row that never reached Pesapal explains itself (redirect, no 500)', in_array($r['code'], [302, 303], true), (string) $r['code']);
+    // tables missing (the database update was not imported yet): a clear message, never a 500
+    Database::execute('RENAME TABLE pesapal_payments TO zz_pesapal_payments_off');
+    try {
+        $r = $adminReq('GET', '/admin/pesapal');
+        check('admin: with the Pesapal tables missing the page still opens and says what to import', $r['code'] === 200 && str_contains($r['body'], 'tables are missing'), (string) $r['code']);
+    } finally {
+        Database::execute('RENAME TABLE zz_pesapal_payments_off TO pesapal_payments');
+    }
+    Database::execute("DELETE FROM pesapal_payments WHERE merchant_reference = 'LAFD0-SELFTEST'");
+    Database::execute("DELETE FROM users WHERE email = 'zz-pesapal-admin@example.test'");
+    Database::execute('DELETE FROM rate_limits');
+    @unlink($jar);
+}
 // ---- clean up -----------------------------------------------------------------------------------------------------------
 Database::execute("DELETE FROM pesapal_payments WHERE payer_email IN ('ada@example.test', 't@example.test', 'shop-tester@example.test') OR merchant_reference LIKE 'LAFD%' OR merchant_reference LIKE 'LAFS%' AND payer_email = 'shop-tester@example.test'");
 Database::execute("DELETE FROM pesapal_payments WHERE ref_id IN (?, ?) AND purpose = 'shop'", [$orderId, $orderId2]);

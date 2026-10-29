@@ -16,6 +16,6 @@ $phBadge = is_array($badge ?? null) && trim((string) ($badge['label'] ?? '')) !=
         <?php if (!empty($eyebrow)): ?><span class="eyebrow"><?= e($eyebrow) ?></span><br><?php endif; ?>
         <h1 class="page-hero__title"><?= highlight((string) $title) ?></h1>
         <?php if ($phBadge !== null): ?><p class="pi-hero__badge"><span class="badge badge--<?= e((string) ($phBadge['tone'] ?? 'neutral')) ?>"><?= e((string) $phBadge['label']) ?></span></p><?php endif; ?>
-        <?php if (!empty($lead)): ?><p class="page-hero__lead"><?= e($lead) ?></p><?php endif; ?>
+        <?php if (!empty($lead)): ?><p class="page-hero__lead"><?= e(hero_brief((string) $lead)) ?></p><?php endif; ?>
     </div>
 </header>

@@ -19,7 +19,7 @@ $phSheet = in_array($sheet ?? 'white', ['tint', 'cool'], true) ? ' page-hero--sh
         <?= partial('partials/breadcrumbs', ['breadcrumbs' => $crumbs]) ?>
         <?php if (!empty($eyebrow)): ?><span class="eyebrow"><?= e($eyebrow) ?></span><br><?php endif; ?>
         <h1 class="page-hero__title"><?= highlight((string) $title) ?></h1>
-        <?php if (!empty($lead)): ?><p class="page-hero__lead"><?= e($lead) ?></p><?php endif; ?>
+        <?php if (!empty($lead)): ?><p class="page-hero__lead"><?= e(hero_brief((string) $lead)) ?></p><?php endif; ?>
         <?php if (!empty($actions)): ?>
             <div class="page-hero__actions">
                 <?php foreach ($actions as $a): if (empty($a['label']) || empty($a['url'])) { continue; } ?>

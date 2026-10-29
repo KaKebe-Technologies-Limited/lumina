@@ -608,3 +608,21 @@ function academy_duration(int $minutes): string
     $m = $minutes % 60;
     return $h . ' h' . ($m > 0 ? ' ' . $m . ' min' : '');
 }
+
+/**
+ * A short version of a banner lead: the first sentence when it is short enough, else cut at a word with an ellipsis. Banners stay light;
+ * the full text still lives in the page body and in the admin.
+ */
+function hero_brief(string $text, int $max = 120): string
+{
+    $s = trim((string) preg_replace('/\s+/u', ' ', strip_tags($text)));
+    if (mb_strlen($s) <= $max) {
+        return $s;
+    }
+    if (preg_match('/^(.{20,' . $max . '}?[.!?])(\s|$)/u', $s, $m) === 1) {
+        return $m[1];
+    }
+    $cut = mb_substr($s, 0, $max);
+    $sp = mb_strrpos($cut, ' ');
+    return rtrim($sp !== false && $sp > 40 ? mb_substr($cut, 0, $sp) : $cut, " ,;:-") . '…';
+}

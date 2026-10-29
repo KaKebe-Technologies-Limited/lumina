@@ -45,6 +45,25 @@
         @include respond(xl) { grid-template-columns: 0.9fr 1.5fr 0.95fr 1.4fr; gap: $space-6; }
     }
 
+    // top row: who we are (left) and how to reach us (right); below it the link groups in tidy columns, then the legal bar
+    &__top {
+        @include container($container);
+        display: grid;
+        gap: $space-6;
+        padding-block: $space-8 $space-6;
+        @include respond(md) { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: $space-8; }
+    }
+    &__groups {
+        @include container($container);
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: $space-6 $space-5;
+        padding-block: $space-6 $space-7;
+        border-top: 1px solid rgba($white, 0.14);
+        @include respond(md) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: $space-6; }
+        .site-footer__title { margin-bottom: $space-3; font-size: 0.95rem; }
+    }
+    &__group .site-footer__links { gap: $space-1; }
     &__brand { display: flex; flex-direction: column; align-items: flex-start; gap: $space-3; }
     &__logo { width: 64px; height: 64px; border-radius: 50%; }
     &__name { font-family: $font-display; font-size: 1.4rem; font-weight: 600; line-height: 1.2; color: $white; }

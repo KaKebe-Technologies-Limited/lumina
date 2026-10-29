@@ -20,9 +20,9 @@ if ($phTitles === []) {
     return;
 }
 $phLeads = array_values(array_filter(array_map(static fn($t): string => trim((string) $t), (array) ($leads ?? [])), static fn(string $t): bool => $t !== ''));
-$phLead = $phLeads[0] ?? '';
-$phMore = array_slice($phLeads, 1);
-$phQuote = trim((string) ($quote ?? ''));
+$phLead = hero_brief($phLeads[0] ?? '');          // a banner is a headline, not a page: one short line (the full text is in the page body)
+$phMore = [];
+$phQuote = hero_brief(trim((string) ($quote ?? '')), 100);
 $phLabel = trim((string) ($lead_label ?? ''));
 $phHasImg = !empty($image['src']);
 $phFocus = preg_match('/^[0-9%. a-z-]{1,30}$/i', (string) ($image['focus'] ?? '')) ? (string) $image['focus'] : '';

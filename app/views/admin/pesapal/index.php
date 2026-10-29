@@ -1,11 +1,14 @@
 <?php
-/** Admin > Pesapal payments. Vars: $hasKeys, $mode, $payments, $ipnUrl, $returnUrl. */
+/** Admin > Pesapal payments. Vars: $tables (database tables present), $hasKeys, $mode, $payments, $ipnUrl, $returnUrl. */
 use App\Services\Shop\Money;
 
 $tones = ['pending' => 'warning', 'paid' => 'success', 'failed' => 'danger', 'reversed' => 'danger', 'review' => 'warning'];
 ?>
 <?= partial('partials/admin/page-header', ['title' => 'Pesapal payments', 'subtitle' => 'Card, mobile money and bank payments for donations and shop orders.']) ?>
 
+<?php if (!$tables): ?>
+<div class="alert alert--error" role="alert"><strong>The Pesapal database tables are missing.</strong> In phpMyAdmin, select the live database, open <b>Import</b> and import the file <code>database/updates/2026-10-pesapal.sql</code> (it only adds two tables and is safe to repeat). Then reload this page.</div>
+<?php endif; ?>
 <section class="card">
     <div class="card__header"><h2 class="card__title">Connection</h2></div>
     <div class="card__body">

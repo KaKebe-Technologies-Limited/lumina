@@ -97,7 +97,30 @@ final class App
             throw new \RuntimeException('APP_URL is not set. Set APP_URL=https://your-domain in .env (required when APP_ENV is not "local").');
         }
         if (!$request->hostAllowed()) {
+            self::redirectWwwSibling($request);
             throw new HttpException(400, 'Bad request');
+        }
+    }
+
+    /**
+     * www.example.org and example.org are the same site: whichever one APP_URL names is the canonical address, and a visitor who typed the other one is
+     * sent there with a permanent redirect (path and query kept) instead of getting a "Bad request" page. Any other host is still refused.
+     */
+    private static function redirectWwwSibling(Request $request): void
+    {
+        $canon = parse_url((string) Config::get('app.url', ''), PHP_URL_HOST);
+        if (!is_string($canon) || $canon === '') {
+            return;
+        }
+        $h = rtrim(strtolower(explode(':', (string) ($_SERVER['HTTP_HOST'] ?? $request->host()))[0]), '.');
+        $canon = strtolower($canon);
+        if ($h === 'www.' . $canon || 'www.' . $h === $canon) {
+            $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+            if ($uri === '' || $uri[0] !== '/' || str_starts_with($uri, '//')) {
+                $uri = '/';
+            }
+            header('Location: ' . rtrim((string) Config::get('app.url', ''), '/') . $uri, true, 301);
+            exit;
         }
     }
 
