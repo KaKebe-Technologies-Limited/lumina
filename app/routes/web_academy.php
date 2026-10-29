@@ -33,6 +33,7 @@ $router->get('/academy/verify/{token}', [AcademyAccountController::class, 'verif
 $router->get('/academy/contact', [AcademyContactController::class, 'form'])->name('academy.contact');
 $router->post('/academy/contact', [AcademyContactController::class, 'send'])->middleware('throttle:20,600')->name('academy.contact.send');
 $router->get('/academy/pending', [AcademyAccountController::class, 'pending'])->name('academy.pending');
+$router->post('/academy/fee/pay', [AcademyAccountController::class, 'payFee'])->middleware('throttle:10,600')->name('academy.fee.pay');
 $router->get('/academy/google', [AcademyAccountController::class, 'googleStart'])->middleware('throttle:30,600')->name('academy.google');
 $router->get('/academy/google/callback', [AcademyAccountController::class, 'googleCallback'])->middleware('throttle:30,600')->name('academy.google.callback');
 $router->get('/academy/login', [AcademyAccountController::class, 'loginForm'])->name('academy.login');
@@ -55,6 +56,7 @@ $router->post('/academy/account/delete', [AcademyAccountController::class, 'dele
 $router->get('/academy/dashboard', [AcademyPortalController::class, 'overview'])->name('academy.dashboard');
 $router->get('/academy/portal/courses', [AcademyPortalController::class, 'courses'])->name('academy.portal.courses');
 $router->get('/academy/portal/certificates', [AcademyPortalController::class, 'certificates'])->name('academy.portal.certificates');
+$router->post('/academy/portal/certificates/{id}/pay', [AcademyPortalController::class, 'payCertificate'])->where('id', '[0-9]+')->middleware('throttle:10,600')->name('academy.portal.certificates.pay');
 $router->get('/academy/portal/messages', [AcademyPortalController::class, 'messages'])->name('academy.portal.messages');
 $router->post('/academy/portal/messages', [AcademyPortalController::class, 'sendMessage'])->middleware('throttle:30,600')->name('academy.portal.messages.send');
 $router->get('/academy/portal/security', [AcademyPortalController::class, 'security'])->name('academy.portal.security');

@@ -1,5 +1,5 @@
 <?php
-/** Admin > Pesapal payments. Vars: $donationsOn, $shopOn, $shopOpen, $canShop (where Pesapal is offered), $tables (database tables present), $hasKeys, $mode, $payments, $ipnUrl, $returnUrl. */
+/** Admin > Pesapal payments. Vars: $fees, $feeCurrencies, $feesReady, $canFees (Academy fees), $donationsOn, $shopOn, $shopOpen, $canShop (where Pesapal is offered), $tables (database tables present), $hasKeys, $mode, $payments, $ipnUrl, $returnUrl. */
 use App\Services\Shop\Money;
 
 $tones = ['pending' => 'warning', 'paid' => 'success', 'failed' => 'danger', 'reversed' => 'danger', 'review' => 'warning'];
@@ -61,6 +61,39 @@ PESAPAL_CONSUMER_SECRET=your secret from the Pesapal dashboard</pre>
 </section>
 
 <section class="card" style="margin-top:1.5rem">
+    <div class="card__header"><h2 class="card__title">LAF Academy fees</h2></div>
+    <div class="card__body">
+        <?php if (!$feesReady): ?>
+            <div class="alert alert--error" role="alert"><strong>The Academy fee columns are missing in the database.</strong> In phpMyAdmin import <code>database/updates/2026-10-academy-fees.sql</code> (safe to repeat), then reload this page. Until then no fee is charged.</div>
+        <?php endif; ?>
+        <form method="post" action="<?= e(url('admin/pesapal/fees')) ?>">
+            <?= csrf_field() ?>
+            <p class="text-muted">Set what learners pay through Pesapal. <strong>Leave 0 for free.</strong> A fee is only charged while Pesapal is connected (keys in <code>.env</code>). Accounts and certificates that exist already are never charged.</p>
+            <?php foreach ([
+                'signup' => ['Sign-up fee', 'Paid once by a new learner right after creating the account. The account cannot be used until it is paid (or you waive it on the learner\'s page).'],
+                'cert'   => ['Certificate fee', 'Paid by a learner to receive a certificate earned by passing a final exam (the certificate is held until it is paid, and still needs your approval if that setting is on).'],
+            ] as $kind => [$label, $help]): $f = $fees[$kind]; ?>
+                <div style="display:grid;gap:.25rem;margin:1rem 0">
+                    <strong><?= e($label) ?></strong>
+                    <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end">
+                        <div class="field" style="margin:0"><label class="field__label" for="fee-<?= e($kind) ?>">Amount</label><input class="input" id="fee-<?= e($kind) ?>" name="<?= e($kind) ?>_amount" inputmode="decimal" value="<?= e($f['amount']) ?>" maxlength="15"<?= $canFees ? '' : ' disabled' ?>></div>
+                        <div class="field" style="margin:0"><label class="field__label" for="feec-<?= e($kind) ?>">Currency</label><select class="select" id="feec-<?= e($kind) ?>" name="<?= e($kind) ?>_currency"<?= $canFees ? '' : ' disabled' ?>>
+                            <?php foreach ($feeCurrencies as $code): ?><option value="<?= e($code) ?>"<?= $f['currency'] === $code ? ' selected' : '' ?>><?= e($code) ?></option><?php endforeach; ?></select></div>
+                        <div>
+                            <?php if ($f['on'] && $feesReady && $hasKeys): ?><span class="badge badge--success badge--dot">Charged: <?= e($f['display']) ?></span>
+                            <?php elseif ($f['on']): ?><span class="badge badge--warning badge--dot">Set, but not charged yet: <?= !$hasKeys ? 'the Pesapal keys are missing' : 'database update needed' ?></span>
+                            <?php else: ?><span class="badge badge--neutral badge--dot">Free</span><?php endif; ?>
+                        </div>
+                    </div>
+                    <span class="text-muted"><?= e($help) ?></span>
+                </div>
+            <?php endforeach; ?>
+            <?php if ($canFees): ?><button class="btn btn--primary" type="submit">Save the fees</button><?php else: ?><p class="text-muted">Only an administrator who manages the Academy can change the fees.</p><?php endif; ?>
+        </form>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1.5rem">
     <div class="card__header"><h2 class="card__title">Payments</h2></div>
     <div class="card__body">
         <?php if ($payments === []): ?>
@@ -73,7 +106,7 @@ PESAPAL_CONSUMER_SECRET=your secret from the Pesapal dashboard</pre>
                 <tr>
                     <td><?= e(format_datetime((string) $p['created_at'], 'j M Y, H:i')) ?></td>
                     <td><code><?= e($p['merchant_reference']) ?></code><?= $p['mode'] === 'sandbox' ? ' <span class="badge badge--neutral">sandbox</span>' : '' ?></td>
-                    <td><?php if ($p['purpose'] === 'donation'): ?><a href="<?= e(url('admin/donations/' . (int) $p['ref_id'] . '/edit')) ?>">Donation #<?= (int) $p['ref_id'] ?></a><?php else: ?>Shop order #<?= (int) $p['ref_id'] ?><?php endif; ?></td>
+                    <td><?php if ($p['purpose'] === 'donation'): ?><a href="<?= e(url('admin/donations/' . (int) $p['ref_id'] . '/edit')) ?>">Donation #<?= (int) $p['ref_id'] ?></a><?php elseif ($p['purpose'] === 'academy_signup'): ?><a href="<?= e(url('admin/academy/learners/' . (int) $p['ref_id'])) ?>">Academy sign-up fee (learner #<?= (int) $p['ref_id'] ?>)</a><?php elseif ($p['purpose'] === 'academy_cert'): ?><a href="<?= e(url('admin/academy/certificates')) ?>">Academy certificate fee (#<?= (int) $p['ref_id'] ?>)</a><?php else: ?>Shop order #<?= (int) $p['ref_id'] ?><?php endif; ?></td>
                     <td><?= e($p['payer_name']) ?><br><small class="text-muted"><?= e($p['payer_email']) ?></small></td>
                     <td><?= e(Money::format((int) $p['amount_minor'], (string) $p['currency'])) ?></td>
                     <td><span class="badge badge--<?= e($tones[$p['status']] ?? 'neutral') ?>"><?= e(ucfirst((string) $p['status'])) ?></span><?= $p['last_error'] ? '<br><small class="text-muted">' . e($p['last_error']) . '</small>' : '' ?></td>

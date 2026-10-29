@@ -1,0 +1,164 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Services\Academy;
+
+use App\Core\Database;
+use App\Core\Mailer;
+use App\Core\Settings;
+use App\Services\Pesapal\PesapalPayments;
+use App\Services\Shop\Money;
+
+/**
+ * The two fees of the LAF Academy, paid through Pesapal. The administrator sets the amounts (Admin > Pesapal payments, or Settings > LAF Academy); 0 or empty = free.
+ *
+ *   SIGN-UP FEE       a new learner pays after creating the account. Until it is paid the account cannot sign in (it stays "due"); an administrator can WAIVE it.
+ *                     After the payment the usual approval rules apply (an administrator approves, or the account is open at once, depending on the sign-up mode).
+ *   CERTIFICATE FEE   a certificate earned by passing a final exam is issued with the fee "due": it does not become available until the fee is paid AND (when the
+ *                     setting asks for it) an administrator approves it. An administrator can waive the fee of one certificate.
+ *
+ * A fee is only CHARGED when its amount is above 0, Pesapal is connected (keys in .env) and the database has the fee columns. Otherwise nobody is blocked: the Academy
+ * behaves as it did before, and the admin page says why the fee is not active. Accounts and certificates that exist already are never charged.
+ */
+final class AcademyFees
+{
+    public const CURRENCIES = ['UGX', 'USD', 'EUR', 'GBP', 'KES', 'TZS', 'RWF'];
+
+    /** Do the fee columns exist (database update imported)? */
+    public static function ready(): bool
+    {
+        static $ok = null;
+        if ($ok === null) {
+            try {
+                $ok = (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND ((table_name = 'academy_learners' AND column_name = 'fee_status') OR (table_name = 'academy_certificates' AND column_name = 'fee_status'))", [], 0) === 2;
+            } catch (\Throwable) {
+                $ok = false;
+            }
+        }
+        return $ok;
+    }
+
+    /** @return array{minor:int,currency:string,display:string}|null the amount set by the administrator (regardless of whether it can be charged yet) */
+    public static function configured(string $kind): ?array
+    {
+        $key = $kind === 'cert' ? 'academy_cert_fee' : 'academy_signup_fee';
+        $minor = Money::parse(trim((string) Settings::get($key, '0')));
+        if ($minor === null || $minor <= 0) {
+            return null;
+        }
+        $cur = strtoupper((string) Settings::get($key . '_currency', 'UGX'));
+        $cur = in_array($cur, self::CURRENCIES, true) && Money::validCurrency($cur) ? $cur : 'UGX';
+        return ['minor' => $minor, 'currency' => $cur, 'display' => Money::format($minor, $cur)];
+    }
+
+    /** The fee that is actually charged now, or null. @return array{minor:int,currency:string,display:string}|null */
+    public static function active(string $kind): ?array
+    {
+        return self::ready() && PesapalPayments::ready() ? self::configured($kind) : null;
+    }
+
+    public static function signup(): ?array
+    {
+        return self::active('signup');
+    }
+
+    public static function cert(): ?array
+    {
+        return self::active('cert');
+    }
+
+    /** Does this learner still owe the sign-up fee? (also true while the fee is switched off again: an unpaid learner stays blocked until waived or paid) */
+    public static function signupDue(?array $learner): bool
+    {
+        return $learner !== null && ($learner['fee_status'] ?? 'none') === 'due';
+    }
+
+    public static function certDue(?array $cert): bool
+    {
+        return $cert !== null && ($cert['fee_status'] ?? 'none') === 'due';
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- paying
+
+    /** @return array{ok:bool,link?:string,error?:string} */
+    public static function beginSignup(int $learnerId): array
+    {
+        $l = Database::one('SELECT id, name, email, phone, fee_status FROM academy_learners WHERE id = ?', [$learnerId]);
+        $fee = self::configured('signup');
+        if ($l === null || $fee === null || !PesapalPayments::ready()) {
+            return ['ok' => false, 'error' => 'unavailable'];
+        }
+        if ($l['fee_status'] !== 'due') {
+            return ['ok' => false, 'error' => 'not_due'];
+        }
+        return PesapalPayments::begin('academy_signup', $learnerId, $fee['minor'], $fee['currency'], 'LAF Academy sign-up fee', ['name' => (string) $l['name'], 'email' => (string) $l['email'], 'phone' => (string) ($l['phone'] ?? '')]);
+    }
+
+    /** @return array{ok:bool,link?:string,error?:string} */
+    public static function beginCert(int $certId, int $learnerId): array
+    {
+        $c = Database::one('SELECT id, learner_id, course_title, fee_status, revoked_at FROM academy_certificates WHERE id = ?', [$certId]);
+        $l = Database::one('SELECT id, name, email, phone FROM academy_learners WHERE id = ?', [$learnerId]);
+        $fee = self::configured('cert');
+        if ($c === null || $l === null || (int) $c['learner_id'] !== $learnerId || $fee === null || !PesapalPayments::ready()) {
+            return ['ok' => false, 'error' => 'unavailable'];
+        }
+        if ($c['fee_status'] !== 'due' || $c['revoked_at'] !== null) {
+            return ['ok' => false, 'error' => 'not_due'];
+        }
+        return PesapalPayments::begin('academy_cert', $certId, $fee['minor'], $fee['currency'], 'LAF Academy certificate fee', ['name' => (string) $l['name'], 'email' => (string) $l['email'], 'phone' => (string) ($l['phone'] ?? '')]);
+    }
+
+    /** Called by PesapalPayments when Pesapal confirms the sign-up fee (once). */
+    public static function markSignupPaid(int $learnerId, string $reference): void
+    {
+        $n = Database::execute("UPDATE academy_learners SET fee_status = 'paid', fee_paid_at = ? WHERE id = ? AND fee_status = 'due'", [date('Y-m-d H:i:s'), $learnerId]);
+        if ($n > 0) {
+            $l = Database::one('SELECT name, email, reg_no FROM academy_learners WHERE id = ?', [$learnerId]);
+            Mailer::notify('Academy sign-up fee paid', 'A new learner paid the LAF Academy sign-up fee through Pesapal.' . "\n\n" . 'Name: ' . ($l['name'] ?? '') . "\nE-mail: " . ($l['email'] ?? '')
+                . "\nRegistration number: " . ($l['reg_no'] ?? '-') . "\nReference: " . $reference . "\n\nManage the account: " . abs_url('admin/academy/learners/' . $learnerId) . "\n", null);
+        }
+    }
+
+    /**
+     * Called by PesapalPayments when Pesapal confirms a certificate fee (once). The certificate becomes available straight away when administrator approval is not
+     * required; otherwise it waits for the administrator, who now sees it as paid.
+     */
+    public static function markCertPaid(int $certId, string $reference): void
+    {
+        $n = Database::execute("UPDATE academy_certificates SET fee_status = 'paid', fee_paid_at = ? WHERE id = ? AND fee_status = 'due'", [date('Y-m-d H:i:s'), $certId]);
+        if ($n === 0) {
+            return;
+        }
+        $c = Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$certId]);
+        if ($c === null) {
+            return;
+        }
+        if (!CertificateService::approvalRequired() && $c['approved_at'] === null) {
+            CertificateService::approve($certId, null, true);
+        } else {
+            Mailer::notify('Academy certificate fee paid', 'The certificate fee was paid through Pesapal and the certificate now waits for your approval.' . "\n\nLearner: " . $c['learner_name'] . "\nCourse: "
+                . $c['course_title'] . "\nCertificate: " . $c['code'] . "\nReference: " . $reference . "\n\nApprove it: " . abs_url('admin/academy/certificates') . "\n", null);
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- waiving (administrators)
+
+    public static function waiveSignup(int $learnerId): bool
+    {
+        return Database::execute("UPDATE academy_learners SET fee_status = 'waived' WHERE id = ? AND fee_status = 'due'", [$learnerId]) > 0;
+    }
+
+    public static function waiveCert(int $certId): bool
+    {
+        return Database::execute("UPDATE academy_certificates SET fee_status = 'waived' WHERE id = ? AND fee_status = 'due'", [$certId]) > 0;
+    }
+
+    /** Short wording for lists: "Fee unpaid" | "Fee paid" | "Fee waived" | '' (no fee). */
+    public static function label(?string $status): string
+    {
+        return match ($status) {
+            'due' => 'Fee unpaid', 'paid' => 'Fee paid', 'waived' => 'Fee waived', default => '',
+        };
+    }
+}

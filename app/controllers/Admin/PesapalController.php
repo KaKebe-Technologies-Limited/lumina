@@ -28,6 +28,10 @@ final class PesapalController extends AdminController
             'shopOn'    => \App\Services\Shop\ShopSettings::bool('shop_pay_pesapal_enabled'),
             'shopOpen'  => \App\Services\Shop\ShopSettings::bool('shop_open'),
             'canShop'   => can('shop.settings'),
+            'fees'      => $this->feeValues(),
+            'feeCurrencies' => \App\Services\Academy\AcademyFees::CURRENCIES,
+            'feesReady' => \App\Services\Academy\AcademyFees::ready(),
+            'canFees'   => can('academy.manage'),
             'hasKeys'   => PesapalClient::hasKeys(),
             'mode'      => PesapalClient::mode(),
             'payments'  => $tables ? PesapalPayments::recent(100) : [],
@@ -47,6 +51,43 @@ final class PesapalController extends AdminController
         \App\Core\Settings::setMany($changes);
         AuditLog::record('pesapal.options', 'settings', null, 'Pesapal offered on: ' . implode(', ', array_keys(array_filter(['donations' => $changes['pesapal_donations_enabled'] === '1', 'shop' => ($changes['shop_pay_pesapal_enabled'] ?? '0') === '1']))) ?: 'nowhere');
         Flash::success('Saved. Pesapal is now offered on the places you ticked.');
+        return $this->redirect('admin/pesapal');
+    }
+
+    /** @return array<string,array{amount:string,currency:string,on:bool,display:string}> */
+    private function feeValues(): array
+    {
+        $out = [];
+        foreach (['signup' => 'academy_signup_fee', 'cert' => 'academy_cert_fee'] as $kind => $key) {
+            $conf = \App\Services\Academy\AcademyFees::configured($kind);
+            $raw = trim((string) \App\Core\Settings::get($key, '0'));
+            $out[$kind] = ['amount' => $raw === '' ? '0' : $raw, 'currency' => strtoupper((string) \App\Core\Settings::get($key . '_currency', 'UGX')), 'on' => $conf !== null, 'display' => $conf['display'] ?? ''];
+        }
+        return $out;
+    }
+
+    /** Set the Academy sign-up fee and certificate fee (0 = free). */
+    public function fees(Request $request): Response
+    {
+        $this->authorize('inbox.manage', 'academy.manage');
+        $save = [];
+        foreach (['signup' => 'academy_signup_fee', 'cert' => 'academy_cert_fee'] as $kind => $key) {
+            $raw = \App\Controllers\Web\DonateController::parseAmount((string) $request->post($kind . '_amount', '0'));
+            $cur = strtoupper(trim((string) $request->post($kind . '_currency', 'UGX')));
+            if ($raw === null || ($raw !== '' && ((float) $raw < 0 || (float) $raw > 100000000))) {
+                Flash::error('Type the amount with digits only (for example 20000), or 0 for free.');
+                return $this->redirect('admin/pesapal');
+            }
+            if (!in_array($cur, \App\Services\Academy\AcademyFees::CURRENCIES, true)) {
+                Flash::error('Choose a currency from the list.');
+                return $this->redirect('admin/pesapal');
+            }
+            $save[$key] = $raw === '' ? '0' : $raw;
+            $save[$key . '_currency'] = $cur;
+        }
+        \App\Core\Settings::setMany($save);
+        AuditLog::record('academy.fees', 'settings', null, 'Academy fees set: sign-up ' . $save['academy_signup_fee'] . ' ' . $save['academy_signup_fee_currency'] . ', certificate ' . $save['academy_cert_fee'] . ' ' . $save['academy_cert_fee_currency']);
+        Flash::success('The Academy fees were saved.');
         return $this->redirect('admin/pesapal');
     }
 

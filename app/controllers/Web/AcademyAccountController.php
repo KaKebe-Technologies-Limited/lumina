@@ -8,6 +8,7 @@ use App\Core\Flash;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\HttpException;
+use App\Services\Academy\AcademyFees;
 use App\Services\Academy\GoogleSignIn;
 use App\Services\Academy\LearnerAuth;
 use App\Services\Academy\LearnerMessages;
@@ -20,6 +21,8 @@ use App\Services\Academy\VerificationCode;
  */
 final class AcademyAccountController extends AcademyBaseController
 {
+    use GatewayRedirects;
+
     // ------------------------------------------------------------------------------------------------------------- sign up
 
     public function registerForm(Request $request): Response
@@ -59,6 +62,17 @@ final class AcademyAccountController extends AcademyBaseController
             if (!$pr['ok']) {
                 Flash::info('Your account was created, but your picture could not be saved: ' . $pr['error'] . ' You can add it later from your account.');
             }
+        }
+        if (isset($res['learner']) && AcademyFees::signupDue((array) $res['learner'])) {
+            // the sign-up fee is paid first (Pesapal); the learner can come back to the waiting page to pay again if the payment page does not open
+            \App\Core\Session::put('academy_pending_id', (int) $res['learner']['id']);
+            \App\Core\Session::put('academy_reg_no', (string) ($res['learner']['reg_no'] ?? ''));
+            $pay = AcademyFees::beginSignup((int) $res['learner']['id']);
+            if ($pay['ok']) {
+                return $this->sendToGateway((string) $pay['link']);
+            }
+            Flash::warning('Your account was created. The payment page could not be opened just now: press "Pay the sign-up fee" below to try again.');
+            return $this->redirect('academy/pending');
         }
         if ($res['verify']) {
             \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail($request->string('email')));
@@ -126,11 +140,33 @@ final class AcademyAccountController extends AcademyBaseController
                 LearnerMessages::markRead($pid, 'learner');
             }
         }
-        return $this->renderAcademy('web/academy/pending', ['regNo' => (string) \App\Core\Session::get('academy_reg_no', ''), 'hours' => LearnerAuth::approvalText(), 'thread' => $thread], [
+        $fee = null;
+        if ($pid > 0 && AcademyFees::ready()) {
+            $row = \App\Core\Database::one('SELECT id, fee_status FROM academy_learners WHERE id = ?', [$pid]);
+            $fee = $row !== null && AcademyFees::signupDue($row) ? AcademyFees::configured('signup') : null;
+        }
+        return $this->renderAcademy('web/academy/pending', ['regNo' => (string) \App\Core\Session::get('academy_reg_no', ''), 'hours' => LearnerAuth::approvalText(), 'thread' => $thread, 'fee' => $fee], [
             'bodyClass' => 'is-academy is-academy-auth',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Application received', null]],
             'meta' => ['title' => 'Application received'],
         ], true);
+    }
+
+    /** POST academy/fee/pay: the applicant on the waiting page pays the sign-up fee (the account is known from the sign-up or from signing in with the right password). */
+    public function payFee(Request $request): Response
+    {
+        $this->gate();
+        $pid = (int) \App\Core\Session::get('academy_pending_id', 0);
+        if ($pid <= 0) {
+            Flash::info('Please sign in with your e-mail address and password to pay the sign-up fee.');
+            return $this->redirect('academy/login');
+        }
+        $pay = AcademyFees::beginSignup($pid);
+        if ($pay['ok']) {
+            return $this->sendToGateway((string) $pay['link']);
+        }
+        Flash::error($pay['error'] === 'not_due' ? 'Your sign-up fee is already settled.' : 'The payment page could not be opened just now. Nothing was charged. Please try again in a minute.');
+        return $this->redirect('academy/pending');
     }
 
     public function resend(Request $request): Response
@@ -185,7 +221,7 @@ final class AcademyAccountController extends AcademyBaseController
                 \App\Core\Session::put('academy_reg_no', (string) ($res['learner']['reg_no'] ?? ''));
                 \App\Core\Session::put('academy_pending_id', (int) ($res['learner']['id'] ?? 0));        // proved by the password: lets the waiting page show the team's messages
                 Flash::warning((string) $res['error']);
-                return $this->redirect(LearnerAuth::emailVerificationOn() ? 'academy/check-email' : 'academy/pending');
+                return $this->redirect(LearnerAuth::emailVerificationOn() && empty($res['fee_due']) ? 'academy/check-email' : 'academy/pending');
             }
             if (!empty($res['rejected'])) {
                 Flash::error((string) $res['error']);
@@ -229,6 +265,12 @@ final class AcademyAccountController extends AcademyBaseController
         if (!$res['ok']) {
             Flash::error((string) $res['error']);
             return $this->redirect('academy/login');
+        }
+        if (AcademyFees::signupDue((array) $res['learner'])) {
+            \App\Core\Session::put('academy_pending_id', (int) $res['learner']['id']);
+            \App\Core\Session::put('academy_reg_no', (string) ($res['learner']['reg_no'] ?? ''));
+            $pay = AcademyFees::beginSignup((int) $res['learner']['id']);
+            return $pay['ok'] ? $this->sendToGateway((string) $pay['link']) : $this->redirect('academy/pending');
         }
         LearnerAuth::signIn($res['learner']);
         if (LearnerAuth::missingContact((array) $res['learner'])) {

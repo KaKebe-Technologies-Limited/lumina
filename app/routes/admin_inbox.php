@@ -74,6 +74,7 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth']], function ($route
 
     // ---- Pesapal payments (docs/PESAPAL.md)
     $router->get('/pesapal', [\App\Controllers\Admin\PesapalController::class, 'index'])->name('admin.pesapal');
+    $router->post('/pesapal/fees', [\App\Controllers\Admin\PesapalController::class, 'fees'])->middleware('throttle:30,600')->name('admin.pesapal.fees');
     $router->post('/pesapal/options', [\App\Controllers\Admin\PesapalController::class, 'options'])->middleware('throttle:30,600')->name('admin.pesapal.options');
     $router->post('/pesapal/test', [\App\Controllers\Admin\PesapalController::class, 'test'])->middleware('throttle:10,600')->name('admin.pesapal.test');
     $router->post('/pesapal/{id}/check', [\App\Controllers\Admin\PesapalController::class, 'check'])->middleware('throttle:30,600')->where('id', '[0-9]+')->name('admin.pesapal.check');

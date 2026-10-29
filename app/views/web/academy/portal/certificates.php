@@ -17,11 +17,16 @@ use App\Services\Academy\CertificateService;
         <?php endforeach; ?>
 
         <?php if ($waiting !== []): ?>
-            <h2 class="ac-block__title">Waiting for approval and signing</h2>
+            <h2 class="ac-block__title">Waiting for payment, approval and signing</h2>
             <?php foreach ($waiting as $w): ?>
                 <article class="ac-panel card" data-reveal>
                     <h3 class="ac-panel__title"><?= icon('clock', 'icon--sm') ?> <?= e($w['course_title']) ?></h3>
+                    <?php if (\App\Services\Academy\AcademyFees::certDue($w) && ($certFee = \App\Services\Academy\AcademyFees::configured('cert'))): ?>
+                        <p class="opp-notice ac-cert-wait"><?= icon('credit-card', 'icon--sm') ?> Your certificate is ready once the certificate fee of <strong><?= e($certFee['display']) ?></strong> is paid. You pay securely with Pesapal (card or mobile money).</p>
+                        <form method="post" action="<?= e(url('academy/portal/certificates/' . (int) $w['id'] . '/pay')) ?>"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('lock', 'icon--sm') ?> Pay the certificate fee</button></form>
+                    <?php else: ?>
                     <p class="opp-notice ac-cert-wait"><?= e(CertificateService::waitingNotice()) ?></p>
+                    <?php endif; ?>
                     <p class="text-muted">Filed on <?= e(format_date($w['issued_at'], 'j M Y')) ?>.</p>
                 </article>
             <?php endforeach; ?>

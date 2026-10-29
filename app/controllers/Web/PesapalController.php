@@ -7,6 +7,7 @@ use App\Core\Controller;
 use App\Core\Flash;
 use App\Core\Request;
 use App\Core\Response;
+use App\Services\Academy\LearnerAuth;
 use App\Services\Pesapal\PesapalPayments;
 
 /**
@@ -38,6 +39,10 @@ final class PesapalController extends Controller
                 }
                 return $this->redirect('shop/order/' . $order['token']);
             }
+        }
+        if ($row !== null && $row['purpose'] === 'academy_cert' && $state === 'paid' && LearnerAuth::check()) {
+            Flash::success('Payment received. Thank you! Your certificate is now being finalised: it appears under "Ready" as soon as it is available.');
+            return $this->redirect('academy/portal/certificates');
         }
         return $this->render('web/pay/pesapal-result', ['state' => $state, 'row' => $row], [
             'page' => 'donate',

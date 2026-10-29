@@ -73,10 +73,10 @@ final class AcademyCertificatesController extends AcademyAdminController
     {
         $this->authorize('academy.manage');
         $c = Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]) ?? throw new HttpException(404, 'Not found');
-        $res = CertificateService::approve($id, \App\Core\Auth::id(), $request->bool('email'));
+        $res = CertificateService::approve($id, \App\Core\Auth::id(), $request->bool('email'), $request->bool('waive'));
         $this->audit('academy.certificate.approve', 'academy_certificate', $id, 'Approved certificate ' . $c['code'] . ($request->bool('email') ? ' and e-mailed it' : ''));
         if (!$res['ok']) {
-            Flash::error('The certificate could not be approved.');
+            Flash::error(!empty($res['fee']) ? 'The certificate fee is not paid yet. Use "Waive fee and approve" if you want to give it for free.' : 'The certificate could not be approved.');
         } elseif ($request->bool('email')) {
             $res['mailed'] ? Flash::success('Certificate ' . $c['code'] . ' was approved and e-mailed to the learner.') : Flash::warning('Certificate ' . $c['code'] . ' was approved, but the e-mail could not be sent (check Settings > E-mail). The learner can still download it from the Academy.');
         } else {

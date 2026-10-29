@@ -51,3 +51,12 @@ The keys go ONLY in the `.env` file next to `index.php` on Hostinger (File Manag
 * The connection was written from Pesapal's documentation and tested against a mock, never against the real Pesapal (that needs your keys). Do a **sandbox** donation first: give 1,000 UGX, pay with the sandbox test details Pesapal shows, and check the line in Admin > Pesapal payments turns **Paid** and the donation shows **Received**.
 * Pesapal's minimum amounts and fees are theirs; the site asks for at least 1,000 UGX online.
 * Memberships and Academy fees do not use Pesapal yet (they have no price in the system); the same `PesapalPayments::begin()` call can be used for them later.
+
+## 7. Academy fees (sign-up fee and certificate fee)
+
+Admin > Pesapal payments > **LAF Academy fees**: type the amount and currency of each fee (0 = free) and **Save the fees**. The same two fees are also in Settings > LAF Academy.
+
+* A fee is only charged when its amount is above 0, Pesapal is connected (keys in `.env`) and the database has the fee columns (`database/updates/2026-10-academy-fees.sql`). Otherwise nobody is blocked and the Academy works as before.
+* **Sign-up fee**: a new learner sees the fee on the sign-up page, is sent to Pesapal right after creating the account, and the account cannot sign in until the fee is paid (the waiting page has a "Pay the sign-up fee" button for a second try). After payment the normal approval rules apply. Administrators can waive it on the learner's page ("Waive the fee"), and the learners list shows "Fee unpaid / paid / waived". Accounts that exist already are never charged.
+* **Certificate fee**: a certificate earned by passing a final exam is held until the fee is paid (My portal > Certificates > "Pay the certificate fee"). If certificates need approval, the administrator is e-mailed after payment and approves as usual; if not, the certificate becomes available at once. Admin > Academy > Certificates: "Waive fee and approve". Certificates issued by hand by an administrator are free.
+* Every payment is listed in Admin > Pesapal payments ("Academy sign-up fee", "Academy certificate fee"). Tests: `php bin/selftest-academy-fees.php`.

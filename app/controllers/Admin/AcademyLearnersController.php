@@ -358,6 +358,20 @@ final class AcademyLearnersController extends AcademyAdminController
         return $this->redirect('admin/academy/learners');
     }
 
+    /** POST admin/academy/learners/{id}/waive-fee: the sign-up fee is not asked of this learner (they can then be approved and sign in). */
+    public function waiveFee(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        if (\App\Services\Academy\AcademyFees::waiveSignup($id)) {
+            $this->audit('academy.learner.fee_waived', 'academy_learner', $id, 'Waived the sign-up fee of ' . $l['email']);
+            Flash::success('The sign-up fee was waived. You can approve the account now.');
+        } else {
+            Flash::info('This account has no unpaid sign-up fee.');
+        }
+        return $this->redirect('admin/academy/learners/' . $id);
+    }
+
     public function photoRemove(Request $request, int $id): Response
     {
         $this->authorize('academy.manage');

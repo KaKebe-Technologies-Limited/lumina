@@ -19,11 +19,12 @@ use App\Services\Shop\PaymentService;
  *             completed + same reference + same currency + amount >= expected  -> paid (idempotent, row locked); anything else odd -> review
  *   The customer's return page and the IPN call both just call settle(), so whichever arrives first wins and the other is a harmless repeat.
  *
- * purpose = donation (ref_id = donations.id: marked received) | shop (ref_id = shop_orders.id: PaymentService::markPaid, method "pesapal").
+ * purpose = donation (ref_id = donations.id: marked received) | shop (ref_id = shop_orders.id: PaymentService::markPaid, method "pesapal") |
+ *           academy_signup (ref_id = academy_learners.id) | academy_cert (ref_id = academy_certificates.id): see App\Services\Academy\AcademyFees.
  */
 final class PesapalPayments
 {
-    public const PURPOSES = ['donation', 'shop'];
+    public const PURPOSES = ['donation', 'shop', 'academy_signup', 'academy_cert'];
 
     /**
      * @param array{name?:string,email?:string,phone?:string} $payer
@@ -35,7 +36,7 @@ final class PesapalPayments
         if (!in_array($purpose, self::PURPOSES, true) || $refId < 1 || $amountMinor < 1 || !Money::validCurrency($currency)) {
             return ['ok' => false, 'error' => 'rejected'];
         }
-        $reference = 'LAF' . ($purpose === 'donation' ? 'D' : 'S') . $refId . '-' . strtoupper(bin2hex(random_bytes(4)));
+        $reference = 'LAF' . ['donation' => 'D', 'shop' => 'S', 'academy_signup' => 'A', 'academy_cert' => 'C'][$purpose] . $refId . '-' . strtoupper(bin2hex(random_bytes(4)));
         $id = Database::insert('pesapal_payments', [
             'merchant_reference' => $reference,
             'purpose'            => $purpose,
@@ -177,6 +178,10 @@ final class PesapalPayments
                     Mailer::notify('Online donation received', "An online donation was paid through Pesapal.\n\nDonor: " . ((int) $d['is_anonymous'] === 1 ? '(anonymous) ' : '') . $d['donor_name'] . ' <' . $d['donor_email'] . ">\nAmount: "
                         . Money::format($amount, (string) $row['currency']) . "\nReference: " . $row['merchant_reference'] . "\n\nManage it in the admin area: " . abs_url('admin/donations') . "\n", (string) $d['donor_email']);
                 }
+            } elseif ($row['purpose'] === 'academy_signup') {
+                \App\Services\Academy\AcademyFees::markSignupPaid((int) $row['ref_id'], (string) $row['merchant_reference']);
+            } elseif ($row['purpose'] === 'academy_cert') {
+                \App\Services\Academy\AcademyFees::markCertPaid((int) $row['ref_id'], (string) $row['merchant_reference']);
             } elseif ($row['purpose'] === 'shop') {
                 PaymentService::markPaid((int) $row['ref_id'], [
                     'method'     => 'pesapal',

@@ -10,6 +10,19 @@ $copy = [
     'unknown'       => ['info', 'Payment not found', 'We could not find this payment. If you were charged, please write to us.'],
 ];
 [$icon, $title, $text] = $copy[$state] ?? $copy['unknown'];
+$purpose = (string) ($row['purpose'] ?? '');
+if ($purpose === 'academy_signup' || $purpose === 'academy_cert') {
+    $what = $purpose === 'academy_signup' ? 'sign-up fee' : 'certificate fee';
+    $next = $purpose === 'academy_signup' ? 'Your account is now with the Academy team: sign in after it is approved (you do not need to pay again).' : 'Sign in to your learner portal to open your certificate.';
+    $academy = [
+        'paid'    => ['check-circle', 'Payment received', 'Thank you! Your ' . $what . ' was received. ' . $next],
+        'pending' => ['clock', 'We are waiting for your payment', 'Pesapal has not confirmed the ' . $what . ' yet. If you have paid, it can take a few minutes: please do not pay again. You can sign in later to check.'],
+        'failed'  => ['x-circle', 'The payment did not go through', 'Nothing was charged. Sign in and press "Pay the ' . $what . '" to try again.'],
+    ];
+    [$icon, $title, $text] = $academy[$state] ?? [$icon, $title, $text];
+}
+$backUrl = in_array($purpose, ['academy_signup', 'academy_cert'], true) ? 'academy/login' : ($state === 'paid' ? '' : 'donate');
+$backLabel = in_array($purpose, ['academy_signup', 'academy_cert'], true) ? 'Go to my learner portal' : ($state === 'paid' ? 'Back to the home page' : 'Back to the donate page');
 ?>
 <?= partial('partials/page-hero', ['title' => $title, 'eyebrow' => 'Donate']) ?>
 <section class="section">
@@ -18,7 +31,7 @@ $copy = [
         <p class="lead"><?= e($text) ?></p>
         <?php if (!empty($row['merchant_reference'])): ?><p class="text-muted">Reference: <strong><?= e($row['merchant_reference']) ?></strong></p><?php endif; ?>
         <p>
-            <a class="btn btn--cta btn--caps" href="<?= e(url($state === 'paid' ? '' : 'donate')) ?>"><?= $state === 'paid' ? 'Back to the home page' : 'Back to the donate page' ?></a>
+            <a class="btn btn--cta btn--caps" href="<?= e(url($backUrl)) ?>"><?= e($backLabel) ?></a>
         </p>
     </div>
 </section>

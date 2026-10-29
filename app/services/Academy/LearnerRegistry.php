@@ -124,6 +124,9 @@ final class LearnerRegistry
         if ($l === null || $l['email_verified_at'] !== null) {
             return false;
         }
+        if (AcademyFees::signupDue($l)) {
+            return false;                         // the sign-up fee comes first (paid, or waived by an administrator)
+        }
         $upd = ['email_verified_at' => date('Y-m-d H:i:s'), 'token_hash' => null, 'token_kind' => null, 'token_expires_at' => null];
         if (self::rejectReady() && $l['rejected_at'] !== null) {
             $upd += ['is_active' => 1, 'rejected_at' => null, 'rejected_by' => null, 'reject_reason' => null];        // reconsidered: the account is on again

@@ -210,6 +210,9 @@ final class GoogleSignIn
             if (self::subColumn()) {
                 $row['google_sub'] = $sub;
             }
+            if (AcademyFees::signup() !== null) {
+                $row['fee_status'] = 'due';
+            }
             $id = Database::insert('academy_learners', $row);
             $l = (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$id]);
             $created = true;

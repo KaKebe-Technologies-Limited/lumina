@@ -7,6 +7,7 @@ use App\Core\Flash;
 use App\Core\RateLimit;
 use App\Core\Request;
 use App\Core\Response;
+use App\Services\Academy\AcademyFees;
 use App\Services\Academy\CertificateService;
 use App\Services\Academy\ClassService;
 use App\Services\Academy\CourseService;
@@ -26,6 +27,8 @@ use App\Services\Academy\LearnerPortrait;
  */
 final class AcademyPortalController extends AcademyBaseController
 {
+    use GatewayRedirects;
+
     /** @return array{0:?array<string,mixed>,1:?Response} the learner, or the sign-in redirect */
     private function who(): array
     {
@@ -92,6 +95,21 @@ final class AcademyPortalController extends AcademyBaseController
             'certificates' => CertificateService::forLearner($id), 'waiting' => CertificateService::pendingForLearner($id),
             'requestable' => array_values(array_filter(CourseService::dashboard($id), static fn(array $c): bool => !empty($c['cert_requestable']))),
         ]);
+    }
+
+    /** POST academy/portal/certificates/{id}/pay: the learner pays the certificate fee through Pesapal. */
+    public function payCertificate(Request $request, int|string $id): Response
+    {
+        [$l, $redirect] = $this->who();
+        if ($redirect !== null) {
+            return $redirect;
+        }
+        $pay = AcademyFees::beginCert((int) $id, (int) $l['id']);
+        if ($pay['ok']) {
+            return $this->sendToGateway((string) $pay['link']);
+        }
+        Flash::error($pay['error'] === 'not_due' ? 'This certificate does not need a payment (it is paid or free).' : 'The payment page could not be opened just now. Nothing was charged. Please try again in a minute.');
+        return $this->redirect('academy/portal/certificates');
     }
 
     public function messages(Request $request): Response

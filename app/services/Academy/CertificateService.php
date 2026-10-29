@@ -113,11 +113,17 @@ final class CertificateService
      * Approve a waiting certificate: from now on the learner can open and download it and the public check page accepts it. $email also sends the learner the e-mail
      * with the link to the certificate and the PDF. @return array{ok:bool,mailed:bool}
      */
-    public static function approve(int $id, ?int $adminId, bool $email): array
+    public static function approve(int $id, ?int $adminId, bool $email, bool $waiveFee = false): array
     {
         $c = Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]);
         if ($c === null || !self::approvalReady()) {
             return ['ok' => false, 'mailed' => false];
+        }
+        if (AcademyFees::certDue($c)) {
+            if (!$waiveFee) {
+                return ['ok' => false, 'mailed' => false, 'fee' => true];           // the certificate fee comes first (paid, or waived on purpose)
+            }
+            AcademyFees::waiveCert($id);
         }
         if ($c['approved_at'] === null) {
             Database::update('academy_certificates', ['approved_at' => date('Y-m-d H:i:s'), 'approved_by' => $adminId], 'id = ?', [$id]);
@@ -135,7 +141,19 @@ final class CertificateService
     /** The message shown (and e-mailed) when a learner has passed and the certificate waits for the administrator. */
     public static function waitingNotice(): string
     {
-        return 'Congratulations, you passed and completed the course! Your certificate is ready to be prepared: it is now waiting for approval and signing by the Academy administrator, and it is shared with you only after that. Please check this page, or your dashboard, again after ' . self::waitHours() . ' hours.';
+        return self::feeSentence() . 'Congratulations, you passed and completed the course! Your certificate is ready to be prepared: it is now waiting for approval and signing by the Academy administrator, and it is shared with you only after that. Please check this page, or your dashboard, again after ' . self::waitHours() . ' hours.';
+    }
+
+    /** "To receive it, pay the certificate fee ..." while the signed-in learner has a certificate whose fee is due, else ''. */
+    public static function feeSentence(): string
+    {
+        $fee = AcademyFees::configured('cert');
+        $lid = LearnerAuth::id();
+        if ($fee === null || $lid === null || !AcademyFees::ready()) {
+            return '';
+        }
+        $due = (int) Database::value("SELECT COUNT(*) FROM academy_certificates WHERE learner_id = ? AND fee_status = 'due' AND revoked_at IS NULL", [$lid], 0);
+        return $due > 0 ? 'Your certificate is held until the certificate fee of ' . $fee['display'] . ' is paid: open My portal > Certificates and press "Pay the certificate fee". ' : '';
     }
 
     public static function waitingShort(): string
@@ -214,6 +232,9 @@ final class CertificateService
             self::email($cert);
             return ['ok' => true, 'error' => null, 'cert' => $cert, 'waiting' => false];
         }
+        if (AcademyFees::certDue($cert)) {
+            return ['ok' => true, 'error' => null, 'cert' => $cert, 'waiting' => true];          // the team is told after the fee is paid
+        }
         try {
             Mailer::notify('Certificate request: ' . mb_substr((string) $learner['name'], 0, 60) . ' - ' . mb_substr((string) $course['title'], 0, 80),
                 $learner['name'] . ' (' . $learner['email'] . ") passed \"" . $course['title'] . "\" and asked for the certificate.\n\nApprove it here: " . abs_url('admin/academy/certificates?status=waiting'), (string) $learner['email']);
@@ -285,7 +306,10 @@ final class CertificateService
             'score_pct' => $score,
             'hours' => $minutes > 0 ? round($minutes / 60 * 2) / 2 : null,
         ];
-        if (self::approvalReady() && ($approved || !self::approvalRequired())) {
+        $fee = !$approved && self::approvalReady() ? AcademyFees::cert() : null;      // an exam certificate with a fee waits for the payment first (a certificate an administrator issues by hand is free)
+        if ($fee !== null) {
+            $row['fee_status'] = 'due';
+        } elseif (self::approvalReady() && ($approved || !self::approvalRequired())) {
             $row['approved_at'] = date('Y-m-d H:i:s');
         }
         $id = Database::insert('academy_certificates', $row);

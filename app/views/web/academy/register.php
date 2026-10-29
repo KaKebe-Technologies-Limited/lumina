@@ -46,7 +46,8 @@
                         <label class="check"><input type="checkbox" name="agree" value="1"<?= old('agree') ? ' checked' : '' ?> required><span><?= e(content('academy', 'auth.consent')) ?></span></label>
                         <?php if (error('agree')): ?><div class="field__error"><?= e((string) error('agree')) ?></div><?php endif; ?>
                     </div>
-                    <button class="btn btn--cta btn--caps btn--block" type="submit">Create my account</button>
+                    <?php if ($acFee = \App\Services\Academy\AcademyFees::signup()): ?><p class="opp-notice" role="note"><?= icon('info', 'icon--sm') ?> A sign-up fee of <strong><?= e($acFee['display']) ?></strong> applies. After you press the button you pay it securely with Pesapal (card or mobile money), and then your account is processed.</p><?php endif; ?>
+                    <button class="btn btn--cta btn--caps btn--block" type="submit"><?= \App\Services\Academy\AcademyFees::signup() ? 'Create my account and pay the fee' : 'Create my account' ?></button>
                     <?php if (($sw = \App\Services\Academy\LearnerAuth::supportWhatsapp()) !== null): ?><p class="ac-form__alt">Quick inquiries about your approval? <a href="<?= e($sw['url']) ?>" rel="noopener" target="_blank">WhatsApp <?= e($sw['display']) ?></a></p><?php endif; ?>
                     <?= partial('partials/academy-wa-group', ['style' => 'line']) ?>
                     <p class="ac-form__alt">Questions before you register? <a href="<?= e(url('academy/contact')) ?>">Message the Academy team</a></p>

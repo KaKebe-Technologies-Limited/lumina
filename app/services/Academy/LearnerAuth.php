@@ -44,12 +44,12 @@ final class LearnerAuth
             return self::$current = null;
         }
         try {
-            $wa = (VerificationCode::ready() ? ', whatsapp' : '') . (LearnerRegistry::ready() ? ', reg_no' : '') . (self::bioReady() ? ', bio' : '');
+            $wa = (VerificationCode::ready() ? ', whatsapp' : '') . (LearnerRegistry::ready() ? ', reg_no' : '') . (self::bioReady() ? ', bio' : '') . (AcademyFees::ready() ? ', fee_status' : '');
             $row = Database::one('SELECT id, name, email, phone, country' . $wa . ', email_verified_at, is_active, created_at FROM academy_learners WHERE id = ? LIMIT 1', [$id]);
         } catch (\Throwable) {
             $row = null;
         }
-        if ($row === null || (int) $row['is_active'] !== 1) {
+        if ($row === null || (int) $row['is_active'] !== 1 || AcademyFees::signupDue($row)) {          // an unpaid sign-up fee keeps the account out until it is paid or waived
             Session::forget(self::SESSION_KEY);
             return self::$current = null;
         }
@@ -260,7 +260,7 @@ final class LearnerAuth
             return ['ok' => true, 'errors' => [], 'verify' => self::requireVerification()];
         }
         $verify = self::requireVerification();
-        $id = Database::insert('academy_learners', [
+        $row = [
             'name' => mb_substr($name, 0, 120),
             'email' => $email,
             'password_hash' => Auth::hashPassword($password),
@@ -268,7 +268,11 @@ final class LearnerAuth
             'country' => $country !== '' ? mb_substr($country, 0, 80) : null,
             'email_verified_at' => $verify ? null : date('Y-m-d H:i:s'),
             'is_active' => 1,
-        ]);
+        ];
+        if (AcademyFees::signup() !== null) {
+            $row['fee_status'] = 'due';                                   // the sign-up fee must be paid (Pesapal) before the account can be used
+        }
+        $id = Database::insert('academy_learners', $row);
         LearnerRegistry::assign($id);
         VerificationCode::saveNumber($id, $wa);                                                  // the WhatsApp number is kept for support
         $learner = (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$id]);
@@ -420,6 +424,9 @@ final class LearnerAuth
             RateLimit::hit($key, 900);
             RateLimit::hit('academy-login-ip:' . $ip, 900);
             return ['ok' => false, 'error' => 'That e-mail address and password do not match.', 'unverified' => false, 'learner' => null];
+        }
+        if (AcademyFees::signupDue($l)) {
+            return ['ok' => false, 'error' => 'Your sign-up fee is not paid yet. Please pay it to continue.', 'unverified' => true, 'fee_due' => true, 'learner' => $l];
         }
         if (self::requireVerification() && $l['email_verified_at'] === null) {
             return ['ok' => false, 'error' => self::emailVerificationOn()

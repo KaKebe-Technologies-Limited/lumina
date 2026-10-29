@@ -167,7 +167,7 @@ $active = (int) ($me['is_active'] ?? 1) === 1;
                     <h2 class="ac-panel__title"><?= icon('award', 'icon--sm') ?> My certificates</h2>
                     <?php $waiting = CertificateService::pendingForLearner((int) $me['id']); ?>
                     <?php if ($certificates === [] && $waiting === []): ?><p class="text-muted">Pass a final exam to earn your first certificate.</p><?php endif; ?>
-                    <?php foreach ($waiting as $wc): ?><p class="text-muted"><?= icon('clock', 'icon--sm') ?> <?= e($wc['course_title']) ?>: <?= e(CertificateService::waitingShort()) ?></p><?php endforeach; ?>
+                    <?php foreach ($waiting as $wc): ?><p class="text-muted"><?= icon('clock', 'icon--sm') ?> <?= e($wc['course_title']) ?>: <?= \App\Services\Academy\AcademyFees::certDue($wc) ? '<a href="' . e(url('academy/portal/certificates')) . '">pay the certificate fee to receive it</a>.' : e(CertificateService::waitingShort()) ?></p><?php endforeach; ?>
                     <ul class="ac-minilist">
                         <?php foreach ($certificates as $ce): ?>
                             <li><a href="<?= e(url('academy/certificate/' . $ce['code'])) ?>"><?= e($ce['course_title']) ?></a><span><?= $ce['revoked_at'] !== null ? 'Withdrawn' : e(format_date($ce['issued_at'])) ?></span></li>
