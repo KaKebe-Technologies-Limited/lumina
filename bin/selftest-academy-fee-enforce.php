@@ -36,6 +36,7 @@ use App\Services\Academy\AcademyFees;
 use App\Services\Academy\LearnerAuth;
 use App\Services\Academy\LearnerRegistry;
 
+set_time_limit(0); // the sign-up form waits for the anti-bot delay several times
 echo "-- academy sign-up payment enforced --\n";
 
 $keys = ['academy_signup_fee', 'academy_signup_fee_currency', 'academy_pay_mobile_money', 'academy_pay_bank_details', 'daraza_signup_on', 'daraza_url', 'academy_signup_mode'];
