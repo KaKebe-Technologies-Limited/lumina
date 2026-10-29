@@ -110,3 +110,7 @@
   .btn { margin-top: $space-2; } }
 .ac-form.card.ac-danger { border-color: rgba(#B3261E, 0.4); .card__title { color: #B3261E; } }
 .ac-form .ac-portrait { margin-bottom: $space-4; }
+
+// ---- the team's messages on the "waiting for approval" page (an applicant who signed in with the right password)
+.ac-pending-msgs { margin: $space-5 0; padding: $space-4 $space-5; text-align: left; background: #FFF8D6; border-left: 4px solid #FFD21F; border-radius: $radius;
+  &__item { margin: $space-3 0; padding: $space-3 $space-4; background: $white; border: 1px solid $line; border-radius: $radius; line-height: 1.5; overflow-wrap: anywhere; &--me { background: $surface-alt; } } }

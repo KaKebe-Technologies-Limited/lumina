@@ -172,7 +172,7 @@ final class LearnerMessages
         }
         $reg = LearnerRegistry::ready() ? 'l.reg_no' : 'NULL AS reg_no';
         return Database::all(
-            'SELECT l.id, l.name, l.email, ' . $reg . ', t.last_id, t.total, t.unread, m.sender AS last_sender, m.body AS last_body, m.created_at AS last_at FROM academy_learners l '
+            'SELECT l.id, l.name, l.email, l.email_verified_at, l.is_active, ' . $reg . ', t.last_id, t.total, t.unread, m.sender AS last_sender, m.body AS last_body, m.created_at AS last_at FROM academy_learners l '
             . 'JOIN (SELECT learner_id, MAX(id) AS last_id, COUNT(*) AS total, SUM(sender = \'learner\' AND read_at IS NULL) AS unread FROM academy_messages GROUP BY learner_id) t ON t.learner_id = l.id '
             . 'JOIN academy_messages m ON m.id = t.last_id' . $where . ' ORDER BY (t.unread > 0) DESC, t.last_id DESC LIMIT ' . max(1, min(300, $limit)),
             $params

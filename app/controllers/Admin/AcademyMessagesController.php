@@ -54,7 +54,7 @@ final class AcademyMessagesController extends AcademyAdminController
             }
         }
         LearnerMessages::markRead($id, 'admin');
-        return $this->render('admin/academy/messages/thread', ['l' => $l, 'thread' => $thread, 'firstNew' => $firstNew, 'ready' => LearnerMessages::ready()],
+        return $this->render('admin/academy/messages/thread', ['l' => $l, 'login' => abs_url('academy/login'), 'thread' => $thread, 'firstNew' => $firstNew, 'ready' => LearnerMessages::ready()],
             ['title' => 'Messages: ' . $l['name'], 'nav' => 'academy_messages', 'breadcrumbs' => $this->crumbs('Messages', [(string) $l['name'], null])]);
     }
 

@@ -269,6 +269,25 @@ Database::execute("DELETE FROM academy_inquiries WHERE email LIKE 'zz-lpo-%'");
 $homeStats = $req('GET', '/academy', [], $jN)['body'];
 check('stats: the Academy home band keeps its own markup and the portal numbers have their own class', str_contains($homeStats, 'ac-stats__list') && str_contains($req('GET', '/academy/dashboard', [], $jA)['body'], 'class="ac-pstats"') && !str_contains($req('GET', '/academy/dashboard', [], $jA)['body'], 'class="ac-stats"'));
 
+// ------------------------------------------------------------------------------------------------------------- notifying a learner who is not approved yet
+$pend = (int) Database::insert('academy_learners', ['name' => 'Zed Lpo Pending', 'email' => 'zz-lpo-pend@example.test', 'password_hash' => Auth::hashPassword($pw), 'phone' => '+256700000030', 'country' => 'Uganda', 'whatsapp' => '256772000030', 'email_verified_at' => null, 'is_active' => 1]);
+\App\Services\Academy\LearnerRegistry::assign($pend);
+$pt = $req('GET', '/admin/academy/learners/' . $pend . '/messages', [], $jAdmin)['body'];
+check('notify: for a learner who is not approved the conversation page warns that they cannot open the portal and offers WhatsApp, Approve now and the e-mail', str_contains($pt, 'not approved yet') && str_contains($pt, 'Notify Zed on WhatsApp') && str_contains($pt, 'https://wa.me/256772000030?text=') && str_contains($pt, 'Approve now') && str_contains($pt, 'Recommended'));
+check('notify: for an approved learner there is no warning, but the WhatsApp button is there too', !str_contains($req('GET', '/admin/academy/learners/' . $a . '/messages', [], $jAdmin)['body'], 'not approved yet') && str_contains($req('GET', '/admin/academy/learners/' . $a . '/messages', [], $jAdmin)['body'], 'Notify Zed on WhatsApp'));
+$adminPost('/admin/academy/learners/' . $pend . '/messages', ['body' => 'Hello! Please send us a photo of your student card so we can approve you.'], '/admin/academy/learners/' . $pend . '/messages');
+check('notify: the inbox marks the conversation of a learner who is not approved', str_contains($req('GET', '/admin/academy/messages', [], $jAdmin)['body'], 'Not approved'));
+$jPe = null;
+$pendPage0 = $req('GET', '/academy/pending', [], $jPe);
+check('notify: a visitor who has not signed in sees none of the team\'s messages on the waiting page', !str_contains($pendPage0['body'], 'Messages from the Academy team') && !str_contains($pendPage0['body'], 'student card'));
+$lgPe = $post('/academy/login', ['email' => 'zz-lpo-pend@example.test', 'password' => $pw], $jPe, '/academy/login');
+$pendPage = $req('GET', '/academy/pending', [], $jPe)['body'];
+check('notify: the applicant who tries to sign in with the right password lands on the waiting page and reads the team\'s message there, with a button to reply', in_array($lgPe['code'], [302, 303], true) && str_contains($lgPe['head'], 'academy/pending') && str_contains($pendPage, 'Messages from the Academy team') && str_contains($pendPage, 'student card') && str_contains($pendPage, 'Reply to the Academy team'));
+check('notify: reading it marks it as read (the team sees "read")', LearnerMessages::unreadForLearner($pend) === 0 && str_contains($req('GET', '/admin/academy/learners/' . $pend . '/messages', [], $jAdmin)['body'], '&middot; read<'));
+$jPe2 = null;
+$badPe = $post('/academy/login', ['email' => 'zz-lpo-pend@example.test', 'password' => 'wrong password 12'], $jPe2, '/academy/login');
+check('notify: with a wrong password the waiting page shows nothing of the conversation', !str_contains($req('GET', '/academy/pending', [], $jPe2)['body'], 'student card'));
+
 // deleting a learner removes the conversation
 Database::execute('DELETE FROM academy_learners WHERE id = ?', [$b]);
 check('messages: deleting a learner deletes the conversation with the team', (int) Database::value('SELECT COUNT(*) FROM academy_messages WHERE learner_id = ?', [$b], 0) === 0);

@@ -256,3 +256,13 @@ Each course card (`web/academy/_course_card.php`) has: a **coloured banner** per
 ### Rejecting an application (admin control)
 
 Next to **Approve**, a learner who is waiting for approval has a **Reject** button (Admin > LAF Academy > Learners, on the row; on the learner page it opens a form with a **reason** and an optional "also e-mail them"). A rejected application is switched off (cannot sign in) and marked with the time, the administrator and the reason (`rejected_at`, `rejected_by`, `reject_reason`); it shows a red **Rejected** badge and appears under the Status filter **Rejected** (and no longer under "Switched off"). If the applicant then signs in with the right password, or with Google, they are told "Your application was not approved" with the reason and are sent to the **Message the Academy team** form, so they can appeal; the message lands in their own conversation. **Approve after all** (list and learner page) reconsiders it: the account is switched on, approved, and the rejection cleared. Only learners who are not approved yet can be rejected. Recorded in the activity log (`academy.learner.reject`). The button stays hidden until the database update has been imported. Test: `bin/selftest-academy-registry.php`.
+
+### Telling a learner who is not approved yet that they have a message
+
+A learner who is waiting for approval (or was rejected) cannot open the portal, so a message written to them is not seen at once. Three ways to reach them:
+
+* **Waiting page:** when they try to sign in with the right password they land on "Application received" (`/academy/pending`), which now shows the team's messages (and marks them read) with a **Reply to the Academy team** button. With a wrong password, or without signing in, nothing of the conversation is shown.
+* **WhatsApp:** every conversation page (Admin > LAF Academy > Messages > a learner) has **Notify NAME on WhatsApp**: it opens WhatsApp with their number and a short text asking them to sign in (the message itself is not put in the link). The WhatsApp number is mandatory for every learner.
+* **E-mail:** the "Also send it by e-mail" box (off by default because e-mail is limited); the page recommends it for learners who are not approved.
+
+The conversation page also warns that the learner cannot open the portal yet and offers **Approve now**; in the inbox such learners carry a "Not approved" badge. Test: `bin/selftest-academy-portal.php`.

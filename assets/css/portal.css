@@ -859,3 +859,26 @@
 .ac-form .ac-portrait {
   margin-bottom: 1rem;
 }
+
+.ac-pending-msgs {
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+  text-align: left;
+  background: #FFF8D6;
+  border-left: 4px solid #FFD21F;
+  border-radius: 12px;
+}
+
+.ac-pending-msgs__item {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  background: #FFFFFF;
+  border: 1px solid #E4E1DA;
+  border-radius: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.ac-pending-msgs__item--me {
+  background: #F1EEE8;
+}

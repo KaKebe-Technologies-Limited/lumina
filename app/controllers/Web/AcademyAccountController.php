@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\HttpException;
 use App\Services\Academy\GoogleSignIn;
 use App\Services\Academy\LearnerAuth;
+use App\Services\Academy\LearnerMessages;
 use App\Services\Academy\LearnerPortrait;
 use App\Services\Academy\VerificationCode;
 
@@ -115,7 +116,17 @@ final class AcademyAccountController extends AcademyBaseController
     /** After sign-up while administrators approve accounts (no e-mail code): the account is received, sign in after the approval time. */
     public function pending(Request $request): Response
     {
-        return $this->renderAcademy('web/academy/pending', ['regNo' => (string) \App\Core\Session::get('academy_reg_no', ''), 'hours' => LearnerAuth::approvalText()], [
+        // an applicant who signed in with the right password while waiting for approval can read what the Academy team wrote to them
+        $pid = (int) \App\Core\Session::get('academy_pending_id', 0);
+        $thread = [];
+        if ($pid > 0 && LearnerMessages::ready()) {
+            $row = \App\Core\Database::one('SELECT id FROM academy_learners WHERE id = ? AND email_verified_at IS NULL AND is_active = 1', [$pid]);
+            if ($row !== null) {
+                $thread = LearnerMessages::thread($pid, 20);
+                LearnerMessages::markRead($pid, 'learner');
+            }
+        }
+        return $this->renderAcademy('web/academy/pending', ['regNo' => (string) \App\Core\Session::get('academy_reg_no', ''), 'hours' => LearnerAuth::approvalText(), 'thread' => $thread], [
             'bodyClass' => 'is-academy is-academy-auth',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Application received', null]],
             'meta' => ['title' => 'Application received'],
@@ -172,6 +183,7 @@ final class AcademyAccountController extends AcademyBaseController
             if ($res['unverified']) {
                 \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail($request->string('email')));
                 \App\Core\Session::put('academy_reg_no', (string) ($res['learner']['reg_no'] ?? ''));
+                \App\Core\Session::put('academy_pending_id', (int) ($res['learner']['id'] ?? 0));        // proved by the password: lets the waiting page show the team's messages
                 Flash::warning((string) $res['error']);
                 return $this->redirect(LearnerAuth::emailVerificationOn() ? 'academy/check-email' : 'academy/pending');
             }

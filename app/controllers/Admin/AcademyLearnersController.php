@@ -324,7 +324,7 @@ final class AcademyLearnersController extends AcademyAdminController
         } else {
             Flash::info('This account is already active.');
         }
-        return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
+        return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : ($request->string('back') === 'thread' ? 'admin/academy/learners/' . $id . '/messages' : 'admin/academy/learners/' . $id));
     }
 
     /** The learner's portrait (administrators and facilitators who may see this learner). */
