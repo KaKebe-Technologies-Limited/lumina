@@ -112,6 +112,8 @@ final class ShopProductsController extends AdminController
             'counts'     => $counts,
             'categories' => ShopCategory::all(),
             'samples'    => (int) Database::value('SELECT COUNT(*) FROM shop_products WHERE is_sample = 1', [], 0),
+            'lafMissing' => count(array_filter(\App\Services\Shop\LafProducts::catalogue(), static fn(array $p): bool => Database::one('SELECT id FROM shop_products WHERE slug = ? OR sku = ?', [$p['slug'], $p['sku']]) === null)),
+            'canDelete'  => can('shop.delete'),
             'currency'   => ShopSettings::currency(),
             'shopOpen'   => ShopSettings::isOpen(),
         ], ['title' => 'Products', 'nav' => 'shop_products', 'breadcrumbs' => [['Shop', url('admin/shop')], ['Products', null]]]);
@@ -273,6 +275,33 @@ final class ShopProductsController extends AdminController
         }
         Flash::success($msg);
         return $this->returnTo($request);
+    }
+
+    /** POST admin/shop/products/import-laf: add the LAF branded products that are not in the shop yet (published, with picture, sizes and a starting price). */
+    public function importLaf(Request $request): Response
+    {
+        $this->authorize('shop.manage');
+        $r = \App\Services\Shop\LafProducts::import();
+        $this->audit('shop.products.import_laf', 'shop_product', null, 'Added ' . $r['created'] . ' LAF products', $r);
+        if ($r['created'] === 0 && $r['problems'] === []) {
+            Flash::info('All the LAF products are already in the shop. Nothing was added.');
+        } elseif ($r['created'] > 0) {
+            Flash::success($r['created'] . ' LAF product' . ($r['created'] === 1 ? '' : 's') . ' added and published. The prices are starting values: open a product > Edit to set its price.' . ($r['skipped'] > 0 ? ' ' . $r['skipped'] . ' were already there.' : ''));
+        }
+        foreach ($r['problems'] as $p) {
+            Flash::warning($p);
+        }
+        return $this->redirect('admin/shop/products');
+    }
+
+    /** POST admin/shop/products/delete-samples: delete the placeholder sample products (needs shop.delete as well). */
+    public function deleteSamples(Request $request): Response
+    {
+        $this->authorize('shop.manage', 'shop.delete');
+        $n = \App\Services\Shop\LafProducts::removeSamples();
+        $this->audit('shop.products.delete_samples', 'shop_product', null, 'Deleted ' . $n . ' sample products');
+        Flash::success($n === 0 ? 'There were no sample products to delete.' : $n . ' sample product' . ($n === 1 ? ' was' : 's were') . ' deleted. Past orders keep their own copy of the items.');
+        return $this->redirect('admin/shop/products');
     }
 
     public function destroy(Request $request, int $id): Response

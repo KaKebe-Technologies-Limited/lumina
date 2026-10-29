@@ -246,6 +246,7 @@ require __DIR__ . '/selftest-bono.php';                      // Bono AI: reading
 require __DIR__ . '/selftest-academy-portal.php';             // Academy portal: tabs, profile + bio, messages between the team and each learner, yellow notifications, link to the portal (removes its own test data)
 require __DIR__ . '/selftest-academy-phones.php';               // Academy: phone code follows the country, older accounts repaired, WhatsApp group link
 require __DIR__ . '/selftest-academy-fees.php';                 // Academy sign-up fee and certificate fee through Pesapal (mock)
+require __DIR__ . '/selftest-shop-laf.php';                      // Shop: the LAF branded products (import, editable prices, removing the samples)
 require __DIR__ . '/selftest-pesapal.php';                    // Pesapal payment gateway: client, donations, shop orders, endpoints (mock transport)
 require __DIR__ . '/selftest-home-focus.php';                // Home page: the four focus areas (numbered colour ribbons): registry section, order, colours, markup, style
 require __DIR__ . '/selftest-academy-catalog.php';           // Academy course cards: banner colours, Free / Certificate pills, level dots, what you will learn, stylesheet

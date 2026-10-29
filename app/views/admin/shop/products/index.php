@@ -29,6 +29,15 @@ $this->start('scripts'); ?>
         ],
     ]) ?>
 
+    <?php if ($lafMissing > 0 || ($samples > 0 && $canDelete)): ?>
+        <section class="card" style="margin-bottom:1rem"><div class="card__body">
+            <strong>LAF branded products</strong>
+            <p class="text-muted">Hoodies, a jacket, shirts, polos, a cap and a backpack with the LAF badge: names, pictures, sizes and a starting price (UGX), all editable afterwards. Prices are changed in each product's <em>Edit</em> page.</p>
+            <?php if ($lafMissing > 0): ?><form method="post" action="<?= e(url('admin/shop/products/import-laf')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--primary btn--sm" type="submit"><?= icon('plus', 'icon--sm') ?> Add the <?= (int) $lafMissing ?> LAF product<?= $lafMissing === 1 ? '' : 's' ?></button></form><?php endif; ?>
+            <?php if ($samples > 0 && $canDelete): ?><form method="post" action="<?= e(url('admin/shop/products/delete-samples')) ?>" class="inline-form" data-confirm="Delete the <?= (int) $samples ?> sample products and their pictures? Past orders keep their own copy of the items. This cannot be undone."><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit"><?= icon('trash', 'icon--sm') ?> Delete the <?= (int) $samples ?> sample product<?= $samples === 1 ? '' : 's' ?></button></form><?php endif; ?>
+        </div></section>
+    <?php endif; ?>
+
     <?php if ($samples > 0): ?>
         <div class="alert alert--info" role="status"><?= icon('info') ?><div class="alert__body"><strong class="alert__title">Sample products are placeholders.</strong>
             <?= (int) $samples ?> product<?= $samples === 1 ? ' is a sample' : 's are samples' ?>: the names, prices and pictures were made up to show how the shop looks. Open each one, replace the name, price and photos, and the "Sample" label goes away. Delete the ones you do not need.</div></div>
