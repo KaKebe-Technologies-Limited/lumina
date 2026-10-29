@@ -25289,3 +25289,221 @@ fieldset.ac-q legend + * {
     display: none;
   }
 }
+
+.home-focus {
+  padding-bottom: 4rem;
+}
+
+.focus-list {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 62rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.focus-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 12.5rem) minmax(0, 1fr) auto;
+  align-items: stretch;
+  min-height: 7.5rem;
+  background: #FFFFFF;
+  border: 1px solid #E4E1DA;
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgba(23, 32, 54, 0.08);
+}
+
+.focus-row__link {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+}
+
+.focus-row__link:focus-visible {
+  outline: 3px solid #2C3950;
+  outline-offset: -3px;
+}
+
+.focus-row__ribbon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1rem 2.6rem 1rem 1.6rem;
+  color: #FFFFFF;
+  clip-path: polygon(0 0, 100% 0, 84% 100%, 0 100%);
+}
+
+.focus-row__word {
+  max-width: 4.6rem;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+
+.focus-row__num {
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  line-height: 1;
+  font-weight: 700;
+  padding-left: 0.7rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.focus-row__body {
+  align-self: center;
+  padding: 0.75rem 1rem;
+  min-width: 0;
+}
+
+.focus-row__title {
+  margin: 0 0 0.2rem;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: clamp(1.1rem, 2.6vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+
+.focus-row__text {
+  margin: 0;
+  color: #5A6470;
+  font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+  line-height: 1.35;
+}
+
+.focus-row__icon {
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 4.6rem;
+  height: 4.6rem;
+  margin: 0 1.6rem 0 0.5rem;
+  border-radius: 50%;
+  color: #FFFFFF;
+  box-shadow: 0 6px 16px rgba(23, 32, 54, 0.2);
+}
+
+.focus-row__icon .icon {
+  width: 2.3rem;
+  height: 2.3rem;
+}
+
+.focus-row--red {
+  background: linear-gradient(90deg, #FFFFFF 35%, #FDECEC 100%);
+}
+
+.focus-row--red .focus-row__ribbon, .focus-row--red .focus-row__icon {
+  background: linear-gradient(135deg, #B3151C, #8A0F15);
+}
+
+.focus-row--red .focus-row__title {
+  color: #A5121A;
+}
+
+.focus-row--green {
+  background: linear-gradient(90deg, #FFFFFF 35%, #E9F6EE 100%);
+}
+
+.focus-row--green .focus-row__ribbon, .focus-row--green .focus-row__icon {
+  background: linear-gradient(135deg, #138A45, #0B6B35);
+}
+
+.focus-row--green .focus-row__title {
+  color: #0B6B35;
+}
+
+.focus-row--gold {
+  background: linear-gradient(90deg, #FFFFFF 35%, #FDF3DD 100%);
+}
+
+.focus-row--gold .focus-row__ribbon, .focus-row--gold .focus-row__icon {
+  background: linear-gradient(135deg, #B87808, #8F5E05);
+}
+
+.focus-row--gold .focus-row__title {
+  color: #7A4F08;
+}
+
+.focus-row--purple {
+  background: linear-gradient(90deg, #FFFFFF 35%, #F2EAFB 100%);
+}
+
+.focus-row--purple .focus-row__ribbon, .focus-row--purple .focus-row__icon {
+  background: linear-gradient(135deg, #7A2FC0, #5B1C9B);
+}
+
+.focus-row--purple .focus-row__title {
+  color: #5B1C9B;
+}
+
+@media (max-width: 640px) {
+  .focus-row {
+    grid-template-columns: 6.4rem minmax(0, 1fr) auto;
+    min-height: 6.2rem;
+    border-radius: 1.6rem;
+  }
+  .focus-row__ribbon {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.1rem;
+    padding: 0.7rem 1.4rem 0.7rem 0.9rem;
+  }
+  .focus-row__num {
+    padding-left: 0;
+    border-left: 0;
+    font-size: 2rem;
+  }
+  .focus-row__word {
+    font-size: 0.66rem;
+    max-width: none;
+  }
+  .focus-row__body {
+    padding: 0.5rem 0.75rem;
+  }
+  .focus-row__icon {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 0.8rem 0 0;
+  }
+  .focus-row__icon .icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+.focus-tagline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0 0;
+  color: #2C3950;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: clamp(0.8rem, 2.2vw, 1rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.focus-tagline::before, .focus-tagline::after {
+  content: '';
+  flex: 0 1 4.5rem;
+  height: 2px;
+  background: #D6A151;
+}
+
+@media print {
+  .focus-row {
+    box-shadow: none;
+  }
+}

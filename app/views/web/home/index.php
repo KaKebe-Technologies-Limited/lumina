@@ -75,6 +75,34 @@ endif;
 ?>
 
 <?php /* ------------------------------------------------------------------ 3. WHAT WE DO (program highlights) */ ?>
+<?php /* ------------------------------------------------------------------ 2c. THE FOUR FOCUS AREAS (numbered colour ribbons; docs/DESIGN-COLOURS.md) */ ?>
+<?php
+$focus = $titled(content_list('home', 'focus.items'));
+if ($focus):
+    section_begin('home', 'focus', ['class' => 'home-focus', 'labelledby' => 'focus-title']);
+    echo partial('partials/section-head', ['eyebrow' => content('home', 'focus.eyebrow'), 'title' => content('home', 'focus.title'), 'lead' => content('home', 'focus.intro'), 'align' => 'center', 'id' => 'focus-title']);
+    $focusWord = trim((string) content('home', 'focus.label'));
+    $tones = ['red', 'green', 'gold', 'purple'];
+?>
+    <ol class="focus-list">
+        <?php foreach ($focus as $i => $f): $fHref = link_url((string) ($f['url'] ?? '')); $tone = $tones[$i % 4]; ?>
+            <li class="focus-row focus-row--<?= e($tone) ?>" data-reveal>
+                <?php if ($fHref !== ''): ?><a class="focus-row__link" href="<?= e($fHref) ?>"><span class="visually-hidden"><?= e($f['title']) ?></span></a><?php endif; ?>
+                <div class="focus-row__ribbon" aria-hidden="true">
+                    <?php if ($focusWord !== ''): ?><span class="focus-row__word"><?= e($focusWord) ?></span><?php endif; ?>
+                    <span class="focus-row__num"><?= str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT) ?></span>
+                </div>
+                <div class="focus-row__body">
+                    <h3 class="focus-row__title"><?= e($f['title']) ?></h3>
+                    <p class="focus-row__text"><?= e((string) ($f['text'] ?? '')) ?></p>
+                </div>
+                <span class="focus-row__icon" aria-hidden="true"><?= icon((string) ($f['icon'] ?? 'check-circle'), 'icon--xl') ?></span>
+            </li>
+        <?php endforeach; ?>
+    </ol>
+    <?php $focusTag = trim((string) content('home', 'focus.tagline')); if ($focusTag !== ''): ?><p class="focus-tagline"><span><?= e($focusTag) ?></span></p><?php endif; ?>
+<?php section_end(); endif; ?>
+
 <?php
 $cardCta = trim((string) content('home', 'programs.card_cta'));
 $progBtn = $pill(content_btn('home', 'programs.cta'), 'btn--primary btn--caps');

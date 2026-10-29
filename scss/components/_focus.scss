@@ -1,0 +1,37 @@
+// The four focus areas on the home page (the foundation's programme template): numbered colour ribbons, a title and one line, and a round icon.
+// Colours follow the order of the rows (red, green, gold, purple). Text on the ribbons is white on colours of at least 4.5:1; the titles use the darker text shades.
+$focus-tones: (
+  red:    (#B3151C, #8A0F15, #A5121A, #FDECEC),
+  green:  (#138A45, #0B6B35, #0B6B35, #E9F6EE),
+  gold:   (#B87808, #8F5E05, #7A4F08, #FDF3DD),
+  purple: (#7A2FC0, #5B1C9B, #5B1C9B, #F2EAFB),
+);
+
+.home-focus { padding-bottom: $space-8; }
+.focus-list { list-style: none; margin: 0 auto; padding: 0; max-width: 62rem; display: grid; gap: $space-4; }
+.focus-row { position: relative; display: grid; grid-template-columns: minmax(7.5rem, 12.5rem) minmax(0, 1fr) auto; align-items: stretch; min-height: 7.5rem; background: $white; border: 1px solid $line; border-radius: 999px; overflow: hidden; box-shadow: 0 10px 28px rgba($navy-dark, 0.08);
+  &__link { position: absolute; inset: 0; z-index: 2; border-radius: inherit; &:focus-visible { outline: 3px solid $navy; outline-offset: -3px; } }
+  &__ribbon { position: relative; display: flex; align-items: center; gap: 0.7rem; padding: 1rem 2.6rem 1rem 1.6rem; color: $white; clip-path: polygon(0 0, 100% 0, 84% 100%, 0 100%); }
+  &__word { max-width: 4.6rem; font-family: $font-heading; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1.15; }
+  &__num { font-family: $font-display; font-size: clamp(2.2rem, 5vw, 3.2rem); line-height: 1; font-weight: 700; padding-left: 0.7rem; border-left: 1px solid rgba($white, 0.55); }
+  &__body { align-self: center; padding: $space-3 $space-4; min-width: 0; }
+  &__title { margin: 0 0 0.2rem; font-family: $font-heading; font-size: clamp(1.1rem, 2.6vw, 1.5rem); font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; line-height: 1.15; }
+  &__text { margin: 0; color: $ink-soft; font-size: clamp(0.95rem, 2.2vw, 1.1rem); line-height: 1.35; }
+  &__icon { align-self: center; display: grid; place-items: center; width: 4.6rem; height: 4.6rem; margin: 0 1.6rem 0 0.5rem; border-radius: 50%; color: $white; box-shadow: 0 6px 16px rgba($navy-dark, 0.2); .icon { width: 2.3rem; height: 2.3rem; } }
+  @each $name, $c in $focus-tones {
+    &--#{$name} { background: linear-gradient(90deg, $white 35%, nth($c, 4) 100%);
+      .focus-row__ribbon, .focus-row__icon { background: linear-gradient(135deg, nth($c, 1), nth($c, 2)); }
+      .focus-row__title { color: nth($c, 3); } }
+  }
+  @media (max-width: 640px) {
+    grid-template-columns: 6.4rem minmax(0, 1fr) auto; min-height: 6.2rem; border-radius: 1.6rem;
+    &__ribbon { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0.1rem; padding: 0.7rem 1.4rem 0.7rem 0.9rem; }
+    &__num { padding-left: 0; border-left: 0; font-size: 2rem; }
+    &__word { font-size: 0.66rem; max-width: none; }
+    &__body { padding: $space-2 $space-3; }
+    &__icon { width: 3rem; height: 3rem; margin: 0 0.8rem 0 0; .icon { width: 1.5rem; height: 1.5rem; } }
+  }
+}
+.focus-tagline { display: flex; align-items: center; justify-content: center; gap: $space-4; margin: $space-6 0 0; color: $navy; font-family: $font-heading; font-size: clamp(0.8rem, 2.2vw, 1rem); letter-spacing: 0.2em; text-transform: uppercase; text-align: center;
+  &::before, &::after { content: ''; flex: 0 1 4.5rem; height: 2px; background: $gold; } }
+@media print { .focus-row { box-shadow: none; } }

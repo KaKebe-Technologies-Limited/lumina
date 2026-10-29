@@ -244,6 +244,7 @@ require __DIR__ . '/selftest-academy-google.php';           // Academy: Continue
 require __DIR__ . '/selftest-academy-registry.php';         // Academy: registration numbers, administrator approval (one, all), new-account notice + dashboard tile, Reg no in the list and export (removes its own test data)
 require __DIR__ . '/selftest-bono.php';                      // Bono AI: reading pages, learning, answers, taught answers, Claude (fake), chat endpoints, admin page (empties and refills nothing: run bin/bono-learn.php afterwards)
 require __DIR__ . '/selftest-academy-portal.php';             // Academy portal: tabs, profile + bio, messages between the team and each learner, yellow notifications, link to the portal (removes its own test data)
+require __DIR__ . '/selftest-home-focus.php';                // Home page: the four focus areas (numbered colour ribbons): registry section, order, colours, markup, style
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);

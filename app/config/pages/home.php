@@ -94,6 +94,31 @@ return [
                 ],
             ],
         ],
+        // ------------------------------------------------------------------ 2c. the four focus areas (the foundation's programme template)
+        [
+            'key' => 'focus', 'label' => '2c. Our four focus areas (the programme ribbons)', 'toggle' => true, 'default_visible' => true,
+            'help' => 'The four focus areas of the foundation as numbered colour ribbons (Health, Education, Technology & Innovation, Empowered Communities). Colours follow the order of the rows: red, green, gold, purple. Add a link to send visitors to the matching programs.',
+            'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => 'What we do'],
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our four [[focus areas]]', 'help' => $hl],
+                ['key' => 'intro', 'label' => 'Intro (optional)', 'type' => 'textarea', 'rows' => 2, 'default' => 'Everything we do serves one of four goals, so that every community can grow stronger.'],
+                ['key' => 'label', 'label' => 'Word on each ribbon', 'type' => 'text', 'default' => 'Focus area'],
+                ['key' => 'items', 'label' => 'Focus areas', 'type' => 'repeater', 'item_label' => 'title', 'add_label' => 'Add a focus area', 'max_rows' => 6,
+                    'fields' => [
+                        ['key' => 'icon', 'label' => 'Icon', 'type' => 'select', 'options' => icon_options(), 'default' => 'check-circle'],
+                        ['key' => 'title', 'label' => 'Title', 'type' => 'text'],
+                        ['key' => 'text', 'label' => 'One line', 'type' => 'textarea', 'rows' => 2],
+                        ['key' => 'url', 'label' => 'Link (optional)', 'type' => 'url'],
+                    ],
+                    'default' => [
+                        ['icon' => 'heart', 'title' => 'Health', 'text' => 'Healthier people, stronger communities.', 'url' => '/programs'],
+                        ['icon' => 'book-open', 'title' => 'Education', 'text' => 'Brighter minds, bigger opportunities.', 'url' => '/programs'],
+                        ['icon' => 'lightbulb', 'title' => 'Technology & Innovation', 'text' => 'Digital skills for a brighter tomorrow.', 'url' => '/academy'],
+                        ['icon' => 'users', 'title' => 'Empowered Communities', 'text' => 'Inclusive, resilient and sustainable Africa.', 'url' => '/programs'],
+                    ]],
+                ['key' => 'tagline', 'label' => 'Line under the ribbons (optional)', 'type' => 'text', 'default' => 'Igniting Light. Inspiring Change.'],
+            ],
+        ],
         // ------------------------------------------------------------------ 3. what we do (program highlights)  [the cards come from Admin > Programs]
         [
             'key' => 'programs', 'label' => '3. What we do (program highlights)', 'toggle' => true, 'default_visible' => true,

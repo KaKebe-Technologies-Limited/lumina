@@ -41,3 +41,7 @@ An in-browser audit (`tools/contrast-audit.js`: loads each page in an iframe at 
 
 - Calendar type colours are edited in Admin > Calendar > Types. The seed (`database/seed.sql`) now ships the palette above and only applies to types that were never edited. On an existing site, set them by hand to the hex values listed above if you want them to match.
 - Membership-card accent (`membership_card_accent`, `#E0642C`), share-image accent 2 (`social_card_accent2`, `#CC651A`) and the card templates "Reference / Royal / Forest" are admin-editable design settings for printed cards and social images, not website UI.
+
+## The four focus areas (home page)
+
+The home page shows the foundation's programme template as a native section "Our four focus areas" (Admin > Pages > Home > "2c. Our four focus areas"): four numbered ribbons coloured red, green, gold and purple in the order of the rows (health, education, technology and innovation, empowered communities), a title, one line and a round icon, with the tagline under them. They are the only places where these four accent colours are used; they live in `scss/components/_focus.scss` (not in the global palette). White text on the ribbons is at least 4.5:1 (red #B3151C, green #138A45, gold #B87808, purple #7A2FC0); the row titles use the darker text shades (#A5121A, #0B6B35, #7A4F08, #5B1C9B) so they pass on white. Rows can be edited, reordered, given a link or an icon, and the whole section can be switched off in the admin; with a link, the whole row is clickable. Test: `bin/selftest-home-focus.php`.
