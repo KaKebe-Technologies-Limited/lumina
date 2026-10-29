@@ -175,6 +175,7 @@ $active = (int) ($me['is_active'] ?? 1) === 1;
                     </ul>
                     <p><a href="<?= e(url('academy/portal/certificates')) ?>">All my certificates</a></p>
                 </section>
+                <?= partial('partials/academy-wa-group', ['style' => 'panel']) ?>
                 <?php if ($sw !== null): ?>
                 <section class="ac-panel" data-reveal>
                     <h2 class="ac-panel__title"><?= icon('whatsapp', 'icon--sm') ?> Need help?</h2>

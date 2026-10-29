@@ -1,5 +1,5 @@
 <?php
-/** Admin > Pesapal payments. Vars: $tables (database tables present), $hasKeys, $mode, $payments, $ipnUrl, $returnUrl. */
+/** Admin > Pesapal payments. Vars: $donationsOn, $shopOn, $shopOpen, $canShop (where Pesapal is offered), $tables (database tables present), $hasKeys, $mode, $payments, $ipnUrl, $returnUrl. */
 use App\Services\Shop\Money;
 
 $tones = ['pending' => 'warning', 'paid' => 'success', 'failed' => 'danger', 'reversed' => 'danger', 'review' => 'warning'];
@@ -27,6 +27,36 @@ PESAPAL_CONSUMER_SECRET=your secret from the Pesapal dashboard</pre>
         <?php endif; ?>
         <p class="text-muted">Pesapal reports payments to <code><?= e($ipnUrl) ?></code> (registered automatically on the first payment). Customers return to <code><?= e($returnUrl) ?></code>.
             Online giving appears on the Donate page, and "Pesapal" appears at the shop checkout once it is switched on under Shop &gt; Payments.</p>
+    </div>
+</section>
+
+<section class="card" style="margin-top:1.5rem">
+    <div class="card__header"><h2 class="card__title">Where Pesapal is offered on the website</h2></div>
+    <div class="card__body">
+        <form method="post" action="<?= e(url('admin/pesapal/options')) ?>">
+            <?= csrf_field() ?>
+            <p class="text-muted">Tick the places where visitors can pay with Pesapal, then press <strong>Save</strong>. A place only shows Pesapal when its box is ticked <em>and</em> the keys are in <code>.env</code>.</p>
+            <div style="display:grid;gap:1rem;margin:1rem 0">
+                <label class="check" style="display:flex;gap:.75rem;align-items:flex-start">
+                    <input type="checkbox" name="donations" value="1"<?= $donationsOn ? ' checked' : '' ?>>
+                    <span><strong>Donate page: "Give online" form</strong><br>
+                        <span class="text-muted">Donors pay by card or mobile money on <a href="<?= e(url('donate')) ?>" target="_blank" rel="noopener">/donate</a>. Paid gifts become "Received" donations with a receipt number.</span><br>
+                        <?php if ($donationsOn && $hasKeys): ?><span class="badge badge--success badge--dot">Visible to visitors</span>
+                        <?php elseif ($donationsOn): ?><span class="badge badge--warning badge--dot">Ticked, but hidden: the keys are missing</span>
+                        <?php else: ?><span class="badge badge--neutral badge--dot">Off: the form is hidden</span><?php endif; ?></span>
+                </label>
+                <label class="check" style="display:flex;gap:.75rem;align-items:flex-start">
+                    <input type="checkbox" name="shop" value="1"<?= $shopOn ? ' checked' : '' ?><?= $canShop ? '' : ' disabled' ?>>
+                    <span><strong>Shop checkout: "Card or mobile money (Pesapal)"</strong><br>
+                        <span class="text-muted">Customers can choose Pesapal when they pay for an order at <a href="<?= e(url('shop/checkout')) ?>" target="_blank" rel="noopener">/shop</a>. Paid orders are marked paid automatically.<?= $canShop ? '' : ' (Only a main administrator can change this one.)' ?></span><br>
+                        <?php if ($shopOn && $hasKeys && $shopOpen): ?><span class="badge badge--success badge--dot">Visible at checkout</span>
+                        <?php elseif ($shopOn && !$hasKeys): ?><span class="badge badge--warning badge--dot">Ticked, but hidden: the keys are missing</span>
+                        <?php elseif ($shopOn && !$shopOpen): ?><span class="badge badge--warning badge--dot">Ticked, but the shop is closed: turn on "The shop takes orders" in <a href="<?= e(url('admin/shop/settings')) ?>">Shop settings</a></span>
+                        <?php else: ?><span class="badge badge--neutral badge--dot">Off at checkout</span><?php endif; ?></span>
+                </label>
+            </div>
+            <button class="btn btn--primary" type="submit">Save</button>
+        </form>
     </div>
 </section>
 

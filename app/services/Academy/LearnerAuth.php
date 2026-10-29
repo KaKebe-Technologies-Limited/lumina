@@ -148,25 +148,61 @@ final class LearnerAuth
         }
         $country = trim((string) preg_replace('/\s+/u', ' ', strip_tags($countryIn)));
         if (mb_strlen($country) < 2 || mb_strlen($country) > 80) {
-            $errors['country'] = 'Please enter your country.';
+            $errors['country'] = 'Please choose your country.';
         }
-        $wa = self::normaliseWhatsApp($whatsappIn);
+        $dial = $country !== '' && !isset($errors['country']) ? \App\Services\Web\Countries::dial($country) : null;
+        // the number is saved WITH the country code of the learner's own country ("0772 123 456" + Uganda -> +256772123456)
+        $intl = isset($errors['phone']) ? null : LearnerPhones::international($phoneIn, $dial);
+        if ($intl !== null) {
+            $phone = '+' . $intl;
+        }
+        $wa = self::normaliseWhatsApp($whatsappIn, $dial);
         if ($wa === null) {
             $errors['whatsapp'] = 'Please enter your WhatsApp number with the country code, for example +256 772 123 456.';
         }
         return ['errors' => $errors, 'phone' => $phone, 'country' => $country, 'whatsapp' => $wa];
     }
 
-    /** International digits of a WhatsApp number. A local number starting with 0 gets the default country code (WHATSAPP_COUNTRY_CODE, else 256 = Uganda). */
-    public static function normaliseWhatsApp(string $input): ?string
+    /**
+     * International digits of a WhatsApp number. A local number gets the code of the learner's country ($dial); with no known country it gets the site default
+     * (WHATSAPP_COUNTRY_CODE, else 256 = Uganda). "+..." and "00..." numbers are already international.
+     */
+    public static function normaliseWhatsApp(string $input, ?string $dial = null): ?string
     {
-        $n = WhatsAppSender::normalise($input);
-        if ($n === null && str_starts_with((string) preg_replace('/\D+/', '', $input), '0') && !str_starts_with((string) preg_replace('/\D+/', '', $input), '00')) {
-            $d = (string) preg_replace('/\D+/', '', $input);
-            $n = '256' . ltrim($d, '0');
-            $n = strlen($n) >= 8 && strlen($n) <= 15 ? $n : null;
+        return LearnerPhones::international($input, $dial);
+    }
+
+    /**
+     * The country list of the sign-up and account forms: every country with its dialling code. A country typed before the list existed (or one we do not list) stays selectable.
+     * @return array{options:array<string,string>,json:string} options = name => name; json = {"Uganda":"256",...} for the script that fills in the code
+     */
+    public static function countryChoices(string $current): array
+    {
+        $dials = \App\Services\Web\Countries::dialList();
+        $current = trim($current);
+        $options = [];
+        if ($current !== '' && !isset($dials[$current])) {
+            $options[$current] = $current;                                  // keep what an older account has, so saving the page does not lose it
+            $known = \App\Services\Web\Countries::dial($current);
+            if ($known !== null) {
+                $dials[$current] = $known;
+            }
         }
-        return $n;
+        foreach (\App\Services\Web\Countries::dialList() as $name => $code) {
+            $options[$name] = $name;
+        }
+        return ['options' => $options, 'json' => (string) json_encode($dials, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)];
+    }
+
+    /** The invitation link of the Academy WhatsApp support group (Settings > LAF Academy), or null when switched off or not a WhatsApp group link. */
+    public static function whatsappGroup(): ?string
+    {
+        $u = trim((string) setting('academy_whatsapp_group_url', 'https://chat.whatsapp.com/I96TlewmJ3J0PpEecpwv8U?s=cl&p=a&iam=2'));
+        $p = parse_url($u);
+        if ($u === '' || $p === false || ($p['scheme'] ?? '') !== 'https' || strtolower((string) ($p['host'] ?? '')) !== 'chat.whatsapp.com' || !isset($p['path']) || strlen($p['path']) < 10) {
+            return null;
+        }
+        return $u;
     }
 
     /** True when the learner still has to give the phone, country or WhatsApp number. */

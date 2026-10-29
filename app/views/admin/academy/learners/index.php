@@ -18,6 +18,15 @@ if ($manager) {
         </div>
     </div>
 <?php endif; ?>
+<?php if ($manager): ?>
+    <details class="card" style="margin-bottom:1rem"><summary class="card__body" style="cursor:pointer"><strong>Phone country codes of older accounts</strong></summary>
+        <div class="card__body">
+            <p class="text-muted">New sign-ups pick their country and get its phone code automatically. For accounts created before that, this adds the code of the country on the account to the phone number (for example a Nigerian "0803 123 456" becomes "+234803123456") and corrects WhatsApp numbers that were wrongly given +256. Numbers that already start with + are left alone. Safe to repeat.</p>
+            <form method="post" action="<?= e(url('admin/academy/learners-phone-codes')) ?>" class="inline-form"><?= csrf_field() ?><input type="hidden" name="mode" value="preview"><button class="btn btn--outline btn--sm" type="submit">Preview (changes nothing)</button></form>
+            <form method="post" action="<?= e(url('admin/academy/learners-phone-codes')) ?>" class="inline-form" data-confirm="Add the country codes to the older numbers now? Run Preview first to see what changes."><?= csrf_field() ?><input type="hidden" name="mode" value="apply"><button class="btn btn--primary btn--sm" type="submit">Update the numbers</button></form>
+        </div>
+    </details>
+<?php endif; ?>
 <form class="filters" method="get" action="<?= e(url('admin/academy/learners')) ?>" role="search">
     <div class="field field--grow"><label class="field__label" for="f-q">Search</label><input class="input" id="f-q" type="search" name="q" value="<?= e($f['q']) ?>" placeholder="Name, reg no, e-mail or phone" maxlength="80"></div>
     <div class="field"><label class="field__label" for="f-status">Status</label><select class="select" id="f-status" name="status"><option value="">Any</option>

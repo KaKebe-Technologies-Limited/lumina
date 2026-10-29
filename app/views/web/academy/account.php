@@ -10,11 +10,12 @@
             <div class="card__body">
                 <?= partial('partials/form-field', ['name' => 'name', 'label' => 'Full name', 'required' => true, 'maxlength' => 120, 'value' => old('name', $me['name']), 'help' => 'Used on new certificates. Certificates you already earned keep their name.']) ?>
                 <div class="field"><label class="field__label" for="acc-email">E-mail address</label><input class="input" id="acc-email" type="email" value="<?= e($me['email']) ?>" disabled><div class="field__help">To change your e-mail address, write to us and we will help.</div></div>
+                <?php $acCountry = \App\Services\Academy\LearnerAuth::countryChoices((string) old('country', (string) $me['country'])); ?>
                 <div class="form-grid">
-                    <?= partial('partials/form-field', ['name' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'required' => true, 'maxlength' => 40, 'value' => old('phone', (string) $me['phone'])]) ?>
-                    <?= partial('partials/form-field', ['name' => 'country', 'label' => 'Country', 'required' => true, 'maxlength' => 80, 'value' => old('country', (string) $me['country'])]) ?>
+                    <?= partial('partials/form-field', ['name' => 'country', 'label' => 'Country', 'type' => 'select', 'required' => true, 'options' => $acCountry['options'], 'empty' => 'Choose your country', 'value' => old('country', (string) $me['country']), 'attrs' => ['data-country-dial' => $acCountry['json']], 'help' => 'Choose it first: your phone code is filled in for you.']) ?>
+                    <?= partial('partials/form-field', ['name' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'required' => true, 'maxlength' => 40, 'value' => old('phone', (string) $me['phone']), 'attrs' => ['data-dial-input' => '1']]) ?>
                 </div>
-                <?= partial('partials/form-field', ['name' => 'whatsapp', 'label' => 'WhatsApp number', 'type' => 'tel', 'required' => true, 'maxlength' => 24, 'value' => old('whatsapp', !empty($me['whatsapp']) ? '+' . $me['whatsapp'] : ''), 'help' => 'With the country code, for example +256 772 123 456. We use it to support you.']) ?>
+                <?= partial('partials/form-field', ['name' => 'whatsapp', 'label' => 'WhatsApp number', 'type' => 'tel', 'required' => true, 'maxlength' => 24, 'value' => old('whatsapp', !empty($me['whatsapp']) ? '+' . $me['whatsapp'] : ''), 'attrs' => ['data-dial-input' => '1'], 'help' => 'It starts with the code of your country. We use it to support you.']) ?>
                 <?php if (\App\Services\Academy\LearnerAuth::bioReady()): ?>
                 <?= partial('partials/form-field', ['name' => 'bio', 'label' => 'About me (bio)', 'type' => 'textarea', 'rows' => 4, 'maxlength' => 600, 'value' => old('bio', (string) ($me['bio'] ?? '')), 'help' => 'A few lines about you: your school or work, what you want to learn. Only you and the Academy team can see it.']) ?>
                 <?php endif; ?>

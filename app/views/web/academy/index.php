@@ -141,6 +141,8 @@ $cta = content_btn('academy', 'cta.button');
 </section>
 <?php endif; ?>
 
+<?= partial('partials/academy-wa-group', ['style' => 'band']) ?>
+
 <?php section_begin('academy', 'facilitate', ['class' => 'section--tint', 'labelledby' => 'ac-fac-title']); ?>
     <?= partial('partials/section-head', ['eyebrow' => (string) content('academy', 'facilitate.eyebrow'), 'title' => (string) content('academy', 'facilitate.title'), 'lead' => (string) content('academy', 'facilitate.intro'), 'align' => 'center', 'id' => 'ac-fac-title']) ?>
     <p class="ac-center"><a class="btn btn--cta btn--caps" href="<?= e(url('academy/facilitate')) ?>"><?= e(content('academy', 'facilitate.button')) ?></a></p>

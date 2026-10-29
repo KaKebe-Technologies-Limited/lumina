@@ -41,7 +41,7 @@ final class DonateController extends Controller
             'currencies'       => array_combine(self::CURRENCIES, self::CURRENCIES),
             'selectedCurrency' => in_array($selectedCurrency, self::CURRENCIES, true) ? $selectedCurrency : 'UGX',
             'methods'          => $this->methodLabels(),
-            'giveOnline'       => PesapalPayments::ready(),
+            'giveOnline'       => PesapalPayments::donationsEnabled(),
         ], [
             'breadcrumbs' => [[HomeSupport::navLabel('donate', 'Donate'), null]],
         ]);
@@ -116,7 +116,7 @@ final class DonateController extends Controller
      */
     public function online(Request $request): Response
     {
-        if (!PesapalPayments::ready()) {
+        if (!PesapalPayments::donationsEnabled()) {
             Flash::error('Online giving is not switched on yet. Please use one of the other ways to give.');
             return $this->redirect('donate');
         }

@@ -18,11 +18,12 @@
                     <?= partial('partials/form-field', ['name' => 'name', 'label' => 'Full name', 'required' => true, 'maxlength' => 120, 'autocomplete' => 'name', 'help' => 'As it should appear on your certificates.']) ?>
                     <?= partial('partials/form-field', ['name' => 'email', 'label' => 'E-mail address', 'type' => 'email', 'required' => true, 'maxlength' => 190, 'autocomplete' => 'email']) ?>
                     <?= partial('partials/form-field', ['name' => 'password', 'label' => 'Password', 'type' => 'password', 'required' => true, 'maxlength' => 72, 'autocomplete' => 'new-password', 'help' => 'At least 8 characters. A short sentence is easy to remember and hard to guess.']) ?>
+                    <?php $acCountry = \App\Services\Academy\LearnerAuth::countryChoices((string) old('country', '')); ?>
                     <div class="form-grid">
-                        <?= partial('partials/form-field', ['name' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'required' => true, 'maxlength' => 40, 'autocomplete' => 'tel']) ?>
-                        <?= partial('partials/form-field', ['name' => 'country', 'label' => 'Country', 'required' => true, 'maxlength' => 80, 'autocomplete' => 'country-name']) ?>
+                        <?= partial('partials/form-field', ['name' => 'country', 'label' => 'Country', 'type' => 'select', 'required' => true, 'options' => $acCountry['options'], 'empty' => 'Choose your country', 'autocomplete' => 'country-name', 'attrs' => ['data-country-dial' => $acCountry['json']], 'help' => 'Choose it first: your phone code is filled in for you.']) ?>
+                        <?= partial('partials/form-field', ['name' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'required' => true, 'maxlength' => 40, 'autocomplete' => 'tel', 'attrs' => ['data-dial-input' => '1']]) ?>
                     </div>
-                    <?= partial('partials/form-field', ['name' => 'whatsapp', 'label' => 'WhatsApp number', 'type' => 'tel', 'required' => true, 'maxlength' => 24, 'autocomplete' => 'tel', 'help' => 'With the country code, for example +256 772 123 456. We use it to support you.']) ?>
+                    <?= partial('partials/form-field', ['name' => 'whatsapp', 'label' => 'WhatsApp number', 'type' => 'tel', 'required' => true, 'maxlength' => 24, 'autocomplete' => 'tel', 'attrs' => ['data-dial-input' => '1'], 'help' => 'It starts with the code of your country. We use it to support you.']) ?>
                     <?php if (\App\Services\Academy\LearnerPortrait::ready()): ?>
                     <div class="field ac-selfie<?= error('photo') ? ' field--error' : '' ?>" data-selfie>
                         <label class="field__label" for="reg-photo">Your picture (optional)</label>
@@ -47,6 +48,7 @@
                     </div>
                     <button class="btn btn--cta btn--caps btn--block" type="submit">Create my account</button>
                     <?php if (($sw = \App\Services\Academy\LearnerAuth::supportWhatsapp()) !== null): ?><p class="ac-form__alt">Quick inquiries about your approval? <a href="<?= e($sw['url']) ?>" rel="noopener" target="_blank">WhatsApp <?= e($sw['display']) ?></a></p><?php endif; ?>
+                    <?= partial('partials/academy-wa-group', ['style' => 'line']) ?>
                     <p class="ac-form__alt">Questions before you register? <a href="<?= e(url('academy/contact')) ?>">Message the Academy team</a></p>
                     <p class="ac-form__alt">Already have an account? <a href="<?= e(url('academy/login')) ?>">Sign in</a></p>
                 </div>

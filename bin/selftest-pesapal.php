@@ -285,6 +285,20 @@ if (isset($probe) && $probe['code'] === 200) {
     check('admin: a payment row is listed', str_contains($page['body'], 'LAFD0-SELFTEST'));
     $r = $adminReq('POST', '/admin/pesapal/' . $dRow . '/check', ['_token' => $tok($page['body'])]);
     check('admin: "Check with Pesapal" on a row that never reached Pesapal explains itself (redirect, no 500)', in_array($r['code'], [302, 303], true), (string) $r['code']);
+    // where Pesapal is offered: the owner's tick boxes
+    $donBefore = Settings::get('pesapal_donations_enabled', '1');
+    $page = $adminReq('GET', '/admin/pesapal');
+    check('admin: the page has the "Where Pesapal is offered" tick boxes', str_contains($page['body'], 'Where Pesapal is offered') && str_contains($page['body'], 'name="donations"') && str_contains($page['body'], 'name="shop"'));
+    $adminReq('POST', '/admin/pesapal/options', ['_token' => $tok($page['body']), 'shop' => '1']);
+    Settings::flush();
+    check('options: ticking only the shop switches online giving off and the shop method on', Settings::get('pesapal_donations_enabled', '1') === '0' && Settings::get('shop_pay_pesapal_enabled', '0') === '1' && !PesapalPayments::donationsEnabled());
+    $page = $adminReq('GET', '/admin/pesapal');
+    $adminReq('POST', '/admin/pesapal/options', ['_token' => $tok($page['body']), 'donations' => '1']);
+    Settings::flush();
+    check('options: ticking only donations switches online giving on and the shop method off', Settings::get('pesapal_donations_enabled', '1') === '1' && Settings::get('shop_pay_pesapal_enabled', '0') === '0' && PesapalPayments::donationsEnabled());
+    $r = $adminReq('POST', '/admin/pesapal/options', ['donations' => '1']);
+    check('options: without the CSRF token nothing is saved (403)', $r['code'] === 403, (string) $r['code']);
+    Settings::set('pesapal_donations_enabled', (string) $donBefore);
     // tables missing (the database update was not imported yet): a clear message, never a 500
     Database::execute('RENAME TABLE pesapal_payments TO zz_pesapal_payments_off');
     try {

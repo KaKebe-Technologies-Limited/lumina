@@ -140,3 +140,33 @@
     }
   });
 })();
+
+/* LAF Academy sign-up and account: choosing the country fills in its phone code ("+234 ") in the phone and WhatsApp boxes, so nothing defaults to +256. */
+(function () {
+  'use strict';
+  var sel = document.querySelector('[data-country-dial]');
+  if (!sel) return;
+  var dials = {};
+  try { dials = JSON.parse(sel.getAttribute('data-country-dial') || '{}'); } catch (e) { return; }
+  var inputs = Array.prototype.slice.call(document.querySelectorAll('[data-dial-input]'));
+  var prev = '';
+  function plain(v) { return v.replace(/\s+/g, ''); }
+  function apply() {
+    var d = dials[sel.value];
+    if (!d) return;
+    inputs.forEach(function (inp) {
+      var v = inp.value.trim();
+      if (v === '' || v === '+' || (prev && plain(v) === '+' + prev)) {
+        inp.value = '+' + d + ' ';
+      } else if (prev && v.indexOf('+' + prev) === 0) {
+        inp.value = '+' + d + v.slice(('+' + prev).length);
+      }
+    });
+    prev = d;
+  }
+  sel.addEventListener('change', apply);
+  if (sel.value && dials[sel.value]) {               // already chosen when the page opens (a form sent back with errors, the account page): fill the empty boxes only
+    prev = dials[sel.value];
+    inputs.forEach(function (inp) { if (inp.value.trim() === '') inp.value = '+' + prev + ' '; });
+  }
+})();

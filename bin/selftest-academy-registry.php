@@ -84,7 +84,7 @@ $mailsNow = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
 check('sign-up: no e-mail was sent to the learner', array_filter(array_diff($mailsNow, $mailsBeforeLre), static fn(string $f): bool => preg_match('/^To:.*zz-lre-one@/mi', (string) file_get_contents($f)) === 1) === []);
 check('contact: phone, country and WhatsApp are stored; a local WhatsApp number gets the country code', $one !== null && $one['phone'] === '+256700000001' && $one['country'] === 'Uganda' && $one['whatsapp'] === '256772123456');
 check('contact: the pending page gives the support WhatsApp line for quick inquiries about the approval', str_contains($page['body'], 'https://wa.me/256779795662') && str_contains($page['body'], '+256779795662'));
-foreach (['phone' => 'Please enter your phone', 'country' => 'Please enter your country', 'whatsapp' => 'Please enter your WhatsApp'] as $miss => $text) {
+foreach (['phone' => 'Please enter your phone', 'country' => 'Please choose your country', 'whatsapp' => 'Please enter your WhatsApp'] as $miss => $text) {
     $form = ['name' => 'Zed Lre Req', 'email' => 'zz-lre-req-' . $miss . '@example.test', 'password' => $pw, 'phone' => '+256700000002', 'country' => 'Kenya', 'whatsapp' => '+254 711 222 333', 'agree' => '1'];
     $form[$miss] = '';
     $jR = null;

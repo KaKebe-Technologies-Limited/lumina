@@ -334,6 +334,30 @@ final class AcademyLearnersController extends AcademyAdminController
         return LearnerPortrait::download($id) ?? throw new HttpException(404, 'Not found');
     }
 
+    /**
+     * POST admin/academy/learners-phone-codes: give the numbers of older accounts the country code of their own country (LearnerPhones::repair).
+     * mode=preview only counts and shows examples; mode=apply saves. Safe to repeat.
+     */
+    public function phoneCodes(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $apply = $request->string('mode') === 'apply';
+        $r = \App\Services\Academy\LearnerPhones::repair($apply);
+        $msg = ($apply ? 'Done. ' : 'Preview (nothing was changed yet). ') . $r['checked'] . ' accounts checked: ' . $r['phones'] . ' phone number(s) ' . ($apply ? 'updated' : 'would be updated')
+            . ' and ' . $r['whatsapp'] . ' WhatsApp number(s) ' . ($apply ? 'corrected' : 'would be corrected') . '.';
+        if ($r['examples'] !== []) {
+            $msg .= ' Examples: ' . implode('; ', array_map(static fn(array $e): string => $e[0] . ' becomes ' . $e[1], array_slice($r['examples'], 0, 4))) . '.';
+        }
+        if ($r['unknown_country'] !== []) {
+            $msg .= ' Countries we do not recognise (left as they are): ' . implode(', ', array_map(static fn(string $k, int $n): string => $k . ' (' . $n . ')', array_keys($r['unknown_country']), $r['unknown_country'])) . '.';
+        }
+        if ($apply) {
+            $this->audit('academy.learner.phone_codes', 'academy_learner', null, 'Added country codes to older numbers: ' . $r['phones'] . ' phones, ' . $r['whatsapp'] . ' WhatsApp numbers');
+        }
+        Flash::success($msg);
+        return $this->redirect('admin/academy/learners');
+    }
+
     public function photoRemove(Request $request, int $id): Response
     {
         $this->authorize('academy.manage');

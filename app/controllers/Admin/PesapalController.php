@@ -24,12 +24,30 @@ final class PesapalController extends AdminController
         $tables = Database::tableExists('pesapal_payments') && Database::tableExists('pesapal_ipns');
         return $this->render('admin/pesapal/index', [
             'tables'    => $tables,
+            'donationsOn' => PesapalPayments::donationsSwitch(),
+            'shopOn'    => \App\Services\Shop\ShopSettings::bool('shop_pay_pesapal_enabled'),
+            'shopOpen'  => \App\Services\Shop\ShopSettings::bool('shop_open'),
+            'canShop'   => can('shop.settings'),
             'hasKeys'   => PesapalClient::hasKeys(),
             'mode'      => PesapalClient::mode(),
             'payments'  => $tables ? PesapalPayments::recent(100) : [],
             'ipnUrl'    => abs_url('pay/pesapal/ipn'),
             'returnUrl' => abs_url('pay/pesapal/return'),
         ], ['title' => 'Pesapal payments', 'nav' => 'pesapal', 'breadcrumbs' => [['Pesapal payments', null]]]);
+    }
+
+    /** Where on the website Pesapal is offered: tick the places. Shop needs the shop.settings ability (it is also set in Shop > Payments). */
+    public function options(Request $request): Response
+    {
+        $this->authorize('inbox.manage');
+        $changes = ['pesapal_donations_enabled' => $request->bool('donations') ? '1' : '0'];
+        if (can('shop.settings')) {
+            $changes['shop_pay_pesapal_enabled'] = $request->bool('shop') ? '1' : '0';
+        }
+        \App\Core\Settings::setMany($changes);
+        AuditLog::record('pesapal.options', 'settings', null, 'Pesapal offered on: ' . implode(', ', array_keys(array_filter(['donations' => $changes['pesapal_donations_enabled'] === '1', 'shop' => ($changes['shop_pay_pesapal_enabled'] ?? '0') === '1']))) ?: 'nowhere');
+        Flash::success('Saved. Pesapal is now offered on the places you ticked.');
+        return $this->redirect('admin/pesapal');
     }
 
     public function test(Request $request): Response

@@ -256,6 +256,18 @@ final class PesapalPayments
         return PesapalClient::hasKeys();
     }
 
+    /** The owner's switch (Admin > Pesapal payments): the Donate page's "Give online" form. On unless switched off. */
+    public static function donationsSwitch(): bool
+    {
+        return (string) \App\Core\Settings::get('pesapal_donations_enabled', '1') !== '0';
+    }
+
+    /** Is online giving available to visitors? keys + the switch. */
+    public static function donationsEnabled(): bool
+    {
+        return self::ready() && self::donationsSwitch();
+    }
+
     /** The shop order of a row, or null. @return ?array<string,mixed> */
     public static function shopOrder(array $row): ?array
     {

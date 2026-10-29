@@ -30,6 +30,5 @@ return [
          'badge' => static fn(): int => Counts::get('applications')],
         ['key' => 'donations', 'label' => 'Donations', 'url' => 'admin/donations', 'icon' => 'banknote', 'can' => 'inbox.manage', 'order' => 50,
          'badge' => static fn(): int => Counts::get('donations')],
-        ['key' => 'pesapal', 'label' => 'Pesapal payments', 'url' => 'admin/pesapal', 'icon' => 'credit-card', 'can' => 'inbox.manage', 'order' => 55],
     ],
 ];
