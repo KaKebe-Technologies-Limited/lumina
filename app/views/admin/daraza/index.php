@@ -1,10 +1,11 @@
 <?php
-/** Admin > Pay with Daraza. Vars: $v (label, url, donate_url, shop_url, signup_url, cert_url), $places (place => name, on, link, can). */
+/** Admin > Pay with Daraza. Vars: $v (label, url, donate_url, shop_url, signup_url, cert_url, membership_url), $places (place => name, on, link, can). */
 $fields = [
     'donate' => ['donate_url', 'Link for the Donate page'],
     'shop'   => ['shop_url', 'Link for the shop checkout'],
     'signup' => ['signup_url', 'Link for the Academy sign-up fee'],
     'cert'   => ['cert_url', 'Link for the Academy certificate fee'],
+    'membership' => ['membership_url', 'Link for membership payments'],
 ];
 ?>
 <?= partial('partials/admin/page-header', ['title' => 'Pay with Daraza', 'subtitle' => 'A payment button that opens your Daraza payment link. Payments are confirmed by your team (there is no automatic connection).']) ?>
@@ -19,7 +20,7 @@ $fields = [
                 <div class="field"><label class="field__label" for="dz-label">Button text</label><input class="input" id="dz-label" name="label" maxlength="40" value="<?= e($v['label']) ?>"></div>
                 <div class="field"><label class="field__label" for="dz-url">Main payment link</label><input class="input" id="dz-url" name="url" type="url" maxlength="500" placeholder="https://paylink.daraza.net/..." value="<?= e($v['url']) ?>"><div class="field__help">Used everywhere below unless a place has a link of its own.</div></div>
             </div>
-            <details style="margin-top:1rem"<?= array_filter([$v['donate_url'], $v['shop_url'], $v['signup_url'], $v['cert_url']]) !== [] ? ' open' : '' ?>>
+            <details style="margin-top:1rem"<?= array_filter([$v['donate_url'], $v['shop_url'], $v['signup_url'], $v['cert_url'], $v['membership_url']]) !== [] ? ' open' : '' ?>>
                 <summary><strong>A different link for one place (optional)</strong></summary>
                 <p class="text-muted">Useful when you made a separate Daraza link for each purpose (for example one for donations and one for the sign-up fee). Leave empty to use the main link.</p>
                 <div style="display:grid;gap:1rem;max-width:46rem">
@@ -42,6 +43,7 @@ $fields = [
                     'shop'   => 'A payment method at the shop checkout: the customer pays on Daraza, types the transaction ID on the order page, and your team marks the order paid (Admin > Shop > Orders).',
                     'signup' => 'A learner can pay the Academy sign-up fee with Daraza (when a sign-up fee is set under Pesapal payments). An administrator marks the fee paid on the learner\'s page after checking Daraza.',
                     'cert'   => 'A learner can pay the certificate fee with Daraza. An administrator marks it paid in Admin > Academy > Certificates after checking Daraza.',
+                    'membership' => 'The membership payment details shown right after someone applies (and on their private membership page) get a Daraza button next to the mobile-money and bank details. They then attach their proof of payment, and staff record the payment in Admin > Membership.',
                 ];
                 foreach ($places as $place => $p): ?>
                     <label class="check" style="display:flex;gap:.75rem;align-items:flex-start">

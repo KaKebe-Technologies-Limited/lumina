@@ -110,18 +110,53 @@ final class MembershipService
         return $e !== '' ? $e : trim((string) setting('email_primary', ''));
     }
 
-    /** Plain-text payment instructions: membership_payment_instructions, else the donation bank + mobile-money details. '' when none. */
-    public static function paymentInstructions(): string
+    /** The "Pay with Daraza" button of the membership payments: ['url' => ..., 'label' => ...] or null (switched off or no link). */
+    public static function darazaOption(): ?array
     {
-        $own = trim((string) setting('membership_payment_instructions', ''));
-        if ($own !== '') {
-            return $own;
+        return \App\Services\Daraza::enabled('membership') ? ['url' => \App\Services\Daraza::url('membership'), 'label' => \App\Services\Daraza::label()] : null;
+    }
+
+    /**
+     * The ways to pay a membership fee, as the administrator set them (Settings > Membership): a free text (notes), the mobile-money details and the bank details.
+     * When the administrator filled none of the three, the mobile-money and bank details of the Donations tab are used (as before).
+     * @return array{notes:string,mobile:string,bank:string,fallback:bool}
+     */
+    public static function paymentParts(): array
+    {
+        $notes = trim((string) setting('membership_payment_instructions', ''));
+        $mobile = trim((string) setting('membership_mobile_money', ''));
+        $bank = trim((string) setting('membership_bank_details', ''));
+        $fallback = false;
+        if ($notes === '' && $mobile === '' && $bank === '') {
+            $mobile = trim((string) setting('donate_mobile_money', ''));
+            $bank = trim((string) setting('donate_bank_details', ''));
+            $fallback = true;
         }
-        $parts = array_values(array_filter([
-            trim((string) setting('donate_bank_details', '')),
-            trim((string) setting('donate_mobile_money', '')),
-        ], static fn(string $s): bool => $s !== ''));
-        return implode("\n\n", $parts);
+        return ['notes' => $notes, 'mobile' => $mobile, 'bank' => $bank, 'fallback' => $fallback];
+    }
+
+    /**
+     * Plain-text payment instructions (pages, e-mails): the notes, the mobile-money details, the bank details and, when switched on, the Daraza link.
+     * '' when there is nothing to show. $withLink false leaves the Daraza link out (the pages show it as a button).
+     */
+    public static function paymentInstructions(bool $withLink = true): string
+    {
+        $p = self::paymentParts();
+        $lines = [];
+        if ($p['notes'] !== '') {
+            $lines[] = $p['notes'];
+        }
+        if ($p['mobile'] !== '') {
+            $lines[] = ($p['fallback'] ? '' : "Mobile money:\n") . $p['mobile'];
+        }
+        if ($p['bank'] !== '') {
+            $lines[] = ($p['fallback'] ? '' : "Bank transfer:\n") . $p['bank'];
+        }
+        $dz = $withLink ? self::darazaOption() : null;
+        if ($dz !== null) {
+            $lines[] = $dz['label'] . ' (pay online): ' . $dz['url'];
+        }
+        return implode("\n\n", $lines);
     }
 
     // ------------------------------------------------------------------------------------------------ editable option lists
@@ -154,7 +189,11 @@ final class MembershipService
         }
         $map = ['occupation' => 'options.occupation', 'education' => 'options.education', 'availability' => 'options.availability',
             'heard' => 'options.heard', 'payment_methods' => 'options.payment_methods'];
-        return isset($map[$list]) ? self::registryList($map[$list]) : [];
+        $out = isset($map[$list]) ? self::registryList($map[$list]) : [];
+        if ($list === 'payment_methods' && !isset($out['daraza']) && \App\Services\Daraza::enabled('membership')) {
+            $out = ['daraza' => \App\Services\Daraza::label()] + $out;          // switched on in Admin > Pay with Daraza: the applicant can say they will pay that way
+        }
+        return $out;
     }
 
     /** Label for a stored key; a key the owner removed later still shows as a readable fallback. */

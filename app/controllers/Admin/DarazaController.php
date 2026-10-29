@@ -17,7 +17,7 @@ use App\Services\Daraza;
  */
 final class DarazaController extends AdminController
 {
-    private const URL_FIELDS = ['url' => 'daraza_url', 'donate_url' => 'daraza_donate_url', 'shop_url' => 'daraza_shop_url', 'signup_url' => 'daraza_signup_url', 'cert_url' => 'daraza_cert_url'];
+    private const URL_FIELDS = ['url' => 'daraza_url', 'donate_url' => 'daraza_donate_url', 'shop_url' => 'daraza_shop_url', 'signup_url' => 'daraza_signup_url', 'cert_url' => 'daraza_cert_url', 'membership_url' => 'daraza_membership_url'];
 
     public function index(Request $request): Response
     {
@@ -47,7 +47,7 @@ final class DarazaController extends AdminController
             }
             $save[$key] = $u;
         }
-        foreach (['donate', 'signup', 'cert'] as $place) {
+        foreach (['donate', 'signup', 'cert', 'membership'] as $place) {
             if ($this->canSwitch($place)) {
                 $save['daraza_' . $place . '_on'] = $request->bool('on_' . $place) ? '1' : '0';
             }

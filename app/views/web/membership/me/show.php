@@ -56,7 +56,9 @@ ob_start(); ?>
             <p class="mb-me__due"><strong><?= e(str_replace('{amount}', MembershipService::formatMoney($balance, $cur), $c('dashboard.payment_due'))) ?></strong></p>
         <?php endif; ?>
         <h3 class="mb-me__h3"><?= e($c('dashboard.instructions_title')) ?></h3>
-        <div class="mb-me__prose"><?= $instructions !== '' ? nl2p($instructions) : nl2p($c('dashboard.payment_none')) ?></div>
+        <div class="mb-me__prose"><?= $instructions !== '' ? nl2p($instructions) : (!empty($payDaraza) ? '' : nl2p($c('dashboard.payment_none'))) ?></div>
+        <?php if (!empty($payDaraza)): ?><p><a class="btn btn--cta btn--caps" href="<?= e($payDaraza['url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('external-link', 'icon--sm') ?> <?= e($payDaraza['label']) ?></a></p><?php endif; ?>
+        <p class="mb-me__hint"><?= icon('upload', 'icon--sm') ?> <?= e(MembershipService::copy('dashboard.proof_after_paying', 'After you pay, attach your proof of payment below.')) ?> <a href="#proof"><?= e(MembershipService::copy('dashboard.proof_jump', 'Attach proof of payment')) ?></a></p>
     <?php endif; ?>
 </section>
 <?php $panelPayment = (string) ob_get_clean();

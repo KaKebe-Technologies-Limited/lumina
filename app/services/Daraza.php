@@ -11,14 +11,15 @@ use App\Core\Settings;
  * CONFIRMED BY STAFF (shop orders: the customer types the transaction ID and staff mark the order paid; Academy fees: an administrator marks the fee paid;
  * donations: the money shows in the Daraza dashboard).
  *
- * Places:  donate (every Donate button and the Donate page)  |  shop (the checkout method)  |  signup (Academy sign-up fee)  |  cert (Academy certificate fee)
+ * Places:  donate (every Donate button and the Donate page)  |  shop (the checkout method)  |  signup (Academy sign-up fee)  |  cert (Academy certificate fee)  |
+ *           membership (the payment options shown after applying and on the member's private page)
  * Settings (settings table): daraza_label, daraza_url (the main link) and an optional link of its own per place: daraza_donate_url, daraza_shop_url, daraza_signup_url,
- * daraza_cert_url; the switches daraza_donate_on, daraza_signup_on, daraza_cert_on (the shop switch is the shop payment method "daraza": Admin > Shop > Payments).
+ * daraza_cert_url, daraza_membership_url; the switches daraza_donate_on, daraza_signup_on, daraza_cert_on, daraza_membership_on (the shop switch is the shop payment method "daraza": Admin > Shop > Payments).
  * Only https links on daraza.net are accepted, so a wrong paste can never send visitors somewhere else.
  */
 final class Daraza
 {
-    public const PLACES = ['donate' => 'Donate page and every Donate button', 'shop' => 'Shop checkout', 'signup' => 'Academy sign-up fee', 'cert' => 'Academy certificate fee'];
+    public const PLACES = ['donate' => 'Donate page and every Donate button', 'shop' => 'Shop checkout', 'signup' => 'Academy sign-up fee', 'cert' => 'Academy certificate fee', 'membership' => 'Membership payments'];
 
     public static function label(): string
     {

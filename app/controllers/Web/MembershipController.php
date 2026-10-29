@@ -37,7 +37,7 @@ final class MembershipController extends Controller
             'types'        => $types,
             'allFull'      => $types !== [] && count(array_filter($types, static fn(array $t): bool => !$t['full'])) === 0,
             'open'         => MembershipService::isOpen(),
-            'instructions' => MembershipService::paymentInstructions(),
+            'instructions' => '',                       // the payment details are shown AFTER the application is submitted (confirmation page, private page, e-mail)
             'faqs'         => HomeSupport::faqs('membership', 'membership', 'faq.items'),
         ], [
             'breadcrumbs' => [[HomeSupport::navLabel('membership', 'Membership'), null]],
@@ -75,7 +75,7 @@ final class MembershipController extends Controller
             'allFull'      => $types === [] && $activeCount > 0,
             'selected'     => $selected,
             'collectId'    => MembershipService::collectsId(),
-            'instructions' => MembershipService::paymentInstructions(),
+            'instructions' => '',                       // shown after the application is submitted
             'age'          => $age,
             'minor'        => $age >= 0 && $age < MembershipService::ADULT_AGE,
             'interestsOld' => is_array($interests) ? array_values(array_map('strval', array_filter($interests, 'is_scalar'))) : [],
@@ -207,7 +207,8 @@ final class MembershipController extends Controller
             'member'       => $member,
             'fee'          => MembershipService::memberFeeLabel($member),
             'joining'      => MembershipService::joiningFeeLabel($member),
-            'instructions' => MembershipService::paymentInstructions(),
+            'instructions' => MembershipService::paymentInstructions(false),
+            'payDaraza'    => MembershipService::darazaOption(),
             // the applicant's PRIVATE page (photo, proof of payment, progress, card): the link is a credential, so this page is never cached
             'meUrl'        => MembershipService::dashboardPath($member),
         ], $opts)->header('Cache-Control', 'private, no-store, max-age=0')->header('Referrer-Policy', 'no-referrer');

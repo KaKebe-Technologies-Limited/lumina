@@ -291,8 +291,9 @@ final class AcademyLearnersController extends AcademyAdminController
     {
         $this->authorize('academy.manage');
         $n = LearnerRegistry::approveAll(Auth::id());
-        $this->audit('academy.learner.approve_all', 'academy_learner', null, 'Approved every learner who was waiting', ['count' => $n]);
-        Flash::success($n . ' learner' . ($n === 1 ? ' was' : 's were') . ' approved. They can sign in now.');
+        $unpaid = \App\Services\Academy\AcademyFees::ready() ? (int) Database::value("SELECT COUNT(*) FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NULL AND fee_status = 'due'", [], 0) : 0;
+        $this->audit('academy.learner.approve_all', 'academy_learner', null, 'Approved every learner who was waiting', ['count' => $n, 'unpaid_left' => $unpaid]);
+        Flash::success($n . ' learner' . ($n === 1 ? ' was' : 's were') . ' approved. They can sign in now.' . ($unpaid > 0 ? ' ' . $unpaid . ' more ' . ($unpaid === 1 ? 'is' : 'are') . ' waiting for their sign-up fee and cannot be approved until it is paid.' : ''));
         return $this->redirect('admin/academy/learners');
     }
 
@@ -317,6 +318,10 @@ final class AcademyLearnersController extends AcademyAdminController
     {
         $this->authorize('academy.manage');
         $l = $this->learner($id);
+        if (\App\Services\Academy\AcademyFees::signupDue($l)) {
+            Flash::error($l['name'] . ' has not paid the sign-up fee yet, so the account cannot be approved. Mark the fee as paid after you have checked the money, or waive it.');
+            return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
+        }
         if (LearnerRegistry::approve($id, Auth::id())) {
             $this->audit('academy.learner.approve', 'academy_learner', $id, 'Approved the account of ' . $l['email'] . ((string) ($l['reg_no'] ?? '') !== '' ? ' (' . $l['reg_no'] . ')' : ''));
             \App\Services\Academy\AcademyMail::approved($l);        // best effort: the approval does not depend on it
@@ -356,6 +361,18 @@ final class AcademyLearnersController extends AcademyAdminController
         }
         Flash::success($msg);
         return $this->redirect('admin/academy/learners');
+    }
+
+    /** GET admin/academy/learners/{id}/fee-proof: the receipt the applicant attached to their payment report (private). */
+    public function feeProof(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        $p = (string) ($l['fee_proof_path'] ?? '');
+        if ($p === '' || !\App\Core\Uploader::privateExists($p)) {
+            throw new HttpException(404, 'Not found');
+        }
+        return \App\Core\Uploader::download($p, 'sign-up-payment-' . $id . '.' . pathinfo($p, PATHINFO_EXTENSION), true)->header('Cache-Control', 'private, no-store')->header('X-Robots-Tag', 'noindex');
     }
 
     /** POST admin/academy/learners/{id}/mark-fee-paid: the money was checked (Daraza dashboard, cash...): the sign-up fee counts as paid. */
@@ -400,6 +417,10 @@ final class AcademyLearnersController extends AcademyAdminController
     {
         $this->authorize('academy.manage');
         $l = $this->learner($id);
+        if (\App\Services\Academy\AcademyFees::signupDue($l)) {
+            Flash::error('The sign-up fee is not paid yet, so the account cannot be confirmed. Mark the fee as paid (or waive it) first.');
+            return $this->redirect('admin/academy/learners/' . $id);
+        }
         LearnerRegistry::approve($id, Auth::id());
         $this->audit('academy.learner.verify', 'academy_learner', $id, 'Confirmed the e-mail address of ' . $l['email']);
         Flash::success('The e-mail address was marked as confirmed.');

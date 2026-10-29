@@ -67,7 +67,7 @@ final class AcademyAccountController extends AcademyBaseController
             // the sign-up fee is paid first (Pesapal); the learner can come back to the waiting page to pay again if the payment page does not open
             \App\Core\Session::put('academy_pending_id', (int) $res['learner']['id']);
             \App\Core\Session::put('academy_reg_no', (string) ($res['learner']['reg_no'] ?? ''));
-            if (AcademyFees::daraza('signup') !== null) {            // a choice of ways to pay: the waiting page offers them all
+            if (AcademyFees::daraza('signup') !== null || AcademyFees::manual() !== null) {            // a choice of ways to pay: the waiting page offers them all
                 Flash::info('Your account was created. Choose how to pay the sign-up fee below.');
                 return $this->redirect('academy/pending');
             }
@@ -149,7 +149,9 @@ final class AcademyAccountController extends AcademyBaseController
             $row = \App\Core\Database::one('SELECT id, fee_status FROM academy_learners WHERE id = ?', [$pid]);
             $fee = $row !== null && AcademyFees::signupDue($row) ? AcademyFees::configured('signup') : null;
         }
-        return $this->renderAcademy('web/academy/pending', ['regNo' => (string) \App\Core\Session::get('academy_reg_no', ''), 'hours' => LearnerAuth::approvalText(), 'thread' => $thread, 'fee' => $fee, 'feePesapal' => \App\Services\Pesapal\PesapalPayments::ready(), 'feeDaraza' => $fee !== null ? AcademyFees::daraza('signup') : null], [
+        return $this->renderAcademy('web/academy/pending', ['regNo' => (string) \App\Core\Session::get('academy_reg_no', ''), 'hours' => LearnerAuth::approvalText(), 'thread' => $thread, 'fee' => $fee, 'feePesapal' => \App\Services\Pesapal\PesapalPayments::ready(), 'feeDaraza' => $fee !== null ? AcademyFees::daraza('signup') : null,
+            'feeManual' => $fee !== null ? AcademyFees::manual() : null, 'feeReportReady' => AcademyFees::reportReady(),
+            'feeReported' => $fee !== null && AcademyFees::reportReady() && $pid > 0 ? \App\Core\Database::one('SELECT fee_reference, fee_reported_at FROM academy_learners WHERE id = ? AND fee_reported_at IS NOT NULL', [$pid]) : null], [
             'bodyClass' => 'is-academy is-academy-auth',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Application received', null]],
             'meta' => ['title' => 'Application received'],
@@ -170,6 +172,24 @@ final class AcademyAccountController extends AcademyBaseController
             return $this->sendToGateway((string) $pay['link']);
         }
         Flash::error($pay['error'] === 'not_due' ? 'Your sign-up fee is already settled.' : 'The payment page could not be opened just now. Nothing was charged. Please try again in a minute.');
+        return $this->redirect('academy/pending');
+    }
+
+    /** POST academy/fee/report: "I have paid" (mobile money, bank or Daraza): the transaction ID and optionally the receipt. An administrator confirms; nothing is approved here. */
+    public function reportFee(Request $request): Response
+    {
+        $this->gate();
+        $pid = (int) \App\Core\Session::get('academy_pending_id', 0);
+        if ($pid <= 0) {
+            Flash::info('Please sign in with your e-mail address and password first.');
+            return $this->redirect('academy/login');
+        }
+        $r = AcademyFees::report($pid, $request->string('reference'), $request->file('proof'));
+        if ($r['ok']) {
+            Flash::success('Thank you. We have your payment details. The Academy team checks the payment and then approves your account.');
+        } else {
+            Flash::error((string) ($r['error'] ?? 'Please try again.'));
+        }
         return $this->redirect('academy/pending');
     }
 
@@ -273,7 +293,7 @@ final class AcademyAccountController extends AcademyBaseController
         if (AcademyFees::signupDue((array) $res['learner'])) {
             \App\Core\Session::put('academy_pending_id', (int) $res['learner']['id']);
             \App\Core\Session::put('academy_reg_no', (string) ($res['learner']['reg_no'] ?? ''));
-            if (AcademyFees::daraza('signup') !== null) {
+            if (AcademyFees::daraza('signup') !== null || AcademyFees::manual() !== null) {
                 return $this->redirect('academy/pending');
             }
             $pay = AcademyFees::beginSignup((int) $res['learner']['id']);

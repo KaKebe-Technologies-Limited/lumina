@@ -33,6 +33,7 @@ $router->get('/academy/verify/{token}', [AcademyAccountController::class, 'verif
 $router->get('/academy/contact', [AcademyContactController::class, 'form'])->name('academy.contact');
 $router->post('/academy/contact', [AcademyContactController::class, 'send'])->middleware('throttle:20,600')->name('academy.contact.send');
 $router->get('/academy/pending', [AcademyAccountController::class, 'pending'])->name('academy.pending');
+$router->post('/academy/fee/report', [AcademyAccountController::class, 'reportFee'])->middleware(['honeypot', 'throttle:10,600'])->name('academy.fee.report');
 $router->post('/academy/fee/pay', [AcademyAccountController::class, 'payFee'])->middleware('throttle:10,600')->name('academy.fee.pay');
 $router->get('/academy/google', [AcademyAccountController::class, 'googleStart'])->middleware('throttle:30,600')->name('academy.google');
 $router->get('/academy/google/callback', [AcademyAccountController::class, 'googleCallback'])->middleware('throttle:30,600')->name('academy.google.callback');
