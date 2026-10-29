@@ -1,6 +1,7 @@
 <?php
 /** Learner portal > Password and security. Vars: $me, $tab, $unread, $portrait. */
 ?>
+<?php $this->start('head'); ?><link rel="stylesheet" href="<?= e(asset('css/portal.min.css')) ?>"><?php $this->end(); ?>
 <?= partial('partials/page-hero', ['title' => 'Password and security', 'eyebrow' => 'LAF Academy | My portal', 'lead' => 'Change your password, sign out, or delete your account.']) ?>
 <section class="section ac-dash">
     <div class="container container--narrow">

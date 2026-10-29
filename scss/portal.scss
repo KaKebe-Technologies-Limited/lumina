@@ -1,0 +1,10 @@
+// =====================================================================================
+// LEARNER PORTAL STYLESHEET  ->  assets/css/portal.css + portal.min.css  (python bin/build-scss.py)
+// Loaded only by the learner portal pages (docs/ACADEMY.md), after main.css. It holds everything the portal needs by itself.
+// =====================================================================================
+
+@import 'abstracts/tokens';
+@import 'abstracts/functions';
+@import 'abstracts/mixins';
+
+@import 'pages/portal';

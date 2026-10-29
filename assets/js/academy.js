@@ -127,3 +127,16 @@
   });
   window.addEventListener('pagehide', stop);
 })();
+
+/* LAF Academy portal: choosing a file in an input marked data-autosubmit sends its form at once (the "Change photo" button on the dashboard). */
+(function () {
+  'use strict';
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t && t.matches && t.matches('input[type=file][data-autosubmit]') && t.files && t.files.length && t.form) {
+      var btn = t.closest('.pt-avatar__btn');
+      if (btn) btn.textContent = 'Saving...';
+      t.form.submit();
+    }
+  });
+})();

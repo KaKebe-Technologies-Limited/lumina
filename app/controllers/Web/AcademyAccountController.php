@@ -341,7 +341,15 @@ final class AcademyAccountController extends AcademyBaseController
         }
         $r = LearnerPortrait::save((int) $l['id'], $file, $consent);
         if (!$r['ok']) {
+            if ($request->string('back') === 'dashboard') {
+                Flash::error('Your picture could not be saved: ' . $r['error']);
+                return $this->redirect('academy/dashboard');
+            }
             $this->fail(['photo' => $r['error']], 'academy/account#portrait');
+        }
+        if ($request->string('back') === 'dashboard') {
+            Flash::success('Your profile picture was saved.');
+            return $this->redirect('academy/dashboard');
         }
         Flash::success($consent ? 'Your picture was saved and may be shown on the Academy page.' : 'Your picture was saved. Only you and the Academy team can see it.');
         return $this->redirect('academy/account#portrait');

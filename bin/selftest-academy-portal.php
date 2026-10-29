@@ -113,9 +113,39 @@ $jA = null;
 $login = $post('/academy/login', ['email' => 'zz-lpo-a@example.test', 'password' => $pw], $jA, '/academy/login');
 check('link: signing in leaves a small marker cookie (no personal data) and goes to the portal', in_array($login['code'], [302, 303], true) && str_contains($login['head'], 'academy/dashboard') && stripos($login['head'], 'laf_portal=1') !== false);
 $ov = $req('GET', '/academy/dashboard', [], $jA);
-check('portal: the overview greets the learner, shows the numbers, the registration number and the tabs', $ov['code'] === 200 && str_contains($ov['body'], 'Welcome, Zed') && str_contains($ov['body'], 'Courses completed') && str_contains($ov['body'], 'Reg no. LAF-AC-')
+check('portal: the overview greets the learner, shows the numbers, the registration number and the tabs', $ov['code'] === 200 && str_contains($ov['body'], 'Welcome back, Zed') && str_contains($ov['body'], 'Courses completed') && str_contains($ov['body'], 'Reg no. LAF-AC-')
     && str_contains($ov['body'], 'aria-label="My portal"') && str_contains($ov['body'], 'ac-tabs__link is-active') && str_contains($ov['body'], 'Messages'));
 check('portal: the overview shows how complete the profile is', str_contains($ov['body'], 'ac-meter') && str_contains($ov['body'], '% complete'));
+// the dashboard: big picture button, course picker with Enrol buttons, its own stylesheet
+check('dashboard: the portal loads its own stylesheet (assets/css/portal.min.css), so it never depends on main.css being the newest copy', str_contains($ov['body'], 'css/portal.min.css') && is_file(dirname(__DIR__) . '/assets/css/portal.min.css'));
+check('dashboard: a big profile picture area with an "Add your photo" button that sends the picture at once', str_contains($ov['body'], 'pt-avatar__btn') && str_contains($ov['body'], 'Add your photo') && str_contains($ov['body'], 'data-autosubmit') && str_contains($ov['body'], 'name="back" value="dashboard"'));
+check('dashboard: "Choose a course and enrol" lists the available courses with an Enrol now button and a Details link, plus a search', str_contains($ov['body'], 'Choose a course and enrol') && substr_count($ov['body'], 'Enrol now') >= 3 && preg_match('~action="[^"]*academy/courses/[a-z0-9-]+/enroll"~', $ov['body']) === 1 && str_contains($ov['body'], 'name="q"'));
+$searched = $req('GET', '/academy/dashboard?q=excel', [], $jA)['body'];
+check('dashboard: the course search narrows the list (Excel found, a typing course not)', str_contains($searched, 'Microsoft Excel') && !str_contains($searched, 'Typing and Keyboard Skills'));
+$first = preg_match('~academy/courses/([a-z0-9-]+)/enroll~', $ov['body'], $mc) === 1 ? $mc[1] : '';
+$en = $post('/academy/courses/' . $first . '/enroll', [], $jA, '/academy/dashboard');
+$ov3 = $req('GET', '/academy/dashboard', [], $jA)['body'];
+check('dashboard: Enrol now enrols the learner, who lands in the first lesson, and the course leaves the "choose" list and shows under My courses', in_array($en['code'], [302, 303], true) && str_contains($en['head'], '/lesson/') && !str_contains($ov3, 'courses/' . $first . '/enroll') && str_contains($ov3, 'Continue learning') && preg_match('~class="ac-pstats".*?<strong>1</strong>~s', $ov3) === 1);
+// the picture, from the dashboard
+$img = sys_get_temp_dir() . '/zz-lpo-' . bin2hex(random_bytes(4)) . '.jpg';
+copy(dirname(__DIR__) . '/assets/img/site/photo-02.jpg', $img);
+$pg = $req('GET', '/academy/dashboard', [], $jA);
+$ch = curl_init($site . '/academy/account/photo');
+curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_COOKIEJAR => $jA, CURLOPT_COOKIEFILE => $jA, CURLOPT_FOLLOWLOCATION => false, CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => ['_token' => $tok($pg['body']), 'back' => 'dashboard', 'photo' => new CURLFile($img, 'image/jpeg', 'me.jpg')]]);
+$raw = (string) curl_exec($ch);
+$hs = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+curl_close($ch);
+$pRow = Database::one('SELECT photo_path, photo_consent_at FROM academy_learners WHERE id = ?', [$a]);
+$ovPic = $req('GET', '/academy/dashboard', [], $jA)['body'];
+check('dashboard: choosing a picture saves it (private) and comes back to the dashboard, where the button now says "Change photo"', str_contains(substr($raw, 0, $hs), 'academy/dashboard') && $pRow['photo_path'] !== null && $pRow['photo_consent_at'] === null && str_contains($ovPic, 'Change photo') && str_contains($ovPic, 'academy/account/photo?v='));
+@unlink($img);
+if ((string) ($pRow['photo_path'] ?? '') !== '') {
+    @unlink(STORAGE_PATH . '/private/' . $pRow['photo_path']);
+}
+$compact = $req('GET', '/academy/portal/courses', [], $jA)['body'];
+check('portal: the other tabs load the same portal stylesheet and keep the compact header', str_contains($compact, 'css/portal.min.css') && str_contains($compact, 'ac-portal__head'));
+
 $allOk = true;
 foreach (array_slice($tabs, 1) as $t) {
     $r = $req('GET', $t, [], $jA);

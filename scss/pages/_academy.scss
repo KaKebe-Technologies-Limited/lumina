@@ -271,41 +271,4 @@ $cert-orange: #E0642C;
   video { width: 100%; max-width: 320px; aspect-ratio: 1; object-fit: cover; border-radius: $radius; background: #000; transform: scaleX(-1); } }
 .ac-cert-wait { border-left: 3px solid $gold; }
 
-// ---- the learner portal: header, tabs, numbers, progress, profile meter, messages (docs/ACADEMY.md)
-.ac-portal__head { display: flex; align-items: center; gap: $space-4; margin-bottom: $space-4; flex-wrap: wrap; }
-.ac-portal__avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 3px solid $white; box-shadow: $shadow-sm; flex: none;
-  &--initial { display: grid; place-items: center; background: $navy; color: $gold; font-family: $font-heading; font-size: 1.6rem; font-weight: 700; } }
-.ac-portal__who { flex: 1; min-width: 12rem; display: grid; line-height: 1.3; strong { font-family: $font-heading; font-size: 1.15rem; color: $navy; } span { color: $ink-soft; font-size: $fs-sm; overflow-wrap: anywhere; } }
-.ac-tabs { margin-bottom: $space-6; border-bottom: 1px solid $line; overflow-x: auto;
-  ul { display: flex; gap: $space-1; list-style: none; margin: 0; padding: 0; min-width: max-content; } }
-.ac-tabs__link { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.8rem 1rem; color: $ink-soft; font-family: $font-heading; font-weight: 600; font-size: 0.95rem; text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px;
-  &:hover, &:focus-visible { color: $navy; background: $surface-alt; }
-  &.is-active { color: $navy; border-bottom-color: $gold; } }
-.ac-tabs__badge { display: inline-block; min-width: 1.35rem; padding: 0 0.4rem; border-radius: $radius-pill; background: #FFD21F; color: $navy-dark; font-size: 0.72rem; font-weight: 700; line-height: 1.35rem; text-align: center; }
-.ac-notice--yellow { border-left: 4px solid #FFD21F; background: #FFF8D6; }
-.ac-pstats { list-style: none; margin: 0 0 $space-6; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: $space-3; @include respond(md) { grid-template-columns: repeat(4, 1fr); }
-  li { background: $white; border: 1px solid $line; border-radius: $radius; padding: $space-4; display: grid; gap: 0.15rem; box-shadow: $shadow-sm; }
-  strong { font-family: $font-heading; font-size: 1.9rem; color: $navy; line-height: 1; }
-  span { color: $ink-soft; font-size: $fs-sm; } }
-.ac-continue { display: flex; align-items: center; justify-content: space-between; gap: $space-4; flex-wrap: wrap; padding: $space-5; margin-bottom: $space-5; background: $navy; color: $white; border: 0;
-  > div { flex: 1; min-width: 14rem; }
-  .ac-mine__meta { color: rgba($white, 0.8); }
-  .ac-progress { background: rgba($white, 0.2); } }
-.ac-continue__eyebrow { font-size: $fs-xs; letter-spacing: 0.12em; text-transform: uppercase; color: $gold; font-weight: 700; }
-.ac-continue__title { margin: 0.2rem 0 $space-3; color: $white; font-size: 1.35rem; }
-.ac-meter { height: 8px; border-radius: 99px; background: $line; overflow: hidden; span { display: block; height: 100%; background: $gold; } }
-.ac-msgpreview { margin: 0 0 $space-2; overflow-wrap: anywhere; }
-.ac-certs { display: grid; gap: $space-4; @include respond(md) { grid-template-columns: repeat(2, 1fr); } }
-.ac-chat { overflow: hidden; }
-.ac-chat__log { max-height: 520px; min-height: 240px; overflow-y: auto; padding: $space-5; display: grid; align-content: start; gap: $space-3; background: $surface-alt; }
-.ac-chat__empty { margin: auto; text-align: center; color: $ink-soft; padding: $space-6 $space-4; }
-.ac-chat__day, .ac-chat__new { margin: $space-2 0; text-align: center; font-size: $fs-xs; color: $ink-soft; span { background: $surface-alt; padding: 0 0.6rem; } }
-.ac-chat__new { color: $navy; font-weight: 700; border-top: 1px dashed #FFD21F; line-height: 0; span { background: #FFF8D6; padding: 0.3rem 0.7rem; border-radius: 99px; } }
-.ac-chat__msg { display: grid; gap: 0.2rem; max-width: 82%; }
-.ac-chat__msg--me { justify-self: end; text-align: right; .ac-chat__bubble { background: $navy; color: $white; border-radius: 16px 16px 4px 16px; } }
-.ac-chat__msg--team { justify-self: start; .ac-chat__bubble { background: $white; color: $ink; border: 1px solid $line; border-radius: 16px 16px 16px 4px; } }
-.ac-chat__bubble { margin: 0; padding: 0.65rem 0.9rem; line-height: 1.5; text-align: left; overflow-wrap: anywhere; }
-.ac-chat__meta { font-size: $fs-xs; color: $ink-soft; }
-.ac-chat__form { padding: $space-4 $space-5; border-top: 1px solid $line; background: $white; }
-.ac-chat__actions { display: flex; align-items: center; gap: $space-4; flex-wrap: wrap; }
 .ac-welcome-back { margin: 0; border-radius: 0; text-align: center; display: flex; align-items: center; justify-content: center; gap: $space-3; flex-wrap: wrap; }

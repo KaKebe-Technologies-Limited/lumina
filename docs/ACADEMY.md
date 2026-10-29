@@ -240,3 +240,11 @@ The top bar of every public page shows **My learner portal** to a browser that h
 * otherwise as an **inquiry** in the "Inquiries from visitors" table, with **E-mail** and **WhatsApp** buttons and "Mark as dealt with".
 
 The visitor always sees the same thank-you, so the form never reveals whether an address has an account. Both kinds count in the yellow number on Messages in the admin menu. A signed-in learner is sent to the Messages tab of the portal instead. Table `academy_inquiries`; test: `bin/selftest-academy-portal.php`.
+
+### The dashboard (Overview) redone
+
+* **Big profile picture:** the top of the portal shows the learner's picture (or a gold initial) at 176 px with a gold **Add your photo / Change photo** button; choosing a file sends it at once (private unless the learner already agreed to show it), and the learner comes back to the dashboard (`back=dashboard` on `POST /academy/account/photo`). Under it: registration number, "Active learner" / "Waiting for approval" and member-since chips, and the buttons Choose a course, Messages (with the yellow number) and Edit profile.
+* **Numbers, Continue learning, My courses** (the first three with progress, the rest on the My courses tab).
+* **Choose a course and enrol:** the published courses the learner is not in yet (with lessons), six at a time, each with its category, level, lessons, duration, certificate, an **Enrol now** button (posts to `academy/courses/{slug}/enroll`, then opens the first lesson) and **Details**; a search box (`/academy/dashboard?q=excel`) and "Browse all courses".
+* **Side panels:** profile completeness, messages, next classes, certificates, help (WhatsApp line and Bono AI).
+* **Own stylesheet:** the portal pages load `assets/css/portal.min.css` (built from `scss/portal.scss` and `scss/pages/_portal.scss` by `bin/build-scss.py`), so they look right even when `main.css` is an older copy. Test: `bin/selftest-academy-portal.php`.

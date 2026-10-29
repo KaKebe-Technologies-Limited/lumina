@@ -60,7 +60,12 @@ final class AcademyPortalController extends AcademyBaseController
             $lessons += (int) $c['progress']['done'];
         }
         $port = LearnerPortrait::of($id);
+        // the courses the learner can enrol in (published, with lessons, not enrolled yet), optionally searched
+        $q = mb_substr(trim($request->string('q')), 0, 60);
+        $mine = array_map(static fn(array $c): int => (int) $c['course_id'], $courses);
+        $avail = array_values(array_filter(CourseService::published($q !== '' ? ['q' => $q] : []), static fn(array $c): bool => (int) $c['lessons'] > 0 && !in_array((int) $c['id'], $mine, true)));
         return $this->page('overview', 'overview', 'Overview', $l, [
+            'available' => array_slice($avail, 0, 6), 'availableTotal' => count($avail), 'q' => $q,
             'courses' => $courses, 'classes' => ClassService::nextForLearner($id), 'certificates' => $certs, 'latest' => LearnerMessages::latest($id),
             'stats' => ['courses' => count($courses), 'completed' => $done, 'lessons' => $lessons, 'certificates' => count($certs)],
             'complete' => LearnerAuth::completeness($l, !empty($port['photo_path'])),

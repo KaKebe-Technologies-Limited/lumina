@@ -3,6 +3,7 @@
 $active = array_values(array_filter($courses, static fn(array $c): bool => $c['completed_at'] === null));
 $finished = array_values(array_filter($courses, static fn(array $c): bool => $c['completed_at'] !== null));
 ?>
+<?php $this->start('head'); ?><link rel="stylesheet" href="<?= e(asset('css/portal.min.css')) ?>"><?php $this->end(); ?>
 <?= partial('partials/page-hero', ['title' => 'My courses', 'eyebrow' => 'LAF Academy | My portal', 'lead' => 'Track your progress in every course and pick up where you stopped.',
     'actions' => [['label' => 'Browse the courses', 'url' => url('academy') . '#courses', 'class' => 'btn--cta btn--caps']]]) ?>
 <section class="section ac-dash">

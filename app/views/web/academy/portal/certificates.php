@@ -2,6 +2,7 @@
 /** Learner portal > Certificates. Vars: $me, $tab, $unread, $portrait, $certificates (ready or withdrawn), $waiting (waiting for approval), $requestable (courses the learner may ask a certificate for). */
 use App\Services\Academy\CertificateService;
 ?>
+<?php $this->start('head'); ?><link rel="stylesheet" href="<?= e(asset('css/portal.min.css')) ?>"><?php $this->end(); ?>
 <?= partial('partials/page-hero', ['title' => 'My certificates', 'eyebrow' => 'LAF Academy | My portal', 'lead' => 'Certificates are approved and signed by the Academy administrator before they are shared with you.']) ?>
 <section class="section ac-dash">
     <div class="container">

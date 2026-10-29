@@ -1,4 +1,5 @@
 <?php /** My account. Vars: $me, $portrait (photo_path, photo_consent_at), $portraitReady. */ ?>
+<?php $this->start('head'); ?><link rel="stylesheet" href="<?= e(asset('css/portal.min.css')) ?>"><?php $this->end(); ?>
 <?= partial('partials/page-hero', ['title' => 'My profile', 'eyebrow' => 'LAF Academy | My portal', 'lead' => 'Your details, your bio, your contact numbers and your picture.']) ?>
 <section class="section ac-auth">
     <div class="container container--narrow">

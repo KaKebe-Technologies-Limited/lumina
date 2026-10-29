@@ -6,6 +6,7 @@ use App\Services\Academy\LearnerMessages;
 $sw = LearnerAuth::supportWhatsapp();
 $day = '';
 ?>
+<?php $this->start('head'); ?><link rel="stylesheet" href="<?= e(asset('css/portal.min.css')) ?>"><?php $this->end(); ?>
 <?= partial('partials/page-hero', ['title' => 'Messages', 'eyebrow' => 'LAF Academy | My portal', 'lead' => 'Write to the Academy team and read their answers here.']) ?>
 <section class="section ac-dash">
     <div class="container">

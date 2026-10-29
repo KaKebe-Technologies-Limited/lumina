@@ -14,6 +14,7 @@ $tabs = [
 $hasPhoto = !empty($portrait['photo_path']);
 $first = explode(' ', trim((string) $me['name']))[0];
 ?>
+<?php if (($showHead ?? true) !== false): ?>
 <div class="ac-portal__head">
     <?php if ($hasPhoto): ?><img class="ac-portal__avatar" src="<?= e(url('academy/account/photo')) ?>?v=<?= e(substr(md5((string) $portrait['photo_path']), 0, 8)) ?>" alt="My picture" width="64" height="64"><?php else: ?><span class="ac-portal__avatar ac-portal__avatar--initial" aria-hidden="true"><?= e(mb_strtoupper(mb_substr($first, 0, 1))) ?></span><?php endif; ?>
     <div class="ac-portal__who">
@@ -22,6 +23,7 @@ $first = explode(' ', trim((string) $me['name']))[0];
     </div>
     <form method="post" action="<?= e(url('academy/logout')) ?>" class="ac-portal__out"><?= csrf_field() ?><button class="btn btn--ghost btn--sm" type="submit"><?= icon('log-out', 'icon--sm') ?> Sign out</button></form>
 </div>
+<?php endif; ?>
 <nav class="ac-tabs" aria-label="My portal">
     <ul>
         <?php foreach ($tabs as $key => [$label, $path, $ic]): ?>
