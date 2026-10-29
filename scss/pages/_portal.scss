@@ -10,6 +10,7 @@
   &__meta { margin: $space-2 0 0; color: rgba($white, 0.82); font-size: $fs-sm; overflow-wrap: anywhere; }
   &__chips { display: flex; flex-wrap: wrap; gap: $space-2; margin-top: $space-3; justify-content: center; @include respond(md) { justify-content: flex-start; } }
   &__actions { display: flex; flex-wrap: wrap; gap: $space-3; justify-content: center; @include respond(md) { flex-direction: column; align-items: stretch; justify-content: flex-start; } } }
+.pt-hero__out { margin: 0; .pt-btn { width: 100%; } }
 .pt-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.8rem; border-radius: $radius-pill; background: rgba($white, 0.14); color: $white; font-size: $fs-xs; font-weight: 600;
   &--ok { background: rgba(#2FBF71, 0.22); color: #CFF5E0; }
   &--warn { background: rgba(#FFD21F, 0.25); color: #FFF3B0; } }

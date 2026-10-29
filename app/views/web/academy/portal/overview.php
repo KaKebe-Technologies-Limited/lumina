@@ -50,6 +50,7 @@ $active = (int) ($me['is_active'] ?? 1) === 1;
                 <a class="pt-btn pt-btn--gold" href="#choose"><?= icon('book-open', 'icon--sm') ?> Choose a course</a>
                 <a class="pt-btn pt-btn--ghost" href="<?= e(url('academy/portal/messages')) ?>"><?= icon('message-circle', 'icon--sm') ?> Messages<?php if ((int) $unread > 0): ?> <span class="pt-badge"><span class="visually-hidden">New: </span><?= (int) $unread ?></span><?php endif; ?></a>
                 <a class="pt-btn pt-btn--ghost" href="<?= e(url('academy/account')) ?>"><?= icon('user', 'icon--sm') ?> Edit profile</a>
+                <form method="post" action="<?= e(url('academy/logout')) ?>" class="pt-hero__out"><?= csrf_field() ?><button class="pt-btn pt-btn--ghost" type="submit"><?= icon('log-out', 'icon--sm') ?> Sign out</button></form>
             </div>
         </div>
     </div>

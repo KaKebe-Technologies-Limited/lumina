@@ -93,6 +93,14 @@
   }
 }
 
+.pt-hero__out {
+  margin: 0;
+}
+
+.pt-hero__out .pt-btn {
+  width: 100%;
+}
+
 .pt-chip {
   display: inline-flex;
   align-items: center;
