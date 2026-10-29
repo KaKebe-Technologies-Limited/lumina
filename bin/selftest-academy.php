@@ -46,7 +46,7 @@ $acSet = static function (string $k, ?string $v): void {
     Settings::flush();
 };
 $acBefore = [];
-foreach (['academy_enabled', 'academy_registration_open', 'academy_signup_mode', 'academy_exam_requires_lessons'] as $k) {
+foreach (['academy_enabled', 'academy_registration_open', 'academy_signup_mode', 'academy_exam_requires_lessons', 'academy_cert_fee'] as $k) {
     $acBefore[$k] = Settings::isCustomised($k) ? (string) setting($k, '') : null;
 }
 $acRestore = static function () use ($acBefore): void {
@@ -55,6 +55,7 @@ $acRestore = static function () use ($acBefore): void {
     }
     Settings::flush();
 };
+$acSet('academy_cert_fee', '0');        // this suite tests learning, exams and the approval flow: the certificate FEE has its own suite (selftest-academy-payments.php)
 $acBase = 'http://localhost/' . basename(dirname(__DIR__));
 
 // ---- quiz text format ------------------------------------------------------------------------------------------------------

@@ -13,6 +13,7 @@ use App\Core\Sanitizer;
 use App\Core\Slug;
 use App\Core\Uploader;
 use App\Services\Academy\AcademyAccess;
+use App\Services\Academy\CertificatePayments;
 use App\Services\Academy\CourseService;
 
 /**
@@ -130,6 +131,10 @@ final class AcademyCoursesController extends AcademyAdminController
         ];
         if (AcademyAccess::manager()) {
             $data['is_featured'] = $r->bool('is_featured') ? 1 : 0;
+            if (CertificatePayments::ready()) {                            // the certificate fee (docs/PESAPAL.md): empty = the site-wide fee, 0 = free
+                $fee = trim($r->string('certificate_fee'));
+                $data['certificate_fee'] = $fee !== '' && ctype_digit($fee) ? min(10000000, (int) $fee) : null;
+            }
             $data['sort_order'] = max(-100000, min(100000, $r->int('sort_order', 100)));
             $fid = $r->int('facilitator_id');
             $data['facilitator_id'] = $fid > 0 && Database::value('SELECT 1 FROM users WHERE id = ? AND is_active = 1', [$fid]) !== null ? $fid : null;

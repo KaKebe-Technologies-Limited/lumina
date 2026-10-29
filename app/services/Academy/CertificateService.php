@@ -207,6 +207,9 @@ final class CertificateService
         if ($enr === null || ($enr['completed_at'] === null && CourseService::completion($lid, $cid) === null)) {
             return ['ok' => false, 'error' => 'Finish every lesson and pass the final exam first, then you can request your certificate.', 'cert' => null, 'waiting' => false];
         }
+        if (CertificatePayments::required($lid, $course)) {
+            return ['ok' => false, 'error' => 'The certificate fee must be paid first.', 'cert' => null, 'waiting' => false, 'payment_required' => true];
+        }
         $tree = CourseService::tree($cid);
         $best = $tree['exam'] !== null ? QuizService::passedBest($lid, (int) $tree['exam']['id']) : null;
         $cert = self::issue($learner, $course, $best !== null ? (float) $best['score_pct'] : null, (int) $tree['minutes']);

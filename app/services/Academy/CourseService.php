@@ -345,6 +345,10 @@ final class CourseService
         if ($learner === null) {
             return null;
         }
+        if (CertificatePayments::required($learnerId, $done['course'])) {
+            // the certificate fee comes first (docs/PESAPAL.md): nothing is filed or issued until Pesapal confirmed the payment, whatever the approval setting says
+            return ['requestable' => true, 'payment_required' => true, 'course_id' => $courseId];
+        }
         if (CertificateService::approvalRequired()) {
             // the certificate is filed for the Academy team straight away (they are told); the learner is told it waits for approval and signing
             $res = CertificateService::request($learner, $done['course']);

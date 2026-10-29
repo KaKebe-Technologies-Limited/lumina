@@ -178,6 +178,21 @@ final class AcademyMail
         ], ['label' => 'Open my certificate', 'url' => abs_url('academy/certificate/' . $cert['code'])]);
     }
 
+    /** Receipt of a certificate payment (Pesapal). Amount and reference only: no card or phone number is ever stored or e-mailed. */
+    public static function paymentReceipt(array $payment, array $learner, bool $certificateWaits): bool
+    {
+        $amount = number_format((float) $payment['amount'], 0) . ' ' . $payment['currency'];
+        $next = $certificateWaits
+            ? 'Your certificate request is now with the Academy team, who approve and sign it. You will get an e-mail as soon as it is ready.'
+            : 'Your certificate is on its way: open your Academy portal to see it.';
+        return self::send((string) $learner['email'], 'Payment received: ' . mb_substr((string) $payment['course_title'], 0, 80), [
+            'Thank you ' . self::first((string) $learner['name']) . '!',
+            'We received your payment of ' . $amount . ' for the certificate of "' . $payment['course_title'] . '".',
+            'Reference: ' . $payment['merchant_ref'] . (!empty($payment['confirmation_code']) ? "\nPesapal confirmation: " . $payment['confirmation_code'] : ''),
+            $next,
+        ], ['label' => 'Open my certificates', 'url' => abs_url('academy/portal/certificates')]);
+    }
+
     // ------------------------------------------------------------------------------------------------------------- volunteer facilitators
 
     public static function facilitatorReceived(array $app): bool

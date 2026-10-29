@@ -19,6 +19,8 @@ return [
         ['key' => 'academy_messages',     'label' => 'Messages',        'url' => 'admin/academy/messages',     'icon' => 'message-circle', 'can' => 'academy.manage', 'order' => 45,
             'badge' => static fn(): int => can('academy.manage') ? \App\Services\Academy\LearnerMessages::unreadForAdmin() : 0, 'badge_tone' => 'yellow'],
         ['key' => 'academy_certificates', 'label' => 'Certificates',    'url' => 'admin/academy/certificates', 'icon' => 'award',     'can' => 'academy.manage', 'order' => 50, 'badge' => null],
+        ['key' => 'academy_payments',     'label' => 'Payments',        'url' => 'admin/academy/payments',     'icon' => 'credit-card', 'can' => 'academy.manage', 'order' => 52,
+            'badge' => static fn(): int => can('academy.manage') && \App\Services\Academy\CertificatePayments::ready() ? (int) \App\Core\Database::value("SELECT COUNT(*) FROM academy_payments WHERE status = 'review'", [], 0) : 0, 'badge_tone' => 'yellow'],
         ['key' => 'academy_challenges',   'label' => 'Challenges',      'url' => 'admin/academy/challenges',   'icon' => 'target',    'can' => 'academy.teach',  'order' => 35, 'badge' => null],
         ['key' => 'academy_applications', 'label' => 'Facilitator applications', 'url' => 'admin/academy/facilitator-applications', 'icon' => 'user-plus', 'can' => 'academy.manage', 'order' => 55, 'badge' => null],
         ['key' => 'academy_facilitators','label' => 'Facilitators',    'url' => 'admin/academy/facilitators', 'icon' => 'user-plus', 'can' => 'academy.manage', 'order' => 60, 'badge' => null],

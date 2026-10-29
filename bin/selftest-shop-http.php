@@ -173,7 +173,7 @@ $gen1 = $http('GET', 'shop/pay/return?status=successful&tx_ref=' . $rRef);
 $gen2 = $http('GET', 'shop/pay/return?status=successful&tx_ref=ZZT-000000-NOPE-1');
 $gen3 = $http('GET', 'shop/pay/return/' . str_repeat('a', 32) . '?tx_ref=' . $rRef);
 // the top-bar clock prints the current time (seconds) and an epoch: two requests a second apart must still compare equal
-$norm = static fn(string $h): string => (string) preg_replace(['/(name="(?:_token|_hp_ts)" value=")[^"]*/', '/s\.\d+\.[a-f0-9]{20,}/', '/(data-clock-hms>)[^<]*/', '/data-epoch="\d+"/', '/(data-clock-date>)[^<]*/'], ['$1', 'T', '$1', 'data-epoch="E"', '$1'], $h);
+$norm = static fn(string $h): string => (string) preg_replace(['/(name="(?:_token|_hp_ts)" value=")[^"]*/', '/s\.\d+\.[a-f0-9]{20,}/', '/(data-clock-hms>)[^<]*/', '/data-epoch="\d+"/', '/(data-clock-date>)[^<]*/', '/(<time class="clock__time" datetime=")[^"]*/'], ['$1', 'T', '$1', 'data-epoch="E"', '$1', '$1'], $h);
 check('GET /shop/pay/return?tx_ref=<a REAL order number>-1 without the key: the same neutral 200 page as for an invented reference - no redirect, no buyer data, no cookie, never cached',
     $gen1['code'] === 200 && $gen2['code'] === 200 && $gen3['code'] === 200 && empty($gen1['headers']['location']) && empty($gen1['headers']['set-cookie']) && !str_contains($gen1['body'], 'zz-shop-http4@example.test')
     && !str_contains($gen1['body'], (string) $rOrder['token']) && str_contains(strtolower(implode(',', $gen1['headers']['cache-control'] ?? [])), 'no-store') && $norm($gen1['body']) === $norm($gen2['body']) && $norm($gen1['body']) === $norm($gen3['body']));

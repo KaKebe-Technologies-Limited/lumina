@@ -45,6 +45,9 @@ $this->start('scripts'); ?>
                     <?php endif; ?>
                     <?= partial('partials/form-field', ['name' => 'pass_mark', 'label' => 'Pass mark of the final exam (%)', 'type' => 'number', 'min' => 40, 'max' => 100, 'value' => $v('pass_mark', 70), 'required' => true]) ?>
                     <?= partial('admin/_content/switch', ['name' => 'certificate_enabled', 'label' => 'Issue a certificate', 'checked' => (bool) $v('certificate_enabled', 1), 'help' => 'Learners who finish every lesson and pass the final exam get a certificate with a number anyone can check.']) ?>
+                    <?php if ($manager && \App\Services\Academy\CertificatePayments::ready()): ?>
+                        <?= partial('partials/form-field', ['name' => 'certificate_fee', 'label' => 'Certificate fee (UGX)', 'type' => 'number', 'min' => 0, 'max' => 10000000, 'value' => $v('certificate_fee', ''), 'help' => 'Paid by the learner through Pesapal before the certificate. Leave empty to use the site-wide fee (Settings > LAF Academy, now UGX ' . number_format((int) setting('academy_cert_fee', '20000')) . '). 0 = this certificate is free.']) ?>
+                    <?php endif; ?>
                 </div>
             </section>
             <?php if ($manager): ?>

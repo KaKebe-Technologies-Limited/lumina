@@ -433,7 +433,7 @@ $admin('POST', '/admin/members/' . $i . '/payments/' . $pid . '/proof/remove', [
 check('removing the proof from the payment clears its columns (the member\'s own proof stays)', empty(Database::one('SELECT proof_path FROM member_payments WHERE id = ?', [$pid])['proof_path']) && $msRow($i)['proof_status'] === 'received');
 $admin('POST', '/admin/members/' . $i . '/payments/' . $pid . '/proof', ['multipart' => ['_token' => $tokenOf($admin, $i), 'pay_proof' => $msCurl($okPng, 'late.png', 'image/png')], 'follow' => true]);
 $p = Database::one('SELECT * FROM member_payments WHERE id = ?', [$pid]);
-check('a file attached to an existing payment is stored privately', str_starts_with((string) $p['proof_path'], 'members/proofs/') && ($p['proof_mime'] ?? '') === 'image/png');
+check('a file attached to an existing payment is stored privately', str_starts_with((string) $p['proof_path'], 'members/proofs/') && ($p['proof_mime'] ?? '') === (function_exists('imagecreatefrompng') && function_exists('imagejpeg') ? 'image/jpeg' : 'image/png'));
 $other = $msMember('i2', $typeA);
 $r = $admin('POST', '/admin/members/' . $other . '/payments/' . $pid . '/proof', ['multipart' => ['_token' => $tokenOf($admin, $other)], 'follow' => false]);
 check('a payment of ANOTHER member cannot be touched through this member\'s URL (404)', $r[0] === 404, (string) $r[0]);

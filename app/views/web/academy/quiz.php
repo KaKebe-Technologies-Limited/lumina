@@ -25,7 +25,7 @@ $base = 'academy/learn/' . $course['slug'];
                 <?php if ($passed): ?>
                     <p class="opp-notice ac-ok"><?= icon('check-circle', 'icon--sm') ?> You passed this <?= $isExam ? 'exam' : 'quiz' ?><?= $best !== null ? ' with ' . (int) round((float) $best['score_pct']) . '%' : '' ?>.</p>
                     <?php if ($isExam && $certificate !== null): ?><p><a class="btn btn--cta btn--caps" href="<?= e(url('academy/certificate/' . $certificate['code'])) ?>"><?= icon('award', 'icon--sm') ?> Open my certificate</a></p><?php endif; ?>
-                    <?php if ($isExam && $certificate === null && empty($certificatePending) && !empty($certificateRequestable)): ?><p><form method="post" action="<?= e(url('academy/courses/' . $course['slug'] . '/certificate')) ?>" class="ac-cert-request"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('award', 'icon--sm') ?> Request my certificate</button></form></p><?php endif; ?>
+                    <?php if ($isExam && $certificate === null && empty($certificatePending) && !empty($certificateRequestable)): ?><p><form method="post" action="<?= e(url('academy/courses/' . $course['slug'] . '/certificate')) ?>" class="ac-cert-request"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('award', 'icon--sm') ?> <?= e(\App\Services\Academy\CertificatePayments::label($course['slug'])) ?></button></form></p><?php endif; ?>
                     <?php if ($isExam && $certificate === null && !empty($certificatePending)): ?><p class="opp-notice ac-cert-wait" role="status"><?= icon('clock', 'icon--sm') ?> <?= e(\App\Services\Academy\CertificateService::waitingNotice()) ?></p><?php endif; ?>
                 <?php endif; ?>
 

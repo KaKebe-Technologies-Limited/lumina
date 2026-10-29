@@ -68,6 +68,10 @@ learner deletion, exports, settings. Every controller checks ownership (`Academy
 * **Not held for approval:** certificates issued by hand (Learners > Issue a certificate) and challenge certificates (issued when the team finalises the results): that action is the approval. With the setting off, the certificate is issued and e-mailed automatically when the course is finished (and a learner who finished earlier can still request it).
 * **Columns** `academy_certificates.approved_at`, `approved_by`, `emailed_at`. When `approved_at` is added, every certificate issued before is approved once (backfilled), so old certificates keep working. Without the columns (code uploaded before the database update) every certificate counts as approved.
 
+## Certificate fee (Pesapal)
+
+A learner pays a certificate fee through Pesapal (mobile money or card) **before** the certificate is requested or issued: finishing the last lesson or passing the final exam leads to *Pay for your certificate* (`/academy/courses/{slug}/checkout`); once Pesapal confirms the payment the certificate request is filed (and approved by the team, or issued at once when approval is off) and a receipt is e-mailed. The fee is Settings > LAF Academy > *Certificate fee (UGX)* (a course can have its own; 0 = free). Admin > LAF Academy > **Payments** lists every payment, re-checks one with Pesapal, accepts one that needs review and lets a learner have the certificate without paying. Full details, set-up and the safeguards: `docs/PESAPAL.md`.
+
 ## Confirmation code and WhatsApp
 
 * Every confirmation e-mail now also contains a **6-digit code** (valid 24 hours, 5 wrong tries, then a new one is needed). The learner types it on **Academy > Check your e-mail** (`/academy/check-email`) instead of opening the link; the page also appears after a sign-in attempt by someone who has not confirmed yet. Only a keyed hash of the code is stored (`code_hash`, `code_expires_at`, `code_attempts`).

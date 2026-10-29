@@ -41,6 +41,8 @@ $cleanup = static function (): void {
 };
 $cleanup();
 $oldSetting = Settings::get('academy_cert_approval', null);
+$oldFee = Settings::isCustomised('academy_cert_fee') ? (string) Settings::get('academy_cert_fee') : null;
+Settings::set('academy_cert_fee', '0');        // these checks are about approval and delivery: the certificate FEE has its own suite (selftest-academy-payments.php)
 Settings::set('academy_cert_approval', '1');
 Settings::flush();
 
@@ -246,6 +248,8 @@ foreach ($keep as $k) {                                                         
     Database::update('academy_certificates', ['approved_at' => $k['approved_at'], 'approved_by' => $k['approved_by'], 'emailed_at' => $k['emailed_at']], 'id = ?', [(int) $k['id']]);
 }
 
+$oldFee === null ? Settings::reset('academy_cert_fee') : Settings::set('academy_cert_fee', $oldFee);
+Settings::flush();
 $cleanup();
 foreach (array_diff(glob(STORAGE_PATH . '/mail/*.eml') ?: [], $mailsBefore) as $f) {
     if (str_contains($mailText($f), 'zz-lce-')) {

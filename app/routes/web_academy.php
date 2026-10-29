@@ -11,6 +11,7 @@ use App\Controllers\Web\AcademyController;
 use App\Controllers\Web\AcademyFacilitateController;
 use App\Controllers\Web\AcademyLearnController;
 use App\Controllers\Web\AcademyContactController;
+use App\Controllers\Web\AcademyPaymentController;
 use App\Controllers\Web\AcademyPortalController;
 
 // ---- public ---------------------------------------------------------------------------------------------------------------
@@ -60,6 +61,13 @@ $router->post('/academy/portal/messages', [AcademyPortalController::class, 'send
 $router->get('/academy/portal/security', [AcademyPortalController::class, 'security'])->name('academy.portal.security');
 $router->post('/academy/courses/{slug}/enroll', [AcademyLearnController::class, 'enroll'])->middleware('throttle:30,600')->name('academy.enroll');
 $router->post('/academy/courses/{slug}/certificate', [AcademyLearnController::class, 'requestCertificate'])->middleware('throttle:20,600')->name('academy.certificate.request');
+// ---- certificate fee, paid through Pesapal (docs/PESAPAL.md) ----------------------------------------------------------------------
+$router->get('/academy/courses/{slug}/checkout', [AcademyPaymentController::class, 'checkout'])->middleware('throttle:60,600')->name('academy.checkout');
+$router->post('/academy/courses/{slug}/checkout', [AcademyPaymentController::class, 'start'])->middleware('throttle:20,600')->name('academy.checkout.pay');
+$router->get('/academy/pay/return/{rid}', [AcademyPaymentController::class, 'return'])->where('rid', '[a-f0-9]{32}')->middleware('throttle:60,600')->name('academy.pay.return');
+$router->get('/academy/pay/return', [AcademyPaymentController::class, 'return'])->middleware('throttle:60,600')->name('academy.pay.return.bare');
+$router->get('/academy/pay/ipn', [AcademyPaymentController::class, 'ipn'])->middleware(['csrf.exempt', 'throttle:240,60'])->name('academy.pay.ipn');
+$router->post('/academy/pay/ipn', [AcademyPaymentController::class, 'ipn'])->middleware(['csrf.exempt', 'throttle:240,60'])->name('academy.pay.ipn.post');
 $router->post('/academy/courses/{slug}/leave', [AcademyLearnController::class, 'unenroll'])->middleware('throttle:10,600')->name('academy.leave');
 $router->get('/academy/learn/{slug}', [AcademyLearnController::class, 'resume'])->name('academy.learn');
 $router->get('/academy/learn/{slug}/lesson/{id}', [AcademyLearnController::class, 'lesson'])->name('academy.lesson');

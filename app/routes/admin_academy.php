@@ -15,6 +15,7 @@ use App\Controllers\Admin\AcademyFacilitatorsController;
 use App\Controllers\Admin\AcademyLearnersController;
 use App\Controllers\Admin\AcademyMessagesController;
 use App\Controllers\Admin\AcademyPartnersController;
+use App\Controllers\Admin\AcademyPaymentsController;
 
 $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:academy.teach']], function ($router) {
     $router->get('', [AcademyAdminController::class, 'index'])->name('admin.academy.index');
@@ -108,6 +109,13 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/certificates/{id}/email', [AcademyCertificatesController::class, 'email'])->middleware('throttle:60,60')->name('admin.academy.certificates.email');
     $router->post('/certificates-approve-all', [AcademyCertificatesController::class, 'approveAll'])->middleware('throttle:10,60')->name('admin.academy.certificates.approve_all');
     $router->post('/certificates-withdraw-all', [AcademyCertificatesController::class, 'withdrawAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.withdraw_all');
+    // certificate payments through Pesapal (docs/PESAPAL.md)
+    $router->get('/payments', [AcademyPaymentsController::class, 'index'])->name('admin.academy.payments');
+    $router->get('/payments-export', [AcademyPaymentsController::class, 'export'])->middleware('throttle:10,60')->name('admin.academy.payments.export');
+    $router->post('/payments/test', [AcademyPaymentsController::class, 'testConnection'])->middleware('throttle:10,60')->name('admin.academy.payments.test');
+    $router->post('/payments/waive', [AcademyPaymentsController::class, 'waive'])->middleware('throttle:30,60')->name('admin.academy.payments.waive');
+    $router->post('/payments/{id}/recheck', [AcademyPaymentsController::class, 'recheck'])->middleware('throttle:60,60')->name('admin.academy.payments.recheck');
+    $router->post('/payments/{id}/accept', [AcademyPaymentsController::class, 'accept'])->middleware('throttle:30,60')->name('admin.academy.payments.accept');
     $router->post('/certificates/{id}/revoke', [AcademyCertificatesController::class, 'revoke'])->name('admin.academy.certificates.revoke');
     $router->post('/certificates/{id}/reinstate', [AcademyCertificatesController::class, 'reinstate'])->name('admin.academy.certificates.reinstate');
 

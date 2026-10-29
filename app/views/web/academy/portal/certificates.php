@@ -12,7 +12,7 @@ use App\Services\Academy\CertificateService;
             <section class="ac-panel card" data-reveal>
                 <h2 class="ac-panel__title"><?= icon('award', 'icon--sm') ?> <?= e($c['title']) ?></h2>
                 <p>You completed this course. Ask for your certificate: the Academy team approves and signs it.</p>
-                <form method="post" action="<?= e(url('academy/courses/' . $c['slug'] . '/certificate')) ?>" class="ac-cert-request"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('award', 'icon--sm') ?> Request my certificate</button></form>
+                <form method="post" action="<?= e(url('academy/courses/' . $c['slug'] . '/certificate')) ?>" class="ac-cert-request"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('award', 'icon--sm') ?> <?= e(\App\Services\Academy\CertificatePayments::label($c['slug'])) ?></button></form>
             </section>
         <?php endforeach; ?>
 

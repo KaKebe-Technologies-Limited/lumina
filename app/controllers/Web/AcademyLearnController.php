@@ -50,6 +50,9 @@ final class AcademyLearnController extends AcademyBaseController
         }
         $course = CourseService::bySlug($slug, true) ?? throw new HttpException(404, 'Not found');
         $res = CertificateService::request($l, $course);
+        if (!empty($res['payment_required'])) {
+            return $this->redirect('academy/courses/' . $course['slug'] . '/checkout');        // the certificate fee first (docs/PESAPAL.md)
+        }
         if (!$res['ok']) {
             $res['waiting'] ? Flash::info((string) $res['error']) : Flash::error((string) $res['error']);
         } elseif ($res['waiting']) {
@@ -153,6 +156,10 @@ final class AcademyLearnController extends AcademyBaseController
         if ($cert !== null && !empty($cert['waiting'])) {
             Flash::success(CertificateService::waitingNotice());
             return $this->redirect('academy/courses/' . $c['course']['slug']);
+        }
+        if ($cert !== null && !empty($cert['payment_required'])) {
+            Flash::success('Congratulations! You completed the course. Pay the certificate fee to get your certificate.');
+            return $this->redirect('academy/courses/' . $c['course']['slug'] . '/checkout');
         }
         if ($cert !== null && !empty($cert['requestable'])) {
             Flash::success('Congratulations! You completed the course. You can now request your certificate.');
@@ -344,7 +351,7 @@ final class AcademyLearnController extends AcademyBaseController
             if ((int) $attempt['passed'] === 1) {
                 $cert = CourseService::checkCompletion($lid, (int) $c['course']['id']);
                 if ($cert !== null) {
-                    Flash::success(!empty($cert['waiting']) ? CertificateService::waitingNotice() : (!empty($cert['requestable']) ? 'You passed and completed the course. You can now request your certificate.' : 'You passed and completed the course. Your certificate is ready!'));
+                    Flash::success(!empty($cert['waiting']) ? CertificateService::waitingNotice() : (!empty($cert['payment_required']) ? 'You passed and completed the course. Pay the certificate fee to get your certificate.' : (!empty($cert['requestable']) ? 'You passed and completed the course. You can now request your certificate.' : 'You passed and completed the course. Your certificate is ready!')));
                 }
             }
         }

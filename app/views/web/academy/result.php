@@ -28,7 +28,7 @@ $pct = (int) round((float) $attempt['score_pct']);
                     <?php elseif ($isExam && $passed && !empty($certificatePending)): ?>
                         <p class="opp-notice ac-cert-wait" role="status"><?= icon('clock', 'icon--sm') ?> <?= e(\App\Services\Academy\CertificateService::waitingNotice()) ?></p>
                     <?php elseif ($isExam && $passed && !empty($certificateRequestable)): ?>
-                        <form method="post" action="<?= e(url('academy/courses/' . $course['slug'] . '/certificate')) ?>" class="ac-cert-request"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('award', 'icon--sm') ?> Request my certificate</button></form>
+                        <form method="post" action="<?= e(url('academy/courses/' . $course['slug'] . '/certificate')) ?>" class="ac-cert-request"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('award', 'icon--sm') ?> <?= e(\App\Services\Academy\CertificatePayments::label($course['slug'])) ?></button></form>
                         <p class="text-muted">The Academy team approves your request, then you can download your certificate.</p>
                     <?php elseif ($isExam && $passed): ?>
                         <a class="btn btn--cta btn--caps" href="<?= e(url($base)) ?>">Finish the remaining lessons</a>
