@@ -10,6 +10,9 @@ $minutes = (int) $tree['minutes'];
 $self = url('academy/courses/' . $course['slug']);
 $loginUrl = url('academy/login', ['next' => 'academy/courses/' . $course['slug']]);
 $registerUrl = url('academy/register', ['next' => 'academy/courses/' . $course['slug']]);
+$this->start('head');
+echo '<link rel="stylesheet" href="' . e(asset('css/catalog.min.css')) . '">';      // the related-course cards
+$this->end();
 ?>
 <?= partial('partials/page-hero', [
     'title'   => $course['title'],

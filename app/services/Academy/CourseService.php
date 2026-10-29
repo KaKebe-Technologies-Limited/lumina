@@ -76,7 +76,7 @@ final class CourseService
             $where[] = 'c.level = ?';
             $params[] = $f['level'];
         }
-        return Database::all(
+        $rows = Database::all(
             'SELECT c.*, '
             . '(SELECT COUNT(*) FROM academy_modules m WHERE m.course_id = c.id) AS modules, '
             . '(SELECT COUNT(*) FROM academy_lessons l WHERE l.course_id = c.id AND l.is_published = 1) AS lessons, '
@@ -85,6 +85,26 @@ final class CourseService
             . 'FROM academy_courses c WHERE ' . implode(' AND ', $where) . ' ORDER BY c.is_featured DESC, c.sort_order ASC, c.id ASC',
             $params
         );
+        return self::withHighlights($rows);
+    }
+
+    /** Add "highlights" to course rows: the titles of the first three modules (what the learner will learn), from one query. @param list<array<string,mixed>> $rows @return list<array<string,mixed>> */
+    public static function withHighlights(array $rows): array
+    {
+        $ids = array_map(static fn(array $r): int => (int) $r['id'], $rows);
+        $by = [];
+        if ($ids !== []) {
+            foreach (Database::all('SELECT course_id, title FROM academy_modules WHERE course_id IN (' . implode(',', $ids) . ') ORDER BY course_id, sort_order, id') as $m) {
+                if (count($by[(int) $m['course_id']] ?? []) < 3) {
+                    $by[(int) $m['course_id']][] = trim((string) preg_replace('/^\s*(module\s*)?\d+\s*[.:)\-]\s*/i', '', (string) $m['title']));
+                }
+            }
+        }
+        foreach ($rows as &$r) {
+            $r['highlights'] = $by[(int) $r['id']] ?? [];
+        }
+        unset($r);
+        return $rows;
     }
 
     /** @return array<string,int> category => number of published courses */

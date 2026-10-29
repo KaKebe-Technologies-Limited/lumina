@@ -1,1 +1,1 @@
-LUMINA build 29 Oct 2026 (final 16): learner dashboard redone (big profile picture, choose and enrol, own stylesheet); focus areas; portal; Bono AI; contact details.
+LUMINA build 29 Oct 2026 (final 17): attractive Academy course cards; learner dashboard; focus areas; portal; Bono AI; contact details.

@@ -1,0 +1,10 @@
+// =====================================================================================
+// LAF ACADEMY COURSE CARDS STYLESHEET  ->  assets/css/catalog.css + catalog.min.css  (python bin/build-scss.py)
+// Loaded by the pages that show course cards (Academy home, course page), after main.css. docs/ACADEMY.md.
+// =====================================================================================
+
+@import 'abstracts/tokens';
+@import 'abstracts/functions';
+@import 'abstracts/mixins';
+
+@import 'pages/catalog';
