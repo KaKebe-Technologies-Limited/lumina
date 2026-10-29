@@ -79,7 +79,11 @@ $tone = $cancelled ? 'danger' : ($isPaid ? 'success' : ($o['payment_status'] ===
                             </dl>
                         <?php endif; ?>
 
-                        <?php if (in_array($o['payment_method'], ['momo', 'bank'], true)): ?>
+                        <?php if (!empty($pay['daraza_url']) && !$pay['paid']): ?>
+                            <p class="sh-payform"><a class="btn btn--cta btn--caps btn--lg" href="<?= e($pay['daraza_url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('external-link', 'icon--sm') ?> <?= e(\App\Services\Daraza::label()) ?></a></p>
+                        <?php endif; ?>
+
+                        <?php if (in_array($o['payment_method'], ['momo', 'bank', 'daraza'], true)): ?>
                             <p class="sh-refline"><?= icon('info', 'icon--sm') ?> <strong><?= e(str_replace('{order_number}', (string) $o['order_number'], (string) content('shop', 'payment.reference_line'))) ?></strong></p>
                         <?php endif; ?>
 
@@ -95,7 +99,7 @@ $tone = $cancelled ? 'danger' : ($isPaid ? 'success' : ($o['payment_status'] ===
                                 <?= csrf_field() ?><?= honeypot_field() ?>
                                 <h3 class="sh-refform__title"><?= e(content('shop', 'order.ref_title')) ?></h3>
                                 <div class="sh-refform__row">
-                                    <?= partial('partials/form-field', ['name' => 'reference', 'label' => (string) content('shop', $o['payment_method'] === 'momo' ? 'order.ref_label_momo' : 'order.ref_label_bank'), 'required' => true, 'maxlength' => 60, 'value' => '', 'autocomplete' => 'off', 'help' => (string) content('shop', 'order.ref_help')]) ?>
+                                    <?= partial('partials/form-field', ['name' => 'reference', 'label' => $o['payment_method'] === 'daraza' ? 'Daraza transaction ID or receipt number' : (string) content('shop', $o['payment_method'] === 'momo' ? 'order.ref_label_momo' : 'order.ref_label_bank'), 'required' => true, 'maxlength' => 60, 'value' => '', 'autocomplete' => 'off', 'help' => (string) content('shop', 'order.ref_help')]) ?>
                                     <button class="btn btn--primary btn--caps" type="submit"><?= e(content('shop', 'order.ref_button')) ?></button>
                                 </div>
                             </form>

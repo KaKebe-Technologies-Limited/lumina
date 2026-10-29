@@ -57,6 +57,7 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth']], function ($route
         $router->get('/shop/products', [ShopProductsController::class, 'index'])->name('admin.shop.products');
         $router->get('/shop/products/create', [ShopProductsController::class, 'create'])->name('admin.shop.products.create');
         $router->post('/shop/products/import-laf', [ShopProductsController::class, 'importLaf'])->middleware('throttle:10,600')->name('admin.shop.products.import_laf');
+        $router->post('/shop/products/refresh-laf-pictures', [ShopProductsController::class, 'refreshLafPictures'])->middleware('throttle:10,600')->name('admin.shop.products.refresh_laf');
         $router->post('/shop/products/delete-samples', [ShopProductsController::class, 'deleteSamples'])->middleware('throttle:10,600')->name('admin.shop.products.delete_samples');
         $router->post('/shop/products', [ShopProductsController::class, 'store'])->name('admin.shop.products.store');
         $router->get('/shop/products/{id}/edit', [ShopProductsController::class, 'edit'])->name('admin.shop.products.edit');

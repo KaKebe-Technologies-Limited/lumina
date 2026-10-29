@@ -13,6 +13,7 @@ namespace App\Services\Shop;
  *                          the transaction ID on the confirmation page; staff VERIFY and mark the order paid.
  *   bank         manual    BANK TRANSFER: same idea with the bank details and an optional transfer reference.
  *   flutterwave  online    CARD (Visa / Mastercard) + MOBILE MONEY through the Flutterwave hosted checkout (a full-page redirect).
+ *   daraza       manual    PAY WITH DARAZA: a payment LINK pasted in Admin > Daraza; the customer pays on Daraza's page, types the transaction ID, staff confirm.
  *   pesapal      online    CARD + MOBILE MONEY + BANK through the Pesapal hosted checkout (docs/PESAPAL.md); needs PESAPAL_CONSUMER_KEY / _SECRET in .env.
  *
  * A method is OFFERED at checkout only when it is enabled AND usable (ready): momo needs a number, bank an account number, flutterwave a
@@ -20,8 +21,8 @@ namespace App\Services\Shop;
  */
 final class PaymentMethods
 {
-    public const KEYS = ['book', 'cod', 'momo', 'bank', 'flutterwave', 'pesapal'];
-    public const KINDS = ['book' => 'deferred', 'cod' => 'deferred', 'momo' => 'manual', 'bank' => 'manual', 'flutterwave' => 'online', 'pesapal' => 'online'];
+    public const KEYS = ['book', 'cod', 'momo', 'bank', 'flutterwave', 'pesapal', 'daraza'];
+    public const KINDS = ['book' => 'deferred', 'cod' => 'deferred', 'momo' => 'manual', 'bank' => 'manual', 'flutterwave' => 'online', 'pesapal' => 'online', 'daraza' => 'manual'];
 
     public static function isKey(string $key): bool
     {
@@ -102,6 +103,11 @@ final class PaymentMethods
             case 'bank':
                 if (ShopSettings::str('shop_bank_account_number') === '') {
                     $p[] = 'Add the bank account number.';
+                }
+                break;
+            case 'daraza':
+                if (\App\Services\Daraza::url('shop') === '') {
+                    $p[] = 'Paste the Daraza payment link in Admin > Daraza (it must be a https link on daraza.net).';
                 }
                 break;
             case 'pesapal':

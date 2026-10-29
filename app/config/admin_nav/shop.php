@@ -21,5 +21,6 @@ return [
         ['key' => 'shop_settings', 'label' => 'Shop settings', 'url' => 'admin/shop/settings', 'icon' => 'settings', 'can' => 'shop.settings', 'order' => 50, 'badge' => null],
         ['key' => 'shop_payments', 'label' => 'Payments', 'url' => 'admin/shop/payments', 'icon' => 'banknote', 'can' => 'shop.settings', 'order' => 60, 'badge' => null],
         ['key' => 'pesapal', 'label' => 'Pesapal payments', 'url' => 'admin/pesapal', 'icon' => 'credit-card', 'can' => 'inbox.manage', 'order' => 70, 'badge' => null],
+        ['key' => 'daraza', 'label' => 'Pay with Daraza', 'url' => 'admin/daraza', 'icon' => 'external-link', 'can' => 'inbox.manage', 'order' => 75, 'badge' => null],
     ],
 ];

@@ -114,6 +114,7 @@ final class ShopProductsController extends AdminController
             'samples'    => (int) Database::value('SELECT COUNT(*) FROM shop_products WHERE is_sample = 1', [], 0),
             'lafMissing' => count(array_filter(\App\Services\Shop\LafProducts::catalogue(), static fn(array $p): bool => Database::one('SELECT id FROM shop_products WHERE slug = ? OR sku = ?', [$p['slug'], $p['sku']]) === null)),
             'canDelete'  => can('shop.delete'),
+            'lafHave'    => (int) Database::value("SELECT COUNT(*) FROM shop_products WHERE sku LIKE 'LAF-%'", [], 0),
             'currency'   => ShopSettings::currency(),
             'shopOpen'   => ShopSettings::isOpen(),
         ], ['title' => 'Products', 'nav' => 'shop_products', 'breadcrumbs' => [['Shop', url('admin/shop')], ['Products', null]]]);
@@ -288,6 +289,19 @@ final class ShopProductsController extends AdminController
         } elseif ($r['created'] > 0) {
             Flash::success($r['created'] . ' LAF product' . ($r['created'] === 1 ? '' : 's') . ' added and published. The prices are starting values: open a product > Edit to set its price.' . ($r['skipped'] > 0 ? ' ' . $r['skipped'] . ' were already there.' : ''));
         }
+        foreach ($r['problems'] as $p) {
+            Flash::warning($p);
+        }
+        return $this->redirect('admin/shop/products');
+    }
+
+    /** POST admin/shop/products/refresh-laf-pictures: store the LAF pictures again without cropping, so the whole product shows. */
+    public function refreshLafPictures(Request $request): Response
+    {
+        $this->authorize('shop.manage');
+        $r = \App\Services\Shop\LafProducts::refreshPictures();
+        $this->audit('shop.products.refresh_laf_pictures', 'shop_product', null, 'Refreshed ' . $r['refreshed'] . ' LAF pictures', $r);
+        Flash::success($r['refreshed'] . ' picture' . ($r['refreshed'] === 1 ? '' : 's') . ' stored again, whole.' . ($r['skipped'] !== [] ? ' Left alone because they have several pictures: ' . implode(', ', $r['skipped']) . '.' : ''));
         foreach ($r['problems'] as $p) {
             Flash::warning($p);
         }

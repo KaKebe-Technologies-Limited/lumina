@@ -241,7 +241,7 @@ final class PaymentService
                 if ($o === null) {
                     throw new ShopException('not_found');
                 }
-                if (!in_array($o['payment_method'], ['momo', 'bank'], true) || $o['status'] !== 'pending' || !in_array($o['payment_status'], ['unpaid', 'pending', 'failed'], true)) {
+                if (!in_array($o['payment_method'], ['momo', 'bank', 'daraza'], true) || $o['status'] !== 'pending' || !in_array($o['payment_status'], ['unpaid', 'pending', 'failed'], true)) {
                     throw new ShopException('not_allowed');
                 }
                 if (Database::one("SELECT id FROM shop_payments WHERE order_id = ? AND reference = ? AND source = 'customer'", [$orderId, $reference]) !== null) {

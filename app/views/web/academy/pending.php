@@ -9,8 +9,12 @@
             <?php if (!empty($fee)): ?>
                 <div class="ac-pending-msgs" role="region" aria-label="Sign-up fee">
                     <h2 class="ac-block__title"><?= icon('credit-card', 'icon--sm') ?> Sign-up fee: <?= e($fee['display']) ?></h2>
-                    <p><strong>Your account starts after the sign-up fee is paid.</strong> You pay securely with Pesapal (card or mobile money). Your registration number stays reserved.</p>
-                    <form method="post" action="<?= e(url('academy/fee/pay')) ?>"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('lock', 'icon--sm') ?> Pay the sign-up fee</button></form>
+                    <p><strong>Your account starts after the sign-up fee is paid.</strong> You pay securely online. Your registration number stays reserved.</p>
+                    <?php if (!empty($feePesapal)): ?><form method="post" action="<?= e(url('academy/fee/pay')) ?>" style="margin-bottom:.75rem"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('lock', 'icon--sm') ?> Pay the sign-up fee with Pesapal</button></form><?php endif; ?>
+                    <?php if (!empty($feeDaraza)): ?>
+                        <p><a class="btn <?= !empty($feePesapal) ? 'btn--outline' : 'btn--cta' ?> btn--caps" href="<?= e($feeDaraza['url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('external-link', 'icon--sm') ?> <?= e($feeDaraza['label']) ?></a></p>
+                        <p class="text-muted">After you pay on Daraza, the Academy team checks the payment and approves your account. This can take a little time. If you like, <a href="<?= e(url('academy/contact')) ?>">send us your Daraza transaction ID</a> to speed it up.</p>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
             <p>The Academy team approves every new account. <strong>This takes about <?= e($hours) ?>.</strong> Please sign in with your e-mail address and password after <?= e($hours) ?>: you do not need to confirm your e-mail address or type any code.</p>

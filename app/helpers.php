@@ -355,7 +355,7 @@ function setting(string $key, mixed $default = null): mixed
 function donate_online_url(): string
 {
     try {
-        if (\App\Services\Pesapal\PesapalPayments::donationsOnSite()) {
+        if (\App\Services\Pesapal\PesapalPayments::donationsOnSite() || \App\Services\Daraza::enabled('donate')) {
             return abs_url('donate') . '#give-online';
         }
     } catch (\Throwable) {

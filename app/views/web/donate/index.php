@@ -133,14 +133,15 @@ $cards = content_list('donate', 'support.items'); $supportUrl = H::href('donate'
 <?php section_end(); ?>
 
 <?php /* ------------------------------------------------------------------ GIVE ONLINE (Pesapal) */ ?>
-<?php if (!empty($giveOnline)): ?>
+<?php if (!empty($giveOnline) || !empty($darazaDonate)): ?>
 <section class="section donate-give" id="give-online" aria-labelledby="give-online-title">
     <div class="container container--narrow">
         <div class="section__head" style="text-align:center">
             <span class="eyebrow">Give online</span>
-            <h2 id="give-online-title">Give now with <span class="text-accent">card or mobile money</span></h2>
-            <p class="lead">Pay securely through Pesapal with Visa, Mastercard, MTN Mobile Money or Airtel Money. You will get a receipt by e-mail.</p>
+            <h2 id="give-online-title"><?= !empty($giveOnline) ? 'Give now with <span class="text-accent">card or mobile money</span>' : 'Give <span class="text-accent">online</span>' ?></h2>
+            <p class="lead"><?= !empty($giveOnline) ? 'Pay securely through Pesapal with Visa, Mastercard, MTN Mobile Money or Airtel Money. You will get a receipt by e-mail.' . (!empty($darazaDonate) ? ' Prefer Daraza? Use the button below the form.' : '') : 'Press the button to give securely on the Daraza page.' ?></p>
         </div>
+        <?php if (!empty($giveOnline)): ?>
         <form class="form-card ia-form" method="post" action="<?= e(url('donate/online')) ?>" novalidate>
             <?= partial('web/inner-a/_error_summary', ['title' => 'Please check the form', 'fields' => [
                 'give_name' => ['id' => 'f-give_name', 'label' => 'Name'], 'give_email' => ['id' => 'f-give_email', 'label' => 'E-mail'], 'give_phone' => ['id' => 'f-give_phone', 'label' => 'Phone'],
@@ -161,6 +162,17 @@ $cards = content_list('donate', 'support.items'); $supportUrl = H::href('donate'
                 <span class="form-note">You will be taken to Pesapal's secure page to finish. We never see your card details.</span>
             </div>
         </form>
+        <?php endif; ?>
+        <?php if (!empty($darazaDonate)): ?>
+        <div class="form-card" style="text-align:center;margin-top:<?= !empty($giveOnline) ? '1.25rem' : '0' ?>">
+            <?php if (!empty($giveOnline)): ?><p class="text-muted" style="margin:0 0 .75rem">or</p><?php endif; ?>
+            <a class="btn btn--cta btn--caps btn--lg" href="<?= e($darazaDonate['url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('external-link', 'icon--sm') ?> <?= e($darazaDonate['label']) ?></a>
+            <p class="form-note" style="margin:.75rem 0 0">You will give on Daraza's secure page (it opens in a new tab). Thank you for your support.</p>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($giveLink)): ?>
+        <p style="text-align:center;margin-top:1rem"><a href="<?= e($giveLink) ?>"<?= is_external($giveLink) ? ' target="_blank" rel="noopener noreferrer"' : '' ?>>Or give through our other online link</a></p>
+        <?php endif; ?>
     </div>
 </section>
 <?php endif; ?>

@@ -22,8 +22,9 @@ use App\Services\Academy\CertificateService;
                 <article class="ac-panel card" data-reveal>
                     <h3 class="ac-panel__title"><?= icon('clock', 'icon--sm') ?> <?= e($w['course_title']) ?></h3>
                     <?php if (\App\Services\Academy\AcademyFees::certDue($w) && ($certFee = \App\Services\Academy\AcademyFees::configured('cert'))): ?>
-                        <p class="opp-notice ac-cert-wait"><?= icon('credit-card', 'icon--sm') ?> Your certificate is ready once the certificate fee of <strong><?= e($certFee['display']) ?></strong> is paid. You pay securely with Pesapal (card or mobile money).</p>
-                        <form method="post" action="<?= e(url('academy/portal/certificates/' . (int) $w['id'] . '/pay')) ?>"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('lock', 'icon--sm') ?> Pay the certificate fee</button></form>
+                        <p class="opp-notice ac-cert-wait"><?= icon('credit-card', 'icon--sm') ?> Your certificate is ready once the certificate fee of <strong><?= e($certFee['display']) ?></strong> is paid. You pay securely online.</p>
+                        <?php $certDz = \App\Services\Academy\AcademyFees::daraza('cert'); if (\App\Services\Pesapal\PesapalPayments::ready()): ?><form method="post" action="<?= e(url('academy/portal/certificates/' . (int) $w['id'] . '/pay')) ?>" style="margin-bottom:.75rem"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('lock', 'icon--sm') ?> Pay the certificate fee with Pesapal</button></form><?php endif; ?>
+                        <?php if ($certDz !== null): ?><p><a class="btn <?= \App\Services\Pesapal\PesapalPayments::ready() ? 'btn--outline' : 'btn--cta' ?> btn--caps" href="<?= e($certDz['url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('external-link', 'icon--sm') ?> <?= e($certDz['label']) ?></a></p><p class="text-muted">After you pay on Daraza, the Academy team checks the payment and releases your certificate. <a href="<?= e(url('academy/portal/messages')) ?>">Send us your Daraza transaction ID</a> to speed it up.</p><?php endif; ?>
                     <?php else: ?>
                     <p class="opp-notice ac-cert-wait"><?= e(CertificateService::waitingNotice()) ?></p>
                     <?php endif; ?>

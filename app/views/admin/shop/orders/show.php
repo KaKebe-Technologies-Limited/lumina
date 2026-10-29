@@ -19,7 +19,7 @@ $isPaid = $o['payment_status'] === 'paid';
 $closed = in_array($o['status'], ['cancelled', 'refunded'], true);
 $booking = $o['payment_method'] === 'book';
 $online = $o['payment_method'] === 'flutterwave';
-$manual = in_array($o['payment_method'], ['momo', 'bank'], true);
+$manual = in_array($o['payment_method'], ['momo', 'bank', 'daraza'], true);
 $canRecord = !in_array($o['payment_status'], ['paid', 'refunded'], true) && !$closed;
 $phoneHref = 'tel:' . preg_replace('/[^0-9+]/', '', (string) $o['customer_phone']);
 $waNumber = preg_replace('/[^0-9]/', '', (string) $o['customer_phone']);

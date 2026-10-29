@@ -54,7 +54,14 @@ final class AcademyFees
     /** The fee that is actually charged now, or null. @return array{minor:int,currency:string,display:string}|null */
     public static function active(string $kind): ?array
     {
-        return self::ready() && PesapalPayments::ready() ? self::configured($kind) : null;
+        return self::ready() && (PesapalPayments::ready() || \App\Services\Daraza::enabled($kind === 'cert' ? 'cert' : 'signup')) ? self::configured($kind) : null;
+    }
+
+    /** The "Pay with Daraza" button of a fee ('signup' | 'cert'): ['url' => ..., 'label' => ...] or null. Daraza payments are confirmed by an administrator (Mark as paid). */
+    public static function daraza(string $kind): ?array
+    {
+        $place = $kind === 'cert' ? 'cert' : 'signup';
+        return \App\Services\Daraza::enabled($place) ? ['url' => \App\Services\Daraza::url($place), 'label' => \App\Services\Daraza::label()] : null;
     }
 
     public static function signup(): ?array
@@ -107,6 +114,24 @@ final class AcademyFees
             return ['ok' => false, 'error' => 'not_due'];
         }
         return PesapalPayments::begin('academy_cert', $certId, $fee['minor'], $fee['currency'], 'LAF Academy certificate fee', ['name' => (string) $l['name'], 'email' => (string) $l['email'], 'phone' => (string) ($l['phone'] ?? '')]);
+    }
+
+    /** An administrator checked the money (Daraza dashboard, cash, ...) and marks the fee as paid. @return bool false when the fee was not due */
+    public static function markPaidByAdmin(string $kind, int $id): bool
+    {
+        $ref = 'confirmed by an administrator';
+        if ($kind === 'cert') {
+            $due = AcademyFees::certDue(Database::one('SELECT fee_status FROM academy_certificates WHERE id = ?', [$id]));
+            if ($due) {
+                self::markCertPaid($id, $ref);
+            }
+            return $due;
+        }
+        $due = self::signupDue(Database::one('SELECT fee_status FROM academy_learners WHERE id = ?', [$id]));
+        if ($due) {
+            self::markSignupPaid($id, $ref);
+        }
+        return $due;
     }
 
     /** Called by PesapalPayments when Pesapal confirms the sign-up fee (once). */

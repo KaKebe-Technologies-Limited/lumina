@@ -393,7 +393,7 @@ final class OrderService
     {
         $now ??= new \DateTimeImmutable('now');
         $interval = match ($paymentMethod) {
-            'momo', 'bank' => 'P' . ShopSettings::int('shop_manual_hold_days', 1, 60) . 'D',
+            'momo', 'bank', 'daraza' => 'P' . ShopSettings::int('shop_manual_hold_days', 1, 60) . 'D',
             'flutterwave', 'pesapal' => 'PT' . ShopSettings::int('shop_gateway_hold_hours', 1, 720) . 'H',
             default        => 'P' . ShopSettings::int('shop_hold_days', 1, 90) . 'D',
         };
@@ -683,9 +683,10 @@ final class OrderService
             'details'               => PaymentMethods::details($m),
             'reference'             => (string) $order['order_number'],
             'paid'                  => $order['payment_status'] === 'paid',
-            'can_enter_reference'   => in_array($m, ['momo', 'bank'], true) && $open,
+            'can_enter_reference'   => in_array($m, ['momo', 'bank', 'daraza'], true) && $open,
+            'daraza_url'            => $m === 'daraza' ? \App\Services\Daraza::url('shop') : '',
             'can_pay_online'        => in_array($m, ['flutterwave', 'pesapal'], true) && $open && PaymentMethods::ready($m),
-            'awaiting_verification' => $order['payment_status'] === 'pending' && in_array($m, ['momo', 'bank'], true) && (string) ($order['payment_reference'] ?? '') !== '',
+            'awaiting_verification' => $order['payment_status'] === 'pending' && in_array($m, ['momo', 'bank', 'daraza'], true) && (string) ($order['payment_reference'] ?? '') !== '',
         ];
     }
 

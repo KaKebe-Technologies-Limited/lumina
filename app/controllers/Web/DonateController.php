@@ -30,7 +30,7 @@ final class DonateController extends Controller
 
     public function index(Request $request): Response
     {
-        $hasMethod = trim((string) setting('donate_url', '')) !== '' || PesapalPayments::donationsEnabled()
+        $hasMethod = trim((string) setting('donate_url', '')) !== '' || PesapalPayments::donationsEnabled() || \App\Services\Daraza::enabled('donate')
             || trim((string) setting('donate_bank_details', '')) !== ''
             || trim((string) setting('donate_mobile_money', '')) !== ''
             || trim((string) setting('donate_paypal_email', '')) !== '';
@@ -42,6 +42,8 @@ final class DonateController extends Controller
             'selectedCurrency' => in_array($selectedCurrency, self::CURRENCIES, true) ? $selectedCurrency : 'UGX',
             'methods'          => $this->methodLabels(),
             'giveOnline'       => PesapalPayments::donationsEnabled(),
+            'darazaDonate'     => \App\Services\Daraza::enabled('donate') ? ['url' => \App\Services\Daraza::url('donate'), 'label' => \App\Services\Daraza::label()] : null,
+            'giveLink'         => \App\Services\Daraza::enabled('donate') && in_array(PesapalPayments::donateMethod(), ['both', 'link'], true) ? trim((string) setting('donate_url', '')) : '',
         ], [
             'breadcrumbs' => [[HomeSupport::navLabel('donate', 'Donate'), null]],
         ]);

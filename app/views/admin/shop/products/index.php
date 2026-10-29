@@ -29,11 +29,12 @@ $this->start('scripts'); ?>
         ],
     ]) ?>
 
-    <?php if ($lafMissing > 0 || ($samples > 0 && $canDelete)): ?>
+    <?php if ($lafMissing > 0 || $lafHave > 0 || ($samples > 0 && $canDelete)): ?>
         <section class="card" style="margin-bottom:1rem"><div class="card__body">
             <strong>LAF branded products</strong>
             <p class="text-muted">Hoodies, a jacket, shirts, polos, a cap and a backpack with the LAF badge: names, pictures, sizes and a starting price (UGX), all editable afterwards. Prices are changed in each product's <em>Edit</em> page.</p>
             <?php if ($lafMissing > 0): ?><form method="post" action="<?= e(url('admin/shop/products/import-laf')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--primary btn--sm" type="submit"><?= icon('plus', 'icon--sm') ?> Add the <?= (int) $lafMissing ?> LAF product<?= $lafMissing === 1 ? '' : 's' ?></button></form><?php endif; ?>
+            <?php if ($lafHave > 0): ?><form method="post" action="<?= e(url('admin/shop/products/refresh-laf-pictures')) ?>" class="inline-form" data-confirm="Store the pictures of the LAF products again so the whole product shows? Products with several pictures are left alone."><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit"><?= icon('image', 'icon--sm') ?> Show the whole product in the LAF pictures</button></form><?php endif; ?>
             <?php if ($samples > 0 && $canDelete): ?><form method="post" action="<?= e(url('admin/shop/products/delete-samples')) ?>" class="inline-form" data-confirm="Delete the <?= (int) $samples ?> sample products and their pictures? Past orders keep their own copy of the items. This cannot be undone."><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit"><?= icon('trash', 'icon--sm') ?> Delete the <?= (int) $samples ?> sample product<?= $samples === 1 ? '' : 's' ?></button></form><?php endif; ?>
         </div></section>
     <?php endif; ?>

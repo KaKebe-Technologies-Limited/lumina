@@ -64,7 +64,7 @@ final class PesapalController extends AdminController
         foreach (['signup' => 'academy_signup_fee', 'cert' => 'academy_cert_fee'] as $kind => $key) {
             $conf = \App\Services\Academy\AcademyFees::configured($kind);
             $raw = trim((string) \App\Core\Settings::get($key, '0'));
-            $out[$kind] = ['amount' => $raw === '' ? '0' : $raw, 'currency' => strtoupper((string) \App\Core\Settings::get($key . '_currency', 'UGX')), 'on' => $conf !== null, 'display' => $conf['display'] ?? ''];
+            $out[$kind] = ['amount' => $raw === '' ? '0' : $raw, 'currency' => strtoupper((string) \App\Core\Settings::get($key . '_currency', 'UGX')), 'on' => $conf !== null, 'display' => $conf['display'] ?? '', 'daraza' => \App\Services\Daraza::enabled($kind === 'cert' ? 'cert' : 'signup')];
         }
         return $out;
     }

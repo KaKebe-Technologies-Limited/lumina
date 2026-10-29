@@ -115,7 +115,7 @@ foreach ($methods as $m) {
                             <div class="sh-pay<?= $selected === $m['key'] ? ' is-on' : '' ?>">
                                 <label class="sh-pick" for="<?= e($mid) ?>">
                                     <input type="radio" id="<?= e($mid) ?>" name="payment" value="<?= e($m['key']) ?>"<?= $selected === $m['key'] ? ' checked' : '' ?> data-shop-pay="<?= e($m['key']) ?>">
-                                    <span class="sh-pick__icon"><?= icon(in_array($m['key'], ['flutterwave', 'pesapal'], true) ? 'shield' : ($m['key'] === 'bank' ? 'banknote' : ($m['key'] === 'momo' ? 'smartphone' : ($m['key'] === 'book' ? 'calendar' : 'hand-heart')))) ?></span>
+                                    <span class="sh-pick__icon"><?= icon(in_array($m['key'], ['flutterwave', 'pesapal'], true) ? 'shield' : ($m['key'] === 'daraza' ? 'external-link' : ($m['key'] === 'bank' ? 'banknote' : ($m['key'] === 'momo' ? 'smartphone' : ($m['key'] === 'book' ? 'calendar' : 'hand-heart'))))) ?></span>
                                     <span class="sh-pick__text"><strong><?= e($m['label']) ?></strong><?php if ($m['instructions'] !== ''): ?><span class="sh-pick__sub"><?= e($m['instructions']) ?></span><?php endif; ?></span>
                                 </label>
                                 <?php $payDetails = in_array($m['key'], ['momo', 'bank'], true) ? PaymentMethods::details($m['key']) : []; ?>

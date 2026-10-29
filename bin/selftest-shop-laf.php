@@ -68,6 +68,20 @@ check('import: the shipped pictures stay in place (the importer copies them)', c
 $again = LafProducts::import();
 check('import twice: nothing is added the second time', $again['created'] === 0 && $again['skipped'] === 12 && (int) Database::value("SELECT COUNT(*) FROM shop_products WHERE sku LIKE 'LAF-%'", [], 0) === 12);
 
+// the pictures can be stored again WHOLE (the first import cropped tall photos)
+$oldPath = (string) Database::value("SELECT i.path FROM shop_product_images i JOIN shop_products p ON p.id = i.product_id WHERE p.slug = 'laf-red-polo'");
+$capId = (int) Database::value("SELECT id FROM shop_products WHERE slug = 'laf-white-cap'");
+Database::insert('shop_product_images', ['product_id' => $capId, 'path' => 'zz-laf-extra.jpg', 'alt' => 'extra', 'sort_order' => 90, 'is_cover' => 0]);
+$ref = LafProducts::refreshPictures();
+$newPath = (string) Database::value("SELECT i.path FROM shop_product_images i JOIN shop_products p ON p.id = i.product_id WHERE p.slug = 'laf-red-polo'");
+check('refresh: every LAF product with one picture gets it stored again (11 of 12), the one with an extra picture is left alone', $ref['refreshed'] === 11 && $ref['skipped'] === ['LAF White Cap'] && $ref['problems'] === [], json_encode($ref));
+check('refresh: the picture is replaced (new file), still exactly one, and it is the cover', $newPath !== '' && $newPath !== $oldPath && (int) Database::value("SELECT COUNT(*) FROM shop_product_images i JOIN shop_products p ON p.id = i.product_id WHERE p.slug = 'laf-red-polo'", [], 0) === 1
+    && (int) Database::value("SELECT i.is_cover FROM shop_product_images i JOIN shop_products p ON p.id = i.product_id WHERE p.slug = 'laf-red-polo'", [], 0) === 1);
+check('refresh: the old picture file is deleted and the new one exists', !is_file(UPLOAD_PATH . '/' . $oldPath) && is_file(UPLOAD_PATH . '/' . $newPath));
+check('refresh: the product with extra pictures keeps both', (int) Database::value('SELECT COUNT(*) FROM shop_product_images WHERE product_id = ?', [$capId], 0) === 2);
+Database::execute("DELETE FROM shop_product_images WHERE path = 'zz-laf-extra.jpg'");
+$css = (string) file_get_contents(dirname(__DIR__) . '/assets/css/main.css');
+check('shop cards: a 4:5 frame with the picture fitted inside (whole product), not cropped', preg_match('/\.sh-card__media\s*\{[^}]*aspect-ratio:\s*4\s*\/\s*5/', $css) === 1 && preg_match('/\.sh-card__img\s*\{[^}]*object-fit:\s*contain/', $css) === 1);
 // the owner edits a price and renames a product: an import never undoes it
 Database::execute("UPDATE shop_products SET price = 99000, name = 'LAF Red Polo (club)' WHERE slug = 'laf-red-polo'");
 LafProducts::import();
@@ -110,6 +124,7 @@ Database::execute('DELETE FROM rate_limits');
 $pg = $req('GET', '/admin/login');
 $req('POST', '/admin/login', ['_token' => $tok($pg['body']), 'email' => 'zz-laf-admin@example.test', 'password' => 'Laf admin pass 55']);
 $ad = $req('GET', '/admin/shop/products');
+check('admin: the "Show the whole product in the LAF pictures" button is there', str_contains($ad['body'], 'refresh-laf-pictures'));
 check('admin: with every LAF product present no "Add" button; the sample button is there (the samples exist)', $ad['code'] === 200 && !str_contains($ad['body'], 'import-laf') && ($samplesBefore === 0 || str_contains($ad['body'], 'delete-samples')), (string) $ad['code']);
 foreach (Database::all("SELECT id FROM shop_products WHERE sku = 'LAF-CAP-WHITE'") as $cap) {          // the picture files go with the product, as the Delete button does it
     $capImages = ProductImages::forProduct((int) $cap['id']);

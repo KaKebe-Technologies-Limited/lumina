@@ -139,9 +139,9 @@ $groupBlock = static function (string $g, array $grp, int $maxValues) use ($valu
                             <div class="field">
                                 <label class="field__label" for="pf-crop">Shape in the shop</label>
                                 <select class="select" id="pf-crop" name="crop" data-pic-crop>
-                                    <option value="square">Square (best for the shop grid)</option>
+                                    <option value="none" selected>Keep the whole picture (best for clothes and tall items)</option>
                                     <option value="portrait">Portrait (4 to 5)</option>
-                                    <option value="none">Keep the original shape</option>
+                                    <option value="square">Square (crops the edges)</option>
                                 </select>
                             </div>
                             <?= partial('partials/form-field', ['name' => 'new_alt', 'label' => 'Describe new pictures (optional)', 'value' => '', 'maxlength' => 200, 'class' => 'field--full', 'help' => 'Leave empty to use the product name.', 'attrs' => ['data-pic-newalt' => true]]) ?>

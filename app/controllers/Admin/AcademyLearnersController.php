@@ -358,6 +358,20 @@ final class AcademyLearnersController extends AcademyAdminController
         return $this->redirect('admin/academy/learners');
     }
 
+    /** POST admin/academy/learners/{id}/mark-fee-paid: the money was checked (Daraza dashboard, cash...): the sign-up fee counts as paid. */
+    public function markFeePaid(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        if (\App\Services\Academy\AcademyFees::markPaidByAdmin('signup', $id)) {
+            $this->audit('academy.learner.fee_marked_paid', 'academy_learner', $id, 'Marked the sign-up fee of ' . $l['email'] . ' as paid');
+            Flash::success('The sign-up fee is marked as paid. You can approve the account now.');
+        } else {
+            Flash::info('This account has no unpaid sign-up fee.');
+        }
+        return $this->redirect('admin/academy/learners/' . $id);
+    }
+
     /** POST admin/academy/learners/{id}/waive-fee: the sign-up fee is not asked of this learner (they can then be approved and sign in). */
     public function waiveFee(Request $request, int $id): Response
     {

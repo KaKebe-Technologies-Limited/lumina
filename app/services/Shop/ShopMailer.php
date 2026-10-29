@@ -166,7 +166,10 @@ final class ShopMailer
         foreach ($info['details'] as $d) {
             $payLines[] = isset($d['number']) ? $d['label'] . ($d['name'] !== '' ? ' (' . $d['name'] . ')' : '') . ': ' . $d['number'] : $d['label'] . ': ' . $d['value'];
         }
-        if (in_array($order['payment_method'], ['momo', 'bank'], true)) {
+        if ($order['payment_method'] === 'daraza' && ($dz = \App\Services\Daraza::url('shop')) !== '') {
+            $payLines[] = \App\Services\Daraza::label() . ': ' . $dz;
+        }
+        if (in_array($order['payment_method'], ['momo', 'bank', 'daraza'], true)) {
             $payLines[] = ShopSettings::registryText('payment.reference_line') !== '' ? str_replace('{order_number}', (string) $order['order_number'], ShopSettings::registryText('payment.reference_line')) : (string) $order['order_number'];
         }
         return [

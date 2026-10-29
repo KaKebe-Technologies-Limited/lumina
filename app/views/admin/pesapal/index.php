@@ -80,8 +80,8 @@ PESAPAL_CONSUMER_SECRET=your secret from the Pesapal dashboard</pre>
                         <div class="field" style="margin:0"><label class="field__label" for="feec-<?= e($kind) ?>">Currency</label><select class="select" id="feec-<?= e($kind) ?>" name="<?= e($kind) ?>_currency"<?= $canFees ? '' : ' disabled' ?>>
                             <?php foreach ($feeCurrencies as $code): ?><option value="<?= e($code) ?>"<?= $f['currency'] === $code ? ' selected' : '' ?>><?= e($code) ?></option><?php endforeach; ?></select></div>
                         <div>
-                            <?php if ($f['on'] && $feesReady && $hasKeys): ?><span class="badge badge--success badge--dot">Charged: <?= e($f['display']) ?></span>
-                            <?php elseif ($f['on']): ?><span class="badge badge--warning badge--dot">Set, but not charged yet: <?= !$hasKeys ? 'the Pesapal keys are missing' : 'database update needed' ?></span>
+                            <?php if ($f['on'] && $feesReady && ($hasKeys || $f['daraza'])): ?><span class="badge badge--success badge--dot">Charged: <?= e($f['display']) ?><?= $hasKeys && $f['daraza'] ? ' (Pesapal + Daraza)' : ($f['daraza'] && !$hasKeys ? ' (Daraza)' : ' (Pesapal)') ?></span>
+                            <?php elseif ($f['on']): ?><span class="badge badge--warning badge--dot">Set, but not charged yet: <?= !$hasKeys ? 'the Pesapal keys are missing and Daraza is not switched on for it (Admin > Pay with Daraza)' : 'database update needed' ?></span>
                             <?php else: ?><span class="badge badge--neutral badge--dot">Free</span><?php endif; ?>
                         </div>
                     </div>

@@ -69,6 +69,20 @@ final class AcademyCertificatesController extends AcademyAdminController
             ->header('X-Robots-Tag', 'noindex');
     }
 
+    /** POST admin/academy/certificates/{id}/mark-fee-paid: the money was checked (Daraza dashboard...): the certificate fee counts as paid. */
+    public function markFeePaid(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $c = Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]) ?? throw new HttpException(404, 'Not found');
+        if (\App\Services\Academy\AcademyFees::markPaidByAdmin('cert', $id)) {
+            $this->audit('academy.certificate.fee_marked_paid', 'academy_certificate', $id, 'Marked the fee of certificate ' . $c['code'] . ' as paid');
+            Flash::success('The certificate fee is marked as paid. The certificate is available once it is approved (or at once if approval is not required).');
+        } else {
+            Flash::info('This certificate has no unpaid fee.');
+        }
+        return $this->backTo($request);
+    }
+
     /** Approve one waiting certificate; optionally e-mail it to the learner at once. */
     public function approve(Request $request, int $id): Response
     {

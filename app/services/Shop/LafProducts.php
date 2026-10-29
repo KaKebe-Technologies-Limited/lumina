@@ -120,7 +120,7 @@ final class LafProducts
                 continue;
             }
             try {
-                ProductImages::upload($id, ['name' => $p['file'], 'tmp_name' => $tmp, 'error' => UPLOAD_ERR_OK, 'size' => (int) filesize($tmp)], ['crop' => 'portrait', 'alt' => $p['name'], 'allow_nonupload' => true]);
+                ProductImages::upload($id, ['name' => $p['file'], 'tmp_name' => $tmp, 'error' => UPLOAD_ERR_OK, 'size' => (int) filesize($tmp)], ['crop' => 'none', 'alt' => $p['name'], 'allow_nonupload' => true]);
                 $out['pictures']++;
             } catch (\Throwable $e) {
                 $out['problems'][] = $p['name'] . ': ' . $e->getMessage();
@@ -129,6 +129,46 @@ final class LafProducts
             }
         }
         OrderService::flushCounts();
+        return $out;
+    }
+
+    /**
+     * Put the pictures of the LAF products back WHOLE: the first version of the import cropped the tall photos (a hood or a hem was cut off). For every LAF product
+     * that has exactly ONE picture (the imported one) the shipped photo is stored again without cropping and replaces it. A product that has more pictures (you added some)
+     * is left alone and reported.
+     * @return array{refreshed:int,skipped:list<string>,problems:list<string>}
+     */
+    public static function refreshPictures(): array
+    {
+        $out = ['refreshed' => 0, 'skipped' => [], 'problems' => []];
+        foreach (self::catalogue() as $p) {
+            $prod = Database::one('SELECT id, name FROM shop_products WHERE slug = ? OR sku = ?', [$p['slug'], $p['sku']]);
+            if ($prod === null) {
+                continue;
+            }
+            $id = (int) $prod['id'];
+            $old = ProductImages::forProduct($id);
+            if (count($old) !== 1) {
+                $out['skipped'][] = (string) $prod['name'];
+                continue;
+            }
+            $file = self::pictureDir() . '/' . $p['file'];
+            $tmp = tempnam(sys_get_temp_dir(), 'laf');
+            if (!is_file($file) || $tmp === false || !@copy($file, $tmp)) {
+                $out['problems'][] = $prod['name'] . ': the picture file is missing on the server (upload assets/img/shop/laf).';
+                continue;
+            }
+            try {
+                ProductImages::upload($id, ['name' => $p['file'], 'tmp_name' => $tmp, 'error' => UPLOAD_ERR_OK, 'size' => (int) filesize($tmp)], ['crop' => 'none', 'alt' => (string) $prod['name'], 'allow_nonupload' => true]);
+                ProductImages::remove((int) $old[0]['id']);
+                ProductImages::ensureCover($id);
+                $out['refreshed']++;
+            } catch (\Throwable $e) {
+                $out['problems'][] = $prod['name'] . ': ' . $e->getMessage();
+            } finally {
+                @unlink($tmp);
+            }
+        }
         return $out;
     }
 
