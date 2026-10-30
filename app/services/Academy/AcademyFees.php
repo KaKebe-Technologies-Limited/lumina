@@ -307,6 +307,27 @@ final class AcademyFees
     }
 
     /**
+     * Pesapal confirmed the sign-up fee: approve the account at once (Settings > LAF Academy can switch this off). Never for a rejected or switched-off account.
+     * @return bool true when the account was approved by this call
+     */
+    public static function autoApproveAfterPayment(int $learnerId): bool
+    {
+        if (!(bool) (int) \App\Core\Settings::get('academy_fee_auto_approve', '1')) {
+            return false;
+        }
+        $l = Database::one('SELECT * FROM academy_learners WHERE id = ?', [$learnerId]);
+        if ($l === null || (int) $l['is_active'] !== 1 || !empty($l['rejected_at']) || $l['email_verified_at'] !== null || self::signupDue($l)) {
+            return false;
+        }
+        if (!\App\Services\Academy\LearnerRegistry::approve($learnerId, null)) {
+            return false;
+        }
+        \App\Core\AuditLog::record('academy.learner.auto_approved', 'academy_learner', (string) $learnerId, 'Approved automatically after the sign-up fee was paid with Pesapal (' . $l['email'] . ')');
+        \App\Services\Academy\AcademyMail::approved($l);        // best effort
+        return true;
+    }
+
+    /**
      * Called by PesapalPayments when Pesapal confirms a certificate fee (once). The certificate becomes available straight away when administrator approval is not
      * required; otherwise it waits for the administrator, who now sees it as paid.
      */
@@ -320,8 +341,9 @@ final class AcademyFees
         if ($c === null) {
             return;
         }
-        if (!CertificateService::approvalRequired() && $c['approved_at'] === null) {
+        if ($c['approved_at'] === null && (!CertificateService::approvalRequired() || (bool) (int) \App\Core\Settings::get('academy_cert_auto_release', '1'))) {
             CertificateService::approve($certId, null, true);
+            \App\Core\AuditLog::record('academy.certificate.auto_released', 'academy_certificate', (string) $certId, 'Certificate ' . $c['code'] . ' released automatically after the fee was paid with Pesapal');
         } else {
             Mailer::notify('Academy certificate fee paid', 'The certificate fee was paid through Pesapal and the certificate now waits for your approval.' . "\n\nLearner: " . $c['learner_name'] . "\nCourse: "
                 . $c['course_title'] . "\nCertificate: " . $c['code'] . "\nReference: " . $reference . "\n\nApprove it: " . abs_url('admin/academy/certificates') . "\n", null);

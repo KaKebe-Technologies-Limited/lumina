@@ -24,7 +24,7 @@
                     <?php endif; ?>
                     <?php if ((!empty($feeManual) || !empty($feeDaraza)) && !empty($feeReportReady)): ?>
                         <?php if (!empty($feeReported)): ?>
-                            <p class="opp-notice" role="status"><?= icon('check-circle', 'icon--sm') ?> You reported a payment with the transaction ID <strong><?= e($feeReported['fee_reference']) ?></strong> on <?= e(format_datetime($feeReported['fee_reported_at'], 'j M, H:i')) ?>. The Academy team is checking it. Your account is approved only after the payment is confirmed.</p>
+                            <p class="opp-notice" role="status"><?= icon('check-circle', 'icon--sm') ?><span>You reported a payment with the transaction ID <strong><?= e($feeReported['fee_reference']) ?></strong> on <?= e(format_datetime($feeReported['fee_reported_at'], 'j M, H:i')) ?>. The Academy team is checking it. Your account is approved only after the payment is confirmed.</span></p>
                         <?php endif; ?>
                         <form method="post" action="<?= e(url('academy/fee/report')) ?>" enctype="multipart/form-data" class="ac-reportfee" novalidate>
                             <?= csrf_field() ?><?= honeypot_field() ?>

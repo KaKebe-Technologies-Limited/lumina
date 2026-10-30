@@ -160,7 +160,7 @@ $req = static function (string $method, string $path, array $form = []) use ($ba
 };
 $tok = static fn(string $html): string => preg_match('/name="_token" value="([^"]+)"/', $html, $m) === 1 ? $m[1] : '';
 $rg = $req('GET', '/academy/register');
-check('sign-up page: names the fee and how to pay it (Daraza here)', str_contains($rg['body'], 'sign-up fee of') && str_contains($rg['body'], 'Pay with Daraza') && str_contains($rg['body'], 'Create my account and pay the fee'));
+check('sign-up page: names the fee and how to pay it (Daraza here)', str_contains($rg['body'], 'Sign-up fee') && str_contains($rg['body'], 'Pay with Daraza') && str_contains($rg['body'], 'Create my account and pay the fee'));
 preg_match('/name="_hp_ts" value="([^"]+)"/', $rg['body'], $ts);
 sleep(6);
 $post = $req('POST', '/academy/register', ['_token' => $tok($rg['body']), '_hp_ts' => $ts[1] ?? '', 'name' => 'ZZ Dz Web', 'email' => 'zz-dz-web@example.test', 'password' => 'Daraza web pass 4321x', 'country' => 'Uganda', 'phone' => '+256 700000042', 'whatsapp' => '+256 700000042', 'agree' => '1']);

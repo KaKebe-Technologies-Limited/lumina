@@ -272,3 +272,14 @@ $cert-orange: #E0642C;
 .ac-cert-wait { border-left: 3px solid $gold; }
 
 .ac-welcome-back { margin: 0; border-radius: 0; text-align: center; display: flex; align-items: center; justify-content: center; gap: $space-3; flex-wrap: wrap; }
+
+// The sign-up fee box on the Academy sign-up page: amount, the ways to pay as a short list, one closing note.
+.ac-feebox {
+  display: flex; gap: $space-4; align-items: flex-start; align-self: stretch; width: 100%; box-sizing: border-box; margin: 0 0 $space-5; padding: $space-4 $space-5; border: 1px solid $border; border-left: 4px solid $gold; border-radius: $radius-card; background: $surface;
+  &__icon { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: $white; color: $navy; border: 1px solid $border; .icon { width: 1.25rem; height: 1.25rem; } }
+  &__body { flex: 1 1 auto; min-width: 0; p { margin: 0; } }
+  &__title { font-size: 1.05rem; font-weight: 700; color: $navy; strong { color: $gold-text; } }
+  &__text { margin-top: .35rem !important; font-size: .95rem; }
+  &__ways { margin: .4rem 0 .6rem; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: .4rem; li { padding: .25rem .7rem; border-radius: 999px; background: $white; border: 1px solid $border; font-size: .88rem; font-weight: 600; color: $navy; } }
+  &__note { font-size: .88rem; color: $ink-soft; }
+}

@@ -24768,6 +24768,87 @@ fieldset.ac-q legend + * {
   flex-wrap: wrap;
 }
 
+.ac-feebox {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  align-self: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.5rem;
+  border: 1px solid #E3DDD2;
+  border-left: 4px solid #D6A151;
+  border-radius: 24px;
+  background: #F7F3EC;
+}
+
+.ac-feebox__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: #2C3950;
+  border: 1px solid #E3DDD2;
+}
+
+.ac-feebox__icon .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.ac-feebox__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ac-feebox__body p {
+  margin: 0;
+}
+
+.ac-feebox__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #2C3950;
+}
+
+.ac-feebox__title strong {
+  color: #85560A;
+}
+
+.ac-feebox__text {
+  margin-top: .35rem !important;
+  font-size: .95rem;
+}
+
+.ac-feebox__ways {
+  margin: .4rem 0 .6rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.ac-feebox__ways li {
+  padding: .25rem .7rem;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1px solid #E3DDD2;
+  font-size: .88rem;
+  font-weight: 600;
+  color: #2C3950;
+}
+
+.ac-feebox__note {
+  font-size: .88rem;
+  color: #5A6470;
+}
+
 .bono {
   position: fixed;
   left: 1rem;

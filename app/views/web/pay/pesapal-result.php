@@ -13,7 +13,8 @@ $copy = [
 $purpose = (string) ($row['purpose'] ?? '');
 if ($purpose === 'academy_signup' || $purpose === 'academy_cert') {
     $what = $purpose === 'academy_signup' ? 'sign-up fee' : 'certificate fee';
-    $next = $purpose === 'academy_signup' ? 'Your account is now with the Academy team: sign in after it is approved (you do not need to pay again).' : 'Sign in to your learner portal to open your certificate.';
+    $approvedNow = $purpose === 'academy_signup' && $state === 'paid' && AppCoreDatabase::value('SELECT email_verified_at FROM academy_learners WHERE id = ?', [(int) ($row['ref_id'] ?? 0)]) !== null;
+    $next = $purpose === 'academy_signup' ? ($approvedNow ? 'Your account is approved: you can sign in to your learner portal now.' : 'Your account is now with the Academy team: sign in after it is approved (you do not need to pay again).') : 'Sign in to your learner portal to open your certificate.';
     $academy = [
         'paid'    => ['check-circle', 'Payment received', 'Thank you! Your ' . $what . ' was received. ' . $next],
         'pending' => ['clock', 'We are waiting for your payment', 'Pesapal has not confirmed the ' . $what . ' yet. If you have paid, it can take a few minutes: please do not pay again. You can sign in later to check.'],

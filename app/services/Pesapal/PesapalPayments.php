@@ -180,6 +180,7 @@ final class PesapalPayments
                 }
             } elseif ($row['purpose'] === 'academy_signup') {
                 \App\Services\Academy\AcademyFees::markSignupPaid((int) $row['ref_id'], (string) $row['merchant_reference']);
+                \App\Services\Academy\AcademyFees::autoApproveAfterPayment((int) $row['ref_id']);
             } elseif ($row['purpose'] === 'academy_cert') {
                 \App\Services\Academy\AcademyFees::markCertPaid((int) $row['ref_id'], (string) $row['merchant_reference']);
             } elseif ($row['purpose'] === 'shop') {

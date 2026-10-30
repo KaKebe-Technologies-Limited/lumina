@@ -90,7 +90,7 @@ $tok = static fn(string $html): string => preg_match('/name="_token" value="([^"
 $learner = $mk();
 $rg = $req($learner, 'GET', '/academy/register');
 preg_match('/name="_hp_ts" value="([^"]+)"/', $rg['body'], $ts);
-check('sign-up page: names the fee and the ways, including mobile money / bank, and says approval needs the payment', str_contains($rg['body'], 'sign-up fee of') && str_contains($rg['body'], 'mobile money / bank transfer') && str_contains($rg['body'], 'approved only after the payment is confirmed'));
+check('sign-up page: names the fee and the ways, including mobile money / bank, and says approval needs the payment', str_contains($rg['body'], 'Sign-up fee') && str_contains($rg['body'], 'Mobile money or bank transfer') && str_contains($rg['body'], 'approved only after the payment is confirmed'));
 sleep(6);
 $post = $req($learner, 'POST', '/academy/register', ['_token' => $tok($rg['body']), '_hp_ts' => $ts[1] ?? '', 'name' => 'ZZ Fe Payer', 'email' => 'zz-fe-payer@example.test', 'password' => 'Fee enforce pass 77x', 'country' => 'Uganda', 'phone' => '+256 700000051', 'whatsapp' => '+256 700000051', 'agree' => '1']);
 $lid = (int) Database::value("SELECT id FROM academy_learners WHERE email = 'zz-fe-payer@example.test'", [], 0);

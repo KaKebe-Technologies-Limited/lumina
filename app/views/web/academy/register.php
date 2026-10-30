@@ -46,7 +46,21 @@
                         <label class="check"><input type="checkbox" name="agree" value="1"<?= old('agree') ? ' checked' : '' ?> required><span><?= e(content('academy', 'auth.consent')) ?></span></label>
                         <?php if (error('agree')): ?><div class="field__error"><?= e((string) error('agree')) ?></div><?php endif; ?>
                     </div>
-                    <?php if ($acFee = \App\Services\Academy\AcademyFees::signup()): ?><p class="opp-notice" role="note"><?= icon('info', 'icon--sm') ?> A sign-up fee of <strong><?= e($acFee['display']) ?></strong> applies. After you press the button you pay it securely online (<?= \App\Services\Pesapal\PesapalPayments::ready() ? 'Pesapal: card or mobile money' . (\App\Services\Academy\AcademyFees::daraza('signup') ? ', or ' : '') : '' ?><?= \App\Services\Academy\AcademyFees::daraza('signup') ? e(\App\Services\Daraza::label()) : '' ?>)<?= \App\Services\Academy\AcademyFees::manual() ? ', or by mobile money / bank transfer' : '' ?>. Your account is approved only after the payment is confirmed.</p><?php endif; ?>
+                    <?php if ($acFee = \App\Services\Academy\AcademyFees::signup()): ?>
+                    <div class="ac-feebox" role="note">
+                        <span class="ac-feebox__icon" aria-hidden="true"><?= icon('credit-card') ?></span>
+                        <div class="ac-feebox__body">
+                            <p class="ac-feebox__title">Sign-up fee <strong><?= e($acFee['display']) ?></strong></p>
+                            <p class="ac-feebox__text">After you press the button, you pay the fee in one of these ways:</p>
+                            <ul class="ac-feebox__ways">
+                                <?php if (\App\Services\Pesapal\PesapalPayments::ready()): ?><li>Pesapal (card or mobile money)</li><?php endif; ?>
+                                <?php if (\App\Services\Academy\AcademyFees::daraza('signup')): ?><li><?= e(\App\Services\Daraza::label()) ?></li><?php endif; ?>
+                                <?php if (\App\Services\Academy\AcademyFees::manual()): ?><li>Mobile money or bank transfer</li><?php endif; ?>
+                            </ul>
+                            <p class="ac-feebox__note">Your account is approved only after the payment is confirmed.</p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                     <button class="btn btn--cta btn--caps btn--block" type="submit"><?= \App\Services\Academy\AcademyFees::signup() ? 'Create my account and pay the fee' : 'Create my account' ?></button>
                     <?php if (($sw = \App\Services\Academy\LearnerAuth::supportWhatsapp()) !== null): ?><p class="ac-form__alt">Quick inquiries about your approval? <a href="<?= e($sw['url']) ?>" rel="noopener" target="_blank">WhatsApp <?= e($sw['display']) ?></a></p><?php endif; ?>
                     <?= partial('partials/academy-wa-group', ['style' => 'line']) ?>

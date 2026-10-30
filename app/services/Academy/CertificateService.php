@@ -153,7 +153,7 @@ final class CertificateService
             return '';
         }
         $due = (int) Database::value("SELECT COUNT(*) FROM academy_certificates WHERE learner_id = ? AND fee_status = 'due' AND revoked_at IS NULL", [$lid], 0);
-        return $due > 0 ? 'Your certificate is held until the certificate fee of ' . $fee['display'] . ' is paid: open My portal > Certificates and press "Pay the certificate fee". ' : '';
+        return $due > 0 ? 'Your certificate is held until the certificate fee of ' . $fee['display'] . ' is paid: open My portal > Certificates and press "Pay the certificate fee"' . (AppServicesPesapalPesapalPayments::ready() && (bool) (int) setting('academy_cert_auto_release', '1') ? ' (with Pesapal the certificate is released to you the moment the payment is confirmed). ' : '. ') : '';
     }
 
     public static function waitingShort(): string

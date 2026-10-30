@@ -115,13 +115,24 @@ check('paying: Pesapal is asked for the fee amount, the description names the fe
 $answer((string) $prow['order_tracking_id'], (string) $prow['merchant_reference'], 20000);
 $s = PesapalPayments::settle((string) $prow['order_tracking_id']);
 $row = (array) Database::one('SELECT fee_status, fee_paid_at, email_verified_at FROM academy_learners WHERE id = ?', [$lid]);
-check('Pesapal confirms: the fee is paid, the account now waits for the normal approval', $s['state'] === 'paid' && $row['fee_status'] === 'paid' && $row['fee_paid_at'] !== null && $row['email_verified_at'] === null);
+check('Pesapal confirms: the fee is paid and the account is APPROVED automatically', $s['state'] === 'paid' && $row['fee_status'] === 'paid' && $row['fee_paid_at'] !== null && $row['email_verified_at'] !== null);
 $again = PesapalPayments::settle((string) $prow['order_tracking_id']);
 check('a repeated notification changes nothing', $again['state'] === 'paid' && Database::value('SELECT fee_paid_at FROM academy_learners WHERE id = ?', [$lid]) === $row['fee_paid_at']);
 $login = LearnerAuth::login('zz-fee-one@example.test', $pw, '10.9.9.1');
-check('after paying, the account behaves like any other (waiting for approval)', $login['ok'] === false && empty($login['fee_due']) && !empty($login['unverified']));
-check('now the administrator can approve it', LearnerRegistry::approve($lid, null) === true);
+check('after paying, the learner can sign in straight away', $login['ok'] === true);
+check('the automatic approval is written to the audit log', (int) Database::value("SELECT COUNT(*) FROM audit_log WHERE action = 'academy.learner.auto_approved' AND entity_id = ?", [(string) $lid], 0) === 1);
 check('a second payment attempt for a paid fee is refused', AcademyFees::beginSignup($lid)['error'] === 'not_due');
+
+// with the switch off, Pesapal payment only marks the fee paid: the normal approval follows
+Settings::set('academy_fee_auto_approve', '0');
+$reg4 = LearnerAuth::register(['name' => 'ZZ Fee Four', 'email' => 'zz-fee-four@example.test', 'password' => $pw, 'phone' => '+256700000014', 'country' => 'Uganda', 'whatsapp' => '+256700000014'], '10.9.9.4');
+$l4 = (int) $reg4['learner']['id'];
+AcademyFees::beginSignup($l4);
+$p4 = (array) Database::one("SELECT * FROM pesapal_payments WHERE purpose = 'academy_signup' AND ref_id = ? ORDER BY id DESC LIMIT 1", [$l4]);
+$answer((string) $p4['order_tracking_id'], (string) $p4['merchant_reference'], 20000);
+PesapalPayments::settle((string) $p4['order_tracking_id']);
+check('switch off: the fee is paid but the account still waits for the administrator', Database::value('SELECT fee_status FROM academy_learners WHERE id = ?', [$l4]) === 'paid' && Database::value('SELECT email_verified_at FROM academy_learners WHERE id = ?', [$l4]) === null && LearnerRegistry::approve($l4, null) === true);
+Settings::reset('academy_fee_auto_approve');
 
 // a short payment is never accepted
 $reg2 = LearnerAuth::register(['name' => 'ZZ Fee Two', 'email' => 'zz-fee-two@example.test', 'password' => $pw, 'phone' => '+256700000012', 'country' => 'Uganda', 'whatsapp' => '+256700000012'], '10.9.9.2');
@@ -146,6 +157,7 @@ if ($course === null) {
     $learner = (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$lid]);
     $learner['name'] = 'ZZ Fee One';
     Settings::set('academy_cert_approval', '1');
+    Settings::set('academy_cert_auto_release', '0');
     $cert = CertificateService::issue($learner, (array) $course, 80.0, 60);
     check('exam certificate with a fee: issued with the fee DUE and not available', $cert['fee_status'] === 'due' && $cert['approved_at'] === null && CertificateService::activeFor($lid, (int) $course['id']) === null);
     check('it shows in the waiting list of the learner', count(CertificateService::pendingForLearner($lid)) === 1);
@@ -157,11 +169,22 @@ if ($course === null) {
     $answer((string) $cp['order_tracking_id'], (string) $cp['merchant_reference'], 15000);
     $s = PesapalPayments::settle((string) $cp['order_tracking_id']);
     $after = (array) Database::one('SELECT fee_status, approved_at FROM academy_certificates WHERE id = ?', [(int) $cert['id']]);
-    check('paid, and approval is required: the fee is paid and the certificate waits for the administrator', $s['state'] === 'paid' && $after['fee_status'] === 'paid' && $after['approved_at'] === null);
+    check('paid, approval required and the automatic release switched off: the certificate waits for the administrator', $s['state'] === 'paid' && $after['fee_status'] === 'paid' && $after['approved_at'] === null);
     check('the administrator approves it now and the learner can use it', CertificateService::approve((int) $cert['id'], null, false)['ok'] === true && CertificateService::activeFor($lid, (int) $course['id']) !== null);
 
-    // approval not required: payment makes it available at once
+    // approval required but the automatic release is on (the default): the confirmed payment releases the certificate at once
     Database::execute('DELETE FROM academy_certificates WHERE id = ?', [(int) $cert['id']]);
+    Settings::reset('academy_cert_auto_release');
+    $certA = CertificateService::issue($learner, (array) $course, 85.0, 60);
+    AcademyFees::beginCert((int) $certA['id'], $lid);
+    $cpA = (array) Database::one("SELECT * FROM pesapal_payments WHERE purpose = 'academy_cert' AND ref_id = ? ORDER BY id DESC LIMIT 1", [(int) $certA['id']]);
+    $answer((string) $cpA['order_tracking_id'], (string) $cpA['merchant_reference'], 15000);
+    PesapalPayments::settle((string) $cpA['order_tracking_id']);
+    check('approval required, release on: paying the fee releases the certificate to the learner immediately', CertificateService::activeFor($lid, (int) $course['id']) !== null && Database::value('SELECT approved_at FROM academy_certificates WHERE id = ?', [(int) $certA['id']]) !== null);
+    check('the automatic release is written to the audit log', (int) Database::value("SELECT COUNT(*) FROM audit_log WHERE action = 'academy.certificate.auto_released' AND entity_id = ?", [(string) $certA['id']], 0) === 1);
+
+    // approval not required: payment makes it available at once
+    Database::execute('DELETE FROM academy_certificates WHERE id = ?', [(int) $certA['id']]);
     Settings::set('academy_cert_approval', '0');
     $cert2 = CertificateService::issue($learner, (array) $course, 90.0, 60);
     AcademyFees::beginCert((int) $cert2['id'], $lid);
