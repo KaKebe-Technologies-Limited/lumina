@@ -95,6 +95,9 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/learners-send-confirmations', [AcademyLearnersController::class, 'sendConfirmations'])->middleware('throttle:10,60')->name('admin.academy.learners.send_confirmations');
     $router->get('/learners/{id}/fee-proof', [AcademyLearnersController::class, 'feeProof'])->middleware('throttle:60,60')->name('admin.academy.learners.fee_proof');
     $router->post('/learners/{id}/mark-fee-paid', [AcademyLearnersController::class, 'markFeePaid'])->middleware('throttle:60,60')->name('admin.academy.learners.mark_fee_paid');
+    $router->post('/learners/{id}/remind-fee', [AcademyLearnersController::class, 'remindFee'])->middleware('throttle:60,60')->name('admin.academy.learners.remind_fee');
+    $router->post('/learners-remind-fee-all', [AcademyLearnersController::class, 'remindFeeAll'])->middleware('throttle:5,60')->name('admin.academy.learners.remind_fee_all');
+    $router->get('/learners-fee-reminders', [AcademyLearnersController::class, 'feeReminders'])->middleware('throttle:60,60')->name('admin.academy.learners.fee_reminders');
     $router->post('/learners/{id}/waive-fee', [AcademyLearnersController::class, 'waiveFee'])->middleware('throttle:60,60')->name('admin.academy.learners.waive_fee');
     $router->post('/learners-phone-codes', [AcademyLearnersController::class, 'phoneCodes'])->middleware('throttle:10,60')->name('admin.academy.learners.phone_codes');
     $router->post('/learners-confirm-all', [AcademyLearnersController::class, 'confirmAll'])->middleware('throttle:5,60')->name('admin.academy.learners.confirm_all');

@@ -220,6 +220,63 @@ final class AcademyFees
         }
     }
 
+    /** Learners whose sign-up fee is still due (active accounts only), oldest first. @return list<array<string,mixed>> */
+    public static function unpaidLearners(): array
+    {
+        if (!self::ready()) {
+            return [];
+        }
+        return Database::all("SELECT id, name, email, phone, country, whatsapp, reg_no, fee_status FROM academy_learners WHERE fee_status = 'due' AND is_active = 1 ORDER BY id");
+    }
+
+    /** The reminder the Academy team sends about an unpaid sign-up fee (the same words in the portal message, the e-mail and WhatsApp). @param array<string,mixed> $learner */
+    public static function reminderText(array $learner): string
+    {
+        $fee = self::configured('signup');
+        $first = trim((string) strtok(trim((string) $learner['name']), ' ')) ?: 'there';
+        $text = 'Hello ' . $first . ', this is the LAF Academy team. Your sign-up fee' . ($fee !== null ? ' of ' . $fee['display'] : '') . ' is not paid yet, so your account cannot be approved. ';
+        $ways = [];
+        $m = self::manual();
+        if ($m !== null) {
+            $ways[] = trim(($m['mobile'] !== '' ? 'mobile money: ' . preg_replace('/\s*\R\s*/', ', ', $m['mobile']) : '') . ($m['bank'] !== '' ? ($m['mobile'] !== '' ? '; ' : '') . 'bank: ' . preg_replace('/\s*\R\s*/', ', ', $m['bank']) : ''));
+        }
+        if (\App\Services\Pesapal\PesapalPayments::ready() || \App\Services\Daraza::enabled('signup')) {
+            $ways[] = 'online on the waiting page';
+        }
+        if ($ways !== []) {
+            $text .= 'You can pay by ' . implode(', or ', $ways) . '. ';
+        }
+        $text .= 'After paying, sign in at ' . abs_url('academy/login') . ' and use "I have paid" to send us the transaction ID. We approve your account as soon as the payment is confirmed.';
+        return $text;
+    }
+
+    /** A click-to-chat WhatsApp link with the reminder already typed, or null when the learner has no usable number. @param array<string,mixed> $learner */
+    public static function reminderWhatsAppUrl(array $learner): ?string
+    {
+        $n = (string) preg_replace('/\D+/', '', (string) ($learner['whatsapp'] ?? ''));
+        if ($n === '') {
+            $n = (string) \App\Services\Academy\WhatsAppSender::normalise((string) ($learner['phone'] ?? ''));
+        }
+        return strlen($n) >= 8 ? 'https://wa.me/' . $n . '?text=' . rawurlencode(self::reminderText($learner)) : null;
+    }
+
+    /** Send the reminder into the learner's portal messages (and e-mail it when asked). @return bool false when it could not be sent */
+    public static function remind(int $learnerId, ?int $adminId, bool $email): bool
+    {
+        $l = Database::one("SELECT id, name, email, phone, whatsapp, fee_status FROM academy_learners WHERE id = ?", [$learnerId]);
+        if ($l === null || !self::signupDue($l) || !self::ready()) {
+            return false;
+        }
+        $text = self::reminderText($l);
+        if (!\App\Services\Academy\LearnerMessages::send($learnerId, 'admin', $text, $adminId)['ok']) {
+            return false;
+        }
+        if ($email) {
+            \App\Services\Academy\AcademyMail::teamMessage($l, $text);
+        }
+        return true;
+    }
+
     /** An administrator checked the money (Daraza dashboard, cash, ...) and marks the fee as paid. @return bool false when the fee was not due */
     public static function markPaidByAdmin(string $kind, int $id): bool
     {

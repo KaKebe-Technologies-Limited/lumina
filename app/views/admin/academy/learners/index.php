@@ -18,6 +18,16 @@ if ($manager) {
         </div>
     </div>
 <?php endif; ?>
+<?php $unpaidN = $manager ? count(\App\Services\Academy\AcademyFees::unpaidLearners()) : 0; ?>
+<?php if ($unpaidN > 0): ?>
+    <div class="alert alert--warning" role="status">
+        <strong><?= $unpaidN ?> learner<?= $unpaidN === 1 ? ' has' : 's have' ?> not paid the sign-up fee.</strong> Send them a payment reminder as a message in the learner portal (and by e-mail if you tick it), or open WhatsApp for each one.
+        <div class="aac-actions">
+            <form method="post" action="<?= e(url('admin/academy/learners-remind-fee-all')) ?>" class="inline-form" data-confirm="Send the payment reminder to all <?= $unpaidN ?> learners who have not paid?"><?= csrf_field() ?><label class="text-muted" style="font-size:.85rem"><input type="checkbox" name="email" value="1"> also e-mail</label> <button class="btn btn--primary btn--sm" type="submit"><?= icon('bell', 'icon--sm') ?> Remind all <?= $unpaidN ?>: message</button></form>
+            <a class="btn btn--outline btn--sm" href="<?= e(url('admin/academy/learners-fee-reminders')) ?>"><?= icon('whatsapp', 'icon--sm') ?> Remind on WhatsApp</a>
+        </div>
+    </div>
+<?php endif; ?>
 <?php if ($manager): ?>
     <details class="card" style="margin-bottom:1rem"><summary class="card__body" style="cursor:pointer"><strong>Phone country codes of older accounts</strong></summary>
         <div class="card__body">

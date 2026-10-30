@@ -389,6 +389,47 @@ final class AcademyLearnersController extends AcademyAdminController
         return $this->redirect('admin/academy/learners/' . $id);
     }
 
+    /** POST admin/academy/learners/{id}/remind-fee: the payment reminder goes into the learner's messages (and by e-mail when ticked). WhatsApp is a link: see the learner page. */
+    public function remindFee(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        if (\App\Services\Academy\AcademyFees::remind($id, Auth::id(), $request->bool('email'))) {
+            $this->audit('academy.learner.fee_reminder', 'academy_learner', $id, 'Sent a sign-up fee reminder to ' . $l['email']);
+            Flash::success('The payment reminder was sent to ' . $l['name'] . '. They see it in their messages' . ($request->bool('email') ? ' and by e-mail.' : '.'));
+        } else {
+            Flash::info('Nothing was sent: this account has no unpaid sign-up fee.');
+        }
+        return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
+    }
+
+    /** POST admin/academy/learners-remind-fee-all: the same reminder to every learner whose sign-up fee is still unpaid. */
+    public function remindFeeAll(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $sent = 0;
+        foreach (\App\Services\Academy\AcademyFees::unpaidLearners() as $row) {
+            if (\App\Services\Academy\AcademyFees::remind((int) $row['id'], Auth::id(), $request->bool('email'))) {
+                $sent++;
+            }
+        }
+        $this->audit('academy.learner.fee_reminder_all', 'academy_learner', null, 'Sent the sign-up fee reminder to every learner who has not paid', ['count' => $sent]);
+        Flash::success($sent === 0 ? 'Nobody has an unpaid sign-up fee, so nothing was sent.' : 'The payment reminder was sent to ' . $sent . ' learner' . ($sent === 1 ? '' : 's') . '.');
+        return $this->redirect('admin/academy/learners');
+    }
+
+    /** GET admin/academy/learners-fee-reminders: one WhatsApp button per learner who has not paid (opens WhatsApp with the reminder typed). */
+    public function feeReminders(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $rows = [];
+        foreach (\App\Services\Academy\AcademyFees::unpaidLearners() as $row) {
+            $row['wa'] = \App\Services\Academy\AcademyFees::reminderWhatsAppUrl($row);
+            $rows[] = $row;
+        }
+        return $this->render('admin/academy/learners/fee-reminders', ['rows' => $rows]);
+    }
+
     /** POST admin/academy/learners/{id}/waive-fee: the sign-up fee is not asked of this learner (they can then be approved and sign in). */
     public function waiveFee(Request $request, int $id): Response
     {
