@@ -1,0 +1,15 @@
+// Admin > Visitors (app/views/admin/visitors/index.php)
+.vis-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-3; margin-bottom: $space-3; @include respond(lg) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.vis-card { margin: 0; .card__body { display: grid; gap: $space-1; } }
+.vis-card__n { font-size: 1.9rem; font-weight: 700; line-height: 1.1; color: $navy; }
+.vis-card__l { color: $ink-soft; font-size: $fs-sm; small { font-weight: 400; } }
+.vis-grid { display: grid; gap: $space-3; margin-top: $space-3; align-items: start; @media (min-width: 1500px) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .card { margin: 0; } }
+.vis-days { display: flex; align-items: flex-end; gap: 3px; height: 9rem; padding-top: $space-2; }
+.vis-days__bar { flex: 1 1 0; min-width: 2px; border-radius: 3px 3px 0 0; background: $gold; &:hover { background: $navy; } }
+.vis-table { td, th { vertical-align: middle; } td a { overflow-wrap: anywhere; } tr.is-active td { background: $surface; font-weight: 700; } }
+.vis-num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.vis-bar { display: block; height: .35rem; margin-top: .3rem; border-radius: $radius-pill; background: $border; overflow: hidden; span { display: block; height: 100%; background: $gold; } }
+.vis-dev { display: grid; grid-template-columns: 5.5rem 1fr 3rem; align-items: center; gap: $space-2; margin: 0 0 $space-2; .vis-bar { margin: 0; } strong { text-align: right; } }
+.vis-sub { margin: $space-4 0 $space-2; font-size: $fs-md; }
+.vis-list { list-style: none; margin: 0; padding: 0; li { display: flex; justify-content: space-between; gap: $space-3; padding: .35rem 0; border-bottom: 1px solid $border; } }
+.vis-note { margin-top: $space-3; font-size: $fs-sm; }

@@ -23489,6 +23489,122 @@ body.admin.fs-printpage .fs-stars__off {
   margin: 0;
 }
 
+.btn--whatsapp {
+  background: #128C7E;
+  border-color: #128C7E;
+  color: #fff;
+}
+
+.btn--whatsapp:hover, .btn--whatsapp:focus-visible {
+  background: #0b6b5f;
+  border-color: #0b6b5f;
+  color: #fff;
+}
+
+.btn--whatsapp:disabled {
+  opacity: .65;
+  cursor: default;
+}
+
+.aac-wa {
+  margin-bottom: 0.75rem;
+}
+
+.aac-wa__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+
+.aac-wa__head > div {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.aac-wa__head p {
+  margin: 0.25rem 0 0;
+}
+
+.aac-wa__bar {
+  height: .5rem;
+  margin-top: 0.75rem;
+  border-radius: 999px;
+  background: #E3DDD2;
+  overflow: hidden;
+}
+
+.aac-wa__bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #128C7E;
+  transition: width .3s ease;
+}
+
+.aac-wa__note {
+  margin: 0.5rem 0 0;
+  font-size: 0.9375rem;
+}
+
+.aac-wa__sent {
+  margin-left: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #1E7B45;
+}
+
+.aac-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+
+.aac-note__text {
+  flex: 1 1 22rem;
+  min-width: 0;
+}
+
+.aac-note__text p {
+  margin: 0.25rem 0 0;
+}
+
+.aac-note__text em {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.aac-note__title {
+  display: block;
+}
+
+.aac-note .aac-actions {
+  margin-top: 0;
+  flex: 0 1 auto;
+  justify-content: flex-end;
+}
+
+.aac-remind {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0;
+}
+
+.aac-remind__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .aac-actions {
   display: flex;
   flex-wrap: wrap;
@@ -23716,4 +23832,152 @@ tr.is-unread td {
 
 .aac-reject form {
   margin-top: 0.75rem;
+}
+
+.vis-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 992px) {
+  .vis-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.vis-card {
+  margin: 0;
+}
+
+.vis-card .card__body {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.vis-card__n {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #2C3950;
+}
+
+.vis-card__l {
+  color: #5A6470;
+  font-size: 0.9375rem;
+}
+
+.vis-card__l small {
+  font-weight: 400;
+}
+
+.vis-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  align-items: start;
+}
+
+@media (min-width: 1500px) {
+  .vis-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.vis-grid .card {
+  margin: 0;
+}
+
+.vis-days {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 9rem;
+  padding-top: 0.5rem;
+}
+
+.vis-days__bar {
+  flex: 1 1 0;
+  min-width: 2px;
+  border-radius: 3px 3px 0 0;
+  background: #D6A151;
+}
+
+.vis-days__bar:hover {
+  background: #2C3950;
+}
+
+.vis-table td, .vis-table th {
+  vertical-align: middle;
+}
+
+.vis-table td a {
+  overflow-wrap: anywhere;
+}
+
+.vis-table tr.is-active td {
+  background: #F7F3EC;
+  font-weight: 700;
+}
+
+.vis-num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.vis-bar {
+  display: block;
+  height: .35rem;
+  margin-top: .3rem;
+  border-radius: 999px;
+  background: #E3DDD2;
+  overflow: hidden;
+}
+
+.vis-bar span {
+  display: block;
+  height: 100%;
+  background: #D6A151;
+}
+
+.vis-dev {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.vis-dev .vis-bar {
+  margin: 0;
+}
+
+.vis-dev strong {
+  text-align: right;
+}
+
+.vis-sub {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.1875rem;
+}
+
+.vis-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vis-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: .35rem 0;
+  border-bottom: 1px solid #E3DDD2;
+}
+
+.vis-note {
+  margin-top: 0.75rem;
+  font-size: 0.9375rem;
 }

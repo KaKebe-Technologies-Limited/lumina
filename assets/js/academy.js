@@ -65,6 +65,156 @@
   if (print) print.addEventListener('click', function () { window.print(); });
 })();
 
+/* LAF Academy lessons: interactive extras added to the lesson text in the browser (the text itself stays plain HTML, so it reads fine without JavaScript).
+   - A blockquote that starts with "Quick check:" becomes a click-to-reveal question card (reveal the answer, then say "I knew it" or "Review this").
+   - The numbered list under the "Try it yourself" heading becomes a tick-off checklist.
+   - A small tracker shows how many checks and practice steps are done; ticks are remembered on this device only (localStorage). */
+(function () {
+  'use strict';
+  var prose = document.querySelector('.ac-prose');
+  if (!prose) return;
+  var key = 'laf-lesson:' + location.pathname;
+  var saved = {};
+  try { saved = JSON.parse(window.localStorage.getItem(key) || '{}') || {}; } catch (e) { saved = {}; }
+  var store = function () { try { window.localStorage.setItem(key, JSON.stringify(saved)); } catch (e) { /* private mode: ticks last only for this visit */ } };
+  var el = function (tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; };
+
+  var checks = [];
+  var steps = [];
+
+  Array.prototype.forEach.call(prose.querySelectorAll('blockquote'), function (bq, i) {
+    var ps = bq.querySelectorAll('p');
+    var head = ps[0] ? ps[0].querySelector('strong') : null;
+    if (!head || !/^quick check/i.test(head.textContent.trim()) || ps.length < 2) return;
+    var id = 'q' + i;
+    var answer = [];
+    for (var k = 1; k < ps.length; k++) answer.push(ps[k]);
+    var box = el('div', 'ac-qc');
+    box.setAttribute('role', 'group');
+    var q = ps[0].cloneNode(true);
+    q.className = 'ac-qc__q';
+    var panel = el('div', 'ac-qc__a');
+    panel.hidden = true;
+    answer.forEach(function (p) { panel.appendChild(p.cloneNode(true)); });
+    var bar = el('div', 'ac-qc__bar');
+    var show = el('button', 'btn btn--outline btn--sm', 'Think, then show the answer');
+    show.type = 'button';
+    show.setAttribute('aria-expanded', 'false');
+    var knew = el('button', 'btn btn--ghost btn--sm', 'I knew it');
+    var again = el('button', 'btn btn--ghost btn--sm', 'Review this');
+    knew.type = again.type = 'button';
+    var mark = el('span', 'ac-qc__mark');
+    var verdict = function (v) {
+      saved[id] = v;
+      store();
+      box.classList.toggle('is-known', v === 'knew');
+      box.classList.toggle('is-review', v === 'review');
+      mark.textContent = v === 'knew' ? 'Got it' : 'To review';
+      count();
+    };
+    show.addEventListener('click', function () {
+      var open = panel.hidden;
+      panel.hidden = !open;
+      show.setAttribute('aria-expanded', open ? 'true' : 'false');
+      show.textContent = open ? 'Hide the answer' : 'Think, then show the answer';
+      bar.classList.toggle('is-open', open);
+      if (open && !saved[id]) { saved[id] = 'seen'; store(); count(); }
+    });
+    knew.addEventListener('click', function () { verdict('knew'); });
+    again.addEventListener('click', function () { verdict('review'); });
+    bar.appendChild(show);
+    bar.appendChild(knew);
+    bar.appendChild(again);
+    bar.appendChild(mark);
+    box.appendChild(el('span', 'ac-qc__tag', 'Quick check'));
+    box.appendChild(q);
+    box.appendChild(bar);
+    box.appendChild(panel);
+    bq.parentNode.replaceChild(box, bq);
+    if (saved[id] === 'knew' || saved[id] === 'review') verdict(saved[id]);
+    checks.push(id);
+  });
+
+  Array.prototype.forEach.call(prose.querySelectorAll('h3'), function (h) {
+    if (!/^try it yourself/i.test(h.textContent.trim())) return;
+    var list = h.nextElementSibling;
+    if (!list || list.tagName !== 'OL') return;
+    list.classList.add('ac-steps');
+    Array.prototype.forEach.call(list.children, function (li, n) {
+      var id = 's' + n;
+      var cb = el('input');
+      cb.type = 'checkbox';
+      cb.className = 'ac-steps__box';
+      cb.setAttribute('aria-label', 'Step ' + (n + 1) + ' done');
+      cb.checked = saved[id] === 1;
+      li.classList.toggle('is-done', cb.checked);
+      cb.addEventListener('change', function () {
+        saved[id] = cb.checked ? 1 : 0;
+        li.classList.toggle('is-done', cb.checked);
+        store();
+        count();
+      });
+      li.insertBefore(cb, li.firstChild);
+      steps.push(id);
+    });
+  });
+
+  if (!checks.length && !steps.length) return;
+  var tracker = el('div', 'ac-track');
+  tracker.setAttribute('role', 'status');
+  tracker.setAttribute('aria-live', 'polite');
+  var fill = el('span', 'ac-track__fill');
+  var label = el('span', 'ac-track__label');
+  var barOuter = el('span', 'ac-track__bar');
+  barOuter.appendChild(fill);
+  tracker.appendChild(label);
+  tracker.appendChild(barOuter);
+  prose.insertBefore(tracker, prose.firstChild);
+
+  function count() {
+    var c = checks.filter(function (id) { return saved[id] === 'knew' || saved[id] === 'review' || saved[id] === 'seen'; }).length;
+    var s = steps.filter(function (id) { return saved[id] === 1; }).length;
+    var total = checks.length + steps.length;
+    var pct = total ? Math.round((c + s) * 100 / total) : 0;
+    var parts = [];
+    if (checks.length) parts.push(c + ' of ' + checks.length + ' quick checks');
+    if (steps.length) parts.push(s + ' of ' + steps.length + ' practice steps');
+    label.textContent = 'Your activity: ' + parts.join(', ') + (pct === 100 ? ' - well done!' : '');
+    fill.style.width = pct + '%';
+    tracker.classList.toggle('is-complete', pct === 100);
+  }
+  count();
+})();
+
+/* LAF Academy virtual classes: a live countdown on every upcoming class ("Starts in 2 days 3 h", "Starting soon", "Live now - join"), refreshed every 30 seconds. */
+(function () {
+  'use strict';
+  var items = document.querySelectorAll('[data-ac-live]');
+  if (!items.length) return;
+  var plural = function (n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); };
+  var tick = function () {
+    var now = Math.floor(Date.now() / 1000);
+    Array.prototype.forEach.call(items, function (li) {
+      var out = li.querySelector('[data-ac-count]');
+      if (!out) return;
+      var start = parseInt(li.getAttribute('data-start'), 10);
+      var end = parseInt(li.getAttribute('data-end'), 10);
+      var left = start - now;
+      var text = '';
+      var state = '';
+      if (now >= end) { text = 'This class has ended.'; state = 'ended'; }
+      else if (now >= start) { text = 'Live now: join the class'; state = 'live'; }
+      else if (left <= 900) { text = 'Starting in ' + plural(Math.max(1, Math.ceil(left / 60)), 'minute'); state = 'soon'; }
+      else if (left < 86400) { text = 'Starts in ' + plural(Math.floor(left / 3600), 'hour') + ' ' + plural(Math.floor((left % 3600) / 60), 'minute'); state = 'today'; }
+      else { text = 'Starts in ' + plural(Math.floor(left / 86400), 'day') + ' ' + plural(Math.floor((left % 86400) / 3600), 'hour'); state = 'later'; }
+      out.textContent = text;
+      out.setAttribute('data-state', state);
+    });
+  };
+  tick();
+  window.setInterval(tick, 30000);
+})();
+
 /* LAF Academy sign-up: show the chosen picture, or take a selfie with the camera (the picture is saved with the account, private). */
 (function () {
   'use strict';

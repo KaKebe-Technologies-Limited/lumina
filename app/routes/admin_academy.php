@@ -97,6 +97,7 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/learners/{id}/mark-fee-paid', [AcademyLearnersController::class, 'markFeePaid'])->middleware('throttle:60,60')->name('admin.academy.learners.mark_fee_paid');
     $router->post('/learners/{id}/remind-fee', [AcademyLearnersController::class, 'remindFee'])->middleware('throttle:60,60')->name('admin.academy.learners.remind_fee');
     $router->post('/learners-remind-fee-all', [AcademyLearnersController::class, 'remindFeeAll'])->middleware('throttle:5,60')->name('admin.academy.learners.remind_fee_all');
+    $router->post('/learners-remind-fee-whatsapp-all', [AcademyLearnersController::class, 'remindFeeWhatsAppAll'])->middleware('throttle:5,60')->name('admin.academy.learners.remind_fee_whatsapp_all');
     $router->get('/learners-fee-reminders', [AcademyLearnersController::class, 'feeReminders'])->middleware('throttle:60,60')->name('admin.academy.learners.fee_reminders');
     $router->post('/learners/{id}/waive-fee', [AcademyLearnersController::class, 'waiveFee'])->middleware('throttle:60,60')->name('admin.academy.learners.waive_fee');
     $router->post('/learners-phone-codes', [AcademyLearnersController::class, 'phoneCodes'])->middleware('throttle:10,60')->name('admin.academy.learners.phone_codes');
@@ -115,6 +116,9 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/certificates/{id}/email', [AcademyCertificatesController::class, 'email'])->middleware('throttle:60,60')->name('admin.academy.certificates.email');
     $router->post('/certificates/{id}/mark-fee-paid', [AcademyCertificatesController::class, 'markFeePaid'])->middleware('throttle:60,60')->name('admin.academy.certificates.mark_fee_paid');
     $router->post('/certificates-approve-all', [AcademyCertificatesController::class, 'approveAll'])->middleware('throttle:10,60')->name('admin.academy.certificates.approve_all');
+    $router->post('/certificates-remind-fee-all', [AcademyCertificatesController::class, 'remindFeeAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.remind_fee_all');
+    $router->post('/certificates-remind-fee-whatsapp-all', [AcademyCertificatesController::class, 'remindFeeWhatsAppAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.remind_fee_whatsapp_all');
+    $router->get('/certificates-fee-reminders', [AcademyCertificatesController::class, 'feeReminders'])->middleware('throttle:60,60')->name('admin.academy.certificates.fee_reminders');
     $router->post('/certificates-hold-all', [AcademyCertificatesController::class, 'holdAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.hold_all');
     $router->post('/certificates-withdraw-all', [AcademyCertificatesController::class, 'withdrawAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.withdraw_all');
     $router->post('/certificates/{id}/revoke', [AcademyCertificatesController::class, 'revoke'])->name('admin.academy.certificates.revoke');

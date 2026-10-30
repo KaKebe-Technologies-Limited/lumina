@@ -19,6 +19,7 @@ use App\Controllers\Admin\PagesController;
 use App\Controllers\Admin\ProfileController;
 use App\Controllers\Admin\SettingsController;
 use App\Controllers\Admin\StatsController;
+use App\Controllers\Admin\VisitorsController;
 use App\Controllers\Admin\UsersController;
 
 // Registry page slugs are file names (app/config/pages/<slug>.php) and may contain underscores (e.g. site_errors);
@@ -80,6 +81,10 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
         $router->post('/maintenance/toggle', [MaintenanceController::class, 'toggle'])->middleware('can:settings.manage');
         $router->post('/maintenance/save', [MaintenanceController::class, 'save'])->middleware('can:settings.manage');
         $router->get('/maintenance/preview', [MaintenanceController::class, 'preview'])->middleware('can:settings.manage');
+
+        // visitors report (who opens the public website)
+        $router->get('/visitors', [VisitorsController::class, 'index'])->name('admin.visitors')->middleware('can:settings.manage');
+        $router->get('/visitors/export', [VisitorsController::class, 'export'])->middleware(['can:settings.manage', 'throttle:20,60']);
 
         // impact figures + FAQs (content.manage)
         $router->group(['middleware' => ['can:content.manage']], function ($router) {

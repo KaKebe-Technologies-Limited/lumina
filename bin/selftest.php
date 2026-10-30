@@ -250,6 +250,7 @@ require __DIR__ . '/selftest-shop-laf.php';                      // Shop: the LA
 require __DIR__ . '/selftest-daraza.php';                        // Pay with Daraza: link, shop method, Donate page, Academy fees, admin page
 require __DIR__ . '/selftest-membership-pay.php';                 // Membership payments: details after applying (Daraza, mobile money, bank), proof of payment
 require __DIR__ . '/selftest-academy-fee-enforce.php';              // Academy sign-up payment enforced: mobile money / bank / Pesapal / Daraza, approval only after payment
+require __DIR__ . '/selftest-visitors.php';                         // Admin > Visitors: counting rules, no IP stored, country + page filters
 require __DIR__ . '/selftest-pesapal.php';                    // Pesapal payment gateway: client, donations, shop orders, endpoints (mock transport)
 require __DIR__ . '/selftest-home-focus.php';                // Home page: the four focus areas (numbered colour ribbons): registry section, order, colours, markup, style
 require __DIR__ . '/selftest-academy-catalog.php';           // Academy course cards: banner colours, Free / Certificate pills, level dots, what you will learn, stylesheet

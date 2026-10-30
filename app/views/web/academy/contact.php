@@ -22,7 +22,7 @@
                     <?= partial('partials/form-field', ['name' => 'phone', 'label' => 'Phone or WhatsApp (optional)', 'type' => 'tel', 'maxlength' => 40, 'autocomplete' => 'tel']) ?>
                     <?= partial('partials/form-field', ['name' => 'message', 'label' => 'Your message', 'type' => 'textarea', 'rows' => 5, 'required' => true, 'maxlength' => 2000, 'placeholder' => 'For example: I registered yesterday and my account is not approved yet.']) ?>
                     <button class="btn btn--cta btn--caps btn--block" type="submit"><?= icon('send', 'icon--sm') ?> Send my message</button>
-                    <?php if ($sw !== null): ?><p class="ac-form__alt">Quick inquiries about your approval (it takes about <?= e($hours) ?>)? <a href="<?= e($sw['url']) ?>" target="_blank" rel="noopener">WhatsApp <?= e($sw['display']) ?></a></p><?php endif; ?>
+                    <?php if ($sw !== null): ?><p class="ac-form__alt">Quick inquiries about your approval<?= \App\Services\Academy\LearnerAuth::approvalByPayment() ? '' : ' (it takes about ' . e($hours) . ')' ?>? <a href="<?= e($sw['url']) ?>" target="_blank" rel="noopener">WhatsApp <?= e($sw['display']) ?></a></p><?php endif; ?>
                     <p class="ac-form__alt"><a href="<?= e(url('academy/login')) ?>">Sign in</a> &middot; <a href="<?= e(url('academy/register')) ?>">Create an account</a></p>
                 </div>
             </form>

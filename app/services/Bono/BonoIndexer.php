@@ -261,7 +261,7 @@ final class BonoIndexer
         $s[] = ['heading' => 'What is the LAF Academy and how to join, register or sign up', 'anchor' => '', 'text' => 'The LAF Academy is the free ICT learning portal of ' . $lh['org'] . ': free courses, virtual classes, quizzes and certificates. To join, create a free account on the Academy sign-up page with your name, e-mail address, password, phone number, country and WhatsApp number. A picture or selfie is optional.'];
         $mode = \App\Services\Academy\LearnerAuth::signupMode();
         $appr = $mode === 'approval'
-            ? 'New Academy accounts are approved by the Academy team, which takes about ' . \App\Services\Academy\LearnerAuth::approvalText() . '. Please sign in after that. You do not need to confirm your e-mail address.'
+            ? (\App\Services\Academy\LearnerAuth::approvalByPayment() ? 'New Academy accounts pay the sign-up fee after registering and are approved automatically as soon as the payment is confirmed (at once with Pesapal). You do not need to confirm your e-mail address.' : 'New Academy accounts are approved by the Academy team, which takes about ' . \App\Services\Academy\LearnerAuth::approvalText() . '. Please sign in after that. You do not need to confirm your e-mail address.')
             : ($mode === 'email' ? 'After you sign up, confirm your e-mail address with the link or the 6-digit code that is sent to you, or wait for the Academy team to approve your account.' : 'After you sign up you can sign in at once.');
         if ($support !== null) {
             $appr .= "\nFor quick inquiries about your approval, contact " . $support['display'] . ' on WhatsApp.';

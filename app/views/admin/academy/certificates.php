@@ -23,6 +23,20 @@
         </div>
     </div>
 <?php endif; ?>
+<?php $unpaidCerts = !empty($ready) && \App\Services\Academy\AcademyFees::cert() !== null ? count(\App\Services\Academy\AcademyFees::unpaidCerts()) : 0; ?>
+<?php if ($unpaidCerts > 0): ?>
+    <div class="alert alert--warning aac-note" role="status">
+        <div class="aac-note__text">
+            <strong class="aac-note__title"><?= $unpaidCerts ?> certificate<?= $unpaidCerts === 1 ? ' is' : 's are' ?> waiting for the certificate fee.</strong>
+            <p>Remind the learners to pay: they get a message in the learner portal (and an e-mail if you tick the box), or you can write to them on WhatsApp. Each certificate is released the moment its payment is confirmed.</p>
+        </div>
+        <div class="aac-actions">
+            <form method="post" action="<?= e(url('admin/academy/certificates-remind-fee-all')) ?>" class="inline-form aac-remind" data-confirm="Send the payment reminder to all <?= $unpaidCerts ?> learners whose certificate waits for its fee?"><?= csrf_field() ?><label class="aac-remind__check"><input type="checkbox" name="email" value="1"> Also e-mail</label> <button class="btn btn--primary btn--sm" type="submit"><?= icon('bell', 'icon--sm') ?> Remind all <?= $unpaidCerts ?>: message</button></form>
+            <form method="post" action="<?= e(url('admin/academy/certificates-remind-fee-whatsapp-all')) ?>" class="inline-form" data-confirm="<?= e(\App\Services\Academy\WhatsAppSender::certReminderEnabled() ? 'Send the WhatsApp payment reminder to all ' . $unpaidCerts . ' learners?' : 'Open the WhatsApp list for all ' . $unpaidCerts . ' learners?') ?>"><?= csrf_field() ?><button class="btn btn--whatsapp btn--sm" type="submit"><?= icon('whatsapp', 'icon--sm') ?> WhatsApp all <?= $unpaidCerts ?></button></form>
+            <a class="btn btn--outline btn--sm" href="<?= e(url('admin/academy/certificates-fee-reminders')) ?>"><?= icon('whatsapp', 'icon--sm') ?> Remind on WhatsApp</a>
+        </div>
+    </div>
+<?php endif; ?>
 <?php if (!empty($ready) && !empty($approved)): ?>
     <div class="alert alert--info" role="status">
         <strong><?= (int) $approved ?> certificate<?= (int) $approved === 1 ? ' is' : 's are' ?> approved and available to the learners.</strong>

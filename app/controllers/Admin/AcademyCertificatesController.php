@@ -160,6 +160,42 @@ final class AcademyCertificatesController extends AcademyAdminController
         return $this->redirect('admin/academy/certificates?status=waiting');
     }
 
+    /** POST certificates-remind-fee-all: a portal message (and an e-mail when ticked) to every learner whose certificate waits for its fee. */
+    public function remindFeeAll(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $n = \App\Services\Academy\AcademyFees::remindAllCerts(\App\Core\Auth::id(), $request->bool('email'));
+        $this->audit('academy.certificates.fee_reminder_all', 'academy_certificate', null, 'Sent the certificate fee reminder to every learner whose certificate waits for its fee', ['count' => $n]);
+        Flash::success($n === 0 ? 'Nobody has a certificate waiting for its fee, so nothing was sent.' : 'The payment reminder was sent to ' . $n . ' learner' . ($n === 1 ? '' : 's') . '.');
+        return $this->redirect('admin/academy/certificates');
+    }
+
+    /** POST certificates-remind-fee-whatsapp-all: one click sends the WhatsApp reminder to all of them (needs the WhatsApp Business API); otherwise the guided list opens. */
+    public function remindFeeWhatsAppAll(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        if (!\App\Services\Academy\WhatsAppSender::certReminderEnabled()) {
+            Flash::info('This site is not connected to the WhatsApp Business API for certificate reminders yet, so WhatsApp cannot send by itself. Use "Start sending to all" below: it opens each chat with the message typed, one after the other.');
+            return $this->redirect('admin/academy/certificates-fee-reminders');
+        }
+        $r = \App\Services\Academy\AcademyFees::remindAllCertsWhatsApp();
+        $this->audit('academy.certificates.fee_whatsapp_all', 'academy_certificate', null, 'Sent the certificate fee reminder on WhatsApp', ['sent' => $r['sent'], 'failed' => $r['failed']]);
+        $msg = $r['sent'] . ' WhatsApp reminder' . ($r['sent'] === 1 ? '' : 's') . ' sent.' . ($r['nonumber'] > 0 ? ' ' . $r['nonumber'] . ' learner' . ($r['nonumber'] === 1 ? ' has' : 's have') . ' no usable number.' : '') . ($r['failed'] > 0 ? ' ' . $r['failed'] . ' could not be sent' . ($r['error'] ? ' (' . $r['error'] . ')' : '') . '.' : '');
+        $r['failed'] > 0 && $r['sent'] === 0 ? Flash::error($msg) : Flash::success($msg);
+        return $this->redirect('admin/academy/certificates');
+    }
+
+    /** GET certificates-fee-reminders: one WhatsApp button per learner whose certificate waits for its fee. */
+    public function feeReminders(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $rows = [];
+        foreach (\App\Services\Academy\AcademyFees::unpaidCerts() as $row) {
+            $row['wa'] = \App\Services\Academy\AcademyFees::certReminderWhatsAppUrl($row);
+            $rows[] = $row;
+        }
+        return $this->render('admin/academy/certificate-fee-reminders', ['rows' => $rows]);
+    }
     /** Take back every approved certificate: all of them wait for approval again before anybody receives them. */
     public function withdrawAll(Request $request): Response
     {

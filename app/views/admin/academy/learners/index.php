@@ -8,9 +8,11 @@ if ($manager) {
 ?>
 <?= partial('partials/admin/page-header', ['title' => 'Learners', 'subtitle' => $manager ? 'Everyone who signed up to the LAF Academy. Personal data: handle with care.' : 'The learners enrolled in your courses.', 'actions' => $actions]) ?>
 <?php if ($manager && !empty($waiting)): ?>
-    <div class="alert alert--warning" role="status">
-        <strong><?= (int) $waiting ?> learner<?= (int) $waiting === 1 ? ' is' : 's are' ?> waiting for approval.</strong>
-        <?php if (\App\Services\Academy\LearnerAuth::emailVerificationOn()): ?>They can start as soon as they confirm their e-mail address, or as soon as you approve them (no e-mail needed). Use <em>Approve</em> on a row, <em>Approve all</em> below, or send the confirmation e-mail again (25 at a time; those who never received one go first).<?php else: ?>New accounts are approved by you (e-mail codes are switched off: Settings > LAF Academy > How new learners get in). They were told to sign in after <?= e(\App\Services\Academy\LearnerAuth::approvalText()) ?>: use <em>Approve</em> on a row or <em>Approve all</em> below.<?php endif; ?>
+    <div class="alert alert--warning aac-note" role="status">
+        <div class="aac-note__text">
+        <strong class="aac-note__title"><?= (int) $waiting ?> learner<?= (int) $waiting === 1 ? ' is' : 's are' ?> waiting for approval.</strong>
+        <p><?php if (\App\Services\Academy\LearnerAuth::emailVerificationOn()): ?>They can start as soon as they confirm their e-mail address, or as soon as you approve them (no e-mail needed). Use <em>Approve</em> on a row, <em>Approve all</em> below, or send the confirmation e-mail again (25 at a time; those who never received one go first).<?php else: ?>New accounts are approved by you (e-mail codes are switched off: Settings > LAF Academy > How new learners get in). <?php if (\App\Services\Academy\LearnerAuth::approvalByPayment()): ?>They were told to pay the sign-up fee and that their account is approved automatically when the payment is confirmed. You can still use <em>Approve</em> on a row once a fee is paid or waived.<?php else: ?>They were told to sign in after <?= e(\App\Services\Academy\LearnerAuth::approvalText()) ?>: use <em>Approve</em> on a row or <em>Approve all</em> below.<?php endif; ?><?php endif; ?></p>
+        </div>
         <div class="aac-actions">
             <?php if (\App\Services\Academy\LearnerAuth::emailVerificationOn()): ?><form method="post" action="<?= e(url('admin/academy/learners-send-confirmations')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit" data-loading-text="Sending...">Send confirmation e-mails</button></form><?php endif; ?>
             <form method="post" action="<?= e(url('admin/academy/learners-confirm-all')) ?>" class="inline-form" data-confirm="Approve all <?= (int) $waiting ?> waiting learners? They can then sign in without opening an e-mail."><?= csrf_field() ?><button class="btn btn--primary btn--sm" type="submit">Approve all <?= (int) $waiting ?></button></form>
@@ -20,10 +22,14 @@ if ($manager) {
 <?php endif; ?>
 <?php $unpaidN = $manager ? count(\App\Services\Academy\AcademyFees::unpaidLearners()) : 0; ?>
 <?php if ($unpaidN > 0): ?>
-    <div class="alert alert--warning" role="status">
-        <strong><?= $unpaidN ?> learner<?= $unpaidN === 1 ? ' has' : 's have' ?> not paid the sign-up fee.</strong> Send them a payment reminder as a message in the learner portal (and by e-mail if you tick it), or open WhatsApp for each one.
+    <div class="alert alert--warning aac-note" role="status">
+        <div class="aac-note__text">
+            <strong class="aac-note__title"><?= $unpaidN ?> learner<?= $unpaidN === 1 ? ' has' : 's have' ?> not paid the sign-up fee.</strong>
+            <p>Send them a payment reminder as a message in the learner portal (and by e-mail if you tick the box), or open WhatsApp for each one.</p>
+        </div>
         <div class="aac-actions">
-            <form method="post" action="<?= e(url('admin/academy/learners-remind-fee-all')) ?>" class="inline-form" data-confirm="Send the payment reminder to all <?= $unpaidN ?> learners who have not paid?"><?= csrf_field() ?><label class="text-muted" style="font-size:.85rem"><input type="checkbox" name="email" value="1"> also e-mail</label> <button class="btn btn--primary btn--sm" type="submit"><?= icon('bell', 'icon--sm') ?> Remind all <?= $unpaidN ?>: message</button></form>
+            <form method="post" action="<?= e(url('admin/academy/learners-remind-fee-all')) ?>" class="inline-form aac-remind" data-confirm="Send the payment reminder to all <?= $unpaidN ?> learners who have not paid?"><?= csrf_field() ?><label class="aac-remind__check"><input type="checkbox" name="email" value="1"> Also e-mail</label> <button class="btn btn--primary btn--sm" type="submit"><?= icon('bell', 'icon--sm') ?> Remind all <?= $unpaidN ?>: message</button></form>
+            <form method="post" action="<?= e(url('admin/academy/learners-remind-fee-whatsapp-all')) ?>" class="inline-form" data-confirm="<?= e(\App\Services\Academy\WhatsAppSender::reminderEnabled() ? 'Send the WhatsApp payment reminder to all ' . $unpaidN . ' learners who have not paid?' : 'Open the WhatsApp list for all ' . $unpaidN . ' learners who have not paid?') ?>"><?= csrf_field() ?><button class="btn btn--whatsapp btn--sm" type="submit"><?= icon('whatsapp', 'icon--sm') ?> WhatsApp all <?= $unpaidN ?></button></form>
             <a class="btn btn--outline btn--sm" href="<?= e(url('admin/academy/learners-fee-reminders')) ?>"><?= icon('whatsapp', 'icon--sm') ?> Remind on WhatsApp</a>
         </div>
     </div>

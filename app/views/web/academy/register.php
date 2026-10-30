@@ -57,7 +57,7 @@
                                 <?php if (\App\Services\Academy\AcademyFees::daraza('signup')): ?><li><?= e(\App\Services\Daraza::label()) ?></li><?php endif; ?>
                                 <?php if (\App\Services\Academy\AcademyFees::manual()): ?><li>Mobile money or bank transfer</li><?php endif; ?>
                             </ul>
-                            <p class="ac-feebox__note">Your account is approved only after the payment is confirmed.</p>
+                            <p class="ac-feebox__note">Your account is approved only after the payment is confirmed, and then automatically: you do not wait for a separate approval.</p>
                         </div>
                     </div>
                     <?php endif; ?>

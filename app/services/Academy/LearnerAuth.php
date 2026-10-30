@@ -105,6 +105,12 @@ final class LearnerAuth
         return $h . ' hour' . ($h === 1 ? '' : 's');
     }
 
+    /** Does a sign-up fee apply? Then approval follows the payment (no waiting time is promised). */
+    public static function approvalByPayment(): bool
+    {
+        return AcademyFees::ready() && AcademyFees::signup() !== null;
+    }
+
     public static function registrationOpen(): bool
     {
         return (string) setting('academy_registration_open', '1') === '1';
@@ -287,6 +293,13 @@ final class LearnerAuth
         }
         self::rememberPortal();
         LearnerRegistry::announce($id, 'the sign-up form');        // the activity log (dashboard) + an e-mail to the organisation
+        if (self::approvalByPayment()) {
+            try {
+                AcademyFees::remind($id, null, true);                // tell the new learner at once (portal message + e-mail) to pay: approval follows the payment
+            } catch (\Throwable $e) {
+                \App\Core\Log::error('Sign-up fee notice failed: ' . $e->getMessage());
+            }
+        }
         return ['ok' => true, 'errors' => [], 'learner' => $learner, 'verify' => $verify];
     }
 
@@ -431,7 +444,7 @@ final class LearnerAuth
         if (self::requireVerification() && $l['email_verified_at'] === null) {
             return ['ok' => false, 'error' => self::emailVerificationOn()
                 ? 'Your account is waiting for approval. Confirm your e-mail address (open the link or type the code we sent you), or wait for the Academy team to approve it.'
-                : 'Your account is waiting for approval. Approval takes about ' . self::approvalText() . ': please sign in after that.' . (($sw = self::supportWhatsapp()) !== null ? ' For quick inquiries about your approval, WhatsApp ' . $sw['display'] . '.' : ''), 'unverified' => true, 'learner' => $l];
+                : (self::approvalByPayment() ? 'Your account is approved automatically as soon as your sign-up fee payment is confirmed. Please sign in again after paying.' : 'Your account is waiting for approval. Approval takes about ' . self::approvalText() . ': please sign in after that.') . (($sw = self::supportWhatsapp()) !== null ? ' For quick inquiries about your approval, WhatsApp ' . $sw['display'] . '.' : ''), 'unverified' => true, 'learner' => $l];
         }
         RateLimit::clear($key);
         self::signIn($l);

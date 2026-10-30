@@ -25,6 +25,15 @@ final class App
         } catch (\Throwable $e) {
             $response = ErrorHandler::response($e, $request);
         }
+        try {
+            if (\App\Services\Analytics\VisitLogger::shouldLog($request, $response)) {
+                self::afterResponse(static function () use ($request): void {
+                    \App\Services\Analytics\VisitLogger::record($request);      // Admin > Visitors: page, country, device (no IP address is stored)
+                });
+            }
+        } catch (\Throwable) {
+            // counting visits must never break a page
+        }
         $response->send();
         self::runAfterResponse();
     }

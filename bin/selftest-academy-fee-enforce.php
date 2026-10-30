@@ -143,17 +143,23 @@ check('even a direct approval in code is refused', LearnerRegistry::approve($lid
 
 // ---- payment reminders: one learner and everyone, by message or WhatsApp ---------------------------------------------------------------------------------
 $countMsgs = static fn(): int => (int) Database::value("SELECT COUNT(*) FROM academy_messages WHERE learner_id = ? AND sender = 'admin' AND body LIKE '%sign-up fee%not paid%'", [$lid], 0);
+$autoMsgs = $countMsgs();
+check('sign-up: the new learner is told at once, in the portal messages, to pay the fee and that approval follows the payment', $autoMsgs === 1 && str_contains((string) Database::value("SELECT body FROM academy_messages WHERE learner_id = ? ORDER BY id DESC LIMIT 1", [$lid], ''), 'approved automatically'));
 $lp = $req($admin, 'GET', '/admin/academy/learners/' . $lid);
 check('admin: the learner page has both reminder buttons (message and WhatsApp)', str_contains($lp['body'], 'Remind: message') && str_contains($lp['body'], 'Remind: WhatsApp') && str_contains($lp['body'], 'https://wa.me/256700000051?text='));
 $one = $req($admin, 'POST', '/admin/academy/learners/' . $lid . '/remind-fee', ['_token' => $tok($lp['body'])]);
-check('admin: the individual reminder lands in the learner\'s messages, with the amount, the mobile-money details and the sign-in link', $countMsgs() === 1
+check('admin: the individual reminder lands in the learner\'s messages, with the amount, the mobile-money details and the sign-in link', $countMsgs() === $autoMsgs + 1
     && ($m = (string) Database::value("SELECT body FROM academy_messages WHERE learner_id = ? ORDER BY id DESC LIMIT 1", [$lid], '')) !== '' && str_contains($m, 'UGX 20,000') && str_contains($m, '0772 222 333') && str_contains($m, 'academy/login'));
 $lst = $req($admin, 'GET', '/admin/academy/learners');
 check('admin: the learners list offers "Remind all" and the WhatsApp list', str_contains($lst['body'], 'have not paid the sign-up fee') || str_contains($lst['body'], 'has not paid the sign-up fee'));
 $bulk = $req($admin, 'POST', '/admin/academy/learners-remind-fee-all', ['_token' => $tok($lst['body'])]);
-check('admin: "Remind all" sends the reminder to the learner who has not paid', $countMsgs() === 2, (string) $countMsgs());
+check('admin: "Remind all" sends the reminder to the learner who has not paid', $countMsgs() === $autoMsgs + 2, (string) $countMsgs());
 $wl = $req($admin, 'GET', '/admin/academy/learners-fee-reminders');
 check('admin: the WhatsApp list has a button with the reminder typed for the learner', $wl['code'] === 200 && str_contains($wl['body'], 'ZZ Fe Payer') && str_contains($wl['body'], 'https://wa.me/256700000051?text=') && str_contains($wl['body'], rawurlencode('UGX 20,000')));
+check('admin: the WhatsApp page offers a one-click "Start sending to all" queue', str_contains($wl['body'], 'Start sending to all') && str_contains($wl['body'], 'data-wa-next') && str_contains($wl['body'], 'js/admin-academy.js'));
+$waAll = $req($admin, 'POST', '/admin/academy/learners-remind-fee-whatsapp-all', ['_token' => $tok($lst['body'])]);
+check('admin: "WhatsApp all" without the WhatsApp Business API opens the guided list instead of failing', in_array($waAll['code'], [302, 303], true) && str_contains($req($admin, 'GET', '/admin/academy/learners-fee-reminders')['body'], 'not connected to the WhatsApp Business API'), (string) $waAll['code']);
+check('WhatsApp reminder: not enabled without the template setting', \App\Services\Academy\WhatsAppSender::reminderEnabled() === false);
 check('a reminder is refused for an account that does not owe the fee', AcademyFees::remind(999999999, null, false) === false);
 
 // ---- the administrator confirms the payment, then approves -----------------------------------------------------------------------------------------

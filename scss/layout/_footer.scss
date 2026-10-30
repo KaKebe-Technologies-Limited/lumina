@@ -95,6 +95,19 @@
 
     &__contact { display: grid; gap: $space-3; li { display: flex; gap: $space-3; align-items: flex-start; overflow-wrap: anywhere; } .icon { margin-top: 3px; color: $gold; } }
 
+    // small "Admin login" pill in the bottom bar: quiet, but a clear target for staff
+    &__admin {
+        display: inline-flex;
+        align-items: center;
+        gap: $space-1;
+        padding: 0.3rem 0.85rem;
+        border: 1px solid rgba($white, 0.3);
+        border-radius: $radius-pill;
+        color: rgba($white, 0.92);
+        font-weight: 600;
+        text-decoration: none;
+        &:hover, &:focus-visible { background: $gold; border-color: $gold; color: $navy-dark; }
+    }
     &__bottom {
         border-top: 1px solid rgba($white, 0.14);
         > div {

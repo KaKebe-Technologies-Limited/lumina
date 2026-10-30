@@ -151,6 +151,33 @@ $ac-tones: (
   code { font-family: $font-mono; font-size: .92em; } p code, li code, td code { padding: .1rem .35rem; border-radius: 4px; background: $surface; color: $navy; }
   table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; th, td { padding: .5rem .75rem; border: 1px solid $border; text-align: left; vertical-align: top; } th { background: $surface; } }
   blockquote { margin-left: 0; padding: $space-2 $space-4; border-left: 4px solid $gold; background: $surface; } }
+// ---- interactive lesson extras (assets/js/academy.js): quick-check cards, tick-off practice steps, activity tracker
+.ac-track { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-3; margin: 0 0 $space-4; padding: $space-2 $space-3; border: 1px solid $border; border-radius: $radius; background: $surface; font-size: $fs-sm; color: $ink-soft;
+  &__label { flex: 1 1 14rem; font-weight: 600; }
+  &__bar { flex: 1 1 8rem; height: .5rem; border-radius: $radius-pill; background: $border; overflow: hidden; }
+  &__fill { display: block; height: 100%; width: 0; background: $gold; border-radius: inherit; transition: width .3s ease; }
+  &.is-complete { border-color: rgba($success, .5); color: $success; .ac-track__fill { background: $success; } } }
+.ac-qc { margin: $space-4 0; padding: $space-3 $space-4 $space-4; border: 1px solid $border-strong; border-left: 5px solid $gold; border-radius: $radius; background: $white; box-shadow: 0 1px 0 rgba($navy-dark, .04);
+  &__tag { display: inline-block; margin-bottom: $space-1; padding: .1rem .6rem; border-radius: $radius-pill; background: $surface; color: $gold-deep; font-size: $fs-sm; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  &__q { margin: 0 0 $space-3; font-weight: 600; }
+  &__q strong:first-child { display: none; }
+  &__bar { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; .btn:nth-child(2), .btn:nth-child(3) { display: none; } &.is-open .btn:nth-child(2), &.is-open .btn:nth-child(3) { display: inline-flex; } }
+  &__a { margin-top: $space-3; padding: $space-3; border-radius: $radius; background: $surface; p { margin: 0; } }
+  &__mark { margin-left: auto; font-size: $fs-sm; font-weight: 700; }
+  &.is-known { border-left-color: $success; .ac-qc__mark { color: $success; } }
+  &.is-review { border-left-color: $danger; .ac-qc__mark { color: $danger; } } }
+.ac-steps { list-style: none; counter-reset: acstep; padding-left: 0;
+  > li { position: relative; counter-increment: acstep; margin: 0 0 $space-2; padding: $space-2 $space-3 $space-2 3.1rem; border: 1px solid $border; border-radius: $radius; background: $white;
+    &::before { content: counter(acstep); position: absolute; left: .55rem; top: .55rem; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: $surface; color: $ink-soft; font-size: .75rem; font-weight: 700; display: grid; place-items: center; }
+    &.is-done { background: $surface; color: $ink-soft; text-decoration: line-through; text-decoration-color: rgba($ink-soft, .5); &::before { background: $success; color: $white; } } } }
+.ac-steps__box { position: absolute; right: .75rem; top: .7rem; width: 1.2rem; height: 1.2rem; accent-color: $success; cursor: pointer; }
+.ac-steps > li { padding-right: 2.6rem; }
+.ac-class__count { display: inline-block; margin: $space-1 0 $space-2; padding: .15rem .75rem; border-radius: $radius-pill; background: $surface; color: $ink-soft; font-size: $fs-sm; font-weight: 700;
+  &:empty { display: none; }
+  &[data-state='soon'] { background: $warning-bg; color: $warning; }
+  &[data-state='live'] { background: $success; color: $white; }
+  &[data-state='ended'] { background: $border; } }
+.ac-class__prep { margin-top: $space-3; font-size: $fs-sm; summary { cursor: pointer; font-weight: 700; color: $navy; } ul { margin: $space-2 0 0; padding-left: 1.2rem; } }
 .ac-video { position: relative; aspect-ratio: 16 / 9; margin: 0 0 $space-4; border-radius: $radius; overflow: hidden; background: #000; iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; } }
 .ac-file { display: flex; align-items: center; gap: $space-3; margin-top: $space-5; padding: $space-3 $space-4; border: 1px dashed $border-strong; border-radius: $radius; background: $surface; div { flex: 1; min-width: 0; strong { display: block; overflow-wrap: anywhere; } small { color: $ink-soft; } } }
 .ac-callout { display: flex; align-items: center; gap: $space-3; margin-top: $space-5; padding: $space-4; border-radius: $radius; background: $warning-bg; color: $warning; p { margin: .15rem 0 0; } div { flex: 1; } svg { flex: none; } }

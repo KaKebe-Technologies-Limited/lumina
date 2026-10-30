@@ -36,7 +36,11 @@
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
+            <?php if (\App\Services\Academy\LearnerAuth::approvalByPayment()): ?>
+            <p><strong>Pay the sign-up fee and your account is approved automatically as soon as the payment is confirmed.</strong> Then sign in with your e-mail address and password: you do not need to confirm your e-mail address or type any code.</p>
+            <?php else: ?>
             <p>The Academy team approves every new account. <strong>This takes about <?= e($hours) ?>.</strong> Please sign in with your e-mail address and password after <?= e($hours) ?>: you do not need to confirm your e-mail address or type any code.</p>
+            <?php endif; ?>
             <?php if (!empty($thread)): ?>
                 <div class="ac-pending-msgs" role="region" aria-label="Messages from the Academy team">
                     <h2 class="ac-block__title"><?= icon('message-circle', 'icon--sm') ?> Messages from the Academy team</h2>
@@ -52,7 +56,7 @@
             <p class="ac-regno">For quick inquiries about your approval, contact <a href="<?= e($sw['url']) ?>" rel="noopener" target="_blank"><strong><?= e($sw['display']) ?></strong> on WhatsApp</a>.</p>
             <?php endif; ?>
             <?= partial('partials/academy-wa-group', ['style' => 'line']) ?>
-            <p class="text-muted">If you cannot sign in after <?= e($hours) ?>, please try again a little later or write to us through the contact page.</p>
+            <p class="text-muted"><?= \App\Services\Academy\LearnerAuth::approvalByPayment() ? 'If you cannot sign in after you have paid, please write to us through the contact page.' : 'If you cannot sign in after ' . e($hours) . ', please try again a little later or write to us through the contact page.' ?></p>
         </div></div>
     </div>
 </section>

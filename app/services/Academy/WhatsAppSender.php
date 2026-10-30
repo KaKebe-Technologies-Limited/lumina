@@ -67,6 +67,39 @@ final class WhatsAppSender
             'type' => 'template',
             'template' => ['name' => self::cfg('WHATSAPP_TEMPLATE', 'verification_code'), 'language' => ['code' => self::cfg('WHATSAPP_LANGUAGE', 'en')], 'components' => $components],
         ];
+        return self::post($payload);
+    }
+
+    /** True when the sign-up fee reminder can be sent straight from the site: the API is set up AND WHATSAPP_REMINDER_TEMPLATE names an approved template. */
+    public static function reminderEnabled(): bool
+    {
+        return self::enabled() && self::cfg('WHATSAPP_REMINDER_TEMPLATE') !== '';
+    }
+
+    /** True when the certificate-fee reminder can be sent from the site: the API is set up AND WHATSAPP_CERT_REMINDER_TEMPLATE names an approved template. */
+    public static function certReminderEnabled(): bool
+    {
+        return self::enabled() && self::cfg('WHATSAPP_CERT_REMINDER_TEMPLATE') !== '';
+    }
+
+    /** Send the approved fee-reminder template. $params fill {{1}}, {{2}}... of the template body in order. @param list<string> $params @return array{ok:bool,error:?string} */
+    public static function sendReminder(string $number, array $params, string $envKey = 'WHATSAPP_REMINDER_TEMPLATE'): array
+    {
+        if (!self::enabled() || self::cfg($envKey) === '') {
+            return ['ok' => false, 'error' => 'WhatsApp reminders are not set up on this site.'];
+        }
+        $text = array_map(static fn(string $p): array => ['type' => 'text', 'text' => mb_substr(trim((string) preg_replace('/\s+/', ' ', $p)), 0, 120)], array_values($params));
+        return self::post([
+            'messaging_product' => 'whatsapp',
+            'to' => $number,
+            'type' => 'template',
+            'template' => ['name' => self::cfg($envKey), 'language' => ['code' => self::cfg('WHATSAPP_LANGUAGE', 'en')], 'components' => [['type' => 'body', 'parameters' => $text]]],
+        ]);
+    }
+
+    /** @param array<string,mixed> $payload @return array{ok:bool,error:?string} */
+    private static function post(array $payload): array
+    {
         $ch = curl_init(self::API . rawurlencode(self::cfg('WHATSAPP_PHONE_ID')) . '/messages');
         curl_setopt_array($ch, [
             CURLOPT_POST => true,

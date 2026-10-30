@@ -195,6 +195,13 @@ if ($course === null) {
     $fa = (array) Database::one('SELECT fee_status, approved_at FROM academy_certificates WHERE id = ?', [(int) $free['id']]);
     check('"Hold all": the free certificate now waits behind the fee and nobody can use it', $held >= 1 && $fa['fee_status'] === 'due' && $fa['approved_at'] === null && CertificateService::activeFor($lid, (int) $course['id']) === null);
     check('"Hold all" a second time changes nothing', AcademyFees::holdAllCertificates() === 0 && AcademyFees::certificatesWithoutFee() === 0);
+    $uc = array_values(array_filter(AcademyFees::unpaidCerts(), static fn(array $r): bool => (int) $r['id'] === (int) $free['id']));
+    check('certificate reminders: the held certificate is listed with its learner and course', count($uc) === 1 && (int) $uc[0]['learner_id'] === $lid && $uc[0]['course_title'] === $free['course_title']);
+    check('certificate reminders: the text names the course, the fee and the sign-in link', $uc !== [] && str_contains(AcademyFees::certReminderText($uc[0]), (string) $free['course_title']) && str_contains(AcademyFees::certReminderText($uc[0]), 'academy/login'));
+    $msgsBefore = (int) Database::value("SELECT COUNT(*) FROM academy_messages WHERE learner_id = ? AND sender = 'admin'", [$lid], 0);
+    $sentN = AcademyFees::remindAllCerts(null, false);
+    check('certificate reminders: "Remind all" lands in the learner\'s portal messages', $sentN >= 1 && (int) Database::value("SELECT COUNT(*) FROM academy_messages WHERE learner_id = ? AND sender = 'admin'", [$lid], 0) === $msgsBefore + 1);
+    check('certificate reminders: WhatsApp link is typed for a learner with a number, and sending by itself needs the template setting', \App\Services\Academy\WhatsAppSender::certReminderEnabled() === false && ($uc === [] || $uc[0]['whatsapp'] === null || str_contains((string) AcademyFees::certReminderWhatsAppUrl($uc[0]), 'https://wa.me/')));
     AcademyFees::beginCert((int) $free['id'], $lid);
     $cpH = (array) Database::one("SELECT * FROM pesapal_payments WHERE purpose = 'academy_cert' AND ref_id = ? ORDER BY id DESC LIMIT 1", [(int) $free['id']]);
     $answer((string) $cpH['order_tracking_id'], (string) $cpH['merchant_reference'], 15000);

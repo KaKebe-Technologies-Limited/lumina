@@ -10,6 +10,20 @@
   &--links li { justify-content: flex-start; } }
 .aac-facts { margin: 0; div { display: flex; justify-content: space-between; gap: $space-3; padding: .4rem 0; border-bottom: 1px solid $border; } dt { color: $ink-soft; } dd { margin: 0; font-weight: 600; text-align: right; } }
 .aac-inline { display: flex; flex-wrap: wrap; align-items: flex-end; gap: $space-3; margin: $space-3 0; .field { margin: 0; } }
+// WhatsApp reminders: the green "send to all" button and the guided one-chat-at-a-time list
+.btn--whatsapp { background: #128C7E; border-color: #128C7E; color: #fff; &:hover, &:focus-visible { background: #0b6b5f; border-color: #0b6b5f; color: #fff; } &:disabled { opacity: .65; cursor: default; } }
+.aac-wa { margin-bottom: $space-3;
+  &__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3 $space-5; > div { flex: 1 1 20rem; min-width: 0; } p { margin: $space-1 0 0; } }
+  &__bar { height: .5rem; margin-top: $space-3; border-radius: $radius-pill; background: $border; overflow: hidden; span { display: block; height: 100%; width: 0; background: #128C7E; transition: width .3s ease; } }
+  &__note { margin: $space-2 0 0; font-size: $fs-sm; }
+  &__sent { margin-left: $space-2; font-size: $fs-sm; font-weight: 700; color: $success; } }
+// a notice with its text on the left and its buttons on the right (stacked on narrow screens)
+.aac-note { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3 $space-5;
+  &__text { flex: 1 1 22rem; min-width: 0; p { margin: $space-1 0 0; } em { font-style: normal; font-weight: 700; } }
+  &__title { display: block; }
+  .aac-actions { margin-top: 0; flex: 0 1 auto; justify-content: flex-end; } }
+.aac-remind { display: inline-flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-3; margin: 0;
+  &__check { display: inline-flex; align-items: center; gap: $space-1; font-size: $fs-sm; font-weight: 600; cursor: pointer; white-space: nowrap; } }
 .aac-actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2; margin-top: $space-3; }
 .aac-statusbar { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; margin-bottom: $space-4; padding: $space-3 $space-4; border-radius: $radius; background: $surface; }
 .aac-num { display: inline-grid; place-items: center; width: 1.8rem; height: 1.8rem; margin-right: .35rem; border-radius: 50%; background: $navy; color: $white; font-size: $fs-sm; }

@@ -2,13 +2,15 @@
 /** Virtual classes. Vars: $list ['upcoming','recorded'] (rows with may_join), $platforms, $learner. */
 $card = static function (array $cl, bool $recorded) use ($platforms, $learner): string {
     ob_start(); ?>
-    <li class="ac-class ac-class--full" data-reveal>
+    <?php $tz = new \DateTimeZone('Africa/Kampala'); $t0 = (new \DateTimeImmutable((string) $cl['start_at'], $tz))->getTimestamp(); $t1 = (new \DateTimeImmutable((string) $cl['end_at'], $tz))->getTimestamp(); ?>
+    <li class="ac-class ac-class--full" data-reveal<?= $recorded ? '' : ' data-ac-live data-start="' . $t0 . '" data-end="' . $t1 . '"' ?>>
         <time class="ac-class__date" datetime="<?= e(format_date($cl['start_at'], 'Y-m-d')) ?>"><b><?= e(format_date($cl['start_at'], 'j')) ?></b><span><?= e(format_date($cl['start_at'], 'M')) ?></span></time>
         <div class="ac-class__main">
             <h3 class="ac-class__title"><?= e($cl['title']) ?> <span class="opp-chip"><?= e($platforms[$cl['platform']] ?? 'Online') ?></span></h3>
             <p class="ac-class__meta"><?= icon('clock', 'icon--sm') ?> <?= e(format_datetime($cl['start_at'], 'l j F Y, H:i')) ?> - <?= e(format_datetime($cl['end_at'], 'H:i')) ?> EAT (East Africa Time)</p>
             <p class="ac-class__meta"><?php if (!empty($cl['course_title'])): ?><?= icon('book', 'icon--sm') ?> <a href="<?= e(url('academy/courses/' . $cl['course_slug'])) ?>"><?= e($cl['course_title']) ?></a> &nbsp;<?php else: ?><?= icon('users', 'icon--sm') ?> Open to all learners &nbsp;<?php endif; ?>
                 <?php if (!empty($cl['facilitator_name'])): ?><?= icon('user', 'icon--sm') ?> <?= e($cl['facilitator_name']) ?><?php endif; ?></p>
+            <?php if (!$recorded): ?><p class="ac-class__count" data-ac-count aria-live="polite"></p><?php endif; ?>
             <?php if (trim((string) $cl['description']) !== ''): ?><p class="ac-class__text"><?= e($cl['description']) ?></p><?php endif; ?>
             <div class="ac-class__actions">
                 <?php if ($recorded): ?>
@@ -24,6 +26,7 @@ $card = static function (array $cl, bool $recorded) use ($platforms, $learner): 
                     <span class="text-muted">Enrol in <?= !empty($cl['course_title']) ? 'the course "' . e($cl['course_title']) . '"' : 'a course' ?> to join this class.</span>
                 <?php endif; ?>
             </div>
+            <?php if (!$recorded && $cl['may_join']): ?><details class="ac-class__prep"><summary>How to get ready for this class</summary><ul><li>Join from a quiet place with a charged device and stable internet.</li><li>Test your microphone and speaker a few minutes before the start.</li><li>Open the course lessons on this topic and note one question to ask.</li><li>Keep a notebook or a document open: the facilitator may give a short task in the class.</li></ul></details><?php endif; ?>
         </div>
     </li>
     <?php
@@ -46,3 +49,4 @@ $card = static function (array $cl, bool $recorded) use ($platforms, $learner): 
         <?php endif; ?>
     </div>
 </section>
+<?php $this->start('scripts'); ?><script src="<?= e(asset('js/academy.js')) ?>" defer></script><?php $this->end(); ?>

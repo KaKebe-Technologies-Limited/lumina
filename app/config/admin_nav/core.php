@@ -13,6 +13,7 @@ return [
         ['key' => 'pages', 'label' => 'Pages', 'url' => 'admin/pages', 'icon' => 'layout', 'can' => 'pages.edit', 'order' => 10],
         ['key' => 'menus', 'label' => 'Menus', 'url' => 'admin/menus', 'icon' => 'list', 'can' => 'menus.manage', 'order' => 20],
         ['key' => 'stats', 'label' => 'Impact figures', 'url' => 'admin/stats', 'icon' => 'bar-chart', 'can' => 'content.manage', 'order' => 30],
+        ['key' => 'visitors', 'label' => 'Visitors', 'url' => 'admin/visitors', 'icon' => 'globe', 'can' => 'settings.manage', 'order' => 35],
         ['key' => 'faqs', 'label' => 'FAQs', 'url' => 'admin/faqs', 'icon' => 'help-circle', 'can' => 'content.manage', 'order' => 40],
     ],
 ];

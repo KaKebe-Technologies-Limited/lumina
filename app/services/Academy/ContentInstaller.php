@@ -14,8 +14,8 @@ use App\Core\Slug;
  */
 final class ContentInstaller
 {
-    /** Marker value of setting academy_starter_done: 1 = first starter courses installed, 2 = the courses 320-410 and the starter challenges too. */
-    public const VERSION = '2';
+    /** Marker value of setting academy_starter_done: 1 = first starter courses installed, 2 = the courses 320-410 and the starter challenges too, 3 = the AI and IT courses 420-490. */
+    public const VERSION = '3';
 
     public static function dir(): string
     {
@@ -174,10 +174,11 @@ final class ContentInstaller
             }
             @set_time_limit(180);
             $did = false;
-            if ($marker === '1') {
-                // a site that already had the first starter courses: add only the courses written since then (file number above 310), once
+            if ($marker === '1' || $marker === '2') {
+                // a site that already had earlier starter courses: add only the courses written since then (file number above 310, or above 410 once the marker is 2), once
+                $after = $marker === '2' ? 410 : 310;
                 foreach (self::status() as $s) {
-                    if (!$s['installed'] && (int) $s['order'] > 310) {
+                    if (!$s['installed'] && (int) $s['order'] > $after) {
                         $did = self::install((string) $s['slug'], null, true)['ok'] || $did;
                     }
                 }

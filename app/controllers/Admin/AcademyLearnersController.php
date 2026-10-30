@@ -418,6 +418,21 @@ final class AcademyLearnersController extends AcademyAdminController
         return $this->redirect('admin/academy/learners');
     }
 
+    /** POST admin/academy/learners-remind-fee-whatsapp-all: one click sends the WhatsApp reminder to everyone who has not paid. Without the WhatsApp Business API it opens the guided list instead. */
+    public function remindFeeWhatsAppAll(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        if (!\App\Services\Academy\WhatsAppSender::reminderEnabled()) {
+            Flash::info('This site is not connected to the WhatsApp Business API yet, so WhatsApp cannot send by itself. Use "Start sending to all" below: it opens each chat with the message typed, one after the other.');
+            return $this->redirect('admin/academy/learners-fee-reminders');
+        }
+        $r = \App\Services\Academy\AcademyFees::remindAllWhatsApp();
+        $this->audit('academy.learner.fee_whatsapp_all', 'academy_learner', null, 'Sent the sign-up fee reminder on WhatsApp to every learner who has not paid', ['sent' => $r['sent'], 'failed' => $r['failed']]);
+        $msg = $r['sent'] . ' WhatsApp reminder' . ($r['sent'] === 1 ? '' : 's') . ' sent.' . ($r['nonumber'] > 0 ? ' ' . $r['nonumber'] . ' learner' . ($r['nonumber'] === 1 ? ' has' : 's have') . ' no usable number.' : '') . ($r['failed'] > 0 ? ' ' . $r['failed'] . ' could not be sent' . ($r['error'] ? ' (' . $r['error'] . ')' : '') . '.' : '');
+        $r['failed'] > 0 && $r['sent'] === 0 ? Flash::error($msg) : Flash::success($msg);
+        return $this->redirect('admin/academy/learners');
+    }
+
     /** GET admin/academy/learners-fee-reminders: one WhatsApp button per learner who has not paid (opens WhatsApp with the reminder typed). */
     public function feeReminders(Request $request): Response
     {

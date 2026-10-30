@@ -246,8 +246,103 @@ final class AcademyFees
         if ($ways !== []) {
             $text .= 'You can pay by ' . implode(', or ', $ways) . '. ';
         }
-        $text .= 'After paying, sign in at ' . abs_url('academy/login') . ' and use "I have paid" to send us the transaction ID. We approve your account as soon as the payment is confirmed.';
+        $text .= 'After paying, sign in at ' . abs_url('academy/login') . ' and use "I have paid" to send us the transaction ID. Your account is approved automatically as soon as the payment is confirmed.';
         return $text;
+    }
+
+    /** Certificates held until the certificate fee is paid, with the learner's contact details. @return list<array<string,mixed>> */
+    public static function unpaidCerts(): array
+    {
+        if (!self::ready()) {
+            return [];
+        }
+        return Database::all("SELECT c.id, c.learner_id, c.learner_name AS name, c.course_title, l.email, l.phone, l.country, l.whatsapp, l.reg_no FROM academy_certificates c JOIN academy_learners l ON l.id = c.learner_id WHERE c.fee_status = 'due' AND c.revoked_at IS NULL AND l.is_active = 1 ORDER BY c.id");
+    }
+
+    /** The reminder about an unpaid certificate fee (portal message, e-mail and WhatsApp). @param array<string,mixed> $row a row of unpaidCerts() */
+    public static function certReminderText(array $row): string
+    {
+        $fee = self::configured('cert');
+        $first = trim((string) strtok(trim((string) $row['name']), ' ')) ?: 'there';
+        return 'Hello ' . $first . ', this is the LAF Academy team. Congratulations on passing "' . $row['course_title'] . '". Your certificate is ready and is released as soon as the certificate fee' . ($fee !== null ? ' of ' . $fee['display'] : '') . ' is paid. Sign in at ' . abs_url('academy/login') . ', open My certificates and pay online: the certificate is available the moment the payment is confirmed.';
+    }
+
+    /** @param array<string,mixed> $row a row of unpaidCerts() */
+    public static function certReminderWhatsAppUrl(array $row): ?string
+    {
+        $n = (string) preg_replace('/\D+/', '', (string) ($row['whatsapp'] ?? ''));
+        if ($n === '') {
+            $n = (string) \App\Services\Academy\WhatsAppSender::normalise((string) ($row['phone'] ?? ''));
+        }
+        return strlen($n) >= 8 ? 'https://wa.me/' . $n . '?text=' . rawurlencode(self::certReminderText($row)) : null;
+    }
+
+    /** Portal message (and e-mail when asked) to every learner whose certificate waits for its fee. @return int how many learners were written to */
+    public static function remindAllCerts(?int $adminId, bool $email): int
+    {
+        $sent = 0;
+        foreach (self::unpaidCerts() as $row) {
+            $text = self::certReminderText($row);
+            if (!\App\Services\Academy\LearnerMessages::send((int) $row['learner_id'], 'admin', $text, $adminId)['ok']) {
+                continue;
+            }
+            if ($email) {
+                \App\Services\Academy\AcademyMail::teamMessage($row, $text);
+            }
+            $sent++;
+        }
+        return $sent;
+    }
+
+    /** WhatsApp template reminder to every learner whose certificate waits for its fee ({{1}} first name, {{2}} course, {{3}} fee, {{4}} sign-in link). @return array{sent:int,failed:int,nonumber:int,error:?string} */
+    public static function remindAllCertsWhatsApp(): array
+    {
+        $out = ['sent' => 0, 'failed' => 0, 'nonumber' => 0, 'error' => null];
+        $fee = self::configured('cert');
+        foreach (self::unpaidCerts() as $l) {
+            $n = (string) preg_replace('/\D+/', '', (string) ($l['whatsapp'] ?? ''));
+            $n = $n !== '' ? (string) \App\Services\Academy\WhatsAppSender::normalise('+' . $n) : (string) \App\Services\Academy\WhatsAppSender::normalise((string) ($l['phone'] ?? ''));
+            if ($n === '') {
+                $out['nonumber']++;
+                continue;
+            }
+            $first = trim((string) strtok(trim((string) $l['name']), ' ')) ?: 'there';
+            $r = \App\Services\Academy\WhatsAppSender::sendReminder($n, [$first, (string) $l['course_title'], $fee !== null ? (string) $fee['display'] : 'the certificate fee', abs_url('academy/login')], 'WHATSAPP_CERT_REMINDER_TEMPLATE');
+            if ($r['ok']) {
+                $out['sent']++;
+            } else {
+                $out['failed']++;
+                $out['error'] ??= $r['error'];
+            }
+        }
+        return $out;
+    }
+    /**
+     * Send the fee reminder on WhatsApp to every learner who has not paid, straight from the site (needs the WhatsApp Business API and an approved template, see
+     * WhatsAppSender::reminderEnabled()). The template body is filled with {{1}} first name, {{2}} the fee, {{3}} the sign-in link.
+     * @return array{sent:int,failed:int,nonumber:int,error:?string}
+     */
+    public static function remindAllWhatsApp(): array
+    {
+        $out = ['sent' => 0, 'failed' => 0, 'nonumber' => 0, 'error' => null];
+        $fee = self::configured('signup');
+        foreach (self::unpaidLearners() as $l) {
+            $n = (string) preg_replace('/\D+/', '', (string) ($l['whatsapp'] ?? ''));
+            $n = $n !== '' ? (string) \App\Services\Academy\WhatsAppSender::normalise('+' . $n) : (string) \App\Services\Academy\WhatsAppSender::normalise((string) ($l['phone'] ?? ''));
+            if ($n === '') {
+                $out['nonumber']++;
+                continue;
+            }
+            $first = trim((string) strtok(trim((string) $l['name']), ' ')) ?: 'there';
+            $r = \App\Services\Academy\WhatsAppSender::sendReminder($n, [$first, $fee !== null ? (string) $fee['display'] : 'the sign-up fee', abs_url('academy/login')]);
+            if ($r['ok']) {
+                $out['sent']++;
+            } else {
+                $out['failed']++;
+                $out['error'] ??= $r['error'];
+            }
+        }
+        return $out;
     }
 
     /** A click-to-chat WhatsApp link with the reminder already typed, or null when the learner has no usable number. @param array<string,mixed> $learner */
