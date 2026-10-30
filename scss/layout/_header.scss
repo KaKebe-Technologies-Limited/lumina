@@ -186,10 +186,10 @@
         padding: $space-4 $space-4 0;
         @include respond(nav) {
             flex-direction: row;
-            flex-wrap: wrap;            // an owner who adds menu items gets a second row, never an overlap with the logo
+            flex-wrap: nowrap;          // every item on ONE row: the links are compact (below) so that eleven items still fit next to the logo and the Donate button
             justify-content: center;
             align-items: center;
-            gap: 0 0.1rem;
+            gap: 0;
             padding: 0;
         }
         @include respond('2xl') { gap: 0 0.1rem; }                 // Membership made the menu one item longer: keep one row at 1400px+
@@ -209,12 +209,13 @@
         &:hover { background: $tint-cool; color: $navy-dark; }
         @include respond(nav) {
             position: relative;
-            padding: $space-2 0.6rem;
-            font-size: 0.9rem;
+            padding: $space-2 0.32rem;
+            font-size: 0.84rem;
+            white-space: nowrap;
             border-radius: $radius-pill;
             &:hover { background: transparent; color: $orange-text; }
         }
-        @include respond('2xl') { padding: $space-2 0.55rem; font-size: 0.95rem; }
+        @include respond('2xl') { padding: $space-2 0.45rem; font-size: 0.92rem; }
     }
     // the active page: coloured text (orange 5.8:1 on white) + a short accent bar on desktop
     &__item.is-active > &__link { color: $orange-text; background: rgba($gold, 0.14); }
@@ -243,7 +244,7 @@
             position: static;
             width: 24px;
             height: 24px;
-            margin-left: -0.5rem;
+            margin-left: -0.6rem;
             .icon { width: 0.9rem; height: 0.9rem; }
         }
     }

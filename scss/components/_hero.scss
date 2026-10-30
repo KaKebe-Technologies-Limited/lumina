@@ -4,13 +4,13 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    padding-block: $space-5 calc(var(--radius-sheet) + #{$space-5});
+    padding-block: $space-5 calc(var(--radius-sheet) + #{$space-3});
     color: rgba($white, 0.92);
     background:
         radial-gradient(46rem 24rem at 96% 10%, rgba($navy-light, 0.75), transparent 64%),
         radial-gradient(30rem 18rem at 0% 100%, rgba($gold, 0.1), transparent 60%),
         $navy-dark;
-    @include respond(lg) { padding-block: $space-6 calc(var(--radius-sheet) + #{$space-6}); }
+    @include respond(lg) { padding-block: $space-6 calc(var(--radius-sheet) + #{$space-5}); }
 
     &__bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
     // phones + tablets: the copy spans the full width, so the veil is even (white text >= 4.5:1 over a white photo patch);
@@ -41,8 +41,10 @@
     // short and calm: one or two lines, never a paragraph (partials/page-hero.php shortens the text with hero_brief())
     &__lead { margin-top: $space-3; max-width: 38rem; font-size: fluid(1rem, '0.95rem + 0.3vw', 1.15rem); line-height: 1.5; color: rgba($white, 0.9); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
     &__actions { display: flex; flex-wrap: wrap; gap: $space-3; margin-top: $space-5; }
-    .eyebrow { margin-bottom: $space-3; }
-    .breadcrumbs { margin-bottom: $space-5; }
+    .eyebrow { display: inline-block; margin-bottom: $space-2; color: $gold; letter-spacing: 0.14em; text-shadow: 0 1px 2px rgba($navy-dark, 0.5); }
+    .breadcrumbs { margin-bottom: $space-4; text-shadow: 0 1px 2px rgba($navy-dark, 0.5); }
+    &__title { text-shadow: 0 2px 14px rgba($navy-dark, 0.35); }
+    &__lead { text-shadow: 0 1px 8px rgba($navy-dark, 0.4); }
 }
 
 // ---- Hero polish (all banners) ------------------------------------------------------------------------------------------
@@ -61,8 +63,8 @@
 .page-hero .breadcrumbs li:last-child { min-width: 0; max-width: 100%; }
 .page-hero .breadcrumbs li:last-child [aria-current='page'] { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
 @media (max-width: 639px) {
-    .page-hero { padding-block: $space-5 calc(var(--radius-sheet) + #{$space-4}); }
-    .page-hero .breadcrumbs { margin-bottom: $space-4; }
+    .page-hero { padding-block: $space-4 calc(var(--radius-sheet) + #{$space-2}); }
+    .page-hero .breadcrumbs { margin-bottom: $space-3; }
     .page-hero__actions .btn { flex: 1 1 100%; justify-content: center; }
     .hero-photo { min-height: #{'min(34rem, 88vh)'}; min-height: #{'min(34rem, 88svh)'}; padding-block: $space-7 calc(var(--radius-sheet) + #{$space-6}); }
     .hero-photo__actions .btn { flex: 1 1 100%; justify-content: center; }
