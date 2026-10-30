@@ -182,6 +182,11 @@ final class CertificateService
         return $n;
     }
 
+    public static function hasEmailedColumn(): bool
+    {
+        return self::emailedColumn();
+    }
+
     private static function emailedColumn(): bool
     {
         try {
@@ -326,11 +331,12 @@ final class CertificateService
         if ($existing !== null) {
             return $existing;
         }
+        $fee = self::approvalReady() ? AcademyFees::cert() : null;      // a challenge certificate is held behind the certificate fee too
         $id = Database::insert('academy_certificates', [
             'code' => self::generateCode(), 'kind' => 'challenge', 'learner_id' => (int) $learner['id'], 'challenge_id' => (int) $challenge['id'],
             'learner_name' => mb_substr((string) $learner['name'], 0, 120), 'course_title' => mb_substr((string) $challenge['title'], 0, 190),
             'award' => mb_substr($award, 0, 80), 'score_pct' => $score,
-        ] + (self::approvalReady() ? ['approved_at' => date('Y-m-d H:i:s')] : []));
+        ] + ($fee !== null ? ['fee_status' => 'due'] : (self::approvalReady() ? ['approved_at' => date('Y-m-d H:i:s')] : [])));
         return (array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]);
     }
 

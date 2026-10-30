@@ -13,6 +13,16 @@
         </div>
     </div>
 <?php endif; ?>
+<?php if (!empty($ready) && \App\Services\Academy\AcademyFees::cert() !== null && ($freeN = \App\Services\Academy\AcademyFees::certificatesWithoutFee()) > 0): ?>
+    <div class="alert alert--warning" role="status">
+        <strong><?= (int) $freeN ?> certificate<?= (int) $freeN === 1 ? ' is' : 's are' ?> given without the certificate fee.</strong>
+        Hold them all until the fee is paid: each learner then pays on the portal and gets the certificate the moment Pesapal confirms it. You can still release a certificate, issue one by hand or waive a fee for anyone.
+        <div class="aac-actions">
+            <form method="post" action="<?= e(url('admin/academy/certificates-hold-all')) ?>" class="inline-form" data-confirm="Hold all <?= (int) $freeN ?> certificates until their fee is paid? Learners cannot open them (and the public check page will not accept them) until the fee is paid, released or waived."><?= csrf_field() ?>
+                <button class="btn btn--primary btn--sm" type="submit"><?= icon('lock', 'icon--sm') ?> Hold all <?= (int) $freeN ?> until the fee is paid</button></form>
+        </div>
+    </div>
+<?php endif; ?>
 <?php if (!empty($ready) && !empty($approved)): ?>
     <div class="alert alert--info" role="status">
         <strong><?= (int) $approved ?> certificate<?= (int) $approved === 1 ? ' is' : 's are' ?> approved and available to the learners.</strong>
@@ -47,7 +57,7 @@
                     <?php if ($isWaiting): ?>
                         <a class="btn btn--ghost btn--icon" href="<?= e(url('admin/academy/certificates/' . $id . '/preview')) ?>" target="_blank" rel="noopener" title="Look at the PDF" aria-label="Preview: <?= e($c['code']) ?>"><?= icon('eye', 'icon--sm') ?></a>
                         <?php if (\App\Services\Academy\AcademyFees::certDue($c)): ?><form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/mark-fee-paid')) ?>" class="inline-form" data-confirm="Mark the fee of <?= e($c['code']) ?> as PAID? Do this after you have seen the money (for example in the Daraza dashboard)."><?= csrf_field() ?><input type="hidden" name="back" value="<?= e($status) ?>"><button class="btn btn--outline btn--sm" type="submit">Mark fee paid</button></form><?php endif; ?>
-                        <form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/approve')) ?>" class="inline-form"<?= \App\Services\Academy\AcademyFees::certDue($c) ? ' data-confirm="The certificate fee is not paid. Waive it and approve this certificate?"' : '' ?>><?= csrf_field() ?><?= \App\Services\Academy\AcademyFees::certDue($c) ? '<input type="hidden" name="waive" value="1">' : '' ?><input type="hidden" name="back" value="<?= e($status) ?>"><button class="btn btn--primary btn--sm" type="submit">Approve</button><button class="btn btn--outline btn--sm" type="submit" name="email" value="1">Approve and e-mail</button></form>
+                        <form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/approve')) ?>" class="inline-form"<?= \App\Services\Academy\AcademyFees::certDue($c) ? ' data-confirm="The certificate fee is not paid. Waive it and approve this certificate?"' : '' ?>><?= csrf_field() ?><?= \App\Services\Academy\AcademyFees::certDue($c) ? '<input type="hidden" name="waive" value="1">' : '' ?><input type="hidden" name="back" value="<?= e($status) ?>"><button class="btn btn--primary btn--sm" type="submit"><?= \App\Services\Academy\AcademyFees::certDue($c) ? 'Release (waive the fee)' : 'Approve' ?></button><button class="btn btn--outline btn--sm" type="submit" name="email" value="1"><?= \App\Services\Academy\AcademyFees::certDue($c) ? 'Release and e-mail' : 'Approve and e-mail' ?></button></form>
                         <details class="aac-edit"><summary class="btn btn--ghost btn--sm">Decline</summary>
                             <form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/decline')) ?>" class="aac-edit__form" data-confirm="Decline the request for <?= e($c['code']) ?>?"><?= csrf_field() ?><input type="hidden" name="back" value="<?= e($status) ?>">
                                 <div class="field"><label class="field__label" for="dc-<?= $id ?>">Message to the learner (optional)</label><input class="input" id="dc-<?= $id ?>" name="reason" maxlength="300"></div>

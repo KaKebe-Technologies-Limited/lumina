@@ -150,6 +150,16 @@ final class AcademyCertificatesController extends AcademyAdminController
         return $this->redirect('admin/academy/certificates');
     }
 
+    /** POST admin/academy/certificates-hold-all: every certificate in the system waits for its certificate fee (paid with Pesapal = released at once; or release / waive here). */
+    public function holdAll(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $n = \App\Services\Academy\AcademyFees::holdAllCertificates();
+        $this->audit('academy.certificates.hold_all', 'academy_certificate', null, 'Put every certificate on hold until its fee is paid', ['count' => $n]);
+        Flash::success($n === 0 ? 'Nothing to hold: set the certificate fee first (Admin > Pesapal payments > LAF Academy fees), or every certificate already has its fee.' : $n . ' certificate' . ($n === 1 ? ' is' : 's are') . ' on hold now. A learner gets ' . ($n === 1 ? 'it' : 'theirs') . ' as soon as the fee is paid with Pesapal; you can also release a certificate or waive its fee yourself.');
+        return $this->redirect('admin/academy/certificates?status=waiting');
+    }
+
     /** Take back every approved certificate: all of them wait for approval again before anybody receives them. */
     public function withdrawAll(Request $request): Response
     {

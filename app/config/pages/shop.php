@@ -22,7 +22,7 @@ return (static function (): array {
         'title' => 'Shop',
         'route' => '/shop',
         'help'  => 'The Lumina shop: branded jumpers, caps, T-shirts and stickers that raise funds for the foundation. Add and price the products in Admin > Shop > Products; open or close the shop, set delivery and the payment methods in Admin > Shop > Settings and Payments. This page holds all the fixed wording (headings, buttons, messages, e-mails). The texts about delivery, returns and terms are DRAFTS: the foundation must read and approve them.',
-        'nav'   => ['label' => 'Shop', 'order' => 96, 'header' => true, 'footer' => true, 'parent' => 'donate'],
+        'nav'   => ['label' => 'Shop', 'order' => 80, 'header' => true, 'footer' => true, 'parent' => null],
         'seo'   => [
             'title'       => 'Shop',
             'description' => 'Branded jumpers, caps, T-shirts and stickers from Lumina Africa Foundation. Every purchase supports our programmes.',

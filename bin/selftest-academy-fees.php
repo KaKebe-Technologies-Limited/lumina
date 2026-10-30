@@ -185,6 +185,35 @@ if ($course === null) {
 
     // approval not required: payment makes it available at once
     Database::execute('DELETE FROM academy_certificates WHERE id = ?', [(int) $certA['id']]);
+
+    // "Hold all": EVERY certificate goes behind the fee (the local database may hold real ones: they are put back at the end of this block)
+    $emCol = CertificateService::hasEmailedColumn();
+    $snap = Database::all("SELECT id, approved_at, approved_by" . ($emCol ? ', emailed_at' : '') . " FROM academy_certificates WHERE fee_status = 'none' AND revoked_at IS NULL");
+    $free = CertificateService::issue($learner, (array) $course, 70.0, 60, true);
+    check('a certificate an administrator issues by hand is free and available', $free['fee_status'] === 'none' && $free['approved_at'] !== null && CertificateService::activeFor($lid, (int) $course['id']) !== null);
+    $held = AcademyFees::holdAllCertificates();
+    $fa = (array) Database::one('SELECT fee_status, approved_at FROM academy_certificates WHERE id = ?', [(int) $free['id']]);
+    check('"Hold all": the free certificate now waits behind the fee and nobody can use it', $held >= 1 && $fa['fee_status'] === 'due' && $fa['approved_at'] === null && CertificateService::activeFor($lid, (int) $course['id']) === null);
+    check('"Hold all" a second time changes nothing', AcademyFees::holdAllCertificates() === 0 && AcademyFees::certificatesWithoutFee() === 0);
+    AcademyFees::beginCert((int) $free['id'], $lid);
+    $cpH = (array) Database::one("SELECT * FROM pesapal_payments WHERE purpose = 'academy_cert' AND ref_id = ? ORDER BY id DESC LIMIT 1", [(int) $free['id']]);
+    $answer((string) $cpH['order_tracking_id'], (string) $cpH['merchant_reference'], 15000);
+    PesapalPayments::settle((string) $cpH['order_tracking_id']);
+    check('paying the held certificate with Pesapal releases it at once', CertificateService::activeFor($lid, (int) $course['id']) !== null && Database::value('SELECT fee_status FROM academy_certificates WHERE id = ?', [(int) $free['id']]) === 'paid');
+    Database::execute('DELETE FROM academy_certificates WHERE id = ?', [(int) $free['id']]);
+    $free2 = CertificateService::issue($learner, (array) $course, 70.0, 60, true);
+    AcademyFees::holdAllCertificates();
+    check('an administrator can release a held certificate and waive its fee', CertificateService::approve((int) $free2['id'], null, false, true)['ok'] === true && Database::value('SELECT fee_status FROM academy_certificates WHERE id = ?', [(int) $free2['id']]) === 'waived' && CertificateService::activeFor($lid, (int) $course['id']) !== null);
+    Database::execute('DELETE FROM academy_certificates WHERE id = ?', [(int) $free2['id']]);
+    $ch = Database::one('SELECT * FROM academy_challenges ORDER BY id LIMIT 1');
+    if ($ch !== null) {
+        $cc = CertificateService::issueForChallenge($learner, (array) $ch, 'Participant', null);
+        check('a challenge certificate is held behind the fee too', $cc['fee_status'] === 'due' && $cc['approved_at'] === null);
+        Database::execute('DELETE FROM academy_certificates WHERE id = ?', [(int) $cc['id']]);
+    }
+    foreach ($snap as $o) {
+        Database::execute("UPDATE academy_certificates SET fee_status = 'none', fee_paid_at = NULL, approved_at = ?, approved_by = ?" . ($emCol ? ', emailed_at = ?' : '') . ' WHERE id = ?', array_merge([$o['approved_at'], $o['approved_by']], $emCol ? [$o['emailed_at']] : [], [(int) $o['id']]));
+    }
     Settings::set('academy_cert_approval', '0');
     $cert2 = CertificateService::issue($learner, (array) $course, 90.0, 60);
     AcademyFees::beginCert((int) $cert2['id'], $lid);

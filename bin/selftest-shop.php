@@ -215,7 +215,7 @@ check('editor holds shop.manage and shop.orders but never settings / export / de
 check('administrator holds every shop ability', Roles::can('admin', 'shop.settings') && Roles::can('admin', 'shop.export') && Roles::can('admin', 'shop.delete'));
 check('"shop" is a reserved page slug', \App\Core\Slug::isReserved('shop'));
 $page = Database::one("SELECT * FROM pages WHERE slug = 'shop'");
-check('pages row: Shop is a header + footer child of Donate', $page !== null && $page['parent_slug'] === 'donate' && (int) $page['show_in_nav'] === 1 && (int) $page['show_in_footer'] === 1);
+check('pages row: Shop is an independent header + footer item (not under Donate)', $page !== null && $page['parent_slug'] === null && (int) $page['show_in_nav'] === 1 && (int) $page['show_in_footer'] === 1);
 check('the one-time migrations ran once (markers present)', (int) Database::value("SELECT COUNT(*) FROM settings WHERE setting_key IN ('migration_shop_nav_v1','migration_shop_editor_role_v1','migration_shop_samples_v1')", [], 0) === 3);
 $sam = Database::all("SELECT * FROM shop_products WHERE is_sample = 1 ORDER BY id");
 check('six sample products are seeded, flagged as samples, UGX placeholder prices', count($sam) >= 6 && count(array_filter($sam, static fn(array $r): bool => (float) $r['price'] > 0 && (int) $r['is_sample'] === 1)) >= 6);
@@ -1009,7 +1009,7 @@ $zzMailText = static function (string $file): string {
 (?:[^
 ]*
 )*??
-([A-Za-z0-9+\/=
+([A-Za-z0-9+\/=
 ]+)/', $raw, $m) === 1 ? (string) base64_decode(preg_replace('/\s+/', '', $m[1]) ?? '') : $raw;
 };
 check('orderPlaced sends only the short "complete your payment" mail to the customer for an online order (no staff notice until it is paid)', count($gmNew) === 1

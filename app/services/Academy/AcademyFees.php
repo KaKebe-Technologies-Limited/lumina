@@ -306,6 +306,26 @@ final class AcademyFees
         }
     }
 
+    /** How many certificates are free at the moment (no fee asked yet, not revoked): the ones "Hold all" would put behind the certificate fee. */
+    public static function certificatesWithoutFee(): int
+    {
+        return self::ready() ? (int) Database::value("SELECT COUNT(*) FROM academy_certificates WHERE fee_status = 'none' AND revoked_at IS NULL", [], 0) : 0;
+    }
+
+    /**
+     * Hold EVERY certificate in the system (also the ones already given out and the ones an administrator issued) until its certificate fee is paid: each gets the fee
+     * DUE and waits again (nobody can open or check it). A payment with Pesapal releases it at once; an administrator can release it, issue another by hand or waive the fee.
+     * Does nothing while the certificate fee is not set up. @return int how many certificates were put on hold
+     */
+    public static function holdAllCertificates(): int
+    {
+        if (self::cert() === null || !CertificateService::approvalReady()) {
+            return 0;
+        }
+        $set = "fee_status = 'due', fee_paid_at = NULL, approved_at = NULL, approved_by = NULL" . (CertificateService::hasEmailedColumn() ? ', emailed_at = NULL' : '');
+        return Database::execute("UPDATE academy_certificates SET " . $set . " WHERE fee_status = 'none' AND revoked_at IS NULL");
+    }
+
     /**
      * Pesapal confirmed the sign-up fee: approve the account at once (Settings > LAF Academy can switch this off). Never for a rejected or switched-off account.
      * @return bool true when the account was approved by this call

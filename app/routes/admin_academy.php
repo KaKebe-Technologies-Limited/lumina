@@ -115,6 +115,7 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/certificates/{id}/email', [AcademyCertificatesController::class, 'email'])->middleware('throttle:60,60')->name('admin.academy.certificates.email');
     $router->post('/certificates/{id}/mark-fee-paid', [AcademyCertificatesController::class, 'markFeePaid'])->middleware('throttle:60,60')->name('admin.academy.certificates.mark_fee_paid');
     $router->post('/certificates-approve-all', [AcademyCertificatesController::class, 'approveAll'])->middleware('throttle:10,60')->name('admin.academy.certificates.approve_all');
+    $router->post('/certificates-hold-all', [AcademyCertificatesController::class, 'holdAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.hold_all');
     $router->post('/certificates-withdraw-all', [AcademyCertificatesController::class, 'withdrawAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.withdraw_all');
     $router->post('/certificates/{id}/revoke', [AcademyCertificatesController::class, 'revoke'])->name('admin.academy.certificates.revoke');
     $router->post('/certificates/{id}/reinstate', [AcademyCertificatesController::class, 'reinstate'])->name('admin.academy.certificates.reinstate');

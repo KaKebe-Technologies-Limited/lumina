@@ -788,11 +788,11 @@ ON DUPLICATE KEY UPDATE
   updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
 
 
--- Page: /shop. Header menu: a child of Donate (dropdown under the Donate button) plus the footer menu. All its copy comes from the page registry
+-- Page: /shop. Header menu: its own top-level item (between Blog and Contact) plus the footer menu. All its copy comes from the page registry
 -- (app/config/pages/shop.php). The owner can move or hide it in Admin > Menus. parent_slug is looked up so the statement also works on a database
 -- whose `donate` row is not there yet (then it is NULL and the entry is a top-level item).
 INSERT INTO pages (slug, title, type, template, is_published, show_in_nav, show_in_footer, nav_label, nav_order, parent_slug)
-SELECT 'shop', 'Shop', 'registry', 'default', 1, 1, 1, 'Shop', 96, (SELECT p.slug FROM pages p WHERE p.slug = 'donate')
+SELECT 'shop', 'Shop', 'registry', 'default', 1, 1, 1, 'Shop', 80, NULL
 ON DUPLICATE KEY UPDATE
   title = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(title), pages.title),
   type = IF((@reseed = 1 OR pages.updated_at = pages.created_at), VALUES(type), pages.type),
@@ -812,6 +812,13 @@ UPDATE pages SET parent_slug = (SELECT d.slug FROM (SELECT slug FROM pages WHERE
 WHERE slug = 'shop' AND parent_slug IS NULL AND nav_order = 96 AND show_in_nav = 1
   AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_shop_nav_v1') m);
 INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_shop_nav_v1', '1');
+
+-- ONE-TIME menu upgrade v2 (own marker): Shop was a child of Donate (a dropdown under the Donate button). It becomes an independent top-level menu item, but ONLY while its menu
+-- fields still hold what the first version set (child of Donate, order 96, in the header): a Shop the owner has already moved or hidden in Admin > Menus is left alone.
+UPDATE pages SET parent_slug = NULL, nav_order = 80, updated_at = updated_at
+WHERE slug = 'shop' AND parent_slug = 'donate' AND nav_order = 96 AND show_in_nav = 1
+  AND NOT EXISTS (SELECT 1 FROM (SELECT setting_key FROM settings WHERE setting_key = 'migration_shop_nav_v2') m);
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES ('migration_shop_nav_v2', '1');
 
 -- ONE-TIME role upgrade (guarded by the marker setting below): the built-in Editor role gets "Manage shop products" and "See and handle shop orders".
 -- It is changed ONLY while its stored ability list is still EXACTLY the list it had before the shop existed (the owner never edited the role); a list
