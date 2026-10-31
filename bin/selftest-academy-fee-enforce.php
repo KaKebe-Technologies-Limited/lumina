@@ -156,6 +156,14 @@ $bulk = $req($admin, 'POST', '/admin/academy/learners-remind-fee-all', ['_token'
 check('admin: "Remind all" sends the reminder to the learner who has not paid', $countMsgs() === $autoMsgs + 2, (string) $countMsgs());
 $wl = $req($admin, 'GET', '/admin/academy/learners-fee-reminders');
 check('admin: the WhatsApp list has a button with the reminder typed for the learner', $wl['code'] === 200 && str_contains($wl['body'], 'ZZ Fe Payer') && str_contains($wl['body'], 'https://wa.me/256700000051?text=') && str_contains($wl['body'], rawurlencode('UGX 20,000')));
+$wid = (int) Database::insert('academy_learners', ['name' => 'ZZ Fe Waive', 'email' => 'zz-fe-waive@example.test', 'password_hash' => Auth::hashPassword('Fee waive pass 99x'), 'is_active' => 1, 'fee_status' => 'due']);
+$wl0 = $req($admin, 'GET', '/admin/academy/learners');
+check('admin: a waiting learner who owes the fee has "Approve, waive fee" and the list has "Approve all and waive the fee"', str_contains($wl0['body'], '/admin/academy/learners/' . $wid . '/approve-waive') && str_contains($wl0['body'], 'Approve all and waive the fee'));
+$aw = $req($admin, 'POST', '/admin/academy/learners/' . $wid . '/approve-waive', ['_token' => $tok($wl0['body'])]);
+$wrow = (array) Database::one('SELECT fee_status, email_verified_at FROM academy_learners WHERE id = ?', [$wid]);
+check('admin: "Approve, waive fee" waives the fee and approves the account in one step', $wrow['fee_status'] === 'waived' && $wrow['email_verified_at'] !== null, json_encode($wrow));
+check('admin: the learner whose fee was waived can sign in without paying', LearnerAuth::login('zz-fe-waive@example.test', 'Fee waive pass 99x', '10.7.7.2')['ok'] === true);
+check('admin: the other unpaid learner was not touched by that', Database::value('SELECT fee_status FROM academy_learners WHERE id = ?', [$lid], '') === 'due');
 check('admin: the WhatsApp page offers a one-click "Start sending to all" queue', str_contains($wl['body'], 'Start sending to all') && str_contains($wl['body'], 'data-wa-next') && str_contains($wl['body'], 'js/admin-academy.js'));
 $waAll = $req($admin, 'POST', '/admin/academy/learners-remind-fee-whatsapp-all', ['_token' => $tok($lst['body'])]);
 check('admin: "WhatsApp all" without the WhatsApp Business API opens the guided list instead of failing', in_array($waAll['code'], [302, 303], true) && str_contains($req($admin, 'GET', '/admin/academy/learners-fee-reminders')['body'], 'not connected to the WhatsApp Business API'), (string) $waAll['code']);

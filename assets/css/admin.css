@@ -23981,3 +23981,55 @@ tr.is-unread td {
   margin-top: 0.75rem;
   font-size: 0.9375rem;
 }
+
+.pay-cards {
+  margin-bottom: 0.5rem;
+}
+
+.pay-card--ok {
+  border-color: rgba(30, 123, 69, 0.45);
+}
+
+.pay-card--ok .vis-card__n {
+  color: #1E7B45;
+}
+
+.pay-card--warn {
+  border-color: rgba(138, 90, 6, 0.5);
+  background: #FFF4DC;
+}
+
+.pay-amount {
+  display: block;
+}
+
+.pay-sub {
+  margin: 0 0 0.75rem;
+  font-size: 0.9375rem;
+}
+
+.pay-table .cell-sub {
+  display: block;
+  color: #5A6470;
+  font-size: 0.9375rem;
+}
+
+.pay-table tr.is-new td {
+  animation: pay-new 4s ease-out;
+}
+
+@keyframes pay-new {
+  from {
+    background: rgba(214, 161, 81, 0.45);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pay-table tr.is-new td {
+    animation: none;
+    background: rgba(214, 161, 81, 0.25);
+  }
+}

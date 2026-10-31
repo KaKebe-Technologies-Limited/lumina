@@ -13,3 +13,13 @@
 .vis-sub { margin: $space-4 0 $space-2; font-size: $fs-md; }
 .vis-list { list-style: none; margin: 0; padding: 0; li { display: flex; justify-content: space-between; gap: $space-3; padding: .35rem 0; border-bottom: 1px solid $border; } }
 .vis-note { margin-top: $space-3; font-size: $fs-sm; }
+
+// Admin > Academy > Payments (reuses the cards, bars and tables above)
+.pay-cards { margin-bottom: $space-2; }
+.pay-card--ok { border-color: rgba($success, .45); .vis-card__n { color: $success; } }
+.pay-card--warn { border-color: rgba($warning, .5); background: $warning-bg; }
+.pay-amount { display: block; }
+.pay-sub { margin: 0 0 $space-3; font-size: $fs-sm; }
+.pay-table { .cell-sub { display: block; color: $ink-soft; font-size: $fs-sm; } tr.is-new td { animation: pay-new 4s ease-out; } }
+@keyframes pay-new { from { background: rgba($gold, .45); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .pay-table tr.is-new td { animation: none; background: rgba($gold, .25); } }

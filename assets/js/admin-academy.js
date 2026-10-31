@@ -72,3 +72,32 @@
   reset.addEventListener('click', function () { done = {}; try { window.localStorage.removeItem(key); } catch (e) { /* ignore */ } btn.disabled = false; paint(); });
   paint();
 })();
+
+/* Admin > Academy > Payments: the list and the figures refresh themselves every 30 seconds (and a new payment is highlighted). Paused while the tab is hidden. */
+(function () {
+  'use strict';
+  var live = document.querySelector('[data-pay-live]');
+  if (!live || !window.fetch || !window.DOMParser) return;
+  var busy = false;
+  var seen = {};
+  var keys = function (root) { return Array.prototype.map.call(root.querySelectorAll('[data-pay-key]'), function (r) { return r.getAttribute('data-pay-key'); }); };
+  keys(live).forEach(function (k) { seen[k] = 1; });
+  var refresh = function () {
+    if (busy || document.hidden) return;
+    busy = true;
+    fetch(window.location.href, { credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } }).then(function (r) { return r.ok ? r.text() : Promise.reject(); }).then(function (html) {
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var fresh = doc.querySelector('[data-pay-live]');
+      if (!fresh) return;
+      live.innerHTML = fresh.innerHTML;
+      Array.prototype.forEach.call(live.querySelectorAll('[data-pay-key]'), function (row) {
+        if (!seen[row.getAttribute('data-pay-key')]) row.classList.add('is-new');
+        seen[row.getAttribute('data-pay-key')] = 1;
+      });
+      var clock = document.querySelector('[data-pay-clock]'), freshClock = doc.querySelector('[data-pay-clock]');
+      if (clock && freshClock) clock.textContent = freshClock.textContent;
+    }).catch(function () { /* offline or signed out: keep what is shown */ }).then(function () { busy = false; });
+  };
+  window.setInterval(refresh, 30000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+})();

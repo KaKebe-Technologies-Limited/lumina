@@ -88,7 +88,7 @@ final class AcademyLearnersController extends AcademyAdminController
         $total = (int) Database::value('SELECT COUNT(*) FROM academy_learners l' . $where, $params, 0);
         $pagination = Pagination::make($total, $request->page(), $this->perPage());
         $extra = (LearnerRegistry::rejectReady() ? ', l.rejected_at, l.reject_reason' : '') . (\App\Services\Academy\LearnerMessages::ready() ? ", (SELECT COUNT(*) FROM academy_messages mu WHERE mu.learner_id = l.id AND mu.sender = 'learner' AND mu.read_at IS NULL) AS msg_unread" : '')
-            . (LearnerRegistry::ready() ? ', l.reg_no, l.approved_at' : '') . (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '')
+            . (\App\Services\Academy\AcademyFees::ready() ? ', l.fee_status' . (\App\Services\Academy\LearnerMessages::ready() ? ", (SELECT COUNT(*) FROM academy_messages mw WHERE mw.learner_id = l.id AND mw.sender = 'admin' AND mw.body LIKE '" . \App\Services\Academy\AcademyFees::WELCOME_MARK . "%') AS welcomed" : '') : '') . (LearnerRegistry::ready() ? ', l.reg_no, l.approved_at' : '') . (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '')
             . (CertificateService::approvalReady() ? ', (SELECT COUNT(*) FROM academy_certificates cw WHERE cw.learner_id = l.id AND cw.approved_at IS NULL AND cw.revoked_at IS NULL) AS certs_waiting' : '');
         $rows = Database::all(
             'SELECT l.id, l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.last_login_at, l.created_at' . $extra . ', '
@@ -297,6 +297,71 @@ final class AcademyLearnersController extends AcademyAdminController
         return $this->redirect('admin/academy/learners');
     }
 
+    /** POST learners/{id}/acknowledge: thank the learner for paying, welcome them to the class and tell them they can ask for support (portal message, and e-mail when ticked). */
+    public function acknowledge(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        if (\App\Services\Academy\AcademyFees::acknowledge($id, Auth::id(), $request->bool('email'))) {
+            $this->audit('academy.learner.payment_acknowledged', 'academy_learner', $id, 'Acknowledged the payment of ' . $l['email'] . ' and welcomed them to the class');
+            Flash::success('The thank-you and welcome message was sent to ' . $l['name'] . ($request->bool('email') ? ' (also by e-mail).' : '.'));
+        } else {
+            Flash::info($l['name'] . ' has not paid the sign-up fee (or the message could not be sent), so nothing was sent.');
+        }
+        return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
+    }
+
+    /** POST learners-acknowledge-all: the same message to everyone who paid and has not been welcomed yet. */
+    public function acknowledgeAll(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $n = \App\Services\Academy\AcademyFees::acknowledgeAll(Auth::id(), $request->bool('email'));
+        $this->audit('academy.learner.payment_acknowledged_all', 'academy_learner', null, 'Sent the thank-you and welcome message to every learner who paid and was not welcomed yet', ['count' => $n]);
+        Flash::success($n === 0 ? 'Everybody who paid has already been welcomed.' : 'The thank-you and welcome message was sent to ' . $n . ' learner' . ($n === 1 ? '' : 's') . '.');
+        return $this->redirect('admin/academy/learners');
+    }
+
+    /** GET learners-welcome-whatsapp: one WhatsApp button per learner who paid and has not been welcomed (opens WhatsApp with the message typed). */
+    public function welcomeWhatsApp(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $rows = [];
+        foreach (\App\Services\Academy\AcademyFees::paidLearners(true) as $row) {
+            $row['wa'] = \App\Services\Academy\AcademyFees::welcomeWhatsAppUrl($row);
+            $rows[] = $row;
+        }
+        return $this->render('admin/academy/learners/welcome-whatsapp', ['rows' => $rows]);
+    }
+    /** POST learners/{id}/approve-waive: the administrator approves the account and waives the unpaid sign-up fee in one step. */
+    public function approveWaive(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        if (\App\Services\Academy\AcademyFees::signupDue($l)) {
+            \App\Services\Academy\AcademyFees::waiveSignup($id);
+        }
+        if (LearnerRegistry::approve($id, Auth::id())) {
+            $this->audit('academy.learner.approve_waive', 'academy_learner', $id, 'Approved the account of ' . $l['email'] . ' and waived the sign-up fee');
+            \App\Services\Academy\AcademyMail::approved($l);        // best effort: the approval does not depend on it
+            Flash::success($l['name'] . ' is approved (sign-up fee waived) and can sign in now.');
+        } else {
+            Flash::info('This account is already active.');
+        }
+        return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
+    }
+
+    /** POST learners-approve-all-waive: approve everyone who is waiting and waive the sign-up fee of those who have not paid. */
+    public function approveAllWaive(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $waived = \App\Services\Academy\AcademyFees::ready()
+            ? Database::execute("UPDATE academy_learners SET fee_status = 'waived' WHERE is_active = 1 AND email_verified_at IS NULL AND fee_status = 'due'")
+            : 0;
+        $n = LearnerRegistry::approveAll(Auth::id());
+        $this->audit('academy.learner.approve_all_waive', 'academy_learner', null, 'Approved every learner who was waiting and waived their unpaid sign-up fee', ['approved' => $n, 'waived' => $waived]);
+        Flash::success($n . ' learner' . ($n === 1 ? ' was' : 's were') . ' approved' . ($waived > 0 ? ' and the sign-up fee of ' . $waived . ' ' . ($waived === 1 ? 'was' : 'were') . ' waived' : '') . '. They can sign in now.');
+        return $this->redirect('admin/academy/learners');
+    }
     /** The "Reject" button: the application is declined, the learner cannot sign in and is told why (and can appeal through the contact form). */
     public function reject(Request $request, int $id): Response
     {
@@ -386,7 +451,7 @@ final class AcademyLearnersController extends AcademyAdminController
         } else {
             Flash::info('This account has no unpaid sign-up fee.');
         }
-        return $this->redirect('admin/academy/learners/' . $id);
+        return $this->redirect($request->string('back') === 'payments' ? 'admin/academy/payments' : 'admin/academy/learners/' . $id);
     }
 
     /** POST admin/academy/learners/{id}/remind-fee: the payment reminder goes into the learner's messages (and by e-mail when ticked). WhatsApp is a link: see the learner page. */

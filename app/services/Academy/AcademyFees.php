@@ -250,6 +250,68 @@ final class AcademyFees
         return $text;
     }
 
+    /** The first words of every payment acknowledgement: also how the site knows a learner was already welcomed (no extra column). */
+    public const WELCOME_MARK = 'Payment received - welcome to the LAF Academy';
+
+    /** Learners who paid the sign-up fee (Pesapal or confirmed by an administrator), with whether the welcome message was sent. @return list<array<string,mixed>> */
+    public static function paidLearners(bool $onlyNotWelcomed = false): array
+    {
+        if (!self::ready() || !\App\Services\Academy\LearnerMessages::ready()) {
+            return [];
+        }
+        $rows = Database::all("SELECT l.id, l.name, l.email, l.phone, l.country, l.whatsapp, l.reg_no, l.fee_paid_at,
+                (SELECT COUNT(*) FROM academy_messages m WHERE m.learner_id = l.id AND m.sender = 'admin' AND m.body LIKE ?) AS welcomed
+            FROM academy_learners l WHERE l.fee_status = 'paid' AND l.is_active = 1 ORDER BY l.id", [self::WELCOME_MARK . '%']);
+        return $onlyNotWelcomed ? array_values(array_filter($rows, static fn(array $r): bool => (int) $r['welcomed'] === 0)) : $rows;
+    }
+
+    /** The message that thanks the learner for paying, welcomes them to the class and says where to ask for help. @param array<string,mixed> $learner */
+    public static function welcomeText(array $learner): string
+    {
+        $fee = self::configured('signup');
+        $first = trim((string) strtok(trim((string) $learner['name']), ' ')) ?: 'there';
+        $sw = \App\Services\Academy\LearnerAuth::supportWhatsapp();
+        return self::WELCOME_MARK . "!\n\nHello " . $first . ', thank you: we have received your sign-up fee' . ($fee !== null ? ' of ' . $fee['display'] : '') . ' and your account is active. Welcome to the class! '
+            . 'Sign in at ' . abs_url('academy/login') . ', pick a course and start with the first lesson. Join the virtual classes too: they are listed at ' . abs_url('academy/classes') . '.'
+            . "\n\nIf you have any question or need any support, just ask: reply to this message in your portal (Messages)" . ($sw !== null ? ' or WhatsApp us on ' . $sw['display'] : '') . '. We are happy to help.';
+    }
+
+    /** @param array<string,mixed> $learner */
+    public static function welcomeWhatsAppUrl(array $learner): ?string
+    {
+        $n = (string) preg_replace('/\D+/', '', (string) ($learner['whatsapp'] ?? ''));
+        if ($n === '') {
+            $n = (string) \App\Services\Academy\WhatsAppSender::normalise((string) ($learner['phone'] ?? ''));
+        }
+        return strlen($n) >= 8 ? 'https://wa.me/' . $n . '?text=' . rawurlencode(self::welcomeText($learner)) : null;
+    }
+
+    /** Send the acknowledgement to one learner who paid (portal message, and an e-mail when asked). @return bool false when the learner has not paid or it could not be sent */
+    public static function acknowledge(int $learnerId, ?int $adminId, bool $email): bool
+    {
+        $l = Database::one('SELECT id, name, email, phone, whatsapp, fee_status FROM academy_learners WHERE id = ?', [$learnerId]);
+        if ($l === null || $l['fee_status'] !== 'paid' || !self::ready()) {
+            return false;
+        }
+        $text = self::welcomeText($l);
+        if (!\App\Services\Academy\LearnerMessages::send($learnerId, 'admin', $text, $adminId)['ok']) {
+            return false;
+        }
+        if ($email) {
+            \App\Services\Academy\AcademyMail::teamMessage($l, $text);
+        }
+        return true;
+    }
+
+    /** The acknowledgement to every learner who paid and has not been welcomed yet. @return int how many learners were written to */
+    public static function acknowledgeAll(?int $adminId, bool $email): int
+    {
+        $n = 0;
+        foreach (self::paidLearners(true) as $row) {
+            $n += self::acknowledge((int) $row['id'], $adminId, $email) ? 1 : 0;
+        }
+        return $n;
+    }
     /** Certificates held until the certificate fee is paid, with the learner's contact details. @return list<array<string,mixed>> */
     public static function unpaidCerts(): array
     {
