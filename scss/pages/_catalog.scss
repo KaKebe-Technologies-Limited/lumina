@@ -39,7 +39,8 @@ $cc-tones: (
   &__facts { display: flex; flex-wrap: wrap; gap: 0.3rem $space-4; margin: auto 0 0; padding: $space-3 0 0; border-top: 1px dashed $line; list-style: none; color: $ink-soft; font-size: $fs-xs; li { display: inline-flex; align-items: center; gap: 0.3rem; } }
   &__foot { padding: $space-2 $space-5 $space-5; } }
 .cc-pill { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.22rem 0.65rem; border-radius: 99px; background: rgba($white, 0.92); color: $navy-dark; font-size: 0.72rem; font-weight: 800;
-  &--free { background: #FFD21F; letter-spacing: 0.06em; text-transform: uppercase; } }
+  &--free { background: #FFD21F; letter-spacing: 0.06em; text-transform: uppercase; }
+  &--paid { background: $navy-dark; color: $white; letter-spacing: 0.06em; text-transform: uppercase; } }
 .cc-level { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; color: $navy;
   &__dots { display: inline-flex; gap: 3px; i { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: $line; &.is-on { background: $gold; } } } }
 .cc-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 0.8rem 1.2rem; border-radius: 99px; background: $navy; color: $white; font-family: $font-heading; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none; transition: background-color 0.15s ease, gap 0.15s ease;

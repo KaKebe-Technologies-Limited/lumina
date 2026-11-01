@@ -92,14 +92,14 @@ $this->end();
                         <?php if ($resume !== null): ?><a class="btn btn--cta btn--caps btn--block" href="<?= e(url('academy/learn/' . $course['slug'] . '/lesson/' . $resume)) ?>"><?= $progress['done'] > 0 ? 'Continue learning' : 'Start learning' ?></a><?php endif; ?>
                         <?php if ($certificate !== null): ?><a class="btn btn--outline btn--caps btn--block" href="<?= e(url('academy/certificate/' . $certificate['code'])) ?>"><?= icon('award', 'icon--sm') ?> My certificate</a><?php elseif (!empty($certificatePending)): ?><p class="ac-enrol__status"><?= icon('clock', 'icon--sm') ?> Certificate filed on <?= e(format_date($certificatePending['issued_at'], 'j M Y')) ?>: <?= e(\App\Services\Academy\CertificateService::waitingShort()) ?></p><?php elseif (!empty($certificateRequestable)): ?><form method="post" action="<?= e(url('academy/courses/' . $course['slug'] . '/certificate')) ?>" class="ac-cert-request"><?= csrf_field() ?><button class="btn btn--cta btn--caps btn--block" type="submit"><?= icon('award', 'icon--sm') ?> Request my certificate</button></form><p class="text-muted ac-enrol__note">You finished the course. Ask for your certificate: the Academy team approves it, then you can download it.</p><?php endif; ?>
                     <?php elseif ($learner !== null): ?>
-                        <p class="ac-enrol__status">Free. Start now.</p>
+                        <p class="ac-enrol__status"><?= \App\Services\Academy\AcademyFees::publicPaid() ? e(\App\Services\Academy\AcademyFees::feeSummary()) . '.' : 'Free. Start now.' ?></p>
                         <?php if ($tree['lessons'] > 0): ?>
                             <form method="post" action="<?= e(url('academy/courses/' . $course['slug'] . '/enroll')) ?>"><?= csrf_field() ?>
                                 <button class="btn btn--cta btn--caps btn--block" type="submit">Enrol and start</button></form>
                         <?php else: ?><p class="text-muted">No lessons yet. Please check back soon.</p><?php endif; ?>
                     <?php else: ?>
-                        <p class="ac-enrol__status">Free course</p>
-                        <a class="btn btn--cta btn--caps btn--block" href="<?= e($registerUrl) ?>">Create a free account</a>
+                        <p class="ac-enrol__status"><?= \App\Services\Academy\AcademyFees::publicPaid() ? e(\App\Services\Academy\AcademyFees::feeSummary()) . '.' : 'Free course' ?></p>
+                        <a class="btn btn--cta btn--caps btn--block" href="<?= e($registerUrl) ?>"><?= \App\Services\Academy\AcademyFees::publicPaid() ? 'Create my account' : 'Create a free account' ?></a>
                         <a class="btn btn--outline btn--caps btn--block" href="<?= e($loginUrl) ?>">I already have an account</a>
                     <?php endif; ?>
                     <dl class="ac-facts">
@@ -107,7 +107,7 @@ $this->end();
                         <div><dt>Lessons</dt><dd><?= (int) $tree['lessons'] ?></dd></div>
                         <div><dt>Time</dt><dd><?= e(academy_duration($minutes)) ?></dd></div>
                         <div><dt>Quizzes</dt><dd><?= (int) $tree['quizzes'] ?></dd></div>
-                        <div><dt>Certificate</dt><dd><?= (int) $course['certificate_enabled'] === 1 ? 'Yes, free' : 'No' ?></dd></div>
+                        <div><dt>Certificate</dt><dd><?= (int) $course['certificate_enabled'] === 1 ? (\App\Services\Academy\AcademyFees::cert() !== null ? 'Yes, ' . \App\Services\Academy\AcademyFees::cert()['display'] : 'Yes, free') : 'No' ?></dd></div>
                         <?php if ($facilitator): ?><div><dt>Facilitator</dt><dd><?= e($facilitator) ?></dd></div><?php endif; ?>
                     </dl>
                     <p class="ac-enrol__more"><a href="<?= e(url('academy/classes')) ?>"><?= icon('video', 'icon--sm') ?> Virtual classes</a></p>

@@ -40,7 +40,7 @@ $cta = content_btn('academy', 'cta.button');
 <section class="ac-stats" aria-label="The Academy in numbers">
     <div class="container">
         <ul class="ac-stats__list">
-            <li><b><?= (int) $stats['courses'] ?></b><span>Free courses</span></li>
+            <li><b><?= (int) $stats['courses'] ?></b><span><?= \App\Services\Academy\AcademyFees::publicPaid() ? 'Courses' : 'Free courses' ?></span></li>
             <li><b><?= (int) $stats['lessons'] ?></b><span>Lessons</span></li>
             <li><b><?= (int) $stats['learners'] ?></b><span>Learners</span></li>
             <li><b><?= (int) $stats['certificates'] ?></b><span>Certificates issued</span></li>

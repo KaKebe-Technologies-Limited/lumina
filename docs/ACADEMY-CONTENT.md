@@ -132,6 +132,26 @@ File names: `NN-slug.php` where NN is the order number below. Targets per course
 | 390 | freelancing-remote-work | Freelancing and Remote Work from Africa | careers | intermediate |
 | 400 | digital-finance-mobile-money | Digital Finance, Mobile Money and Safe Online Payments | business | beginner |
 | 410 | data-visualisation-power-bi | Data Visualisation and Reporting with Power BI | data | intermediate |
+| 420 | ai-no-code-automation | AI Automation Without Code: Workflows, Agents and Everyday Tools | ai | intermediate |
+| 430 | deep-learning-neural-networks | Deep Learning and Neural Networks Explained | ai | advanced |
+| 440 | responsible-ai-data-protection | Responsible AI, Ethics and Data Protection in Africa | ai | intermediate |
+| 450 | building-ai-apps-llm-apis | Building AI Apps: Working with Language Model APIs | ai | advanced |
+| 460 | nlp-chatbots-conversational-ai | Chatbots and Natural Language Processing for Africa | ai | intermediate |
+| 470 | it-support-help-desk | IT Support and Help Desk Essentials | hardware | beginner |
+| 480 | mobile-app-development-basics | Mobile App Development: Build Your First App | coding | intermediate |
+| 490 | devops-docker-ci-cd | DevOps Essentials: Docker, CI/CD and Deployment | cloud | advanced |
+| 500 | canva-graphic-design-masterclass | Graphic Design with Canva: From Beginner to Professional | design | beginner |
+| 510 | adobe-photoshop-photo-editing-design | Adobe Photoshop: Photo Editing and Digital Design | design | intermediate |
+| 520 | adobe-illustrator-vector-graphics-logos | Adobe Illustrator: Vector Graphics, Logos and Illustration | design | intermediate |
+| 530 | digital-content-creation | Digital Content Creation: Plan, Create and Grow Your Audience | marketing | beginner |
+| 540 | personal-branding | Personal Branding: Build a Reputation That Opens Doors | careers | beginner |
+| 550 | startup-entrepreneurship | Business and Entrepreneurship for Startups | business | beginner |
+| 560 | mastering-your-pitch | Mastering Your Pitch: Win Investors, Customers and Partners | business | intermediate |
+| 570 | presentation-confidence-public-speaking | Presentation Skills and Confidence: Speak with Impact | careers | beginner |
+
+**Interactive lessons (courses 420 and later):** every lesson holds two "Quick check" cards, a blockquote in exactly this form, which the site turns into a click-to-reveal question (assets/js/academy.js):
+`<blockquote><p><strong>Quick check:</strong> the question?</p><p>Answer: the answer and one reason.</p></blockquote>`
+The numbered list under "Try it yourself" becomes a tick-off checklist. Keep the lesson order: opening paragraph, teaching sections, two Quick checks, Try it yourself, Key points.
 
 Level guide: **beginner** assumes nothing; **intermediate** assumes the learner can use a computer and has done the relevant beginner course (say which one in `requirements`); **advanced** assumes comfortable intermediate skills (name them in `requirements`) and works on realistic projects, trade-offs and good practice. Intermediate and advanced lessons may run to 700-900 words and may use more code, formulas and screenshots-in-words, but keep the same lesson shape and the same quiz rules.
 

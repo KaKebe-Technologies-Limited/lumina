@@ -17,7 +17,7 @@ $cat = CourseService::categoryLabel($course['category']);
     <a class="cc-card__banner" href="<?= e($href) ?>" tabindex="-1" aria-hidden="true">
         <span class="cc-card__bgicon"><?= icon($icon, 'icon--xl') ?></span>
         <span class="cc-card__pills">
-            <span class="cc-pill cc-pill--free">Free</span>
+            <?php if (\App\Services\Academy\AcademyFees::publicPaid()): ?><span class="cc-pill cc-pill--paid" title="<?= e(\App\Services\Academy\AcademyFees::feeSummary()) ?>">Paid</span><?php else: ?><span class="cc-pill cc-pill--free">Free</span><?php endif; ?>
             <?php if ((int) $course['certificate_enabled'] === 1): ?><span class="cc-pill"><?= icon('award', 'icon--sm') ?> Certificate</span><?php endif; ?>
         </span>
         <?php if ((int) ($course['is_featured'] ?? 0) === 1): ?><span class="cc-card__ribbon"><?= icon('star', 'icon--sm') ?> Popular</span><?php endif; ?>

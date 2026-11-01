@@ -229,6 +229,13 @@
   text-transform: uppercase;
 }
 
+.cc-pill--paid {
+  background: #172036;
+  color: #FFFFFF;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .cc-level {
   display: inline-flex;
   align-items: center;

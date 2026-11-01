@@ -250,6 +250,24 @@ final class AcademyFees
         return $text;
     }
 
+    /** True when a sign-up fee or a certificate fee is set: the Academy shows "Paid" instead of "Free" everywhere visitors see the status. */
+    public static function publicPaid(): bool
+    {
+        try {
+            return self::ready() && (self::configured('signup') !== null || self::configured('cert') !== null);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /** "Sign-up fee USD 3.00 (once), certificate USD 2.00 when you complete the course" or '' when nothing is charged. */
+    public static function feeSummary(): string
+    {
+        $s = self::configured('signup');
+        $c = self::configured('cert');
+        $parts = array_filter([$s !== null ? 'Sign-up fee ' . $s['display'] . ' (once)' : '', $c !== null ? 'certificate ' . $c['display'] . ' when you complete the course' : '']);
+        return $parts === [] ? '' : ucfirst(implode(', ', $parts));
+    }
     /** The first words of every payment acknowledgement: also how the site knows a learner was already welcomed (no extra column). */
     public const WELCOME_MARK = 'Payment received - welcome to the LAF Academy';
 
