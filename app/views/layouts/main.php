@@ -91,6 +91,7 @@ if (!empty($breadcrumbs) && is_array($breadcrumbs)) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Fraunces:wght@500;600;700&amp;display=swap">
     <link rel="stylesheet" href="<?= e(asset('css/main.min.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('css/translate.css')) ?>">
     <script src="<?= e(asset('js/boot.js')) ?>"></script>
     <?= $this->section('head') ?>
     <script type="application/ld+json"><?= json_encode($ld, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
@@ -113,6 +114,7 @@ if (!empty($breadcrumbs) && is_array($breadcrumbs)) {
 
 <button class="back-to-top" type="button" data-back-to-top aria-label="<?= e(content('global', 'footer.back_to_top')) ?>"><?= icon('arrow-up') ?></button>
 
+<?= partial('partials/translate') ?>
 <?= partial('partials/pwa-install') ?>
 <?php if (\App\Services\Bono\BonoEngine::enabled()): ?>
 <?= partial('partials/bono') ?>
@@ -120,6 +122,7 @@ if (!empty($breadcrumbs) && is_array($breadcrumbs)) {
 <?php endif; ?>
 <script src="<?= e(asset('js/main.js')) ?>" defer></script>
 <script src="<?= e(asset('js/pwa.js')) ?>" defer></script>
+<script src="<?= e(asset('js/translate.js')) ?>" defer></script>
 <?= $this->section('scripts') ?>
 </body>
 </html>

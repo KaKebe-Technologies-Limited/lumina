@@ -168,14 +168,22 @@ class Response
             $analyticsConnect = $gaId !== '' ? ' https://www.google-analytics.com https://region1.google-analytics.com' : '';
             // frame-src 'self' lets the newsletter page embed its own PDF viewer (<iframe src="/newsletter/{slug}/pdf">); object-src stays 'none'.
             // No inline <script> / on* handlers anywhere: JS lives in assets/js/*.js
+            // Language switcher: only a browser that has chosen a language (cookie googtrans = /en/xx, set by assets/js/translate.js) gets the
+            // extra allowances Google's website translator needs (its scripts and styles, and a data: iframe that inherits this policy and runs
+            // an inline script); every other visitor keeps the strict policy below.
+            $tr = isset($_COOKIE['googtrans']) && preg_match('#^/en/(sv|es|zh-CN|fr|ru)$#', (string) $_COOKIE['googtrans']) === 1;
+            $trScript = $tr ? " 'unsafe-inline' https://translate.google.com https://translate.googleapis.com https://translate-pa.googleapis.com https://www.gstatic.com" : '';
+            $trStyle = $tr ? ' https://translate.googleapis.com https://www.gstatic.com' : '';
+            $trFrame = $tr ? ' data:' : '';
+            $trConnect = $tr ? ' https://translate.googleapis.com https://translate-pa.googleapis.com' : '';
             $h['Content-Security-Policy'] = "default-src 'self'; "
-                . "script-src 'self'" . $analytics . "; "
-                . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                . "script-src 'self'" . $analytics . $trScript . "; "
+                . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com" . $trStyle . "; "
                 . "font-src 'self' https://fonts.gstatic.com data:; "
                 . "img-src 'self' data: blob: https:; "
                 . "media-src 'self' https:; "
-                . "frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube-nocookie.com https://www.youtube.com; "
-                . "connect-src 'self'" . $analyticsConnect . "; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'";
+                . "frame-src 'self'" . $trFrame . " https://www.google.com https://maps.google.com https://www.youtube-nocookie.com https://www.youtube.com; "
+                . "connect-src 'self'" . $analyticsConnect . $trConnect . "; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'";
         }
         if (Request::current()?->isSecure()) {
             $h['Strict-Transport-Security'] = 'max-age=15552000; includeSubDomains';
