@@ -148,6 +148,17 @@ File names: `NN-slug.php` where NN is the order number below. Targets per course
 | 550 | startup-entrepreneurship | Business and Entrepreneurship for Startups | business | beginner |
 | 560 | mastering-your-pitch | Mastering Your Pitch: Win Investors, Customers and Partners | business | intermediate |
 | 570 | presentation-confidence-public-speaking | Presentation Skills and Confidence: Speak with Impact | careers | beginner |
+| 580 | discover-yourself | Discover Yourself: Find Your Strengths, Values and Purpose | careers | beginner |
+| 590 | goal-setting-personal-development-plan | Goal Setting: Design Your Personal Development Plan | careers | beginner |
+| 600 | self-confidence-overcome-self-doubt | Self-Confidence: Overcome Self-Doubt and Take Action | careers | beginner |
+| 610 | discipline-time-management | Discipline and Time Management for Young People | careers | beginner |
+| 620 | emotional-intelligence-resilience | Emotional Intelligence and Personal Resilience | careers | beginner |
+| 630 | effective-communication-public-speaking | Effective Communication and Public Speaking | careers | beginner |
+| 640 | career-readiness-cvs-applications | Career Readiness: CVs, Cover Letters and Job Applications | careers | beginner |
+| 650 | interview-mastery | Interview Mastery: Prepare, Practise and Perform | careers | beginner |
+| 660 | financial-literacy-money-management | Financial Literacy and Money Management | business | beginner |
+| 670 | ai-productivity-learning-career | AI for Productivity, Learning and Career Growth | ai | beginner |
+| 680 | digital-content-creation-masterclass | Digital Content Creation Masterclass: From Beginner to Paid Creator | marketing | beginner |
 
 **Interactive lessons (courses 420 and later):** every lesson holds two "Quick check" cards, a blockquote in exactly this form, which the site turns into a click-to-reveal question (assets/js/academy.js):
 `<blockquote><p><strong>Quick check:</strong> the question?</p><p>Answer: the answer and one reason.</p></blockquote>`

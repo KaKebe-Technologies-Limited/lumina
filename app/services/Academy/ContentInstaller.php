@@ -14,8 +14,8 @@ use App\Core\Slug;
  */
 final class ContentInstaller
 {
-    /** Marker value of setting academy_starter_done: 1 = first starter courses installed, 2 = the courses 320-410 and the starter challenges too, 3 = the AI and IT courses 420-490, 4 = the design courses 500-520, 5 = the business, branding and presentation courses 530-570. */
-    public const VERSION = '5';
+    /** Marker value of setting academy_starter_done: 1 = first starter courses installed, 2 = the courses 320-410 and the starter challenges too, 3 = the AI and IT courses 420-490, 4 = the design courses 500-520, 5 = the business, branding and presentation courses 530-570, 6 = the personal development and career courses 580-670, 7 = the Digital Content Creation Masterclass 680. */
+    public const VERSION = '7';
 
     public static function dir(): string
     {
@@ -174,9 +174,9 @@ final class ContentInstaller
             }
             @set_time_limit(180);
             $did = false;
-            if (in_array($marker, ['1', '2', '3', '4'], true)) {
+            if (in_array($marker, ['1', '2', '3', '4', '5', '6'], true)) {
                 // a site that already had earlier starter courses: add only the courses written since then (file number above 310, or above 410 once the marker is 2), once
-                $after = ['1' => 310, '2' => 410, '3' => 490, '4' => 520][$marker];
+                $after = ['1' => 310, '2' => 410, '3' => 490, '4' => 520, '5' => 570, '6' => 670][$marker];
                 foreach (self::status() as $s) {
                     if (!$s['installed'] && (int) $s['order'] > $after) {
                         $did = self::install((string) $s['slug'], null, true)['ok'] || $did;
