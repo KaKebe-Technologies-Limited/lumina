@@ -537,7 +537,7 @@ final class ShopProductsController extends AdminController
                     break 2;
                 }
                 if ($v['swatch'] !== null && preg_match('/^#[0-9a-fA-F]{6}$/', (string) $v['swatch']) !== 1) {
-                    $errors['options'] = 'A colour swatch must look like #2C3950, or be empty.';
+                    $errors['options'] = 'A colour swatch must look like #142B4A, or be empty.';
                     break 2;
                 }
             }

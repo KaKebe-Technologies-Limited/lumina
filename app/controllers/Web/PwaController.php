@@ -49,7 +49,7 @@ final class PwaController extends Controller
             'display' => $display,
             'orientation' => 'any',
             'lang' => 'en',
-            'theme_color' => $this->colour('pwa_theme_color', '#2C3950'),
+            'theme_color' => $this->colour('pwa_theme_color', '#142B4A'),
             'background_color' => $this->colour('pwa_background_color', '#1F2A44'),
             'icons' => [
                 $icon('icon-192.png', '192x192'), $icon('icon-512.png', '512x512'),
@@ -90,7 +90,7 @@ final class PwaController extends Controller
             'siteName' => (string) setting('pwa_name', 'Lumina Africa Foundation'),
             'title' => (string) setting('pwa_offline_title', 'You are offline'),
             'text' => (string) setting('pwa_offline_text', ''),
-            'theme' => $this->colour('pwa_theme_color', '#2C3950'),
+            'theme' => $this->colour('pwa_theme_color', '#142B4A'),
             'bg' => $this->colour('pwa_background_color', '#1F2A44'),
             'home' => url(''),
         ]))->header('Cache-Control', 'public, max-age=3600');

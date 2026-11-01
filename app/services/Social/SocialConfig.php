@@ -30,9 +30,9 @@ final class SocialConfig
     public const SECRET_PREFIX = 'social_secret_';
     /** the share-image designer keys (read by the images agent through SocialConfig::str / bool) */
     public const CARD_DEFAULTS = [
-        'social_card_bg'        => ['#2C3950', 'str', 'Share image: background colour'],
-        'social_card_bg_dark'   => ['#172036', 'str', 'Share image: dark gradient colour'],
-        'social_card_accent'    => ['#D6A151', 'str', 'Share image: accent colour (gold)'],
+        'social_card_bg'        => ['#142B4A', 'str', 'Share image: background colour'],
+        'social_card_bg_dark'   => ['#0B1B33', 'str', 'Share image: dark gradient colour'],
+        'social_card_accent'    => ['#D9A441', 'str', 'Share image: accent colour (gold)'],
         'social_card_accent2'   => ['#CC651A', 'str', 'Share image: second accent colour (orange)'],
         'social_card_text'      => ['#FFFFFF', 'str', 'Share image: text colour'],
         'social_card_tagline'   => ['', 'str', 'Share image: tagline (empty = the site tagline)'],
@@ -776,7 +776,7 @@ final class SocialConfig
                     $v = '#' . $v;
                 }
                 if (preg_match('/^#[0-9A-F]{6}$/', $v) !== 1) {
-                    $errors[$field] = $label . ' must be a colour like #2C3950.';
+                    $errors[$field] = $label . ' must be a colour like #142B4A.';
                     continue;
                 }
                 $set['social_card_' . $field] = $v;

@@ -15,17 +15,17 @@
   padding: 0 1rem 0 0.8rem;
   border: 0;
   border-radius: 999px;
-  background: #2C3950;
+  background: #142B4A;
   color: #FFFFFF;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(23, 32, 54, 0.18), 0 2px 6px rgba(23, 32, 54, 0.1);
+  box-shadow: 0 6px 18px rgba(11, 27, 51, 0.18), 0 2px 6px rgba(11, 27, 51, 0.1);
 }
 
-.translate__btn:hover { background: #3C4E6E; }
-.translate__btn:focus-visible { outline: 3px solid #D6A151; outline-offset: 2px; }
+.translate__btn:hover { background: #1D3B61; }
+.translate__btn:focus-visible { outline: 3px solid #D9A441; outline-offset: 2px; }
 .translate__btn .icon { width: 20px; height: 20px; }
 
 .translate__menu {
@@ -37,9 +37,9 @@
   padding: 0.35rem;
   list-style: none;
   background: #FFFFFF;
-  border: 1px solid #E4E1DA;
+  border: 1px solid #E5DED0;
   border-radius: 16px;
-  box-shadow: 0 18px 44px rgba(23, 32, 54, 0.16), 0 6px 14px rgba(23, 32, 54, 0.08);
+  box-shadow: 0 18px 44px rgba(11, 27, 51, 0.16), 0 6px 14px rgba(11, 27, 51, 0.08);
 }
 
 .translate__menu[hidden] { display: none; }
@@ -51,15 +51,15 @@
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: #1D1E20;
+  color: #242A32;
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
 .translate__menu button:hover,
-.translate__menu button:focus-visible { background: #F7F3EC; outline: none; }
-.translate__menu button.is-active { background: #EEF1F6; font-weight: 700; }
+.translate__menu button:focus-visible { background: #FAF8F2; outline: none; }
+.translate__menu button.is-active { background: #F3EFE5; font-weight: 700; }
 
 /* Google's own widget and banner stay out of sight; the page must not be pushed down by the banner */
 .translate__host { position: fixed; left: 0; bottom: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }

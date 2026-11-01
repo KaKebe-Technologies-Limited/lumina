@@ -259,7 +259,7 @@ $fb-z-drawer: 260;
         font-weight: 600;
         color: $navy;
         text-overflow: ellipsis;
-        &:hover { border-color: $border; background: #FBFAF8; }
+        &:hover { border-color: $border; background: #FAF8F2; }
         &:focus { border-color: $navy; background: $white; outline: 0; box-shadow: 0 0 0 3px rgba($navy, 0.14); }
         &::placeholder { color: $fb-ink-faint; font-weight: 500; }
     }
@@ -439,7 +439,7 @@ $fb-z-drawer: 260;
         box-shadow: $shadow-sm;
         overflow: hidden;
     }
-    .fb-side__tabs { display: flex; align-items: center; gap: $space-1; padding: $space-2 $space-3 0; border-bottom: 1px solid $border; background: #FBFAF8; }
+    .fb-side__tabs { display: flex; align-items: center; gap: $space-1; padding: $space-2 $space-3 0; border-bottom: 1px solid $border; background: #FAF8F2; }
     .fb-stab {
         display: inline-flex;
         align-items: center;
@@ -531,7 +531,7 @@ $fb-z-drawer: 260;
         text-align: left;
         cursor: grab;
         transition: border-color $t-fast ease, background-color $t-fast ease, box-shadow $t-fast ease;
-        &:hover { border-color: $navy; background: #FBFAF8; box-shadow: $shadow-sm; }
+        &:hover { border-color: $navy; background: #FAF8F2; box-shadow: $shadow-sm; }
         &:active { cursor: grabbing; }
         &__icon { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 2rem; height: 2rem; border-radius: 9px; background: $tint-cool; color: $navy; }
         &__text { display: flex; flex-direction: column; min-width: 0; }
@@ -681,7 +681,7 @@ $fb-z-drawer: 260;
         &.has-error { border-left: 5px solid $danger; }
         &.is-dragging { opacity: 0.4; }
         &:focus-visible { outline: 3px solid $orange-dark; outline-offset: 2px; }
-        &--layout { background: #FBFAF8; }
+        &--layout { background: #FAF8F2; }
     }
     @media (max-width: 639px) { .fb-card--half, .fb-card--third { grid-column: span 6; } }
 
@@ -758,7 +758,7 @@ $fb-z-drawer: 260;
         padding: 0.4rem 0.75rem;
         border: 1px solid $border-strong;
         border-radius: 10px;
-        background: #FBFAF8;
+        background: #FAF8F2;
     }
     .fb-mock--select { justify-content: space-between; }
     .fb-mock--area { align-items: flex-start; min-height: 4.5rem; }
@@ -805,7 +805,7 @@ $fb-z-drawer: 260;
         font-size: 0.92rem;
         font-weight: 600;
         &::-webkit-details-marker { display: none; }
-        &:hover { background: #FBFAF8; }
+        &:hover { background: #FAF8F2; }
         > span:first-child { flex: 1; }
     }
     .fb-sec__badge { padding: 0 0.5rem; border-radius: $radius-pill; background: $tint-cool; color: $navy; font-size: 0.72rem; font-weight: 700; line-height: 1.35rem; }
@@ -861,14 +861,14 @@ $fb-z-drawer: 260;
     .fb-opts__list { display: grid; gap: 6px; list-style: none; margin: 0; padding: 0; }
     .fb-opts__row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: $space-1; }
     .fb-opts__order { display: grid; gap: 0; }
-    .fb-opts__paste { display: grid; gap: $space-2; padding: $space-3; border: 1px dashed $border-strong; border-radius: $radius; background: #FBFAF8; }
+    .fb-opts__paste { display: grid; gap: $space-2; padding: $space-3; border: 1px dashed $border-strong; border-radius: $radius; background: #FAF8F2; }
     .fb-opts__other { display: grid; gap: $space-3; padding-top: $space-2; border-top: 1px solid $border; }
 
     // conditions
     .fb-cond { display: grid; gap: $space-3; }
     .fb-cond__lead { margin: 0; font-size: 0.86rem; font-weight: 700; color: $navy; }
     .fb-cond__join { margin: 0; justify-self: start; padding: 0 0.7rem; border-radius: $radius-pill; background: $navy; color: $white; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.5rem; }
-    .fb-rule { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: $space-1; align-items: start; padding: $space-3; border: 1px solid $border; border-radius: $radius; background: #FBFAF8; }
+    .fb-rule { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: $space-1; align-items: start; padding: $space-3; border: 1px solid $border; border-radius: $radius; background: #FAF8F2; }
     .fb-rule__fields { display: grid; gap: $space-2; min-width: 0; }
 }
 
@@ -929,7 +929,7 @@ $fb-z-drawer: 260;
     .fb-pv__frame { display: block; border: 0; background: $white; transform-origin: 0 0; max-width: none; }
     .fb-bigpv { display: grid; gap: $space-3; .fb-pv { height: 58vh; min-height: 22rem; } }
 
-    .fb-test { display: grid; gap: $space-2; padding: $space-3; border: 1px solid $border; border-radius: $radius; background: #FBFAF8; justify-items: start; }
+    .fb-test { display: grid; gap: $space-2; padding: $space-3; border: 1px solid $border; border-radius: $radius; background: #FAF8F2; justify-items: start; }
     .fb-test__head { strong { display: block; color: $navy; font-size: $fs-sm; } p { margin: 0; color: $ink-soft; font-size: $fs-xs; } }
     .fb-test__out { width: 100%; max-height: 14rem; overflow-y: auto; }
     .fb-test__out:empty { display: none; }
@@ -970,7 +970,7 @@ $fb-z-drawer: 260;
     &__title { margin: 0; font-family: $font-heading; font-size: 1.15rem; color: $navy; line-height: 1.25; }
     &__body { flex: 1 1 auto; overflow-y: auto; padding: $space-5; }
     &__text { display: grid; gap: $space-3; p { margin: 0; } }
-    &__foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: $space-2; padding: $space-3 $space-5; border-top: 1px solid $border; background: #FBFAF8; }
+    &__foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: $space-2; padding: $space-3 $space-5; border-top: 1px solid $border; background: #FAF8F2; }
     @include respond-down(sm) { &__foot .btn { flex: 1 1 auto; } &__body { padding: $space-4; } }
 
     .fb-bullets { margin: $space-2 0 0; padding-left: 1.2rem; display: grid; gap: $space-2; }

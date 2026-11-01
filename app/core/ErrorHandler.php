@@ -139,12 +139,12 @@ final class ErrorHandler
         } catch (\Throwable) {
         }
         $home = htmlspecialchars(function_exists('url') ? url('') : '/', ENT_QUOTES, 'UTF-8');
-        $dbg = $debug ? '<pre style="text-align:left;white-space:pre-wrap;background:#f7f3ec;padding:1rem;border-radius:8px;overflow:auto;font-size:12px">' . htmlspecialchars($debug, ENT_QUOTES, 'UTF-8') . '</pre>' : '';
+        $dbg = $debug ? '<pre style="text-align:left;white-space:pre-wrap;background:#FAF8F2;padding:1rem;border-radius:8px;overflow:auto;font-size:12px">' . htmlspecialchars($debug, ENT_QUOTES, 'UTF-8') . '</pre>' : '';
         return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
             . '<meta name="robots" content="noindex"><title>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</title>' . $css
-            . '<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#2c3950;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;text-align:center}'
-            . 'main{max-width:560px;padding:2rem}h1{color:#d6a151;font-size:3.5rem;margin:0}h2{margin:.25rem 0 1rem}p{opacity:.9;line-height:1.6}'
-            . 'a{display:inline-block;margin-top:1rem;padding:.75rem 1.5rem;border-radius:999px;background:#D6A151;color:#172036;font-weight:700;text-decoration:none}</style></head>'
+            . '<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#142B4A;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;text-align:center}'
+            . 'main{max-width:560px;padding:2rem}h1{color:#D9A441;font-size:3.5rem;margin:0}h2{margin:.25rem 0 1rem}p{opacity:.9;line-height:1.6}'
+            . 'a{display:inline-block;margin-top:1rem;padding:.75rem 1.5rem;border-radius:999px;background:#D9A441;color:#0B1B33;font-weight:700;text-decoration:none}</style></head>'
             . '<body><main><h1>' . $status . '</h1><h2>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h2><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>'
             . '<a href="' . $home . '">Back to the home page</a>' . $dbg . '</main></body></html>';
     }

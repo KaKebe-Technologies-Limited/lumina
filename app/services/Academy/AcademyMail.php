@@ -49,18 +49,18 @@ final class AcademyMail
             $text .= "\n\n" . $button['label'] . ":\n" . $button['url'];
         }
         $text .= "\n\n" . $site . ' - LAF Academy' . ($support !== '' ? "\nNeed help? Write to " . $support : '');
-        $html = '<!doctype html><html><body style="margin:0;padding:24px;background:#f4f1ea;font-family:Arial,Helvetica,sans-serif;color:#1d1e20">'
+        $html = '<!doctype html><html><body style="margin:0;padding:24px;background:#f4f1ea;font-family:Arial,Helvetica,sans-serif;color:#242A32">'
             . '<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:14px;padding:28px">'
-            . '<p style="margin:0 0 18px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#8a5a06;font-weight:700">' . htmlspecialchars($site . ' - LAF Academy', ENT_QUOTES) . '</p>';
+            . '<p style="margin:0 0 18px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#A5521A;font-weight:700">' . htmlspecialchars($site . ' - LAF Academy', ENT_QUOTES) . '</p>';
         foreach ($paragraphs as $p) {
             $html .= '<p style="margin:0 0 16px;line-height:1.6;font-size:16px">' . nl2br(htmlspecialchars($p, ENT_QUOTES), false) . '</p>';
         }
         if ($button !== null) {
-            $html .= '<p style="margin:22px 0"><a href="' . htmlspecialchars($button['url'], ENT_QUOTES) . '" style="background:#d6a151;color:#172036;text-decoration:none;font-weight:700;padding:13px 24px;border-radius:999px;display:inline-block">'
+            $html .= '<p style="margin:22px 0"><a href="' . htmlspecialchars($button['url'], ENT_QUOTES) . '" style="background:#D9A441;color:#0B1B33;text-decoration:none;font-weight:700;padding:13px 24px;border-radius:999px;display:inline-block">'
                 . htmlspecialchars($button['label'], ENT_QUOTES) . '</a></p>'
-                . '<p style="margin:0 0 16px;font-size:13px;color:#5a6470;word-break:break-all">If the button does not work, copy this address into your browser:<br>' . htmlspecialchars($button['url'], ENT_QUOTES) . '</p>';
+                . '<p style="margin:0 0 16px;font-size:13px;color:#5B6472;word-break:break-all">If the button does not work, copy this address into your browser:<br>' . htmlspecialchars($button['url'], ENT_QUOTES) . '</p>';
         }
-        $html .= '<p style="margin:18px 0 0;font-size:13px;color:#5a6470">' . htmlspecialchars($site, ENT_QUOTES) . ($support !== '' ? ' &middot; Need help? ' . htmlspecialchars($support, ENT_QUOTES) : '') . '</p></div></body></html>';
+        $html .= '<p style="margin:18px 0 0;font-size:13px;color:#5B6472">' . htmlspecialchars($site, ENT_QUOTES) . ($support !== '' ? ' &middot; Need help? ' . htmlspecialchars($support, ENT_QUOTES) : '') . '</p></div></body></html>';
         $opts = ['html' => $html];
         if ($replyTo !== null && $replyTo !== '') {
             $opts['reply_to'] = $replyTo;

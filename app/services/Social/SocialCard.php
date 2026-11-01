@@ -458,9 +458,9 @@ final class SocialCard
             $tag = trim((string) setting('tagline', ''));
         }
         return [
-            'bg'        => $col('social_card_bg', '#2C3950'),
-            'bg_dark'   => $col('social_card_bg_dark', '#172036'),
-            'accent'    => $col('social_card_accent', '#D6A151'),
+            'bg'        => $col('social_card_bg', '#142B4A'),
+            'bg_dark'   => $col('social_card_bg_dark', '#0B1B33'),
+            'accent'    => $col('social_card_accent', '#D9A441'),
             'accent2'   => $col('social_card_accent2', '#CC651A'),
             'text'      => $col('social_card_text', '#FFFFFF'),
             'tagline'   => mb_substr($tag, 0, 80),

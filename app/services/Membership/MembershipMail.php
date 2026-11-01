@@ -206,7 +206,7 @@ final class MembershipMail
             $hasUrl = $url !== '' && str_contains($block, $url);
             $shown = $hasUrl ? trim((string) preg_replace('/\s*' . preg_quote($url, '/') . '/', '', $block)) : $block;     // the button carries the link
             $html = $link(nl2br($esc($shown), false));
-            $body .= '<p style="margin:0 0 14px 0;' . $font . 'font-size:15px;line-height:1.6;color:#1D1E20">' . $html . '</p>';
+            $body .= '<p style="margin:0 0 14px 0;' . $font . 'font-size:15px;line-height:1.6;color:#242A32">' . $html . '</p>';
             if ($hasUrl && !$buttonDone) {
                 $body .= $button;
                 $buttonDone = true;

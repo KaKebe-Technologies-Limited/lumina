@@ -60,7 +60,7 @@ if (!empty($breadcrumbs) && is_array($breadcrumbs)) {
     <meta name="description" content="<?= e($meta['description']) ?>">
     <meta name="robots" content="<?= e($meta['robots']) ?>">
     <link rel="canonical" href="<?= e($meta['canonical']) ?>">
-    <meta name="theme-color" content="#2C3950">
+    <meta name="theme-color" content="#142B4A">
     <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
     <meta name="base-url" content="<?= e(url('')) ?>">
 

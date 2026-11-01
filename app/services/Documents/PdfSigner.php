@@ -22,7 +22,7 @@ final class PdfSigner
     private const NAVY = '#1F2A44';
     private const GOLD = '#B7852F';
     private const INK = '#2B2F36';
-    private const GREY = '#5A6470';
+    private const GREY = '#5B6472';
     private const PAGE_W = 595.28;
     private const PAGE_H = 841.89;
     private const MARGIN = 56.0;
@@ -115,7 +115,7 @@ final class PdfSigner
             $x += $first ? 70 : 60;
         }
         $pdf->text($x, $first ? 46 : 36, mb_strtoupper($doc['org']), 'helvetica-bold', 13, '#FFFFFF');
-        $pdf->text($x, $first ? 66 : 54, 'APPROVAL AND SIGNATURES', 'helvetica-bold', 9.5, '#D6A151');
+        $pdf->text($x, $first ? 66 : 54, 'APPROVAL AND SIGNATURES', 'helvetica-bold', 9.5, '#D9A441');
     }
 
     /** Title, document facts and statement; returns the y where the signature blocks start. */

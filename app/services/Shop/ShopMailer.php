@@ -87,12 +87,12 @@ final class ShopMailer
         $footer = self::fill($get('footer'), $vars, false);
         $text = rtrim($body) . ($footer !== '' ? "\n\n-- \n" . $footer : '') . "\n";
         $paras = array_filter(array_map('trim', preg_split('/\n{2,}/', $body) ?: []), static fn(string $p): bool => $p !== '');
-        $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#1D1E20;max-width:620px;margin:0 auto;padding:16px">';
+        $html = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#242A32;max-width:620px;margin:0 auto;padding:16px">';
         foreach ($paras as $p) {
             $html .= '<p style="margin:0 0 14px">' . nl2br(htmlspecialchars($p, ENT_QUOTES, 'UTF-8')) . '</p>';
         }
         if ($footer !== '') {
-            $html .= '<hr style="border:0;border-top:1px solid #ddd;margin:20px 0"><p style="margin:0;color:#5A6470;font-size:13px">' . nl2br(htmlspecialchars($footer, ENT_QUOTES, 'UTF-8')) . '</p>';
+            $html .= '<hr style="border:0;border-top:1px solid #ddd;margin:20px 0"><p style="margin:0;color:#5B6472;font-size:13px">' . nl2br(htmlspecialchars($footer, ENT_QUOTES, 'UTF-8')) . '</p>';
         }
         $html .= '</div>';
         return ['subject' => $subject, 'text' => $text, 'html' => $html];

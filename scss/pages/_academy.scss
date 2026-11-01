@@ -212,8 +212,8 @@ fieldset.ac-q { padding: 0 $space-4 $space-4;
 
 // ---- certificate page
 // The on-screen certificate follows the printed design (LAF_Certificate template): navy border, gold inner frame, serif title, orange course name.
-$cert-paper: #FCFAF4;
-$cert-navy: #122040;
+$cert-paper: #FAF8F2;
+$cert-navy: #0B1B33;
 $cert-gold: #C9973F;
 $cert-orange: #E0642C;
 .ac-cert { position: relative; max-width: 46rem; margin: $space-5 auto; padding: clamp(1.5rem, 4vw, 3rem); text-align: center; background: $cert-paper; border: 6px solid $cert-navy; border-radius: 2px; box-shadow: 0 14px 40px rgba($navy, .14);
@@ -227,7 +227,7 @@ $cert-orange: #E0642C;
   &__facts { margin: $space-3 0; color: $ink-soft; font-size: $fs-sm; }
   &__no { margin: $space-4 0 0; font-size: $fs-sm; color: $ink-soft; b { color: $navy; letter-spacing: .06em; } } }
 // The certificate on screen is the same picture as the PDF (CertificateService::svg).
-.ac-cert-svg { max-width: 62rem; margin: $space-5 auto; box-shadow: 0 14px 40px rgba($navy, .16); background: #FCFAF4; svg { display: block; width: 100%; height: auto; } }
+.ac-cert-svg { max-width: 62rem; margin: $space-5 auto; box-shadow: 0 14px 40px rgba($navy, .16); background: #FAF8F2; svg { display: block; width: 100%; height: auto; } }
 @media print {
   body.is-academy-certificate { .page-hero, .topbar, .site-header, .site-footer, .back-to-top, .ac-center, .opp-notice, .skip-link, .breadcrumbs { display: none !important; } .section { padding: 0; } }
   .ac-cert, .ac-cert-svg { box-shadow: none; margin: 0 auto; page-break-inside: avoid; }

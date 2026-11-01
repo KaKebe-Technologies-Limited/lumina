@@ -1,17 +1,17 @@
 // =====================================================================================
 // DESIGN TOKENS - shared by main.scss (public) and admin.scss. FOUNDATION-OWNED.
 // Brand colours were sampled from assets/img/brand/logo-512.png (embroidered patch):
-//   navy field  ~ #2C3950   gold ring/lettering ~ #D6A151   (the orange of the Africa map is NOT used in the interface: see docs/DESIGN-COLOURS.md)
+//   Palette: docs/Lumina_Africa_Foundation_Website_Colour_Palette.docx - Deep Navy #0B1B33, Royal Navy #142B4A, Warm Gold #D9A441, Burnt Orange #C96A22, Ivory #FAF8F2, Slate #5B6472, Charcoal #242A32
 // Text contrast (WCAG AA) is noted next to each pairing that agents are expected to use.
 // =====================================================================================
 
 // ---- Brand palette --------------------------------------------------------------
-$navy:          #2C3950 !default;   // logo field. white on navy = 11.6:1
-$navy-dark:     #172036 !default;   // deep shadow of the patch. white = 16.2:1, gold = 7.0:1
-$navy-light:    #3C4E6E !default;
-$gold:          #D6A151 !default;   // logo lettering. on navy-dark = 7.0:1, on navy = 5.0:1 (use for text ONLY on navy)
-$gold-deep:     #C47E0D !default;   // live-site gold; DECORATIVE only on white (3.3:1)
-$gold-text:     #85560A !default;   // gold-looking text on white/cream = 6.2:1
+$navy:          #142B4A !default;   // logo field. white on navy = 11.6:1
+$navy-dark:     #0B1B33 !default;   // deep shadow of the patch. white = 16.2:1, gold = 7.0:1
+$navy-light:    #1D3B61 !default;
+$gold:          #D9A441 !default;   // logo lettering. on navy-dark = 7.0:1, on navy = 5.0:1 (use for text ONLY on navy)
+$gold-deep:     #C96A22 !default;   // live-site gold; DECORATIVE only on white (3.3:1)
+$gold-text:     #A5521A !default;   // gold-looking text on white/cream = 6.2:1
 $orange:        $gold-deep !default;   // LEGACY alias (the old rust orange is retired): decorative gold
 $orange-dark:   $gold-text !default;   // LEGACY alias: bronze for icons, focus rings, links on light = 5.9:1 on white
 $orange-accent: $gold !default;        // LEGACY alias: gold fill
@@ -20,30 +20,30 @@ $teal-dark:     #3D6870 !default;   // 6.2:1 on white
 
 // ---- Action colour: ONE call-to-action = gold fill with navy-dark text (7:1). Secondary actions are navy / outline.
 $cta:           $gold !default;
-$cta-hover:     #E3B666 !default;   // a lighter gold on hover, navy-dark text 8.3:1
+$cta-hover:     #C96A22 !default;   // burnt orange on hover (palette doc section 4), navy-dark text 4.7:1
 $on-cta:        $navy-dark !default;
 $orange-text:   $gold-text !default;   // LEGACY name: gold-looking TEXT on white / cream / pale tints (5.9:1 white, 5.4:1 cream, 5.3:1 pale-navy)
-$tint-cool:     #EEF1F6 !default;   // very pale navy tint (quote cards, mission/vision boxes). navy 10.3:1, ink-soft 5.3:1
-$line:          #E4E1DA !default;   // thin 1px borders on white
+$tint-cool:     #F3EFE5 !default;   // very pale navy tint (quote cards, mission/vision boxes). navy 10.3:1, ink-soft 5.3:1
+$line:          #E5DED0 !default;   // thin 1px borders on white
 
 // ---- Neutrals ----------------------------------------------------------------------
-$ink:           #1D1E20 !default;   // body text, 16.7:1 on white
-$heading:       #2C2F31 !default;
-$ink-soft:      #5A6470 !default;   // secondary text, 6.0:1 on white, 5.4:1 on cream
-$surface:       #F7F3EC !default;   // warm cream section background
-$surface-alt:   #F1EEE8 !default;   // warm light grey (matches the cream surface)
-$border:        #E3DDD2 !default;
-$border-strong: #CFC7B8 !default;
+$ink:           #242A32 !default;   // body text, 16.7:1 on white
+$heading:       #242A32 !default;
+$ink-soft:      #5B6472 !default;   // secondary text, 6.0:1 on white, 5.4:1 on cream
+$surface:       #FAF8F2 !default;   // warm cream section background
+$surface-alt:   #F3EFE5 !default;   // warm light grey (matches the cream surface)
+$border:        #E5DED0 !default;
+$border-strong: #D9D0BD !default;
 $white:         #FFFFFF !default;
 
 // ---- Status colours (text-safe on white) --------------------------------------------
-$success:       #1E7B45 !default;
+$success:       #287A52 !default;
 $success-bg:    #E7F5EC !default;
-$warning:       #8A5A06 !default;
+$warning:       #A5521A !default;
 $warning-bg:    #FFF4DC !default;
-$danger:        #B42318 !default;
+$danger:        #B83232 !default;
 $danger-bg:     #FDECEA !default;
-$info:          #1F5F8B !default;
+$info:          #285B91 !default;
 $info-bg:       #E6F1F8 !default;
 
 // ---- Typography -------------------------------------------------------------------------

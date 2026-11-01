@@ -24,7 +24,7 @@
     // navy fill (white text 11.6:1)
     &--primary { background: $navy; color: $white; &:hover { background: $navy-dark; color: $white; } }
     // gold fill (navy-dark text 7:1)
-    &--accent { background: $orange-accent; color: $navy-dark; &:hover { background: $gold; color: $navy-dark; } }
+    &--accent { background: $orange-accent; color: $navy-dark; &:hover { background: $cta-hover; color: $navy-dark; } }
     // gold fill (navy-dark text 7:1)
     &--gold { background: $gold; color: $navy-dark; &:hover { background: $white; color: $navy-dark; } }
     // legacy name: bronze with white text (6:1)

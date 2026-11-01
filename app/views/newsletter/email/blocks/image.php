@@ -11,5 +11,5 @@ if ($img['path'] === '') {
 ?>
 <tr><td style="padding:20px 32px 4px 32px;font-family:<?= $sans ?>;<?= $wrap ?>">
     <img src="<?= e(R::imageUrl($img, 'email')) ?>" width="536" alt="<?= e($img['alt']) ?>" style="display:block;border:0;width:100%;max-width:536px;height:auto;border-radius:12px;">
-    <?php if ($img['caption'] !== ''): ?><p style="margin:8px 0 0 0;font-size:13px;line-height:1.5;color:#5A6470;"><?= e($img['caption']) ?></p><?php endif; ?>
+    <?php if ($img['caption'] !== ''): ?><p style="margin:8px 0 0 0;font-size:13px;line-height:1.5;color:#5B6472;"><?= e($img['caption']) ?></p><?php endif; ?>
 </td></tr>

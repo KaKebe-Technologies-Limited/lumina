@@ -95,14 +95,14 @@ final class AdminPasswordReset
         $p2 = 'If you did not ask for this, ignore this message: your password stays as it is.';
         $text = $hello . "\n\n" . $p1 . "\n\nChoose a new password:\n" . $url . "\n\n" . $p2 . "\n\n" . $site;
         $h = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES);
-        $html = '<!doctype html><html><body style="margin:0;padding:24px;background:#f4f1ea;font-family:Arial,Helvetica,sans-serif;color:#1d1e20">'
+        $html = '<!doctype html><html><body style="margin:0;padding:24px;background:#f4f1ea;font-family:Arial,Helvetica,sans-serif;color:#242A32">'
             . '<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:14px;padding:28px">'
-            . '<p style="margin:0 0 18px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#85560a;font-weight:700">' . $h($site) . ' - admin</p>'
+            . '<p style="margin:0 0 18px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#A5521A;font-weight:700">' . $h($site) . ' - admin</p>'
             . '<p style="margin:0 0 16px;line-height:1.6;font-size:16px">' . $h($hello) . '</p>'
             . '<p style="margin:0 0 16px;line-height:1.6;font-size:16px">' . $h($p1) . '</p>'
-            . '<p style="margin:22px 0"><a href="' . $h($url) . '" style="background:#d6a151;color:#172036;text-decoration:none;font-weight:700;padding:13px 24px;border-radius:999px;display:inline-block">Choose a new password</a></p>'
-            . '<p style="margin:0 0 16px;font-size:13px;color:#5a6470;word-break:break-all">If the button does not work, copy this address into your browser:<br>' . $h($url) . '</p>'
-            . '<p style="margin:0;line-height:1.6;font-size:14px;color:#5a6470">' . $h($p2) . '</p></div></body></html>';
+            . '<p style="margin:22px 0"><a href="' . $h($url) . '" style="background:#D9A441;color:#0B1B33;text-decoration:none;font-weight:700;padding:13px 24px;border-radius:999px;display:inline-block">Choose a new password</a></p>'
+            . '<p style="margin:0 0 16px;font-size:13px;color:#5B6472;word-break:break-all">If the button does not work, copy this address into your browser:<br>' . $h($url) . '</p>'
+            . '<p style="margin:0;line-height:1.6;font-size:14px;color:#5B6472">' . $h($p2) . '</p></div></body></html>';
         try {
             return Mailer::send((string) $user['email'], 'Reset your ' . $site . ' admin password', $text, ['html' => $html]);
         } catch (\Throwable $e) {

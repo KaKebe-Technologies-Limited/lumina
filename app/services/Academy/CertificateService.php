@@ -469,7 +469,7 @@ final class CertificateService
     public static function pdf(array $cert): string
     {
         $w = self::wording();
-        $navy = '#122040';
+        $navy = '#0B1B33';
         $gold = '#C9973F';
         $goldText = '#9A6F1C';
         $orange = '#E0642C';
@@ -485,11 +485,11 @@ final class CertificateService
         $cx = $W / 2;
 
         // paper, navy border, gold double frame
-        $pdf->fill('#FCFAF4');
+        $pdf->fill('#FAF8F2');
         $pdf->rect(0, 0, $W, $H, 'f');
         $pdf->fill($navy);
         $pdf->rect(18, 18, $W - 36, $H - 36, 'f');
-        $pdf->fill('#FCFAF4');
+        $pdf->fill('#FAF8F2');
         $pdf->rect(24, 24, $W - 48, $H - 48, 'f');
         // the logo, very faint, behind the text (5 % in the template: stored already blended with the paper colour)
         try {
@@ -744,7 +744,7 @@ final class CertificateService
     public static function svg(array $cert): string
     {
         $w = self::wording();
-        $navy = '#122040';
+        $navy = '#0B1B33';
         $gold = '#C9973F';
         $goldText = '#9A6F1C';
         $orange = '#E0642C';
@@ -772,9 +772,9 @@ final class CertificateService
         };
 
         // paper, navy border, gold double frame, corner ornaments
-        $o[] = '<rect width="' . $W . '" height="' . $H . '" fill="#FCFAF4"/>';
+        $o[] = '<rect width="' . $W . '" height="' . $H . '" fill="#FAF8F2"/>';
         $o[] = '<rect x="18" y="18" width="' . ($W - 36) . '" height="' . ($H - 36) . '" fill="' . $navy . '"/>';
-        $o[] = '<rect x="24" y="24" width="' . ($W - 48) . '" height="' . ($H - 48) . '" fill="#FCFAF4"/>';
+        $o[] = '<rect x="24" y="24" width="' . ($W - 48) . '" height="' . ($H - 48) . '" fill="#FAF8F2"/>';
         $o[] = '<image href="' . $e(asset('img/brand/watermark-logo.jpg')) . '" x="270.9449" y="' . ($H - 141.6378 - 300) . '" width="300" height="300"/>';
         $o[] = '<rect x="32" y="32" width="' . ($W - 64) . '" height="' . ($H - 64) . '" fill="none" stroke="' . $gold . '" stroke-width="2.2"/>';
         $o[] = '<rect x="38" y="38" width="' . ($W - 76) . '" height="' . ($H - 76) . '" fill="none" stroke="' . $gold . '" stroke-width="0.7"/>';

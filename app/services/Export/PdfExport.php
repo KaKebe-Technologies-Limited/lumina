@@ -11,12 +11,12 @@ use App\Services\Membership\Card\PdfWriter;
  */
 final class PdfExport
 {
-    private const NAVY = '#122040';
+    private const NAVY = '#0B1B33';
     private const GOLD = '#C9973F';
     private const GREY = '#5B6478';
-    private const INK = '#1D1E20';
-    private const CREAM = '#F7F3EC';
-    private const LINE = '#E4E1DA';
+    private const INK = '#242A32';
+    private const CREAM = '#FAF8F2';
+    private const LINE = '#E5DED0';
     private const MAX_LINES = 14;
 
     public static function render(ExportDocument $d): string

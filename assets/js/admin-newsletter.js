@@ -1238,7 +1238,7 @@
 
     // ------------------------------------------------------------------------------------------------ 6. live preview (rendered by the server)
     const PREVIEW_CSS = '[data-nl-block]{cursor:pointer;outline:2px solid transparent;outline-offset:6px;border-radius:6px;transition:outline-color .15s ease}'
-        + '[data-nl-block]:hover{outline-color:rgba(214,161,81,.85)}[data-nl-block]:focus-visible{outline-color:#B85A14}[data-nl-block].nl-is-selected{outline:3px solid #B85A14}'
+        + '[data-nl-block]:hover{outline-color:rgba(217, 164, 65,.85)}[data-nl-block]:focus-visible{outline-color:#B85A14}[data-nl-block].nl-is-selected{outline:3px solid #B85A14}'
         + 'a{cursor:pointer}html{scroll-behavior:auto!important}';
 
     function setPreviewState(text, tone) {

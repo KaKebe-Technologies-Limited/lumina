@@ -156,12 +156,12 @@ $ziSet = static function (string $k, string $v): void {
     SocialConfig::flush();
 };
 $ziSet('social_card_bg', 'not-a-colour');
-check('designer: an invalid colour falls back to the brand default', SocialCard::designer()['bg'] === '#2C3950');
+check('designer: an invalid colour falls back to the brand default', SocialCard::designer()['bg'] === '#142B4A');
 $ziSet('social_card_bg', '#112233');
 $ziSet('social_card_tagline', 'Custom <b>tagline</b>');
 $d = SocialCard::designer();
 check('designer: a valid colour is used (upper-cased); a tagline is taken as typed (cleaned when drawn)', $d['bg'] === '#112233' && str_contains($d['tagline'], 'Custom'));
-$ziSet('social_card_bg', $zi->settings['social_card_bg'] ?? '#2C3950');
+$ziSet('social_card_bg', $zi->settings['social_card_bg'] ?? '#142B4A');
 $ziSet('social_card_tagline', $zi->settings['social_card_tagline'] ?? '');
 
 // ----------------------------------------------------------------------------------------------------------------------------------- five varied issues, three formats
@@ -236,7 +236,7 @@ if ($zi->gd) {
     $ziSet('social_card_accent', '#FF00AA');
     SocialCard::ensure($draft, 'square');
     check('a changed designer colour redraws too', (string) Database::value('SELECT src_hash FROM social_images WHERE token = ?', [$made['square']['token']], '') !== $h3);
-    $ziSet('social_card_accent', $zi->settings['social_card_accent'] ?? '#D6A151');
+    $ziSet('social_card_accent', $zi->settings['social_card_accent'] ?? '#D9A441');
     $other = $ziIssue(['title' => 'ZZ-IMGS second', 'cover' => null]);
     NewsletterService::publish($other, null);
     $om = SocialCard::ensure($other, 'square');

@@ -2363,7 +2363,7 @@
   function secLook() {
     const c = S.doc.cfg;
     c.theme = c.theme || { accent: 'orange', layout: 'stepped', progress: true };
-    const swatches = { orange: ['Orange', '#B85A14'], navy: ['Navy', '#2C3950'], teal: ['Teal', '#3D6870'], gold: ['Gold', '#8A5A06'] };
+    const swatches = { orange: ['Orange', '#B85A14'], navy: ['Navy', '#142B4A'], teal: ['Teal', '#3D6870'], gold: ['Gold', '#A5521A'] };
     const gid = uid('fb-acc');
     const accent = h('fieldset', { class: 'fb-seg' }, h('legend', { class: 'fb-field__label' }, 'Accent colour of the form'),
       h('div', { class: 'fb-swatches' }, (S.catalog.accents || Object.keys(swatches)).map((a) => {

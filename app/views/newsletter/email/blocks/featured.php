@@ -11,17 +11,17 @@ $link = $featured['link'];
 $href = R::href($link['url'], 'email');
 $linkLabel = $link['label'] !== '' ? $link['label'] : (string) content('newsletter', 'issue.read_more');
 ?>
-<tr><td style="padding:24px 32px 8px 32px;font-family:<?= $sans ?>;font-size:16px;line-height:1.65;color:#1D1E20;<?= $wrap ?>">
+<tr><td style="padding:24px 32px 8px 32px;font-family:<?= $sans ?>;font-size:16px;line-height:1.65;color:#242A32;<?= $wrap ?>">
     <?php if ($img['path'] !== ''): ?>
         <img src="<?= e(R::imageUrl($img, 'email')) ?>" width="536" alt="<?= e($img['alt']) ?>" style="display:block;border:0;width:100%;max-width:536px;height:auto;border-radius:12px;margin:0 0 8px 0;">
-        <?php if ($img['caption'] !== ''): ?><p style="margin:0 0 16px 0;font-size:13px;line-height:1.5;color:#5A6470;"><?= e($img['caption']) ?></p><?php endif; ?>
+        <?php if ($img['caption'] !== ''): ?><p style="margin:0 0 16px 0;font-size:13px;line-height:1.5;color:#5B6472;"><?= e($img['caption']) ?></p><?php endif; ?>
     <?php endif; ?>
-    <p style="margin:12px 0 6px 0;font-size:12px;line-height:1.4;letter-spacing:1.5px;text-transform:uppercase;color:#8A5A06;font-weight:bold;"><?= e(content('newsletter', 'issue.featured_label')) ?></p>
-    <?php if ($featured['heading'] !== ''): ?><h2 style="margin:0 0 12px 0;font-family:<?= $serif ?>;font-size:24px;line-height:1.3;color:#2C3950;font-weight:bold;<?= $wrap ?>"><?= e($featured['heading']) ?></h2><?php endif; ?>
+    <p style="margin:12px 0 6px 0;font-size:12px;line-height:1.4;letter-spacing:1.5px;text-transform:uppercase;color:#A5521A;font-weight:bold;"><?= e(content('newsletter', 'issue.featured_label')) ?></p>
+    <?php if ($featured['heading'] !== ''): ?><h2 style="margin:0 0 12px 0;font-family:<?= $serif ?>;font-size:24px;line-height:1.3;color:#142B4A;font-weight:bold;<?= $wrap ?>"><?= e($featured['heading']) ?></h2><?php endif; ?>
     <?= $body ?>
     <?php if ($href !== ''): ?>
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 0 0;"><tr><td align="center" bgcolor="#D6A151" style="border-radius:999px;background:#D6A151;">
-            <a href="<?= e($href) ?>" style="display:inline-block;padding:12px 26px;font-family:<?= $sans ?>;font-size:15px;line-height:1.2;font-weight:bold;color:#172036;text-decoration:none;border-radius:999px;max-width:100%;<?= $wrap ?>"><?= e($linkLabel) ?></a>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 0 0;"><tr><td align="center" bgcolor="#D9A441" style="border-radius:999px;background:#D9A441;">
+            <a href="<?= e($href) ?>" style="display:inline-block;padding:12px 26px;font-family:<?= $sans ?>;font-size:15px;line-height:1.2;font-weight:bold;color:#0B1B33;text-decoration:none;border-radius:999px;max-width:100%;<?= $wrap ?>"><?= e($linkLabel) ?></a>
         </td></tr></table>
     <?php endif; ?>
 </td></tr>

@@ -305,3 +305,21 @@
 
 // Prevent background scroll while the drawer is open
 body.nav-open { overflow: hidden; @include respond(nav) { overflow: auto; } }
+
+// ---- Palette: the main navigation is Deep Navy with white text and gold accents (colour palette doc, section 3).
+// The mobile drawer and the dropdown panels stay white, so only the bar, the brand, the toggle and the desktop links change.
+.site-header {
+    background: rgba($navy-dark, 0.98);
+    border-bottom: 1px solid rgba($gold, 0.35);
+    .brand, .brand:hover { color: $white; }
+    .brand__name { color: $white; }
+    .brand__tag { color: rgba($white, 0.78); }
+    .site-header__cta { background: $gold; color: $navy-dark; &:hover, &:focus-visible { background: $cta-hover; color: $navy-dark; } }
+    .nav-toggle { background: transparent; border-color: rgba($gold, 0.7); color: $white; &:hover { background: rgba($white, 0.08); border-color: $gold; } }
+    @include respond(nav) {
+        .site-nav > .site-nav__list > .site-nav__item > .site-nav__link,
+        .site-nav__list > .site-nav__item > .site-nav__link { color: $white; &:hover, &:focus-visible { background: transparent; color: $gold; } }
+        .site-nav__list > .site-nav__item.is-active > .site-nav__link { color: $gold; }
+        .site-nav__list > .site-nav__item > .site-nav__sub-toggle { color: $white; }
+    }
+}

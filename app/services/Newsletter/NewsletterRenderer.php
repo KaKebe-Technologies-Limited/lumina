@@ -347,19 +347,19 @@ final class NewsletterRenderer
     {
         $styles = [
             'p'          => 'margin:0 0 16px 0;',
-            'h2'         => "margin:24px 0 12px 0;font-family:Georgia,'Times New Roman',serif;font-size:19px;line-height:1.3;color:#2C3950;",
-            'h3'         => "margin:20px 0 10px 0;font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.3;color:#2C3950;",
-            'h4'         => 'margin:18px 0 8px 0;font-size:16px;line-height:1.4;color:#2C3950;',
+            'h2'         => "margin:24px 0 12px 0;font-family:Georgia,'Times New Roman',serif;font-size:19px;line-height:1.3;color:#142B4A;",
+            'h3'         => "margin:20px 0 10px 0;font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.3;color:#142B4A;",
+            'h4'         => 'margin:18px 0 8px 0;font-size:16px;line-height:1.4;color:#142B4A;',
             'ul'         => 'margin:0 0 16px 0;padding:0 0 0 22px;',
             'ol'         => 'margin:0 0 16px 0;padding:0 0 0 22px;',
             'li'         => 'margin:0 0 6px 0;',
-            'blockquote' => 'margin:0 0 16px 0;padding:0 0 0 16px;border-left:3px solid #D6A151;color:#5A6470;',
-            'a'          => 'color:#85560A;text-decoration:underline;',
+            'blockquote' => 'margin:0 0 16px 0;padding:0 0 0 16px;border-left:3px solid #D9A441;color:#5B6472;',
+            'a'          => 'color:#A5521A;text-decoration:underline;',
             'img'        => 'max-width:100%;height:auto;border:0;display:block;',
-            'hr'         => 'border:0;border-top:1px solid #E4E1DA;margin:20px 0;',
+            'hr'         => 'border:0;border-top:1px solid #E5DED0;margin:20px 0;',
             'table'      => 'border-collapse:collapse;margin:0 0 16px 0;max-width:100%;',
-            'td'         => 'border:1px solid #E4E1DA;padding:6px 8px;',
-            'th'         => 'border:1px solid #E4E1DA;padding:6px 8px;text-align:left;',
+            'td'         => 'border:1px solid #E5DED0;padding:6px 8px;',
+            'th'         => 'border:1px solid #E5DED0;padding:6px 8px;text-align:left;',
         ];
         // a pasted URL or one very long word must wrap inside the 600px card instead of stretching it
         $wrap = 'word-break:break-word;overflow-wrap:anywhere;word-wrap:break-word;';

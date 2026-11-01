@@ -11,14 +11,14 @@ $link = $block['link'];
 $href = R::href($link['url'], 'email');
 $linkLabel = $link['label'] !== '' ? $link['label'] : (string) content('newsletter', 'issue.read_more');
 ?>
-<tr><td style="padding:24px 32px 8px 32px;font-family:<?= $sans ?>;font-size:16px;line-height:1.65;color:#1D1E20;<?= $wrap ?>">
+<tr><td style="padding:24px 32px 8px 32px;font-family:<?= $sans ?>;font-size:16px;line-height:1.65;color:#242A32;<?= $wrap ?>">
     <?php if ($img['path'] !== ''): ?>
         <img src="<?= e(R::imageUrl($img, 'email')) ?>" width="536" alt="<?= e($img['alt']) ?>" style="display:block;border:0;width:100%;max-width:536px;height:auto;border-radius:12px;margin:0 0 8px 0;">
-        <?php if ($img['caption'] !== ''): ?><p style="margin:0 0 12px 0;font-size:13px;line-height:1.5;color:#5A6470;"><?= e($img['caption']) ?></p><?php endif; ?>
+        <?php if ($img['caption'] !== ''): ?><p style="margin:0 0 12px 0;font-size:13px;line-height:1.5;color:#5B6472;"><?= e($img['caption']) ?></p><?php endif; ?>
     <?php endif; ?>
-    <?php if ($block['heading'] !== ''): ?><h2 style="margin:8px 0 10px 0;font-family:<?= $serif ?>;font-size:21px;line-height:1.3;color:#2C3950;font-weight:bold;<?= $wrap ?>"><?= e($block['heading']) ?></h2><?php endif; ?>
+    <?php if ($block['heading'] !== ''): ?><h2 style="margin:8px 0 10px 0;font-family:<?= $serif ?>;font-size:21px;line-height:1.3;color:#142B4A;font-weight:bold;<?= $wrap ?>"><?= e($block['heading']) ?></h2><?php endif; ?>
     <?= $body ?>
     <?php if ($href !== ''): ?>
-        <p style="margin:0 0 8px 0;"><a href="<?= e($href) ?>" style="color:#85560A;font-weight:bold;text-decoration:underline;<?= $wrap ?>"><?= e($linkLabel) ?> &rarr;</a></p>
+        <p style="margin:0 0 8px 0;"><a href="<?= e($href) ?>" style="color:#A5521A;font-weight:bold;text-decoration:underline;<?= $wrap ?>"><?= e($linkLabel) ?> &rarr;</a></p>
     <?php endif; ?>
 </td></tr>
