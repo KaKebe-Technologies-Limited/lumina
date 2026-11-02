@@ -18,7 +18,7 @@ final class AcademyPaymentsController extends AcademyAdminController
     public function index(Request $request): Response
     {
         $this->authorize('academy.manage');
-        $f = PaymentsReport::filters($request->string('period'), $request->string('type'), $request->string('status'));
+        $f = PaymentsReport::filters($request->string('period'), $request->string('type'), $request->string('status'), $request->string('login'));
         $events = PaymentsReport::events($f, 150);
         return $this->render('admin/academy/payments', [
             'f' => $f,
@@ -37,7 +37,7 @@ final class AcademyPaymentsController extends AcademyAdminController
     public function export(Request $request): Response
     {
         $this->authorize('academy.manage');
-        $f = PaymentsReport::filters($request->string('period'), $request->string('type'), $request->string('status'));
+        $f = PaymentsReport::filters($request->string('period'), $request->string('type'), $request->string('status'), $request->string('login'));
         $events = PaymentsReport::events($f, 5000);
         $this->audit('academy.payments.export', 'academy_payment', null, 'Downloaded the Academy payments list', ['rows' => count($events)]);
         return CsvExport::response('academy-payments-' . date('Y-m-d') . '.csv', ['Time', 'Learner', 'Fee', 'Certificate for', 'Status', 'Amount', 'Currency', 'Amount is an estimate', 'Method', 'Reference'],

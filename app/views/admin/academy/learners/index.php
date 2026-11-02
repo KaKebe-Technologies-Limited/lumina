@@ -1,5 +1,5 @@
 <?php /** Admin > Academy > Learners. Vars: $rows, $pagination, $f (q, status, course), $total, $manager, $courses. */
-$exportQs = array_filter(['q' => $f['q'], 'status' => $f['status'], 'course' => $f['course'] ?: null]);
+$exportQs = array_filter(['q' => $f['q'], 'status' => $f['status'], 'course' => $f['course'] ?: null, 'login' => $f['login'] ?? '']);
 $actions = [];
 if ($manager) {
     $actions[] = ['label' => 'Add a learner', 'url' => url('admin/academy/learners/create/new'), 'icon' => 'user-plus'];
@@ -48,16 +48,21 @@ if ($manager) {
         </div>
     </div>
 <?php endif; ?>
-<?php $approvedN = $manager ? count(\App\Services\Academy\LearnerMessages::approvedLearners()) : 0; ?>
+<?php $approvedN = $manager ? count(\App\Services\Academy\LearnerMessages::approvedLearners()) : 0;
+$approvedIn = $manager ? count(\App\Services\Academy\LearnerMessages::approvedLearners('yes')) : 0; ?>
 <?php if ($manager && $approvedN > 0 && \App\Services\Academy\LearnerMessages::ready()): ?>
     <details class="card" style="margin-bottom:1rem"><summary class="card__body" style="cursor:pointer"><strong><?= icon('bell', 'icon--sm') ?> Send a reminder to all approved learners (<?= $approvedN ?>)</strong></summary>
         <div class="card__body">
             <p class="text-muted">Each approved learner gets this as a message in the learner portal, and by e-mail if you tick the box. <code>{name}</code> becomes the learner's first name. Edit the words as you like.</p>
-            <form method="post" action="<?= e(url('admin/academy/learners-remind-approved')) ?>" data-confirm="Send this reminder to all <?= $approvedN ?> approved learners?">
+            <form method="post" action="<?= e(url('admin/academy/learners-remind-approved')) ?>" data-confirm="Send this reminder to the approved learners you chose?">
                 <?= csrf_field() ?>
                 <div class="field"><label class="field__label" for="remind-approved-msg">Reminder</label><textarea class="textarea" id="remind-approved-msg" name="message" rows="5" maxlength="1500" required><?= e(\App\Services\Academy\LearnerMessages::defaultReminder()) ?></textarea></div>
+                <div class="field"><label class="field__label" for="remind-approved-login">Who gets it</label><select class="select" id="remind-approved-login" name="login">
+                    <option value="">All <?= $approvedN ?> approved learners</option>
+                    <option value="yes">Only those who have signed in (<?= $approvedIn ?>)</option>
+                    <option value="no">Only those who have never signed in (<?= $approvedN - $approvedIn ?>)</option></select></div>
                 <label class="aac-remind__check"><input type="checkbox" name="email" value="1"> Also e-mail</label>
-                <button class="btn btn--primary btn--sm" type="submit"><?= icon('send', 'icon--sm') ?> Send to all <?= $approvedN ?> approved learners</button>
+                <button class="btn btn--primary btn--sm" type="submit"><?= icon('send', 'icon--sm') ?> Send the reminder</button>
             </form>
         </div>
     </details>
@@ -75,6 +80,7 @@ if ($manager) {
     <div class="field field--grow"><label class="field__label" for="f-q">Search</label><input class="input" id="f-q" type="search" name="q" value="<?= e($f['q']) ?>" placeholder="Name, reg no, e-mail or phone" maxlength="80"></div>
     <div class="field"><label class="field__label" for="f-status">Status</label><select class="select" id="f-status" name="status"><option value="">Any</option>
         <?php foreach (['active' => 'Active', 'inactive' => 'Switched off', 'unverified' => 'Awaiting approval'] + (\App\Services\Academy\LearnerRegistry::rejectReady() ? ['rejected' => 'Rejected'] : []) as $k => $l): ?><option value="<?= e($k) ?>"<?= $f['status'] === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
+    <div class="field"><label class="field__label" for="f-login">Sign-in</label><select class="select" id="f-login" name="login"><?php foreach (\App\Services\Academy\LearnerRegistry::LOGIN_FILTER as $k => $l): ?><option value="<?= e($k) ?>"<?= ($f['login'] ?? '') === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
     <div class="field"><label class="field__label" for="f-course">Course</label><select class="select" id="f-course" name="course"><option value="0">Any course</option>
         <?php foreach ($courses as $c): ?><option value="<?= (int) $c['id'] ?>"<?= (int) $f['course'] === (int) $c['id'] ? ' selected' : '' ?>><?= e($c['title']) ?></option><?php endforeach; ?></select></div>
     <button class="btn btn--outline" type="submit">Filter</button>

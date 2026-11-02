@@ -36,11 +36,12 @@ final class LearnerMessages
     }
 
     /** @return array{ok:bool,error:?string,id:int} */
-    /** Active learners whose account is approved (can sign in). @return list<array<string,mixed>> */
-    public static function approvedLearners(): array
+    /** Active learners whose account is approved (can sign in); $login narrows them to those who have / have never signed in. @return list<array<string,mixed>> */
+    public static function approvedLearners(string $login = ''): array
     {
         try {
-            return Database::all('SELECT id, name, email FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NOT NULL ORDER BY id');
+            $lc = LearnerRegistry::loginSql(LearnerRegistry::loginMode($login), 'last_login_at');
+            return Database::all('SELECT id, name, email FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NOT NULL' . ($lc !== null ? ' AND ' . $lc : '') . ' ORDER BY id');
         } catch (\Throwable) {
             return [];
         }
@@ -53,10 +54,10 @@ final class LearnerMessages
     }
 
     /** Portal message (and e-mail when asked) to every approved learner. @return int how many learners were written to */
-    public static function remindApproved(?int $adminId, string $text, bool $email): int
+    public static function remindApproved(?int $adminId, string $text, bool $email, string $login = ''): int
     {
         $sent = 0;
-        foreach (self::approvedLearners() as $l) {
+        foreach (self::approvedLearners($login) as $l) {
             $first = trim((string) strtok(trim((string) $l['name']), ' ')) ?: 'there';
             $body = str_replace('{name}', $first, $text);
             if (!self::send((int) $l['id'], 'admin', $body, $adminId)['ok']) {
@@ -192,7 +193,7 @@ final class LearnerMessages
     }
 
     /** The inbox of the team: one row per learner who has a conversation, unread first, then newest. @return list<array<string,mixed>> */
-    public static function inbox(int $limit = 100, ?string $q = null): array
+    public static function inbox(int $limit = 100, ?string $q = null, string $login = ''): array
     {
         if (!self::ready()) {
             return [];
@@ -203,6 +204,9 @@ final class LearnerMessages
             $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
             $where = ' WHERE (l.name LIKE ? OR l.email LIKE ? OR l.reg_no LIKE ?)';
             array_push($params, $like, $like, $like);
+        }
+        if (($lc = LearnerRegistry::loginSql($login)) !== null) {
+            $where .= ($where === '' ? ' WHERE ' : ' AND ') . $lc;
         }
         $reg = LearnerRegistry::ready() ? 'l.reg_no' : 'NULL AS reg_no';
         return Database::all(

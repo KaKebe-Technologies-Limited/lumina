@@ -17,6 +17,7 @@ $statusLabel = ['received' => ['Received', 'success'], 'pending' => ['Started, n
     <div class="field"><label class="field__label" for="p-period">Period</label><select class="select" id="p-period" name="period"><?php foreach ($periods as $k => $l): ?><option value="<?= e((string) $k) ?>"<?= (string) $f['period'] === (string) $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
     <div class="field"><label class="field__label" for="p-type">Fee</label><select class="select" id="p-type" name="type"><?php foreach ($types as $k => $l): ?><option value="<?= e($k) ?>"<?= $f['type'] === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
     <div class="field"><label class="field__label" for="p-status">Status</label><select class="select" id="p-status" name="status"><?php foreach ($statuses as $k => $l): ?><option value="<?= e($k) ?>"<?= $f['status'] === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
+    <div class="field"><label class="field__label" for="p-login">Sign-in</label><select class="select" id="p-login" name="login"><?php foreach (\App\Services\Academy\LearnerRegistry::LOGIN_FILTER as $k => $l): ?><option value="<?= e($k) ?>"<?= ($f['login'] ?? '') === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
     <button class="btn btn--outline" type="submit">Filter</button>
 </form>
 

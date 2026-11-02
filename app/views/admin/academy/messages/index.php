@@ -31,6 +31,7 @@
     <?php endif; ?>
     <form class="filters" method="get" action="<?= e(url('admin/academy/messages')) ?>" role="search">
         <div class="field field--grow"><label class="field__label" for="f-q">Search</label><input class="input" id="f-q" type="search" name="q" value="<?= e($q) ?>" placeholder="Name, e-mail or registration number" maxlength="80"></div>
+        <div class="field"><label class="field__label" for="f-login">Sign-in</label><select class="select" id="f-login" name="login"><?php foreach (\App\Services\Academy\LearnerRegistry::LOGIN_FILTER as $k => $l): ?><option value="<?= e($k) ?>"<?= ($login ?? '') === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
         <button class="btn btn--outline" type="submit">Search</button>
     </form>
     <?php if ($rows === []): ?>

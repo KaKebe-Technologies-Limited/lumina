@@ -21,6 +21,24 @@ use App\Core\Mailer;
  */
 final class LearnerRegistry
 {
+    /** The "Sign-in" filter of the Academy reports: a learner has SIGNED IN when last_login_at is set (it is written only by a successful sign-in). */
+    public const LOGIN_FILTER = ['' => 'Any', 'yes' => 'Has signed in', 'no' => 'Never signed in'];
+
+    public static function loginMode(string $v): string
+    {
+        return isset(self::LOGIN_FILTER[$v]) ? $v : '';
+    }
+
+    /** SQL for the sign-in filter on a column (default l.last_login_at), or null for "any". */
+    public static function loginSql(string $mode, string $col = 'l.last_login_at'): ?string
+    {
+        return match ($mode) {
+            'yes' => $col . ' IS NOT NULL',
+            'no' => $col . ' IS NULL',
+            default => null,
+        };
+    }
+
     public static function ready(): bool
     {
         static $ok = null;

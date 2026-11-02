@@ -73,12 +73,16 @@ final class AcademyLearnersController extends AcademyAdminController
         } else {
             $status = '';
         }
+        $login = LearnerRegistry::loginMode($request->string('login'));
+        if (($lc = LearnerRegistry::loginSql($login)) !== null) {
+            $where[] = $lc;
+        }
         $course = $request->int('course');
         if ($course > 0) {
             $where[] = 'l.id IN (SELECT learner_id FROM academy_enrollments WHERE course_id = ?)';
             $params[] = $course;
         }
-        return [' WHERE ' . implode(' AND ', $where), $params, ['q' => $q, 'status' => $status, 'course' => $course]];
+        return [' WHERE ' . implode(' AND ', $where), $params, ['q' => $q, 'status' => $status, 'course' => $course, 'login' => $login]];
     }
 
     public function index(Request $request): Response
@@ -478,8 +482,9 @@ final class AcademyLearnersController extends AcademyAdminController
             return $this->redirect('admin/academy/learners');
         }
         $text = mb_substr($text, 0, 1500);
-        $n = \App\Services\Academy\LearnerMessages::remindApproved(Auth::id(), $text, $request->bool('email'));
-        $this->audit('academy.learner.remind_approved', 'academy_learner', null, 'Sent a reminder to every approved learner', ['count' => $n, 'email' => $request->bool('email')]);
+        $login = LearnerRegistry::loginMode($request->string('login'));
+        $n = \App\Services\Academy\LearnerMessages::remindApproved(Auth::id(), $text, $request->bool('email'), $login);
+        $this->audit('academy.learner.remind_approved', 'academy_learner', null, 'Sent a reminder to approved learners (' . strtolower(LearnerRegistry::LOGIN_FILTER[$login]) . ')', ['count' => $n, 'email' => $request->bool('email'), 'sign_in' => $login]);
         Flash::success($n === 0 ? 'There is no approved learner to remind.' : 'The reminder was sent to ' . $n . ' approved learner' . ($n === 1 ? '' : 's') . '.');
         return $this->redirect('admin/academy/learners');
     }

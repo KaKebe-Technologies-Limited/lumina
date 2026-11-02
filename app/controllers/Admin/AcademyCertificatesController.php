@@ -40,11 +40,15 @@ final class AcademyCertificatesController extends AcademyAdminController
         } else {
             $st = '';
         }
+        $login = \App\Services\Academy\LearnerRegistry::loginMode($request->string('login'));
+        if (($lc = \App\Services\Academy\LearnerRegistry::loginSql($login, 'll.last_login_at')) !== null) {
+            $where[] = 'c.learner_id IN (SELECT ll.id FROM academy_learners ll WHERE ' . $lc . ')';
+        }
         $whereSql = ' WHERE ' . implode(' AND ', $where);
         $total = (int) Database::value('SELECT COUNT(*) FROM academy_certificates c' . $whereSql, $params, 0);
         $pagination = Pagination::make($total, $request->page(), $this->perPage());
         $rows = Database::all('SELECT c.*, l.email AS learner_email FROM academy_certificates c LEFT JOIN academy_learners l ON l.id = c.learner_id' . $whereSql . ' ORDER BY c.id DESC LIMIT ? OFFSET ?', array_merge($params, [$pagination->perPage, $pagination->offset]));
-        return $this->render('admin/academy/certificates', ['rows' => $rows, 'pagination' => $pagination, 'q' => $q, 'status' => $st, 'total' => $total, 'waiting' => CertificateService::pendingCount(), 'approved' => CertificateService::approvedCount(), 'ready' => $ready],
+        return $this->render('admin/academy/certificates', ['rows' => $rows, 'pagination' => $pagination, 'q' => $q, 'status' => $st, 'login' => $login, 'total' => $total, 'waiting' => CertificateService::pendingCount(), 'approved' => CertificateService::approvedCount(), 'ready' => $ready],
             ['title' => 'Certificates', 'nav' => 'academy_certificates', 'breadcrumbs' => $this->crumbs('Certificates')]);
     }
 

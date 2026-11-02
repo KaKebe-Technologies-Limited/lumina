@@ -20,10 +20,11 @@ final class PaymentsReport
     public const TYPES = ['all' => 'Sign-up and certificate fees', 'signup' => 'Sign-up fees', 'cert' => 'Certificate fees'];
     public const STATUSES = ['all' => 'Every status', 'received' => 'Received', 'pending' => 'Started, not finished', 'reported' => 'Reported, waiting for you', 'failed' => 'Failed'];
 
-    /** @return array{period:string,type:string,status:string} */
-    public static function filters(string $period, string $type, string $status): array
+    /** @return array{period:string,type:string,status:string,login:string} */
+    public static function filters(string $period, string $type, string $status, string $login = ''): array
     {
         return [
+            'login' => LearnerRegistry::loginMode($login),
             'period' => isset(self::PERIODS[$period]) ? $period : '30',
             'type' => isset(self::TYPES[$type]) ? $type : 'all',
             'status' => isset(self::STATUSES[$status]) ? $status : 'all',
@@ -127,6 +128,10 @@ final class PaymentsReport
         }
 
         $out = array_values(array_filter($out, static fn(array $e): bool => ($f['type'] === 'all' || $e['type'] === $f['type']) && ($f['status'] === 'all' || $e['status'] === $f['status'])));
+        if (($lc = LearnerRegistry::loginSql((string) ($f['login'] ?? ''), 'last_login_at')) !== null) {          // only the learners who have (not) signed in
+            $ids = array_flip(array_map('intval', array_column(Database::all('SELECT id FROM academy_learners WHERE ' . $lc), 'id')));
+            $out = array_values(array_filter($out, static fn(array $e): bool => isset($ids[(int) $e['learner_id']])));
+        }
         usort($out, static fn(array $a, array $b): int => strcmp($b['at'], $a['at']));
         return array_slice($out, 0, max(1, $limit));
     }

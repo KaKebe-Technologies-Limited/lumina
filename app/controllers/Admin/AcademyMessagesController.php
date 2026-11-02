@@ -22,8 +22,9 @@ final class AcademyMessagesController extends AcademyAdminController
     {
         $this->authorize('academy.manage');
         $q = mb_substr(trim($request->string('q')), 0, 80);
+        $login = \App\Services\Academy\LearnerRegistry::loginMode($request->string('login'));
         return $this->render('admin/academy/messages/index', [
-            'rows' => LearnerMessages::inbox(100, $q), 'q' => $q, 'ready' => LearnerMessages::ready(), 'unread' => LearnerMessages::unreadMessages(),
+            'rows' => LearnerMessages::inbox(100, $q, $login), 'q' => $q, 'login' => $login, 'ready' => LearnerMessages::ready(), 'unread' => LearnerMessages::unreadMessages(),
             'inquiries' => $q === '' ? LearnerMessages::inquiries(100) : [], 'openInquiries' => LearnerMessages::openInquiries(),
         ], ['title' => 'Messages', 'nav' => 'academy_messages', 'breadcrumbs' => $this->crumbs('Messages')]);
     }
