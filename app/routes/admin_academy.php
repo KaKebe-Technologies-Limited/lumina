@@ -111,6 +111,8 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/learners-confirm-all', [AcademyLearnersController::class, 'confirmAll'])->middleware('throttle:5,60')->name('admin.academy.learners.confirm_all');
     $router->get('/learners/{id}/photo', [AcademyLearnersController::class, 'photo'])->middleware('throttle:300,60')->name('admin.academy.learners.photo');
     $router->post('/learners/{id}/photo-remove', [AcademyLearnersController::class, 'photoRemove'])->name('admin.academy.learners.photo_remove');
+    $router->post('/learners/{id}/feature', [AcademyLearnersController::class, 'feature'])->middleware('throttle:60,60')->name('admin.academy.learners.feature');
+    $router->post('/learners/{id}/unfeature', [AcademyLearnersController::class, 'unfeature'])->middleware('throttle:60,60')->name('admin.academy.learners.unfeature');
     $router->post('/learners/{id}/toggle', [AcademyLearnersController::class, 'toggle'])->name('admin.academy.learners.toggle');
     $router->post('/learners/{id}/delete', [AcademyLearnersController::class, 'delete'])->name('admin.academy.learners.delete');
     $router->post('/learners/{id}/certificate', [AcademyLearnersController::class, 'issueCertificate'])->name('admin.academy.learners.certificate');

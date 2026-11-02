@@ -36,6 +36,25 @@ $lid = (int) $l['id']; ?>
                     <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/toggle')) ?>" class="inline-form" data-confirm="<?= (int) $l['is_active'] === 1 ? 'Switch this account off? The learner can no longer sign in (progress and certificates are kept).' : 'Switch this account on again?' ?>"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit"><?= (int) $l['is_active'] === 1 ? 'Switch the account off' : 'Switch the account on' ?></button></form>
                     <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/delete')) ?>" class="inline-form" data-confirm="Delete this learner account and all progress? Certificates already issued stay valid. This cannot be undone."><?= csrf_field() ?><button class="btn btn--ghost btn--sm btn-danger-hover" type="submit"><?= icon('trash', 'icon--sm') ?> Delete</button></form>
                 </div>
+                <?php if (\App\Services\Academy\FeaturedLearners::ready() && (int) $l['is_active'] === 1 && $l['email_verified_at'] !== null): $feat = \App\Services\Academy\FeaturedLearners::isFeatured($l); ?>
+                    <div class="aac-note" style="margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--surface)">
+                        <strong><?= icon('star', 'icon--sm') ?> Featured student</strong>
+                        <?php if ($feat): ?>
+                            <p class="text-muted">Featured on the public Academy page since <?= e(format_date($l['featured_at'], 'j M Y')) ?>. Visitors see: <strong><?= e(trim((string) strtok(trim((string) $l['name']), ' '))) ?></strong>, the country<?= !empty(\App\Services\Academy\LearnerPortrait::of($lid)['photo_consent_at']) ? ', the picture' : '' ?> and the highlight below.</p>
+                        <?php else: ?>
+                            <p class="text-muted">Show this learner on the public LAF Academy page, with the first name and the first letter of the surname, the country, the courses completed<?= !empty(\App\Services\Academy\LearnerPortrait::of($lid)['photo_consent_at']) ? ', the picture (the learner agreed to show it)' : ' (no picture: the learner has not agreed to show one)' ?> and a short highlight. Nothing else is shown.</p>
+                        <?php endif; ?>
+                        <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/feature')) ?>">
+                            <?= csrf_field() ?>
+                            <div class="field"><label class="field__label" for="feat-note">Highlight (shown on the website, up to 400 characters)</label><textarea class="textarea" id="feat-note" name="note" rows="3" maxlength="400" placeholder="Example: Completed Computer Basics and now helps her family business go online."><?= e((string) ($l['featured_note'] ?? ($l['bio'] ?? ''))) ?></textarea></div>
+                            <label class="aac-remind__check"><input type="checkbox" name="agreed" value="1"<?= $feat ? ' checked' : '' ?>> I have the learner's permission to feature them on the website</label>
+                            <button class="btn btn--primary btn--sm" type="submit"><?= icon('star', 'icon--sm') ?> <?= $feat ? 'Save the highlight' : 'Feature on the website' ?></button>
+                        </form>
+                        <?php if ($feat): ?>
+                            <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/unfeature')) ?>" class="inline-form" data-confirm="Take <?= e($l['name']) ?> off the Academy page?"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit">Remove from featured</button></form>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
                 <?php if (\App\Services\Academy\LearnerRegistry::rejectReady()): ?>
                     <?php if (!empty($l['rejected_at'])): ?>
                         <div class="aac-reject">

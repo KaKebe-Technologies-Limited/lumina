@@ -68,6 +68,8 @@ final class AcademyLearnersController extends AcademyAdminController
             $where[] = 'l.is_active = 0' . (LearnerRegistry::rejectReady() ? ' AND l.rejected_at IS NULL' : '');
         } elseif ($status === 'rejected' && LearnerRegistry::rejectReady()) {
             $where[] = 'l.rejected_at IS NOT NULL';
+        } elseif ($status === 'featured' && \App\Services\Academy\FeaturedLearners::ready()) {
+            $where[] = 'l.featured_at IS NOT NULL';
         } elseif ($status === 'unverified') {
             $where[] = 'l.is_active = 1 AND l.email_verified_at IS NULL';
         } else {
@@ -95,7 +97,7 @@ final class AcademyLearnersController extends AcademyAdminController
             . (\App\Services\Academy\AcademyFees::ready() ? ', l.fee_status' . (\App\Services\Academy\LearnerMessages::ready() ? ", (SELECT COUNT(*) FROM academy_messages mw WHERE mw.learner_id = l.id AND mw.sender = 'admin' AND mw.body LIKE '" . \App\Services\Academy\AcademyFees::WELCOME_MARK . "%') AS welcomed" : '') : '') . (LearnerRegistry::ready() ? ', l.reg_no, l.approved_at' : '') . (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '')
             . (CertificateService::approvalReady() ? ', (SELECT COUNT(*) FROM academy_certificates cw WHERE cw.learner_id = l.id AND cw.approved_at IS NULL AND cw.revoked_at IS NULL) AS certs_waiting' : '');
         $rows = Database::all(
-            'SELECT l.id, l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.last_login_at, l.created_at' . $extra . ', '
+            'SELECT l.id, l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.last_login_at, l.created_at' . (\App\Services\Academy\FeaturedLearners::ready() ? ', l.featured_at' : '') . $extra . ', '
             . '(SELECT COUNT(*) FROM academy_enrollments e WHERE e.learner_id = l.id) AS courses, '
             . '(SELECT COUNT(*) FROM academy_certificates c WHERE c.learner_id = l.id AND c.revoked_at IS NULL) AS certificates '
             . 'FROM academy_learners l' . $where . ' ORDER BY l.id DESC LIMIT ? OFFSET ?',
@@ -567,6 +569,37 @@ final class AcademyLearnersController extends AcademyAdminController
         $this->audit('academy.learner.verify', 'academy_learner', $id, 'Confirmed the e-mail address of ' . $l['email']);
         Flash::success('The e-mail address was marked as confirmed.');
         return $this->redirect('admin/academy/learners/' . $id);
+    }
+
+    /** POST admin/academy/learners/{id}/feature: show this learner on the public Academy page (needs the "learner agreed" tick). */
+    public function feature(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        if (!\App\Services\Academy\FeaturedLearners::ready()) {
+            Flash::error('Featured students need a database update: in phpMyAdmin import database/updates/2026-11-academy-featured-learners.sql, then try again.');
+        } elseif (!$request->bool('agreed')) {
+            Flash::error('Tick the box to confirm that ' . $l['name'] . ' agreed to be featured.');
+        } elseif ((int) $l['is_active'] !== 1 || $l['email_verified_at'] === null) {
+            Flash::error('Only an approved, active learner can be featured.');
+        } elseif (\App\Services\Academy\FeaturedLearners::feature($id, $request->string('note'), Auth::id())) {
+            $this->audit('academy.learner.feature', 'academy_learner', $id, 'Featured ' . $l['name'] . ' on the public Academy page');
+            Flash::success($l['name'] . ' is featured on the Academy page.');
+        } else {
+            Flash::error('The learner could not be featured.');
+        }
+        return $this->redirect('admin/academy/learners/' . $id);
+    }
+
+    /** POST admin/academy/learners/{id}/unfeature: take the learner off the public page. */
+    public function unfeature(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        \App\Services\Academy\FeaturedLearners::unfeature($id);
+        $this->audit('academy.learner.unfeature', 'academy_learner', $id, 'Removed ' . $l['name'] . ' from the featured students');
+        Flash::success($l['name'] . ' is no longer featured.');
+        return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
     }
 
     public function toggle(Request $request, int $id): Response

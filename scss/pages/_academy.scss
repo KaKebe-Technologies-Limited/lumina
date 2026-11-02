@@ -279,6 +279,15 @@ $cert-orange: #E0642C;
   &__img { width: 6.5rem; height: 6.5rem; border-radius: 50%; object-fit: cover; border: 3px solid $white; box-shadow: $shadow; background: $tint-cool; margin-bottom: $space-2; }
   &__name { font-weight: 700; color: $navy; }
   &__country { font-size: $fs-xs; color: $ink-soft; } }
+.ac-featured { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: $space-5; margin: $space-5 0 0; padding: 0; list-style: none;
+  &__card { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; padding: $space-5; text-align: center; background: $white; border: 1px solid $line; border-top: 4px solid $gold; border-radius: $radius-card; box-shadow: $shadow-card; }
+  &__img { width: 6rem; height: 6rem; border-radius: 50%; object-fit: cover; border: 3px solid $white; box-shadow: $shadow-sm; background: $tint-cool; margin-bottom: $space-2; }
+  &__img--initial { display: grid; place-items: center; font-family: $font-display; font-size: 2.4rem; font-weight: 700; color: $white; background: $navy; }
+  &__name { margin: 0; font-size: $fs-lg; color: $navy; }
+  &__country { margin: 0; font-size: $fs-xs; color: $ink-soft; }
+  &__note { margin: $space-2 0 0; font-style: italic; color: $ink; }
+  &__courses { margin: 0; font-size: $fs-sm; color: $ink-soft; }
+  &__badge { margin: $space-2 0 0; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.75rem; border-radius: $radius-pill; background: rgba($gold, 0.18); color: $orange-text; font-size: $fs-xs; font-weight: 600; } }
 .ac-code-input { max-width: 12rem; font-size: 1.6rem; letter-spacing: 0.35em; text-align: center; font-variant-numeric: tabular-nums; }
 
 // ---- "Continue with Google" on the sign-in and sign-up pages (Google's button look: white, grey border, the four-colour G)

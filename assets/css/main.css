@@ -24975,6 +24975,87 @@ fieldset.ac-q legend + * {
   color: #5B6472;
 }
 
+.ac-featured {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ac-featured__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.5rem;
+  text-align: center;
+  background: #FFFFFF;
+  border: 1px solid #E5DED0;
+  border-top: 4px solid #D9A441;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(11, 27, 51, 0.08), 0 1px 3px rgba(11, 27, 51, 0.06);
+}
+
+.ac-featured__img {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 1px 2px rgba(11, 27, 51, 0.08), 0 1px 3px rgba(11, 27, 51, 0.06);
+  background: #F3EFE5;
+  margin-bottom: 0.5rem;
+}
+
+.ac-featured__img--initial {
+  display: grid;
+  place-items: center;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  background: #142B4A;
+}
+
+.ac-featured__name {
+  margin: 0;
+  font-size: 1.375rem;
+  color: #142B4A;
+}
+
+.ac-featured__country {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #5B6472;
+}
+
+.ac-featured__note {
+  margin: 0.5rem 0 0;
+  font-style: italic;
+  color: #242A32;
+}
+
+.ac-featured__courses {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #5B6472;
+}
+
+.ac-featured__badge {
+  margin: 0.5rem 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(217, 164, 65, 0.18);
+  color: #A5521A;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
 .ac-code-input {
   max-width: 12rem;
   font-size: 1.6rem;

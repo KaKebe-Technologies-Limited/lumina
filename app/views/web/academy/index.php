@@ -128,6 +128,26 @@ $cta = content_btn('academy', 'cta.button');
     <p class="ac-center"><a class="btn btn--outline btn--caps" href="<?= e(url('academy/winners')) ?>">All winners</a></p>
 <?php section_end(); endif; ?>
 
+<?php $featured = \App\Services\Academy\FeaturedLearners::public(6); if ($featured): ?>
+<section class="section section--tint" aria-labelledby="ac-featured-title">
+    <div class="container">
+        <header class="section-head section-head--center"><span class="eyebrow">Featured students</span><h2 class="section-head__title" id="ac-featured-title">Learners who are making progress</h2></header>
+        <ul class="ac-featured">
+            <?php foreach ($featured as $f): ?>
+                <li class="ac-featured__card">
+                    <?php if ($f['photo']): ?><img class="ac-featured__img" src="<?= e(url('academy/learners/' . $f['id'] . '/photo')) ?>" alt="<?= e($f['name']) ?>, a featured LAF Academy student" width="96" height="96" loading="lazy"><?php else: ?><span class="ac-featured__img ac-featured__img--initial" aria-hidden="true"><?= e(mb_strtoupper(mb_substr($f['name'], 0, 1))) ?></span><?php endif; ?>
+                    <h3 class="ac-featured__name"><?= e($f['name']) ?></h3>
+                    <?php if ($f['country'] !== ''): ?><p class="ac-featured__country"><?= e($f['country']) ?></p><?php endif; ?>
+                    <?php if ($f['note'] !== ''): ?><p class="ac-featured__note">&ldquo;<?= e($f['note']) ?>&rdquo;</p><?php endif; ?>
+                    <?php if ($f['courses'] !== []): ?><p class="ac-featured__courses"><strong>Completed:</strong> <?= e(implode(', ', $f['courses'])) ?></p><?php endif; ?>
+                    <?php if ($f['certificates'] > 0): ?><p class="ac-featured__badge"><?= icon('award', 'icon--sm') ?> <?= (int) $f['certificates'] ?> certificate<?= $f['certificates'] === 1 ? '' : 's' ?></p><?php endif; ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+</section>
+<?php endif; ?>
+
 <?php $showcase = \App\Services\Academy\LearnerPortrait::showcase(12); if ($showcase): ?>
 <section class="section section--sm" aria-labelledby="ac-learners-title">
     <div class="container">
