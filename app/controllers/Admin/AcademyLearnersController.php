@@ -468,6 +468,22 @@ final class AcademyLearnersController extends AcademyAdminController
         return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
     }
 
+    /** POST admin/academy/learners-remind-approved: one reminder message to every approved learner (portal message, plus e-mail when ticked). */
+    public function remindApproved(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $text = trim((string) $request->post('message', ''));
+        if (mb_strlen($text) < 10) {
+            Flash::error('Write the reminder first (at least a short sentence).');
+            return $this->redirect('admin/academy/learners');
+        }
+        $text = mb_substr($text, 0, 1500);
+        $n = \App\Services\Academy\LearnerMessages::remindApproved(Auth::id(), $text, $request->bool('email'));
+        $this->audit('academy.learner.remind_approved', 'academy_learner', null, 'Sent a reminder to every approved learner', ['count' => $n, 'email' => $request->bool('email')]);
+        Flash::success($n === 0 ? 'There is no approved learner to remind.' : 'The reminder was sent to ' . $n . ' approved learner' . ($n === 1 ? '' : 's') . '.');
+        return $this->redirect('admin/academy/learners');
+    }
+
     /** POST admin/academy/learners-remind-fee-all: the same reminder to every learner whose sign-up fee is still unpaid. */
     public function remindFeeAll(Request $request): Response
     {

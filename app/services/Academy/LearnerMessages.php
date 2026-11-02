@@ -36,6 +36,40 @@ final class LearnerMessages
     }
 
     /** @return array{ok:bool,error:?string,id:int} */
+    /** Active learners whose account is approved (can sign in). @return list<array<string,mixed>> */
+    public static function approvedLearners(): array
+    {
+        try {
+            return Database::all('SELECT id, name, email FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NOT NULL ORDER BY id');
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** The default words of the reminder to approved learners; {name} becomes the learner's first name. */
+    public static function defaultReminder(): string
+    {
+        return "Hello {name}, this is the LAF Academy team. A friendly reminder to keep going with your learning: sign in, open your courses and continue from where you stopped. Each lesson you finish brings you closer to your certificate. Sign in here: " . abs_url('academy/login');
+    }
+
+    /** Portal message (and e-mail when asked) to every approved learner. @return int how many learners were written to */
+    public static function remindApproved(?int $adminId, string $text, bool $email): int
+    {
+        $sent = 0;
+        foreach (self::approvedLearners() as $l) {
+            $first = trim((string) strtok(trim((string) $l['name']), ' ')) ?: 'there';
+            $body = str_replace('{name}', $first, $text);
+            if (!self::send((int) $l['id'], 'admin', $body, $adminId)['ok']) {
+                continue;
+            }
+            if ($email) {
+                \App\Services\Academy\AcademyMail::teamMessage($l, $body);
+            }
+            $sent++;
+        }
+        return $sent;
+    }
+
     public static function send(int $learnerId, string $sender, string $body, ?int $adminId = null): array
     {
         $body = self::clean($body);

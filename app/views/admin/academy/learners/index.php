@@ -48,6 +48,20 @@ if ($manager) {
         </div>
     </div>
 <?php endif; ?>
+<?php $approvedN = $manager ? count(\App\Services\Academy\LearnerMessages::approvedLearners()) : 0; ?>
+<?php if ($manager && $approvedN > 0 && \App\Services\Academy\LearnerMessages::ready()): ?>
+    <details class="card" style="margin-bottom:1rem"><summary class="card__body" style="cursor:pointer"><strong><?= icon('bell', 'icon--sm') ?> Send a reminder to all approved learners (<?= $approvedN ?>)</strong></summary>
+        <div class="card__body">
+            <p class="text-muted">Each approved learner gets this as a message in the learner portal, and by e-mail if you tick the box. <code>{name}</code> becomes the learner's first name. Edit the words as you like.</p>
+            <form method="post" action="<?= e(url('admin/academy/learners-remind-approved')) ?>" data-confirm="Send this reminder to all <?= $approvedN ?> approved learners?">
+                <?= csrf_field() ?>
+                <div class="field"><label class="field__label" for="remind-approved-msg">Reminder</label><textarea class="textarea" id="remind-approved-msg" name="message" rows="5" maxlength="1500" required><?= e(\App\Services\Academy\LearnerMessages::defaultReminder()) ?></textarea></div>
+                <label class="aac-remind__check"><input type="checkbox" name="email" value="1"> Also e-mail</label>
+                <button class="btn btn--primary btn--sm" type="submit"><?= icon('send', 'icon--sm') ?> Send to all <?= $approvedN ?> approved learners</button>
+            </form>
+        </div>
+    </details>
+<?php endif; ?>
 <?php if ($manager): ?>
     <details class="card" style="margin-bottom:1rem"><summary class="card__body" style="cursor:pointer"><strong>Phone country codes of older accounts</strong></summary>
         <div class="card__body">
