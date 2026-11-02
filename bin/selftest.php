@@ -251,6 +251,7 @@ set_time_limit(0); require __DIR__ . '/selftest-daraza.php';                    
 set_time_limit(0); require __DIR__ . '/selftest-membership-pay.php';                 // Membership payments: details after applying (Daraza, mobile money, bank), proof of payment
 set_time_limit(0); require __DIR__ . '/selftest-academy-fee-enforce.php';              // Academy sign-up payment enforced: mobile money / bank / Pesapal / Daraza, approval only after payment
 set_time_limit(0); require __DIR__ . '/selftest-academy-remind-approved.php';              // Admin: reminder to all approved learners
+set_time_limit(0); require __DIR__ . '/selftest-reports.php';              // Admin > Reports: every report runs, hub and CSV
 set_time_limit(0); require __DIR__ . '/selftest-visitors.php';                         // Admin > Visitors: counting rules, no IP stored, country + page filters
 set_time_limit(0); require __DIR__ . '/selftest-academy-payments.php';                       // Academy payments dashboard: Pesapal + hand-confirmed + reported, figures, filters
 set_time_limit(0); require __DIR__ . '/selftest-pesapal.php';                    // Pesapal payment gateway: client, donations, shop orders, endpoints (mock transport)

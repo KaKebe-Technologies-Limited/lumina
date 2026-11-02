@@ -12,6 +12,7 @@ use App\Controllers\Admin\CustomPagesController;
 use App\Controllers\Admin\DashboardController;
 use App\Controllers\Admin\FaqsController;
 use App\Controllers\Admin\MaintenanceController;
+use App\Controllers\Admin\ReportsController;
 use App\Controllers\Admin\RolesController;
 use App\Controllers\Admin\MediaController;
 use App\Controllers\Admin\MenusController;
@@ -81,6 +82,11 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
         $router->post('/maintenance/toggle', [MaintenanceController::class, 'toggle'])->middleware('can:settings.manage');
         $router->post('/maintenance/save', [MaintenanceController::class, 'save'])->middleware('can:settings.manage');
         $router->get('/maintenance/preview', [MaintenanceController::class, 'preview'])->middleware('can:settings.manage');
+
+        // reports hub: every report of the website (each one is checked against its own ability inside the controller)
+        $router->get('/reports', [ReportsController::class, 'index'])->name('admin.reports');
+        $router->get('/reports/{key}', [ReportsController::class, 'show'])->where('key', '[a-z0-9-]+')->name('admin.reports.show');
+        $router->get('/reports/{key}/export', [ReportsController::class, 'export'])->where('key', '[a-z0-9-]+')->middleware('throttle:20,60')->name('admin.reports.export');
 
         // visitors report (who opens the public website)
         $router->get('/visitors', [VisitorsController::class, 'index'])->name('admin.visitors')->middleware('can:settings.manage');
