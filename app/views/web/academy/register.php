@@ -26,11 +26,11 @@
                     <?= partial('partials/form-field', ['name' => 'whatsapp', 'label' => 'WhatsApp number', 'type' => 'tel', 'required' => true, 'maxlength' => 24, 'autocomplete' => 'tel', 'attrs' => ['data-dial-input' => '1'], 'help' => 'It starts with the code of your country. We use it to support you.']) ?>
                     <?php if (\App\Services\Academy\LearnerPortrait::ready()): ?>
                     <div class="field ac-selfie<?= error('photo') ? ' field--error' : '' ?>" data-selfie>
-                        <label class="field__label" for="reg-photo">Your picture (optional)</label>
+                        <label class="field__label" for="reg-photo">Your picture<?= \App\Services\Academy\LearnerPortrait::requiredAtSignup() ? ' <abbr title="required" aria-label="required">*</abbr>' : ' (optional)' ?></label>
                         <div class="ac-selfie__row">
                             <img class="ac-selfie__preview" data-selfie-preview alt="Your picture" width="96" height="96" hidden>
                             <div class="ac-selfie__body">
-                                <input class="input" type="file" id="reg-photo" name="photo" accept="image/jpeg,image/png,image/webp">
+                                <input class="input" type="file" id="reg-photo" name="photo" accept="image/jpeg,image/png,image/webp"<?= \App\Services\Academy\LearnerPortrait::requiredAtSignup() ? ' required aria-required="true"' : '' ?>>
                                 <button class="btn btn--outline btn--sm" type="button" data-selfie-open hidden><?= icon('camera', 'icon--sm') ?> Take a selfie</button>
                             </div>
                         </div>
@@ -38,7 +38,7 @@
                             <video autoplay playsinline muted></video>
                             <div class="ac-selfie__buttons"><button class="btn btn--cta btn--sm" type="button" data-selfie-snap>Take the photo</button> <button class="btn btn--ghost btn--sm" type="button" data-selfie-cancel>Cancel</button></div>
                         </div>
-                        <div class="field__help" data-selfie-msg>Attach a clear head-and-shoulders photo or take a selfie, so the Academy has a record of every learner. JPG, PNG or WebP, at least 300 x 300 pixels. It is private: only you and the Academy team can see it.</div>
+                        <div class="field__help" data-selfie-msg>Attach a clear head-and-shoulders photo or take a selfie, <?= \App\Services\Academy\LearnerPortrait::requiredAtSignup() ? 'A picture is required to create your account. ' : '' ?>so the Academy has a record of every learner. JPG, PNG or WebP, at least 300 x 300 pixels. It is private: only you and the Academy team can see it.</div>
                         <?php if (error('photo')): ?><div class="field__error" role="alert"><?= e((string) error('photo')) ?></div><?php endif; ?>
                     </div>
                     <?php endif; ?>

@@ -26,7 +26,7 @@
         <?php if (!empty($portraitReady)): $hasPhoto = !empty($portrait['photo_path']); ?>
         <form class="ac-form card" id="portrait" method="post" action="<?= e(url('academy/account/photo')) ?>" enctype="multipart/form-data" novalidate>
             <?= csrf_field() ?>
-            <div class="card__header"><h2 class="card__title">My picture</h2></div>
+            <div class="card__header"><h2 class="card__title" id="picture">My picture</h2></div>
             <div class="card__body">
                 <div class="ac-portrait">
                     <?php if ($hasPhoto): ?><img class="ac-portrait__img" src="<?= e(url('academy/account/photo')) ?>?v=<?= e(substr(md5((string) $portrait['photo_path']), 0, 8)) ?>" alt="My picture" width="120" height="120"><?php else: ?><span class="ac-portrait__img ac-portrait__img--empty" aria-hidden="true"><?= icon('user', 'icon--lg') ?></span><?php endif; ?>

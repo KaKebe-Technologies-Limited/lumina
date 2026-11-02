@@ -32,6 +32,34 @@ final class LearnerPortrait
         return self::$ready;
     }
 
+    /** Must a new learner attach a picture to create an account? (Settings > LAF Academy; on by default; only where pictures can be stored) */
+    public static function requiredAtSignup(): bool
+    {
+        return self::ready() && trim((string) \App\Core\Settings::get('academy_register_photo_required', '1')) !== '0';
+    }
+
+    /**
+     * Check a picture BEFORE the account is made (nothing is stored): the same rules as saving it. @param array<string,mixed>|null $file
+     * @return string '' when it is fine, otherwise what is wrong (shown under the picture field)
+     */
+    public static function problem(?array $file): string
+    {
+        if ($file === null || (string) ($file['tmp_name'] ?? '') === '' || (int) ($file['error'] ?? 0) !== 0) {
+            return 'Please add your picture: attach a clear head-and-shoulders photo or take a selfie.';
+        }
+        $tmp = tempnam(sys_get_temp_dir(), 'lpc');
+        try {
+            ImageOptimizer::portrait((string) $file['tmp_name'], (string) $tmp, ['min_side' => 300, 'max_bytes' => 5 * 1024 * 1024, 'side' => 600]);
+            return '';
+        } catch (UploadException $x) {
+            return $x->getMessage();
+        } catch (\Throwable) {
+            return 'That picture could not be used. Please try another one (JPG, PNG or WebP).';
+        } finally {
+            @unlink((string) $tmp);
+        }
+    }
+
     /** @return array{photo_path:?string,photo_consent_at:?string} */
     public static function of(int $learnerId): array
     {

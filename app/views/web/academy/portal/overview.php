@@ -63,6 +63,9 @@ $active = (int) ($me['is_active'] ?? 1) === 1;
         <?php if (LearnerAuth::missingContact((array) $me)): ?>
             <p class="opp-notice" role="status"><?= icon('info', 'icon--sm') ?> Please add your phone number, country and WhatsApp number: <a href="<?= e(url('academy/account#details')) ?>">complete my details</a>.</p>
         <?php endif; ?>
+        <?php if (\App\Services\Academy\LearnerPortrait::requiredAtSignup() && empty(\App\Services\Academy\LearnerPortrait::of((int) $me['id'])['photo_path'])): ?>
+            <p class="opp-notice" role="status"><?= icon('camera', 'icon--sm') ?> Please add your picture so the Academy has a record of every learner: <a href="<?= e(url('academy/account#picture')) ?>">add my picture</a>.</p>
+        <?php endif; ?>
         <?php if ((int) $unread > 0): ?>
             <p class="opp-notice ac-notice--yellow" role="status"><?= icon('message-circle', 'icon--sm') ?> You have <strong><?= (int) $unread ?> new message<?= (int) $unread === 1 ? '' : 's' ?></strong> from the Academy team. <a href="<?= e(url('academy/portal/messages')) ?>">Read <?= (int) $unread === 1 ? 'it' : 'them' ?></a></p>
         <?php endif; ?>

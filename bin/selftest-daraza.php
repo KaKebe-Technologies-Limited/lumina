@@ -42,7 +42,7 @@ use App\Services\Shop\PaymentService;
 echo "-- pay with daraza --\n";
 
 $keys = ['daraza_label', 'daraza_url', 'daraza_donate_url', 'daraza_shop_url', 'daraza_signup_url', 'daraza_cert_url', 'daraza_donate_on', 'daraza_signup_on', 'daraza_cert_on',
-    'shop_pay_daraza_enabled', 'academy_signup_fee', 'academy_signup_fee_currency', 'academy_cert_fee', 'academy_cert_fee_currency', 'academy_cert_approval', 'academy_signup_mode', 'donate_method'];
+    'shop_pay_daraza_enabled', 'academy_signup_fee', 'academy_signup_fee_currency', 'academy_cert_fee', 'academy_cert_fee_currency', 'academy_cert_approval', 'academy_signup_mode', 'donate_method', 'academy_register_photo_required'];
 $before = [];
 foreach ($keys as $k) {
     $before[$k] = Settings::isCustomised($k) ? Settings::get($k) : null;
@@ -60,7 +60,7 @@ $clean = static function (): void {
     Database::execute('DELETE FROM rate_limits');
 };
 $clean();
-Settings::setMany(['daraza_label' => '', 'daraza_url' => '', 'daraza_donate_url' => '', 'daraza_shop_url' => '', 'daraza_signup_url' => '', 'daraza_cert_url' => '', 'daraza_donate_on' => '0', 'daraza_signup_on' => '0', 'daraza_cert_on' => '0', 'shop_pay_daraza_enabled' => '0']);
+Settings::setMany(['academy_register_photo_required' => '0', 'daraza_label' => '', 'daraza_url' => '', 'daraza_donate_url' => '', 'daraza_shop_url' => '', 'daraza_signup_url' => '', 'daraza_cert_url' => '', 'daraza_donate_on' => '0', 'daraza_signup_on' => '0', 'daraza_cert_on' => '0', 'shop_pay_daraza_enabled' => '0']);
 
 // ---- the link ---------------------------------------------------------------------------------------------------------------------
 $good = 'https://paylink.daraza.net/auths/pay/a9fd8f56-75e3-4547-8d2a-f3130b0ee0aa';

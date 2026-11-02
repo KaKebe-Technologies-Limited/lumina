@@ -48,6 +48,10 @@ final class AcademyAccountController extends AcademyBaseController
         if (!$request->bool('agree')) {
             $this->fail(['agree' => 'Please tick the box to continue.'], 'academy/register');
         }
+        // the picture is REQUIRED: checked before anything is created, so a missing or unusable picture never leaves a half-made account behind
+        if (LearnerPortrait::requiredAtSignup() && ($pp = LearnerPortrait::problem($request->file('photo'))) !== '') {
+            $this->fail(['photo' => $pp . ' (A file chosen earlier has to be chosen again.)'], 'academy/register');
+        }
         $res = LearnerAuth::register([
             'name' => $request->string('name'), 'email' => $request->string('email'), 'password' => $request->string('password'),
             'phone' => $request->string('phone'), 'country' => $request->string('country'), 'whatsapp' => $request->string('whatsapp'),
@@ -55,7 +59,7 @@ final class AcademyAccountController extends AcademyBaseController
         if (!$res['ok']) {
             $this->fail($res['errors'], 'academy/register');
         }
-        // the optional picture (attached or a selfie): kept private; a problem with it never stops the sign-up
+        // the picture (attached or a selfie): kept private; it was checked above when it is required, so a problem here is rare and never stops the sign-up
         $photo = $request->file('photo');
         if ($photo !== null && isset($res['learner']['id'])) {
             $pr = LearnerPortrait::save((int) $res['learner']['id'], $photo, false);
@@ -300,6 +304,10 @@ final class AcademyAccountController extends AcademyBaseController
             return $pay['ok'] ? $this->sendToGateway((string) $pay['link']) : $this->redirect('academy/pending');
         }
         LearnerAuth::signIn($res['learner']);
+        if ($res['created'] && LearnerPortrait::requiredAtSignup() && empty(LearnerPortrait::of((int) $res['learner']['id'])['photo_path'])) {
+            Flash::info('Welcome to the LAF Academy! Please add your picture to continue: take a selfie or attach a clear photo. Only you and the Academy team can see it.');
+            return $this->redirect('academy/account#picture');
+        }
         if (LearnerAuth::missingContact((array) $res['learner'])) {
             Flash::info(($res['created'] ? 'Welcome to the LAF Academy! ' : '') . 'Please add your phone number, country and WhatsApp number to continue. They help us to support you.');
             return $this->redirect('academy/account#details');

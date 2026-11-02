@@ -253,6 +253,7 @@ set_time_limit(0); require __DIR__ . '/selftest-academy-fee-enforce.php';       
 set_time_limit(0); require __DIR__ . '/selftest-academy-remind-approved.php';              // Admin: reminder to all approved learners
 set_time_limit(0); require __DIR__ . '/selftest-reports.php';              // Admin > Reports: every report runs, hub and CSV
 set_time_limit(0); require __DIR__ . '/selftest-academy-featured.php';              // Academy: featured students (admin button + public cards)
+set_time_limit(0); require __DIR__ . '/selftest-academy-photo-required.php';              // Academy: a picture is required to create an account
 set_time_limit(0); require __DIR__ . '/selftest-visitors.php';                         // Admin > Visitors: counting rules, no IP stored, country + page filters
 set_time_limit(0); require __DIR__ . '/selftest-academy-payments.php';                       // Academy payments dashboard: Pesapal + hand-confirmed + reported, figures, filters
 set_time_limit(0); require __DIR__ . '/selftest-pesapal.php';                    // Pesapal payment gateway: client, donations, shop orders, endpoints (mock transport)
