@@ -76,6 +76,7 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth']], function ($route
     $router->get('/pesapal', [\App\Controllers\Admin\PesapalController::class, 'index'])->name('admin.pesapal');
     $router->get('/daraza', [\App\Controllers\Admin\DarazaController::class, 'index'])->name('admin.daraza');
     $router->post('/daraza', [\App\Controllers\Admin\DarazaController::class, 'save'])->middleware('throttle:30,600')->name('admin.daraza.save');
+    $router->post('/pesapal/signup-fee-switch', [\App\Controllers\Admin\PesapalController::class, 'signupFeeSwitch'])->middleware('throttle:30,600')->name('admin.pesapal.signup_fee_switch');
     $router->post('/pesapal/fees', [\App\Controllers\Admin\PesapalController::class, 'fees'])->middleware('throttle:30,600')->name('admin.pesapal.fees');
     $router->post('/pesapal/options', [\App\Controllers\Admin\PesapalController::class, 'options'])->middleware('throttle:30,600')->name('admin.pesapal.options');
     $router->post('/pesapal/test', [\App\Controllers\Admin\PesapalController::class, 'test'])->middleware('throttle:10,600')->name('admin.pesapal.test');

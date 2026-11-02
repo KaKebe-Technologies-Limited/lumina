@@ -33,6 +33,8 @@ final class PesapalController extends AdminController
             'feeCurrencies' => \App\Services\Academy\AcademyFees::CURRENCIES,
             'feesReady' => \App\Services\Academy\AcademyFees::ready(),
             'canFees'   => can('academy.manage'),
+            'canFeeSwitch' => can('academy.fees'),
+            'signupOn'  => \App\Services\Academy\AcademyFees::signupEnabled(),
             'hasKeys'   => PesapalClient::hasKeys(),
             'mode'      => PesapalClient::mode(),
             'payments'  => $tables ? PesapalPayments::recent(100) : [],
@@ -67,6 +69,17 @@ final class PesapalController extends AdminController
             $out[$kind] = ['amount' => $raw === '' ? '0' : $raw, 'currency' => strtoupper((string) \App\Core\Settings::get($key . '_currency', 'UGX')), 'on' => $conf !== null, 'display' => $conf['display'] ?? '', 'daraza' => \App\Services\Daraza::enabled($kind === 'cert' ? 'cert' : 'signup'), 'manual' => \App\Services\Academy\AcademyFees::manual() !== null];
         }
         return $out;
+    }
+
+    /** Switch the Academy sign-up fee on or off (needs the ability academy.fees). The amount stays saved. */
+    public function signupFeeSwitch(Request $request): Response
+    {
+        $this->authorize('academy.fees');
+        $on = (string) $request->post('state', '') === 'on';
+        \App\Core\Settings::setMany(['academy_signup_fee_enabled' => $on ? '1' : '0']);
+        AuditLog::record('academy.fees', 'settings', null, 'Academy sign-up fee switched ' . ($on ? 'ON (learners pay it)' : 'OFF (learners sign up free)'));
+        Flash::success($on ? 'The sign-up fee is ON: new learners pay it.' : 'The sign-up fee is OFF: new learners sign up for free. Switch it on again whenever you like.');
+        return $this->redirect('admin/pesapal');
     }
 
     /** Set the Academy sign-up fee and certificate fee (0 = free). */

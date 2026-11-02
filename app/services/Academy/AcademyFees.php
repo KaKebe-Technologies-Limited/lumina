@@ -38,9 +38,18 @@ final class AcademyFees
         return $ok;
     }
 
+    /** Is the sign-up fee switched on? (Admin > Pesapal payments > LAF Academy fees; the ability academy.fees may flip it). Off = every learner signs up free, the amount below is kept for when it is switched on again. */
+    public static function signupEnabled(): bool
+    {
+        return trim((string) Settings::get('academy_signup_fee_enabled', '1')) !== '0';
+    }
+
     /** @return array{minor:int,currency:string,display:string}|null the amount set by the administrator (regardless of whether it can be charged yet) */
     public static function configured(string $kind): ?array
     {
+        if ($kind !== 'cert' && !self::signupEnabled()) {
+            return null;
+        }
         $key = $kind === 'cert' ? 'academy_cert_fee' : 'academy_signup_fee';
         $minor = Money::parse(trim((string) Settings::get($key, '0')));
         if ($minor === null || $minor <= 0) {
@@ -134,10 +143,10 @@ final class AcademyFees
         return self::active('cert');
     }
 
-    /** Does this learner still owe the sign-up fee? (also true while the fee is switched off again: an unpaid learner stays blocked until waived or paid) */
+    /** Does this learner still owe the sign-up fee? (false while the sign-up fee is switched off: nobody owes it then, an unpaid learner is let through to the normal approval; switched on again, the unpaid ones owe it again) */
     public static function signupDue(?array $learner): bool
     {
-        return $learner !== null && ($learner['fee_status'] ?? 'none') === 'due';
+        return $learner !== null && self::signupEnabled() && ($learner['fee_status'] ?? 'none') === 'due';
     }
 
     public static function certDue(?array $cert): bool

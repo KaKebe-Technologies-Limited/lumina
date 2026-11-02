@@ -89,6 +89,7 @@ return [
         'label' => 'LAF Academy',
         'items' => [
             'academy.teach'  => ['Teach in the LAF Academy', 'The facilitator role. Create and edit their own courses (lessons, handouts, quizzes), schedule virtual classes, and see the progress of the learners in those courses.'],
+            'academy.fees'   => ['Switch the Academy sign-up fee on or off', 'Turn the sign-up fee off so new learners create an account for free, and turn it back on at any time. The amount is kept. Changing the amounts is part of "Run the LAF Academy".'],
             'academy.manage' => ['Run the LAF Academy', 'Everything in the Academy: every course, learners (verify, deactivate, reset passwords, export), certificates (issue, revoke), facilitators, Academy settings and the starter courses. Give this to trusted administrators only.'],
         ],
     ],

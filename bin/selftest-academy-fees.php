@@ -67,7 +67,7 @@ $answer = static function (string $trk, string $ref, int $amount, string $cur = 
 
 $keys = [getenv('PESAPAL_CONSUMER_KEY'), getenv('PESAPAL_CONSUMER_SECRET'), getenv('PESAPAL_ENV')];
 $before = [];
-foreach (['academy_signup_fee', 'academy_signup_fee_currency', 'academy_cert_fee', 'academy_cert_fee_currency', 'academy_cert_approval', 'academy_signup_mode'] as $k) {
+foreach (['academy_signup_fee', 'academy_signup_fee_currency', 'academy_cert_fee', 'academy_cert_fee_currency', 'academy_cert_approval', 'academy_signup_mode', 'academy_signup_fee_enabled'] as $k) {
     $before[$k] = Settings::isCustomised($k) ? Settings::get($k) : null;
 }
 $clean = static function (): void {
@@ -94,6 +94,11 @@ check('an amount of 0 means free', AcademyFees::signup() === null && AcademyFees
 Settings::setMany(['academy_signup_fee' => 'abc', 'academy_signup_fee_currency' => 'XXX']);
 check('rubbish in the setting never charges anything', AcademyFees::signup() === null);
 Settings::setMany(['academy_signup_fee' => '20000', 'academy_signup_fee_currency' => 'UGX']);
+check('the switch is ON by default: the sign-up fee is charged', AcademyFees::signupEnabled() && AcademyFees::signup() !== null);
+Settings::set('academy_signup_fee_enabled', '0');
+check('switched OFF: sign-up is free (no fee charged), the certificate fee is untouched, and no learner owes the sign-up fee', !AcademyFees::signupEnabled() && AcademyFees::signup() === null && AcademyFees::configured('signup') === null && AcademyFees::cert() !== null && !AcademyFees::signupDue(['fee_status' => 'due']));
+Settings::set('academy_signup_fee_enabled', '1');
+check('switched ON again: the saved amount is charged again', AcademyFees::signup()['display'] === 'UGX 20,000' && AcademyFees::signupDue(['fee_status' => 'due']));
 
 // ---- sign-up fee ----------------------------------------------------------------------------------------------------------------------
 Settings::set('academy_signup_mode', 'approval');
@@ -286,6 +291,16 @@ if ($probe === false) {
     $req('POST', '/admin/pesapal/fees', ['_token' => $tok($r['body']), 'signup_amount' => '5', 'signup_currency' => 'XXX', 'cert_amount' => '1', 'cert_currency' => 'USD']);
     Settings::flush();
     check('admin: an unknown currency is refused', Settings::get('academy_signup_fee') === '25000');
+    $r = $req('GET', '/admin/pesapal');
+    check('admin: the page shows the sign-up fee switch (ON)', str_contains($r['body'], 'Switch the sign-up fee OFF'));
+    $req('POST', '/admin/pesapal/signup-fee-switch', ['_token' => $tok($r['body']), 'state' => 'off']);
+    Settings::flush();
+    check('admin: the switch turns the sign-up fee off (amount kept)', !AcademyFees::signupEnabled() && Settings::get('academy_signup_fee') === '25000');
+    $r = $req('GET', '/admin/pesapal');
+    check('admin: the page now offers to switch it ON', str_contains($r['body'], 'Switch the sign-up fee ON'));
+    $req('POST', '/admin/pesapal/signup-fee-switch', ['_token' => $tok($r['body']), 'state' => 'on']);
+    Settings::flush();
+    check('admin: the switch turns the sign-up fee back on', AcademyFees::signupEnabled());
     $lp = $req('GET', '/admin/academy/learners/' . $lid);
     check('admin: a learner page opens (200)', $lp['code'] === 200, (string) $lp['code']);
     @unlink($jar);

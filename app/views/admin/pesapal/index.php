@@ -1,5 +1,5 @@
 <?php
-/** Admin > Pesapal payments. Vars: $fees, $feeCurrencies, $feesReady, $canFees (Academy fees), $donationsOn, $shopOn, $shopOpen, $canShop (where Pesapal is offered), $tables (database tables present), $hasKeys, $mode, $payments, $ipnUrl, $returnUrl. */
+/** Admin > Pesapal payments. Vars: $canFeeSwitch, $signupOn (the sign-up fee switch), $fees, $feeCurrencies, $feesReady, $canFees (Academy fees), $donationsOn, $shopOn, $shopOpen, $canShop (where Pesapal is offered), $tables (database tables present), $hasKeys, $mode, $payments, $ipnUrl, $returnUrl. */
 use App\Services\Shop\Money;
 
 $tones = ['pending' => 'warning', 'paid' => 'success', 'failed' => 'danger', 'reversed' => 'danger', 'review' => 'warning'];
@@ -66,6 +66,20 @@ PESAPAL_CONSUMER_SECRET=your secret from the Pesapal dashboard</pre>
         <?php if (!$feesReady): ?>
             <div class="alert alert--error" role="alert"><strong>The Academy fee columns are missing in the database.</strong> In phpMyAdmin import <code>database/updates/2026-10-academy-fees.sql</code> (safe to repeat), then reload this page. Until then no fee is charged.</div>
         <?php endif; ?>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin:0 0 1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--surface)">
+            <div style="flex:1 1 18rem">
+                <strong>Sign-up fee switch</strong>
+                <div><?php if ($signupOn): ?><span class="badge badge--success badge--dot">ON: new learners pay the sign-up fee</span><?php else: ?><span class="badge badge--warning badge--dot">OFF: learners sign up for free</span><?php endif; ?></div>
+                <span class="text-muted">Switching it off keeps the amount below; new accounts are free and nobody is asked to pay. Switch it on again at any time.</span>
+            </div>
+            <?php if ($canFeeSwitch): ?>
+            <form method="post" action="<?= e(url('admin/pesapal/signup-fee-switch')) ?>">
+                <?= csrf_field() ?>
+                <input type="hidden" name="state" value="<?= $signupOn ? 'off' : 'on' ?>">
+                <button class="btn <?= $signupOn ? 'btn--outline' : 'btn--primary' ?>" type="submit"><?= $signupOn ? 'Switch the sign-up fee OFF' : 'Switch the sign-up fee ON' ?></button>
+            </form>
+            <?php else: ?><span class="text-muted">Only a role with "Switch the Academy sign-up fee on or off" can change this.</span><?php endif; ?>
+        </div>
         <form method="post" action="<?= e(url('admin/pesapal/fees')) ?>">
             <?= csrf_field() ?>
             <p class="text-muted">Set what learners pay through Pesapal. <strong>Leave 0 for free.</strong> A fee is only charged while Pesapal is connected (keys in <code>.env</code>). Accounts and certificates that exist already are never charged.</p>
