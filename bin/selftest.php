@@ -256,6 +256,7 @@ set_time_limit(0); require __DIR__ . '/selftest-academy-featured.php';          
 set_time_limit(0); require __DIR__ . '/selftest-academy-photo-required.php';              // Academy: a picture is required to create an account
 set_time_limit(0); require __DIR__ . '/selftest-academy-track.php';              // Academy: registration number warning, tracking page, sign-in with the number
 set_time_limit(0); require __DIR__ . '/selftest-academy-no-picture.php';              // Academy: reminder for learners without a picture, deadline, switch off
+set_time_limit(0); require __DIR__ . '/selftest-bono-knowledge.php';              // Bono AI: built-in knowledge (taught answers + passages)
 set_time_limit(0); require __DIR__ . '/selftest-visitors.php';                         // Admin > Visitors: counting rules, no IP stored, country + page filters
 set_time_limit(0); require __DIR__ . '/selftest-academy-payments.php';                       // Academy payments dashboard: Pesapal + hand-confirmed + reported, figures, filters
 set_time_limit(0); require __DIR__ . '/selftest-pesapal.php';                    // Pesapal payment gateway: client, donations, shop orders, endpoints (mock transport)

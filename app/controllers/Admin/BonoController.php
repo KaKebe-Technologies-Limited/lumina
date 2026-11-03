@@ -40,9 +40,21 @@ final class BonoController extends AdminController
     {
         $this->authorize('settings.manage');
         $r = BonoIndexer::run(50, $request->bool('force'));
+        \App\Services\Bono\BonoKnowledge::install();                       // the built-in knowledge is taught too (only what is not taught yet)
         $this->audit('bono.learn', null, null, 'Bono AI learned the website: ' . $r['pages'] . ' pages read, ' . $r['updated'] . ' updated', $r);
         Flash::success('Bono read ' . $r['pages'] . ' page' . ($r['pages'] === 1 ? '' : 's') . ' and learned ' . $r['passages'] . ' new passages (' . $r['removed'] . ' forgotten, ' . $r['errors'] . ' errors).'
             . ($r['done'] ? '' : ' ' . $r['left'] . ' pages are left: press the button again, or the nightly run will finish them.'));
+        return $this->redirect('admin/bono');
+    }
+
+    /** POST admin/bono/knowledge: teach Bono the built-in knowledge about the foundation (app/config/bono/knowledge.txt); never overwrites what is already taught. */
+    public function knowledge(Request $request): Response
+    {
+        $this->authorize('settings.manage');
+        $r = \App\Services\Bono\BonoKnowledge::install();
+        BonoIndexer::storeKnowledge();                                    // and make the topics searchable at once (no page is fetched)
+        $this->audit('bono.knowledge', null, null, 'Loaded the built-in Bono knowledge: ' . $r['added'] . ' answers added', $r);
+        Flash::success($r['added'] > 0 ? 'Bono learned ' . $r['added'] . ' new answers about the foundation (' . $r['existing'] . ' were already known), from ' . $r['blocks'] . ' topics.' : 'Bono already knows all ' . $r['existing'] . ' built-in answers.');
         return $this->redirect('admin/bono');
     }
 

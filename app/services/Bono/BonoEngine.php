@@ -122,7 +122,7 @@ final class BonoEngine
             }
             // a page named after what is asked (Our Programs, Support Us), a page near the top of the site and the foundation's own facts are better answers than a deep page
             $depth = count(array_filter(explode('/', trim((string) parse_url((string) $r['url'], PHP_URL_PATH), '/'))));
-            $score *= ($inTitle ? 1.6 : 1.0) * ($depth <= 2 ? 1.15 : 1.0) * (str_starts_with((string) $r['url'], 'bono://') ? 1.4 : 1.0);
+            $score *= ($inTitle ? 1.6 : 1.0) * ($depth <= 2 ? 1.15 : 1.0) * ((string) $r['url'] === BonoIndexer::FACTS_URL ? 1.4 : ((string) $r['url'] === BonoIndexer::KNOWLEDGE_URL ? 0.7 : 1.0));
             $out[] = ['id' => (int) $r['id'], 'title' => (string) $r['title'], 'url' => (string) $r['url'], 'heading' => (string) $r['heading'], 'anchor' => (string) $r['anchor'],
                 'body' => (string) $r['body'], 'score' => $score, 'coverage' => min(1.0, $hit / $totalIdf)];
         }
@@ -142,17 +142,26 @@ final class BonoEngine
         return $final;
     }
 
+    /** The words of the organisation's own name say little about WHICH question is asked ("the vision of Lumina Africa Foundation"): left out unless they are all there is. @param list<string> $stems @return list<string> */
+    private static function withoutBrand(array $stems): array
+    {
+        $rest = array_values(array_filter($stems, static fn(string $s): bool => !in_array($s, ['lumina', 'africa', 'foundat', 'laf'], true)));
+        return $rest === [] ? $stems : $rest;
+    }
+
     /** An answer taught by an administrator for (about) the same question. @return array{id:int,answer:string}|null */
     public static function taught(array $qstems): ?array
     {
-        $qs = array_values(array_unique($qstems));
+        $qs = self::withoutBrand(array_values(array_unique($qstems)));
         if ($qs === []) {
             return null;
         }
         $best = null;
         $bestScore = 0.0;
+        $bestBoth = 0;
+        $bestExtra = PHP_INT_MAX;
         foreach (Database::all('SELECT id, answer, stems FROM bono_taught WHERE is_active = 1') as $t) {
-            $ts = array_values(array_filter(explode(' ', (string) $t['stems'])));
+            $ts = self::withoutBrand(array_values(array_filter(explode(' ', (string) $t['stems']))));
             if ($ts === []) {
                 continue;
             }
@@ -167,8 +176,12 @@ final class BonoEngine
             }
             $score = $both / count($ts);                                   // how much of the taught question the visitor's words cover
             $extra = count($qs) - $both;                                   // words the taught question does not have
-            if ($both >= min(2, count($ts)) && $score >= 0.66 && $extra <= max(2, count($ts)) && $score > $bestScore) {
+            // the better match wins: first the share of the taught question that the visitor covered, then the MORE words matched (the more specific taught question), then the fewer unmatched words
+            if ($both >= min(2, count($ts)) && $score >= 0.66 && $extra <= max(2, count($ts))
+                && ($score > $bestScore + 1e-9 || (abs($score - $bestScore) <= 1e-9 && ($both > $bestBoth || ($both === $bestBoth && $extra < $bestExtra))))) {
                 $bestScore = $score;
+                $bestBoth = $both;
+                $bestExtra = $extra;
                 $best = ['id' => (int) $t['id'], 'answer' => (string) $t['answer']];
             }
         }
@@ -260,7 +273,7 @@ final class BonoEngine
         if (preg_match('/^(bye|goodbye|see you|see you later|that is all|that\'s all|no thanks)$/', $l) === 1) {
             return ['answer' => 'Goodbye! Come back any time. Every day I learn more about the foundation.', 'suggest' => false];
         }
-        if (preg_match('/(who|what) are you|your name|are you (a )?(bot|robot|human|ai)|what is bono|what can you do|help me$/', $l) === 1) {
+        if (preg_match('/(who|what) are you|your name|are you (a )?(bot|robot|human|ai)|what is bono|what can you do|help me$/', $l) === 1) {
             return ['answer' => "I'm Bono AI, the support assistant of the website. I read the whole website every day, so I can answer questions about the foundation, its programmes, the LAF Academy, donations, volunteering, events and contacts. If I don't know something I say so and point you to the team.", 'suggest' => true];
         }
         return null;

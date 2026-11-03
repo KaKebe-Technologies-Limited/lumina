@@ -9,6 +9,7 @@ use App\Controllers\Admin\BonoController;
 $router->group(['prefix' => 'admin/bono', 'middleware' => ['auth', 'can:settings.manage']], function ($router) {
     $router->get('', [BonoController::class, 'index'])->name('admin.bono');
     $router->post('/learn', [BonoController::class, 'learn'])->middleware('throttle:6,60')->name('admin.bono.learn');
+    $router->post('/knowledge', [BonoController::class, 'knowledge'])->middleware('throttle:10,60')->name('admin.bono.knowledge');
     $router->post('/teach', [BonoController::class, 'teach'])->middleware('throttle:60,60')->name('admin.bono.teach');
     $router->post('/taught/{id}/toggle', [BonoController::class, 'toggle'])->name('admin.bono.toggle');
     $router->post('/taught/{id}/delete', [BonoController::class, 'delete'])->name('admin.bono.delete');

@@ -1,0 +1,587 @@
+# BONO AI - BUILT-IN KNOWLEDGE ABOUT LUMINA AFRICA FOUNDATION
+# One block per topic:  "## heading", then one or more "Q:" lines (the ways a visitor may ask it) and the "A:" answer (it may run over several lines).
+# Bono learns every block (a) as a taught answer for each Q: line and (b) as a passage it can search. Edit freely: Admin > Bono AI > "Load the built-in knowledge".
+# Rules: only facts that are on the website; no payment numbers or prices that change (point to the page instead); programmes are described as PLANNED, as the website does.
+
+## What is Lumina Africa Foundation
+Q: What is Lumina Africa Foundation?
+Q: Tell me about the foundation
+Q: About Lumina Africa Foundation
+Q: What does LAF do?
+Q: What is LAF?
+Q: What is your organisation about?
+A: Lumina Africa Foundation (LAF) is a registered community-based, non-profit organisation headquartered in Gulu City, Northern Uganda. It works to close the digital divide for young people and women in Northern Uganda by creating pathways to learn, work and lead in the digital economy. Its motto is "Igniting Light, Inspiring Change." You can read more on the About page (/about).
+
+## Registration and legal status
+Q: Is Lumina Africa Foundation registered?
+Q: What is your registration number?
+Q: Are you a legitimate organisation?
+Q: Are you an NGO?
+Q: Is this a non-profit?
+A: Yes. Lumina Africa Foundation is a registered community-based, non-profit organisation. Its registration number is GSD/R 1545. The foundation says openly that the programmes on its website are planned programme areas and proposed interventions, and it promises to report their status, progress and verified results transparently.
+
+## Founder
+Q: Who founded Lumina Africa Foundation?
+Q: Who is the founder?
+Q: Who is Moses Komakech?
+Q: Who started the foundation?
+Q: Who is the person who founded Lumina?
+Q: Who is behind the foundation?
+A: Lumina Africa Foundation was founded by Moses Komakech. He grew up in Northern Uganda during more than two decades of conflict, saw how war disrupted education and opportunity, and founded the foundation to bridge the digital divide so young people can learn, work and lead in the digital age. His story is on the About page (/about).
+
+## Our story and why we exist
+Q: Why was Lumina Africa Foundation created?
+Q: What is the story of Lumina Africa Foundation?
+Q: Why does digital inclusion matter in Northern Uganda?
+Q: What problem do you solve?
+Q: What challenge do you address?
+A: Northern Uganda endured over two decades of armed conflict that displaced about 1.8 million people and interrupted the schooling of a generation. Many young people still lack certificates and access to computers, internet and digital training, while the economy is digitising fast. Lumina Africa Foundation exists to close that gap so that young people in Northern Uganda are not left behind by digital exclusion. In its words: small digital opportunities can unlock income, income restores confidence, and confidence rebuilds dignity.
+
+## Vision
+Q: What is your vision?
+Q: What is the vision of Lumina Africa Foundation?
+A: Our vision is an inclusive digital future for Northern Uganda where all young people and women are equipped, connected, and empowered to thrive in the global digital economy.
+
+## Mission
+Q: What is your mission?
+Q: What is the mission of Lumina Africa Foundation?
+A: Our mission is to strengthen access to learning, improve practical competencies, build confidence and help young people prepare for further education, employment, entrepreneurship and leadership.
+
+## Core values
+Q: What are your core values?
+Q: What do you believe in?
+Q: What are the values of the foundation?
+A: Our five core values are: Equity and Inclusion; Integrity and Transparency; Community-Driven Action; Innovation and Sustainability; and Collaboration and Partnership.
+
+## Motto and slogan
+Q: What is your slogan?
+Q: What is your motto?
+Q: What does Igniting Light mean?
+A: The foundation's motto is "Igniting Light, Inspiring Change." Its programme message is "Building Pathways to Opportunity. Preparing Communities for Change."
+
+## Where we work
+Q: Where do you work?
+Q: Where are you based?
+Q: Which areas do you serve?
+Q: Do you work outside Gulu?
+A: Our headquarters is in Gulu City, Northern Uganda, and our primary geographic focus is Northern Uganda. Specific implementation locations are decided by community needs, capacity, resources and partnerships. The LAF Academy is online, so learners can study from anywhere.
+
+## Who we serve
+Q: Who do you serve?
+Q: Who are your beneficiaries?
+Q: Who can benefit from your programmes?
+Q: What age group do you work with?
+A: We are designing our programmes for: young people aged 15 to 35 seeking skills, mentorship and development; out-of-school and unemployed or underemployed youth; girls and young women; vulnerable children facing barriers to education; persons with disabilities and other underserved groups; community members who benefit from health and education awareness; and schools and community organisations that want to collaborate.
+
+## Contact details
+Q: How do I contact you?
+Q: How can I reach the foundation?
+Q: What is your phone number?
+Q: What is your email address?
+Q: What is your WhatsApp number?
+Q: Contact information
+A: You can reach Lumina Africa Foundation by phone on +256-779-712-990, +256-790-635-544 or +256 741 819 287, by e-mail at luminaafricafoundation@gmail.com or info@luminaafricafoundation.com, or on WhatsApp via the Chat on WhatsApp button. You can also send a message from the Contact page (/contact). Office hours are Monday to Friday, 9am to 5pm.
+
+## Office location
+Q: Where is your office?
+Q: What is your address?
+Q: Where is the foundation located?
+Q: How do I find you in Gulu?
+A: Our office is at Laroo-Pece Division, Gulu City, Northern Uganda. The Contact page (/contact) has a map and an "Open in Google Maps" link.
+
+## Opening hours
+Q: What are your opening hours?
+Q: When is the office open?
+Q: What time do you open?
+Q: What time does the office close?
+Q: Opening and closing times
+Q: Are you open on Saturday?
+Q: Are you open on weekends?
+A: The office is open Monday to Friday, 9am to 5pm (East Africa Time). For anything urgent you can use WhatsApp.
+
+## Request a meeting
+Q: Can I meet the team?
+Q: How do I book a meeting?
+Q: Can I request an appointment?
+Q: I want to talk to someone about a partnership
+A: Yes. Use the "Request a meeting" form on the Contact page (/contact). Choose a topic (partnership, membership, volunteering, programmes, media or other), your preferred date and time of day, and how long you need. The team replies to agree a time; nothing is booked until you hear back.
+
+## Social media
+Q: Are you on social media?
+Q: What is your Facebook page?
+Q: What is your Instagram?
+Q: Where can I follow you?
+Q: Do you have TikTok or LinkedIn?
+A: Yes. Follow Lumina Africa Foundation on Facebook, Instagram (@luminaafricafdn), LinkedIn and TikTok (@lumina.africa.fou). The links are in the website footer and on the Contact page.
+
+## Programmes overview
+Q: What programmes do you run?
+Q: What are your programmes?
+Q: What are your focus areas?
+Q: What are your pillars?
+A: Lumina Africa Foundation is developing a portfolio of community-centred programmes across five pillars: (1) Technology, Digital Inclusion and Innovation; (2) Climate Resilience and Environmental Sustainability; (3) Sustainable Development Goals (SDGs) and Community Development; (4) Health and Community Wellbeing; and (5) Education, Skills and Youth Development. See the Programs page (/programs). The website describes these as planned programme areas and proposed interventions.
+
+## Are the programmes already running
+Q: Are your projects funded?
+Q: Which programmes are active?
+Q: Is everything on the website already happening?
+A: The website is open that its programmes are planned programme areas and proposed interventions, and should not be read as confirmation that every activity is already funded, operational or delivering results. The foundation commits to share the status, objectives, progress and verified outcomes as programmes are developed. Activities that already took place are on the Activities page (/activities), and the LAF Academy is a live, free learning portal.
+
+## Technology pillar
+Q: What is the technology pillar?
+Q: Do you teach ICT skills?
+Q: Do you do digital inclusion work?
+Q: What is Technology, Digital Inclusion and Innovation?
+A: Technology, Digital Inclusion and Innovation aims to expand access to technology and prepare young people for the digital economy. Planned interventions include ICT skills and computer literacy, digital inclusion and access, software development, artificial intelligence and emerging technologies, digital employability, innovation and problem-solving, digital entrepreneurship, cybersecurity and digital safety, robotics and automation, technology for community development and digital innovation activities.
+
+## Education pillar
+Q: What is the education pillar?
+Q: Do you support education and skills?
+Q: Do you offer mentorship?
+Q: What is Education, Skills and Youth Development?
+A: Education, Skills and Youth Development aims to expand learning opportunities and prepare young people for the future. Planned interventions include education support, digital literacy, career guidance, employability and job readiness, youth mentorship, leadership and personal development, internship and experiential learning, girls' education and young women's empowerment, and inclusive learning.
+
+## Health pillar
+Q: What is the health pillar?
+Q: Do you work on health?
+Q: What health activities do you plan?
+Q: What is Health and Community Wellbeing?
+A: Health and Community Wellbeing aims to promote health awareness and support healthier communities. Planned interventions include community health education, youth health and wellbeing, mental health awareness, maternal and family health awareness, preventive health and healthy living, digital health information and community health outreach.
+
+## Climate pillar
+Q: Do you work on climate change?
+Q: What is the climate pillar?
+Q: Do you plant trees?
+Q: What is Climate Resilience and Environmental Sustainability?
+A: Climate Resilience and Environmental Sustainability plans climate change awareness and community adaptation; tree planting, ecosystem restoration and biodiversity conservation; climate-smart agriculture and sustainable livelihoods; youth-led green innovation and environmental protection; and community preparedness for climate-related disasters.
+
+## SDG pillar
+Q: Do you work on the Sustainable Development Goals?
+Q: What is the SDG pillar?
+Q: Do you support the SDGs?
+A: The Sustainable Development Goals (SDGs) and Community Development pillar plans to localise the UN Sustainable Development Goals in community initiatives, engage youth in sustainable development and policy advocacy, build partnerships that advance education, health, gender equality and decent work, run community-led projects against poverty and inequality, and monitor and report measurable contributions to the SDGs.
+
+## Cross-cutting priorities
+Q: What are your cross-cutting priorities?
+Q: Do you focus on women and girls?
+Q: Do you support young women?
+Q: Do you include people with disabilities?
+A: Across all pillars we prioritise youth empowerment; employability and economic empowerment; entrepreneurship and innovation; gender equality and young women's empowerment; inclusion and equal opportunity (including vulnerable children, out-of-school youth and persons with disabilities); leadership, mentorship and civic participation; community resilience and sustainable development; and partnerships and collaboration.
+
+## How we implement
+Q: How do you implement your programmes?
+Q: What is your approach?
+Q: How do you work with communities?
+A: We use a community-centred approach in six steps: (1) listen and assess community needs; (2) design and collaborate on proposals with clear objectives and budgets; (3) mobilise resources and partnerships; (4) implement and support, subject to resources; (5) monitor, learn and improve; and (6) strengthen sustainability and local ownership.
+
+## Planned projects
+Q: What projects do you have?
+Q: How many projects do you plan?
+Q: What are your proposed interventions?
+A: The Projects page (/projects) lists 37 planned interventions under the five pillars: 11 in Technology, Digital Inclusion and Innovation; 9 in Education, Skills and Youth Development; 7 in Health and Community Wellbeing; 5 in Climate Resilience and Environmental Sustainability; and 5 in SDGs and Community Development. Each one is marked as planned.
+
+## Youth trained
+Q: How many young people have you trained?
+Q: What is your impact so far?
+Q: What are your achievements?
+A: The website reports more than 150 young people trained and 5 programme areas. For the latest figures and stories, see the home page, the Activities page (/activities) and the Stories section (/stories).
+
+## Activities
+Q: What activities have you done?
+Q: What have you done recently?
+Q: What is your latest news?
+A: Recent activities include: a mentorship session with the pupils of Lacekocot Primary School on 3 October 2026 (talks on growing up, health and confidence, a menstrual hygiene talk for boys and girls together, and sanitary pads for the girls); and an outreach visit by our Director, with the Northern Region Youth Parliament delegation, to the Wii Got Quarry Site in Gulu City, where quarry youth discussed environmental sustainability and received safety gear. See the Activities page (/activities).
+
+## Mentorship at a school
+Q: Can you visit our school?
+Q: Can you do a mentorship session at my school?
+Q: Do you run talks for pupils?
+A: Yes, we would love to hear from you. If you lead a school, a youth group or a community and would like a mentorship session, or you want to volunteer as a mentor, contact us through the Contact page (/contact) or on WhatsApp.
+
+## Newsletter
+Q: Do you have a newsletter?
+Q: How do I subscribe to the newsletter?
+Q: Where can I read past newsletters?
+Q: How do I get updates?
+A: Yes. Subscribe with your e-mail address in the form at the bottom of any page or on the Newsletter page (/newsletter) to receive news and updates. Past issues are in the newsletter archive. You can unsubscribe at any time from the link in each e-mail.
+
+## Blog and news
+Q: Where can I read your news?
+Q: Do you have a blog?
+Q: Where can I read your news and stories?
+A: News and stories are on the Blog page (/blog), the Activities page (/activities) and the Stories page (/stories). The newsletter shares the same updates by e-mail.
+
+## Events and calendar
+Q: Do you have events?
+Q: What events are coming up?
+Q: Is there a calendar?
+Q: How do I register for an event?
+A: Upcoming events, workshops and meetings appear on the Events page (/events) and the Calendar page (/calendar). Where an event accepts registration, there is a registration form on its page. If nothing is listed, subscribe to the newsletter to hear first.
+
+## Gallery
+Q: Do you have photos?
+Q: Where is the photo gallery?
+A: Photos of our work are in the Gallery (/gallery).
+
+## How to get involved
+Q: How can I get involved?
+Q: How can I help?
+Q: How can I support the foundation?
+Q: How can I be part of Lumina Africa Foundation?
+A: There are many ways: volunteer your time and skills, partner with us as an organisation, advocate and spread the word, become an Ambassador, become a member, donate money or equipment, join the LAF Academy as a learner or facilitator, or buy from the shop. Start on the Involvement page (/involvement).
+
+## Volunteering
+Q: How can I volunteer?
+Q: Can I volunteer with Lumina Africa Foundation?
+Q: Who can volunteer?
+Q: What volunteer roles are there?
+A: Anyone passionate about making a difference can volunteer: students, professionals or retirees. Roles include community mobilisation, programme support (health, education, ICT, environment), media and communications, and fundraising and partnerships. Apply with the Volunteer form on the Involvement page (/involvement) or from the Careers page (/careers).
+
+## Partnerships
+Q: How can we partner with you?
+Q: Can my organisation partner with Lumina Africa Foundation?
+Q: Do you work with companies and institutions?
+Q: What kind of partnerships do you need?
+A: We welcome collaboration with organisations, businesses, schools, universities, healthcare providers, technology companies, government and development partners. Partnerships can include programme funding and grants; computers, digital equipment and learning resources; technical expertise and mentorship; training facilities; internship placements; research, monitoring and evaluation; and innovation and youth development initiatives. Use "Partner With Us" on the Involvement page (/involvement) or request a meeting on the Contact page.
+
+## Advocacy
+Q: What does advocating mean?
+Q: How can I advocate for the foundation?
+A: Not everyone can volunteer on the ground, but you can still help by advocating for digital inclusion, healthcare access and youth empowerment: share our stories, raise awareness and amplify the voices of those who need it most. Join us through the Involvement page (/involvement).
+
+## Ambassadors
+Q: What is an ambassador?
+Q: How do I become an ambassador?
+Q: What do ambassadors do?
+Q: Can I be an ambassador from another country?
+A: A Lumina Ambassador represents the foundation in their own community, workplace and network, from anywhere in the world. Ambassadors raise funds, lobby companies, institutions and donors, mobilise computers, books and other materials, and open doors to partners and volunteers. You set a yearly pledge in money, in kind or both. Apply on the Ambassadors page (/involvement/ambassadors); the team contacts you to agree your pledge and sends a briefing pack. Ambassadors receive a letter of appointment, a briefing pack, a global community and updates on how support is used.
+
+## Ambassador pledge
+Q: What is the ambassador pledge?
+Q: What can ambassadors give in kind?
+Q: What equipment do you accept?
+A: An ambassador's yearly pledge can be money (the amount you raise or give, in your own currency), in-kind support, or something else such as services, scholarships, software licences, free training or venues. In-kind items we can use include laptops and desktop computers, tablets and smartphones, projectors, printers and routers, solar lamps, books and learning materials, stationery, software licences and furniture for training spaces. A pledge is a good-faith intention agreed with you when your application is approved.
+
+## Donate
+Q: How can I donate?
+Q: Can I give money to the foundation?
+Q: How do I make a donation?
+Q: What are the ways to give?
+Q: Where do I send donations?
+Q: I want to give money to help the young people
+Q: How do I support the foundation with money?
+Q: Where can I send money?
+Q: I want to contribute financially
+A: Go to the Donate page (/donate). You can give by bank transfer, mobile money or PayPal, or use the online option, and the page shows the current payment details to copy. You can also submit a pledge form to record your intention to give; the team then contacts you with details to complete your gift. Pledges are not payments: no money is taken on the form. You may give in UGX, USD, EUR or GBP and may stay anonymous.
+
+## Is my donation safe
+Q: Is it safe to donate?
+Q: Can I donate anonymously?
+Q: Can I donate monthly?
+Q: Is my donation tax deductible?
+A: You can ask to stay anonymous on the pledge form. Recurring monthly giving can be arranged by contacting us. Please check with your local tax authority about whether donations are tax-deductible. For any donation question, contact us through the website or on WhatsApp. Always use only the details shown on our official Donate page (/donate).
+
+## What donations support
+Q: What does my donation fund?
+Q: What programmes do donations support?
+Q: What is the impact of my donation?
+A: Donations help develop our planned interventions across five pillars, with a focus on digital inclusion, education and skills, health, climate resilience and community development in Northern Uganda. The website notes these are planned programme areas, and the foundation promises transparency on status and results. Contact us if you want to support a specific area.
+
+## Donating equipment
+Q: Can I donate computers?
+Q: Do you accept laptops?
+Q: Can I give books or equipment?
+A: Yes. We welcome computers and digital equipment, learning resources and books. Contact us from the Contact page (/contact) or on WhatsApp to arrange your gift, or become an Ambassador and collect equipment in your network.
+
+## Membership
+Q: How do I become a member?
+Q: What is membership?
+Q: Can I join as a member?
+Q: How do I register for membership?
+A: Members are people and organisations who want to be part of Lumina Africa Foundation. Register on the Membership page (/membership): apply online, the team reviews your application, you pay the membership fee if your type has one, and when approved you receive your membership number (and a membership card). People under 18 can apply with a parent or guardian's details and consent.
+
+## Membership types
+Q: What types of membership are there?
+Q: What is the membership fee?
+Q: Is membership free?
+A: There are three membership types: Individual Member, Youth and Student Member, and Organisation or Partner Member. Each type page says who it is for. Fees are shown on the Membership page (/membership); some are marked "Fee to be announced". Every application is reviewed before membership is confirmed.
+
+## Membership card
+Q: Do members get a card?
+Q: When do I receive my membership card?
+Q: How long does membership approval take?
+A: When your membership is approved, you receive your membership number and a membership card by e-mail. If you have not heard back, contact us with your application details through the Contact page (/contact).
+
+## Careers
+Q: Are you hiring?
+Q: Do you have job openings?
+Q: How do I apply for a job?
+Q: Do you offer internships?
+A: Job openings appear on the Careers page (/careers). When there are none, you can join the Talent Network form and we will keep your details for future openings. The process: submit the online form, the HR and Programs team reviews applications, shortlisted candidates are contacted for interviews or assessments, and successful candidates are onboarded and trained. Volunteer opportunities are also on that page. Lumina Africa Foundation is an equal opportunity organisation.
+
+## Talent network
+Q: Can I send my CV?
+Q: How do I join the talent network?
+Q: Can I update my application?
+A: Yes. Use the "Join Our Talent Network" form on the Careers page (/careers) to share your details. To change an application, contact the HR team through the contact form and say what you want to change.
+
+## Opportunities page
+Q: Where can I find scholarships?
+Q: Do you list opportunities for young people?
+Q: What is the Opportunities page?
+Q: Where can I find fellowships, internships and grants?
+A: The Opportunities page (/opportunities) lists scholarships, fellowships, internships, grants and funding, jobs, training and courses, competitions and awards, conferences and events, and volunteering for young people in Uganda and across Africa. Search by keyword, choose a type, and open an item to read who can apply and how. Always check the official page of the provider before you apply.
+
+## Shop
+Q: Do you have a shop?
+Q: Can I buy Lumina merchandise?
+Q: What do you sell?
+Q: How do I order a hoodie or T-shirt?
+A: The Lumina shop (/shop) offers jumpers and hoodies, caps, T-shirts and stickers made for the foundation, and every purchase helps fund our work. The shop page shows what is available and whether orders are open. If ordering is not open yet, check back or contact us to order.
+
+## Partners page
+Q: Which organisations do you work with?
+A: Our partners are shown on the Partners page (/partners). We are always open to new partnerships; see "Partner With Us" on the Involvement page (/involvement).
+
+## Team
+Q: Who is on your team?
+Q: Who are the staff members?
+A: You can meet the team on the Team page (/team). To speak to someone, use the Contact page (/contact) or request a meeting.
+
+## Governance and policies
+Q: Do you have policies?
+Q: Where can I find your reports and documents?
+Q: Is your organisation transparent?
+Q: Where is your privacy policy?
+A: Reports, policies and other public documents are on the Reports and Downloads page, and our privacy and terms pages are linked in the footer. The foundation commits to integrity and transparency and to publishing programme status and verified outcomes.
+
+## Privacy
+Q: What do you do with my personal information?
+Q: Do you share my data?
+Q: Is my information safe?
+A: We use your details only to reply to your message or to provide the service you asked for. Read the Privacy Policy linked in the footer for details. Bono AI itself only knows what is public on this website and cannot see private accounts, orders or payments.
+
+## Website language
+Q: Can I read the website in another language?
+Q: How do I translate the website?
+Q: Is the website available in French or Spanish?
+Q: Can I translate to Swedish, Chinese or Russian?
+A: Yes. Use the language button (the globe) at the bottom right of every page to translate the website into Swedish, Spanish, Chinese, French or Russian. Choose English to go back. The translation is automatic, so wording may not be perfect.
+
+## Install the app
+Q: Can I install the website as an app?
+Q: Is there a mobile app?
+A: You can add the website to your phone or computer like an app when your browser offers the "Install" option, or use the install button on the page where it appears. It opens full screen and loads quickly.
+
+## About Bono AI
+Q: Who is Bono?
+Q: What is Bono AI?
+Q: Are you a robot?
+Q: Are you a real person?
+A: I am Bono AI, the support assistant of Lumina Africa Foundation. I answer questions from this website and from what the team has taught me: about our programmes, the LAF Academy, donating, volunteering, membership, events and how to reach us. I cannot see private accounts, payments or orders. For anything urgent or personal, contact the team on WhatsApp +256 779 795 662 or through the Contact page.
+
+## Talk to a person
+Q: Can I speak to a human?
+Q: I need urgent help
+Q: Who can I talk to?
+A: Yes. For quick help, use WhatsApp, call +256-779-712-990, e-mail luminaafricafoundation@gmail.com, or send a message from the Contact page (/contact). Office hours are Monday to Friday, 9am to 5pm.
+
+## LAF Academy overview
+Q: What is the LAF Academy?
+Q: What is the Academy?
+Q: Tell me about the LAF Academy
+Q: Do you offer online courses?
+Q: Is the Academy free?
+A: The LAF Academy (/academy) is the foundation's free online learning portal for ICT and digital skills. It has more than 70 courses and over 1,300 short lessons with practice activities, a quiz after each module and a final exam, and you earn a certificate when you pass. Courses run online at your own pace, with virtual classes led by facilitators.
+
+## How to join the Academy
+Q: How do I join the LAF Academy?
+Q: How do I register for the Academy?
+Q: How do I create an Academy account?
+Q: How do I start learning?
+Q: How do I sign up for courses?
+A: Go to the Academy page (/academy) and choose "Create a free account" (/academy/register). Enter your name, e-mail, a password, phone, country and WhatsApp number, and attach a clear picture or take a selfie (a picture is required to create the account). You are then given a registration number: copy and keep it. Once your account is approved you can sign in, pick a course and start learning.
+
+## Academy sign-up fee
+Q: Does the Academy cost anything?
+Q: Is there a sign-up fee?
+Q: Do I pay for Academy courses?
+Q: How much is the Academy sign-up fee?
+A: The Academy courses are free to take. Depending on the current settings, a new account may be free or carry a small one-time sign-up fee; the registration page and the page you land on after signing up show exactly what applies right now and how to pay. A certificate may also carry a fee when one is set; the page shows it.
+
+## Academy registration number
+Q: I lost my registration number
+Q: Where do I find my Academy registration number?
+Q: What is the LAF-AC number?
+A: When you create an Academy account you get a registration number that looks like LAF-AC-2026-000123. Copy and keep it: you can use it to sign in (instead of your e-mail) and to track your application. If you lost it, send a message to the Academy team at /academy/contact with your name and e-mail and we will help you find your account.
+
+## Track Academy application
+Q: How do I track my application?
+Q: How do I check the status of my Academy account?
+Q: Check my account status
+Q: Where do I paste my registration number?
+A: Open the Track my application page (/academy/track), paste your registration number and press "Check my account". It shows whether your account exists, is approved and is active (and whether a sign-up fee is waiting). For privacy it shows only the status, never personal details.
+
+## Academy approval time
+Q: How long does Academy approval take?
+Q: Why is my account not approved?
+Q: When will my Academy account be approved?
+Q: I registered but cannot sign in
+A: New accounts are approved by the Academy team (usually within about an hour during working times), or automatically once you confirm your e-mail or your payment is confirmed, depending on the current setup. Track the status at /academy/track with your registration number. If it takes longer, message the Academy team at /academy/contact (add your registration number) or use WhatsApp +256 779 795 662.
+
+## Academy sign in
+Q: How do I sign in to the Academy?
+Q: How do I log in to my learner account?
+Q: Can I log in with my registration number?
+A: Go to /academy/login and enter your e-mail address or your registration number (LAF-AC-...) and your password. If you forgot your password, use "Forgotten your password?" on the sign-in page to get a reset link by e-mail.
+
+## Academy forgot password
+Q: I forgot my Academy password
+Q: How do I reset my password?
+Q: How do I change my password?
+A: On the sign-in page (/academy/login) choose "Forgotten your password?", enter your e-mail and follow the link you receive. When signed in, you can change your password under My account, Security.
+
+## Academy picture
+Q: Why do I need to upload a picture?
+Q: What picture should I upload to the Academy?
+Q: Is my picture public?
+A: The Academy keeps a record of every learner, so a clear head-and-shoulders picture (or a selfie) is required to create an account: JPG, PNG or WebP, at least 300 x 300 pixels. It is private: only you and the Academy team can see it, unless you agree to show it on the website. You can change it under My account, My picture.
+
+## Academy courses list
+Q: What courses do you offer?
+Q: Which courses are available in the Academy?
+Q: What can I learn at the Academy?
+Q: List of courses
+A: The Academy has more than 70 courses in 14 topics: Computer basics; Office and productivity (Word, Excel, PowerPoint, Google Workspace); Internet and email; Digital marketing; Design and social media (Canva, Photoshop, Illustrator, video editing, UX/UI); Online safety and cybersecurity; Digital careers and personal development; Web development; Programming (Python, mobile apps); Artificial intelligence; Maintenance and networks; Data and databases; Cloud and systems; and Business and e-commerce. Browse them all at /academy.
+
+## Where to start
+Q: Which course should I start with?
+Q: I am a beginner, where do I start?
+Q: I have never used a computer
+A: Start with "Computer Basics and Digital Literacy", then "Using Windows and Managing Your Files" and "Typing and Keyboard Skills". After that, choose a skill: Microsoft Word, Excel and PowerPoint, the Internet and Email, or Online Safety. Each course is marked Beginner, Intermediate or Advanced.
+
+## Computer courses
+Q: Do you teach Microsoft Word and Excel?
+Q: Do you teach Office skills?
+Q: Can I learn Excel for free?
+Q: Is there a free course on Excel?
+Q: I want to learn Word and Excel
+Q: Is there a course on Google Workspace?
+A: Yes. The Office and productivity topic includes Microsoft Word, Microsoft Excel, Microsoft PowerPoint and Google Workspace (Docs, Sheets, Slides, Drive and Meet), all from zero. Data courses include Excel for Data Analysis, Advanced Excel (Power Query, Power Pivot), Databases and SQL, Data Analysis with Python and Power BI.
+
+## Web and programming courses
+Q: Do you teach coding?
+Q: Can I learn web development?
+Q: Do you teach Python?
+Q: Do you teach programming?
+A: Yes. Web courses include Web Basics (HTML and CSS), JavaScript for Beginners, Modern Web Development, WordPress, Git and GitHub, Web Applications with PHP and MySQL, and Web Development with Claude Code. Programming courses include Introduction to Programming with Python and Mobile App Development. There are also DevOps, Linux, cloud and cybersecurity courses.
+
+## AI courses
+Q: Do you teach artificial intelligence?
+Q: Is there a ChatGPT course?
+Q: Can I learn AI?
+A: Yes. The Artificial intelligence topic has 10 courses, including Practical AI Tools, Generative AI at Work (prompting, safety and productivity), AI for Productivity, Learning and Career Growth, ChatGPT for Productivity, Learning, Creativity and Entrepreneurship, Introduction to Machine Learning, Deep Learning, Building AI Apps with Language Model APIs, Chatbots and NLP for Africa, AI Automation Without Code, and Responsible AI, Ethics and Data Protection in Africa.
+
+## Design courses
+Q: Do you teach graphic design?
+Q: Do you have a Canva course?
+Q: Can I learn video editing?
+Q: Do you teach Photoshop?
+A: Yes. The Design and social media topic includes Graphic Design Fundamentals, Graphic Design with Canva, Social Media Management and Design with Canva, Adobe Photoshop, Adobe Illustrator, Video Editing and Content Creation, and UX and UI Design.
+
+## Marketing courses
+Q: Do you teach digital marketing?
+Q: Is there a content creation course?
+Q: Can I learn social media marketing?
+A: Yes. Marketing courses include Digital Marketing Fundamentals, Advanced Digital Marketing (SEO, analytics and paid ads), Digital Content Creation, and the Digital Content Creation Masterclass: From Beginner to Paid Creator.
+
+## Career and personal development courses
+Q: Do you have courses on CVs and interviews?
+Q: Do you teach confidence and public speaking?
+Q: Do you teach personal development?
+Q: Are there career courses?
+A: Yes. The Digital careers topic has 12 courses, including Job-Ready Digital Skills (CVs, LinkedIn and online work), Freelancing and Remote Work, Career Readiness (CVs, cover letters, applications), Interview Mastery, Personal Branding, Presentation Skills and Confidence, Effective Communication and Public Speaking, Discover Yourself, Goal Setting, Self-Confidence, Discipline and Time Management, and Emotional Intelligence and Resilience.
+
+## Business courses
+Q: Do you teach entrepreneurship?
+Q: Do you have a business course?
+Q: Is there a course on money management?
+A: Yes. Business and e-commerce courses include E-commerce and Selling Online, Project Management Basics, Digital Finance, Mobile Money and Safe Online Payments, Business and Entrepreneurship for Startups, Mastering Your Pitch, and Financial Literacy and Money Management.
+
+## IT support and networking courses
+Q: Do you teach computer repair and networking?
+Q: Do you teach cybersecurity?
+Q: Do you teach robotics?
+A: Yes. Maintenance and networks includes Computer Maintenance, Troubleshooting and Networking Basics, Networking Fundamentals, IT Support and Help Desk Essentials, and Robotics and Automation. Security courses include Online Safety and Cybersecurity Basics, Cybersecurity Essentials for Organisations, and Defending Systems: Security Operations and Incident Response.
+
+## How Academy lessons work
+Q: How do the lessons work?
+Q: Are there quizzes?
+Q: How do I pass a course?
+Q: What is the final exam?
+A: Each course has short lessons with practice activities, worked examples and case scenarios, a quiz after each module and a final exam. Pass the final exam (the pass mark is shown on the course page, usually 70 percent) to earn your certificate. You study online at your own pace.
+
+## Academy certificates
+Q: Do I get a certificate?
+Q: How do I get my Academy certificate?
+Q: Are Academy certificates free?
+Q: How do I download my certificate?
+A: Yes. When you pass a course's final exam your certificate is prepared. Depending on the current settings it may wait for the team's approval and may carry a certificate fee if one is set. When it is ready you can view, download and print it from your learner portal. Each certificate has a number that anyone can check on the certificate page.
+
+## Verify a certificate
+Q: How do I verify a certificate?
+Q: Is this certificate genuine?
+Q: How can an employer check my certificate?
+A: Every LAF Academy certificate has a unique number. Open the certificate check page at /academy/certificate/ followed by the number (or use the link or QR code on the certificate) to see whether it is valid.
+
+## Virtual classes
+Q: Do you have live classes?
+Q: Are there virtual classes?
+Q: How do I join a class?
+A: Yes. Facilitators schedule virtual classes. See upcoming classes on the Classes page (/academy/classes), add them to your calendar, and join through the link shown there.
+
+## Become a facilitator
+Q: Can I teach at the Academy?
+Q: How do I become a facilitator?
+Q: Can I volunteer as a trainer?
+A: Yes. Apply to become a facilitator on the Academy page (/academy/facilitate). Facilitators create and teach courses, schedule virtual classes and follow the progress of their learners.
+
+## Academy WhatsApp group
+Q: Is there a WhatsApp group for the Academy?
+Q: How do I join the Academy community?
+A: Yes. The Academy page (/academy) has a button to join the Academy WhatsApp group where learners and the team share updates and support each other.
+
+## Academy contact
+Q: How do I contact the Academy team?
+Q: I have a problem with my Academy account
+Q: I need help with my course
+A: Use "Message the Academy team" at /academy/contact (add your registration number so we can find you quickly), or WhatsApp +256 779 795 662 for quick questions about approval. If you are signed in, use the Messages tab in your learner portal.
+
+## Academy requirements
+Q: What do I need to study at the Academy?
+Q: Can I learn on my phone?
+Q: Do I need a computer or internet?
+Q: What language are the courses in?
+A: You need a phone or computer with an internet connection and an e-mail address. The lessons are text-based and work on phones, tablets and computers, in English. Some practical exercises are easier on a computer.
+
+## Academy challenges
+Q: Do you have competitions?
+Q: What are Academy challenges?
+Q: Who won the challenge?
+A: The Academy runs challenges where learners submit entries and winners are announced on the Winners page (/academy/winners). Watch the Academy page and the WhatsApp group for new challenges.
+
+## Partner courses
+Q: Do you have courses from other providers?
+Q: What are partner courses?
+A: The Academy also lists free courses from partner organisations on the Partner courses page (/academy/partner-courses), so learners can find more trusted free learning in one place.
+
+## Featured students
+Q: Do you feature students?
+Q: How can I be featured on the Academy page?
+A: The Academy features some outstanding learners on its page, with their first name, country, achievements and a short highlight. A learner is featured only with their permission. Keep learning and completing courses, and the team may reach out.
+
+## Academy account problems
+Q: I did not receive the confirmation e-mail
+Q: My account was switched off
+Q: Why was my Academy account switched off?
+A: Check your spam folder first, and use the resend option on the check-your-e-mail page. If your account was switched off (for example because no profile picture was added by the deadline), message the Academy team at /academy/contact with your registration number and your picture, and we will help you.

@@ -19,6 +19,8 @@ use App\Services\Web\SitemapBuilder;
 final class BonoIndexer
 {
     public const FACTS_URL = 'bono://facts';
+    /** The built-in knowledge (app/config/bono/knowledge.txt) is its own source: it fills the gaps but never out-ranks a real page of the website. */
+    public const KNOWLEDGE_URL = 'bono://knowledge';
 
     /** Tests replace the fetch: fn(string $url): ?array{status:int,body:string}. */
     public static ?\Closure $fetch = null;
@@ -271,6 +273,13 @@ final class BonoIndexer
         return ['title' => 'About ' . $lh['org'] . ' and how to reach us', 'sections' => $s];
     }
 
+    /** Store the built-in knowledge as searchable passages (instant: no page is fetched). @return int passages stored */
+    public static function storeKnowledge(): int
+    {
+        $kn = BonoKnowledge::sections();
+        return $kn === [] || !self::ready() ? 0 : self::store(self::KNOWLEDGE_URL, 'What Bono knows about Lumina Africa Foundation', $kn, true);
+    }
+
     // ------------------------------------------------------------------------------------------------------------- the daily run
 
     /**
@@ -287,6 +296,7 @@ final class BonoIndexer
         $f = self::facts();
         $res['passages'] += self::store(self::FACTS_URL, $f['title'], $f['sections'], true);
         $res['updated']++;
+        $res['passages'] += self::storeKnowledge();
 
         $urls = self::addresses();
         // oldest first: addresses never read, then the least recently read
@@ -331,7 +341,7 @@ final class BonoIndexer
         }
         if ($res['done']) {
             // forget what is no longer in the sitemap (a deleted page)
-            $keep = array_fill_keys($urls, true) + [self::FACTS_URL => true];
+            $keep = array_fill_keys($urls, true) + [self::FACTS_URL => true, self::KNOWLEDGE_URL => true];
             foreach (Database::all('SELECT url FROM bono_pages') as $r) {
                 if (!isset($keep[(string) $r['url']])) {
                     self::forget((string) $r['url']);

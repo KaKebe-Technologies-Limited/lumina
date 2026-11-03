@@ -22,6 +22,10 @@ use App\Services\Bono\BonoIndexer;
 try {
     $args = array_slice($argv, 1);
     $r = BonoIndexer::run(240, in_array('--force', $args, true));
+    if (in_array('--teach', $args, true)) {                          // also teach the built-in knowledge (only what is not taught yet)
+        $k = \App\Services\Bono\BonoKnowledge::install();
+        echo 'Bono taught: ' . $k['added'] . ' answers added, ' . $k['existing'] . ' already known' . PHP_EOL;
+    }
     if (in_array('--verbose', $args, true)) {
         echo 'Bono learned: ' . $r['pages'] . ' pages read, ' . $r['updated'] . ' updated, ' . $r['passages'] . ' passages, ' . $r['removed'] . ' forgotten, ' . $r['errors'] . ' errors'
             . ($r['done'] ? '' : ', ' . $r['left'] . ' left for the next run') . ' (' . $r['seconds'] . 's)' . PHP_EOL;
