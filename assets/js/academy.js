@@ -2,6 +2,43 @@
 (function () {
   'use strict';
 
+  // registration number box: copy button, print button, and the "I have saved it" tick that unlocks Continue
+  var regBox = document.querySelector('.ac-regwarn');
+  if (regBox) {
+    var numEl = regBox.querySelector('[data-regno]');
+    var copyBtn = regBox.querySelector('[data-copy-regno]');
+    var printBtn = regBox.querySelector('[data-print-regno]');
+    var label = regBox.querySelector('[data-copy-label]');
+    if (copyBtn && numEl) {
+      copyBtn.hidden = false;
+      copyBtn.addEventListener('click', function () {
+        var text = numEl.textContent.trim();
+        var done = function () { if (label) { label.textContent = 'Copied!'; setTimeout(function () { label.textContent = 'Copy the number'; }, 2500); } };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text, done); });
+        } else {
+          fallbackCopy(text, done);
+        }
+      });
+    }
+    if (printBtn) { printBtn.hidden = false; printBtn.addEventListener('click', function () { window.print(); }); }
+    var tick = document.querySelector('[data-regno-saved]');
+    var go = document.querySelector('[data-regno-continue]');
+    if (tick && go) {
+      var sync = function () { go.classList.toggle('is-disabled', !tick.checked); go.setAttribute('aria-disabled', tick.checked ? 'false' : 'true'); };
+      go.addEventListener('click', function (e) { if (!tick.checked) { e.preventDefault(); tick.focus(); } });
+      tick.addEventListener('change', sync);
+      sync();
+    }
+  }
+  function fallbackCopy(text, done) {
+    var t = document.createElement('textarea');
+    t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); done(); } catch (e) { /* the number stays selectable on screen */ }
+    document.body.removeChild(t);
+  }
+
   // on phones and tablets the course menu starts closed so the lesson is the first thing on screen
   var side = document.querySelector('.ac-side__box');
   if (side && window.matchMedia && window.matchMedia('(max-width: 1023px)').matches) side.removeAttribute('open');

@@ -25105,6 +25105,167 @@ fieldset.ac-q legend + * {
   background: #E5DED0;
 }
 
+.ac-regwarn {
+  margin: 1rem 0;
+  padding: 1.5rem;
+  text-align: center;
+  background: #FFF4DC;
+  border: 2px solid #D9A441;
+  border-radius: 24px;
+}
+
+.ac-regwarn__title {
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+  color: #A5521A;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.9375rem;
+}
+
+.ac-regwarn__number {
+  margin: 0.5rem 0;
+  padding: 0.75rem 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(1.25rem, 5vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #0B1B33;
+  background: #FFFFFF;
+  border: 1px dashed #142B4A;
+  border-radius: 6px;
+  user-select: all;
+  word-break: break-all;
+}
+
+.ac-regwarn__text {
+  margin: 0.5rem 0 0.75rem;
+  color: #242A32;
+}
+
+.ac-regwarn__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.ac-regwarn__list {
+  margin: 1rem 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.5rem;
+  color: #5B6472;
+}
+
+.ac-regwarn__go {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  margin-top: 1rem;
+}
+
+.ac-regwarn__check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ac-regwarn__go .is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ac-regwarn--compact {
+  padding: 1rem;
+}
+
+.ac-track {
+  margin-top: 1.5rem;
+  border-left: 6px solid #E5DED0;
+}
+
+.ac-track--good {
+  border-left-color: #287A52;
+}
+
+.ac-track--warn {
+  border-left-color: #D9A441;
+}
+
+.ac-track--bad {
+  border-left-color: #B83232;
+}
+
+.ac-track__no {
+  margin: 0 0 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #5B6472;
+}
+
+.ac-track__title {
+  margin: 0 0 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #142B4A;
+}
+
+.ac-track--good .ac-track__title {
+  color: #287A52;
+}
+
+.ac-track--bad .ac-track__title {
+  color: #B83232;
+}
+
+.ac-track__steps {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ac-track__step {
+  display: grid;
+  gap: 0.15rem;
+  padding-left: 1rem;
+  border-left: 4px solid #E5DED0;
+}
+
+.ac-track__step--done {
+  border-left-color: #287A52;
+}
+
+.ac-track__step--todo {
+  border-left-color: #D9A441;
+}
+
+.ac-track__step--stop {
+  border-left-color: #B83232;
+}
+
+.ac-track__step span {
+  color: #5B6472;
+  font-size: 0.9375rem;
+}
+
+.ac-track__note {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+@media print {
+  .ac-regwarn__actions {
+    display: none;
+  }
+}
+
 .ac-regno {
   padding: 0.75rem 1rem;
   background: #F3EFE5;

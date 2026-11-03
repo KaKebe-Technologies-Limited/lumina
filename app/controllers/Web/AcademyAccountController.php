@@ -77,7 +77,7 @@ final class AcademyAccountController extends AcademyBaseController
             }
             $pay = AcademyFees::beginSignup((int) $res['learner']['id']);
             if ($pay['ok']) {
-                return $this->sendToGateway((string) $pay['link']);
+                return $this->numberScreen((string) ($res['learner']['reg_no'] ?? ''), (string) $pay['link'], 'Continue to the payment page');
             }
             Flash::warning('Your account was created. The payment page could not be opened just now: press "Pay the sign-up fee" below to try again.');
             return $this->redirect('academy/pending');
@@ -91,10 +91,69 @@ final class AcademyAccountController extends AcademyBaseController
         if (isset($res['learner'])) {
             LearnerAuth::signIn($res['learner']);
             Flash::success('Welcome to the LAF Academy! Choose a course to start.');
-            return $this->redirect('academy/dashboard');
+            return $this->numberScreen((string) ($res['learner']['reg_no'] ?? ''), 'academy/dashboard', 'Continue to my courses');
         }
         Flash::info('If this address is new, your account is ready. Otherwise sign in or reset your password.');
         return $this->redirect('academy/login');
+    }
+
+    /** After sign-up: the "copy and keep your registration number" screen, then on to $next (a path, or an https:// payment link). Without a number there is nothing to show. */
+    private function numberScreen(string $regNo, string $next, string $label): Response
+    {
+        if ($regNo === '') {
+            return preg_match('~^https?://~i', $next) ? $this->sendToGateway($next) : $this->redirect($next);
+        }
+        \App\Core\Session::put('academy_regno_screen', ['reg_no' => $regNo, 'next' => $next, 'label' => $label]);
+        return $this->redirect('academy/registered');
+    }
+
+    /** GET academy/registered: the warning screen. */
+    public function registered(Request $request): Response
+    {
+        $s = (array) \App\Core\Session::get('academy_regno_screen', []);
+        if (($s['reg_no'] ?? '') === '') {
+            return $this->redirect('academy');
+        }
+        return $this->renderAcademy('web/academy/registered', ['regNo' => (string) $s['reg_no'], 'label' => (string) ($s['label'] ?? 'Continue')], [
+            'bodyClass' => 'is-academy is-academy-auth',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Your registration number', null]],
+            'meta' => ['title' => 'Keep your registration number', 'robots' => 'noindex,nofollow'],
+        ], true);
+    }
+
+    /** GET academy/registered/continue: leave the warning screen for the page the sign-up was heading to. */
+    public function registeredContinue(Request $request): Response
+    {
+        $s = (array) \App\Core\Session::pull('academy_regno_screen', []);
+        $next = (string) ($s['next'] ?? '');
+        if ($next === '') {
+            return $this->redirect('academy');
+        }
+        return preg_match('~^https?://~i', $next) ? $this->sendToGateway($next) : $this->redirect($next);
+    }
+
+    /** GET/POST academy/track: "where is my application?" - paste the registration number, see the state of the account (nothing personal is shown). */
+    public function track(Request $request): Response
+    {
+        $result = null;
+        $input = '';
+        if ($request->isPost()) {
+            $input = mb_substr(trim($request->string('number')), 0, 40);
+            if (\App\Core\RateLimit::tooMany('academy-track:' . $request->ip(), 30)) {
+                Flash::error('Too many lookups. Please wait a few minutes and try again.');
+            } else {
+                \App\Core\RateLimit::hit('academy-track:' . $request->ip(), 600);
+                $result = \App\Services\Academy\LearnerRegistry::track($input);
+                if (!$result['found'] && $result['number'] === '') {
+                    $this->fail(['number' => 'That is not a registration number. It looks like LAF-AC-2026-000123.'], 'academy/track');
+                }
+            }
+        }
+        return $this->renderAcademy('web/academy/track', ['result' => $result, 'input' => $input], [
+            'bodyClass' => 'is-academy is-academy-auth',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Track my application', null]],
+            'meta' => ['title' => 'Track my LAF Academy application', 'description' => 'Paste your registration number to see whether your LAF Academy account is approved and active.'],
+        ], true);
     }
 
     /** The learner types the 6-digit code from the e-mail or WhatsApp message. */
@@ -245,7 +304,7 @@ final class AcademyAccountController extends AcademyBaseController
         $res = LearnerAuth::login($request->string('email'), $request->string('password'), $request->ip());
         if (!$res['ok']) {
             if ($res['unverified']) {
-                \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail($request->string('email')));
+                \App\Core\Session::put('academy_check_email', LearnerAuth::normaliseEmail((string) ($res['learner']['email'] ?? $request->string('email'))));
                 \App\Core\Session::put('academy_reg_no', (string) ($res['learner']['reg_no'] ?? ''));
                 \App\Core\Session::put('academy_pending_id', (int) ($res['learner']['id'] ?? 0));        // proved by the password: lets the waiting page show the team's messages
                 Flash::warning((string) $res['error']);

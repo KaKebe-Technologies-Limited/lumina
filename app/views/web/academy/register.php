@@ -66,6 +66,7 @@
                     <?= partial('partials/academy-wa-group', ['style' => 'line']) ?>
                     <p class="ac-form__alt">Questions before you register? <a href="<?= e(url('academy/contact')) ?>">Message the Academy team</a></p>
                     <p class="ac-form__alt">Already have an account? <a href="<?= e(url('academy/login')) ?>">Sign in</a></p>
+                    <p class="ac-form__alt">Applied already? <a href="<?= e(url('academy/track')) ?>">Track my application</a> with your registration number</p>
                 </div>
             </form>
         <?php endif; ?>

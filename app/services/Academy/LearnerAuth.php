@@ -420,12 +420,13 @@ final class LearnerAuth
     /** @return array{ok:bool,error:?string,unverified:bool,learner:?array<string,mixed>} */
     public static function login(string $email, string $password, string $ip): array
     {
-        $email = self::normaliseEmail($email);
+        $regNo = LearnerRegistry::normaliseNumber($email);              // a registration number can be typed instead of the e-mail address
+        $email = $regNo !== '' ? $regNo : self::normaliseEmail($email);
         $key = 'academy-login:' . sha1($email . '|' . $ip);
         if (RateLimit::tooMany($key, 8) || RateLimit::tooMany('academy-login-ip:' . $ip, 40)) {
             return ['ok' => false, 'error' => 'Too many attempts. Please wait a few minutes and try again.', 'unverified' => false, 'learner' => null];
         }
-        $l = $email !== '' ? Database::one('SELECT * FROM academy_learners WHERE email = ? LIMIT 1', [$email]) : null;
+        $l = $email === '' ? null : ($regNo !== '' ? Database::one('SELECT * FROM academy_learners WHERE reg_no = ? LIMIT 1', [$regNo]) : Database::one('SELECT * FROM academy_learners WHERE email = ? LIMIT 1', [$email]));
         // always verify against a hash so the answer takes the same time whether or not the address exists
         $hash = $l['password_hash'] ?? '$2y$10$abcdefghijklmnopqrstuuJ0zH2o9B5uD2o1cE8o8R7oR0b5eI1xW';
         $ok = Auth::verifyPassword($password, (string) $hash) && $l !== null && (int) $l['is_active'] === 1;
@@ -436,7 +437,7 @@ final class LearnerAuth
         if (!$ok) {
             RateLimit::hit($key, 900);
             RateLimit::hit('academy-login-ip:' . $ip, 900);
-            return ['ok' => false, 'error' => 'That e-mail address and password do not match.', 'unverified' => false, 'learner' => null];
+            return ['ok' => false, 'error' => 'That e-mail address (or registration number) and password do not match.', 'unverified' => false, 'learner' => null];
         }
         if (AcademyFees::signupDue($l)) {
             return ['ok' => false, 'error' => 'Your sign-up fee is not paid yet. Please pay it to continue.', 'unverified' => true, 'fee_due' => true, 'learner' => $l];

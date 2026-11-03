@@ -297,6 +297,27 @@ $cert-orange: #E0642C;
   &::before, &::after { content: ''; flex: 1; height: 1px; background: $line; } }
 
 // ---- registration number notice on the "check your e-mail" page
+.ac-regwarn { margin: $space-4 0; padding: $space-5; text-align: center; background: #FFF4DC; border: 2px solid $gold; border-radius: $radius-card;
+  &__title { margin: 0 0 $space-2; font-weight: 700; color: $orange-text; text-transform: uppercase; letter-spacing: 0.04em; font-size: $fs-sm; }
+  &__number { margin: $space-2 0; padding: $space-3 $space-4; font-family: $font-mono; font-size: clamp(1.25rem, 5vw, 2rem); font-weight: 700; letter-spacing: 0.06em; color: $navy-dark; background: $white; border: 1px dashed $navy; border-radius: $radius-sm; user-select: all; word-break: break-all; }
+  &__text { margin: $space-2 0 $space-3; color: $ink; }
+  &__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: $space-2; margin: 0; }
+  &__list { margin: $space-4 0; padding-left: 1.2rem; display: grid; gap: $space-2; color: $ink-soft; }
+  &__go { display: grid; gap: $space-3; justify-items: center; margin-top: $space-4; }
+  &__check { display: flex; align-items: center; gap: $space-2; font-weight: 600; cursor: pointer; }
+  &__go .is-disabled { opacity: 0.5; cursor: not-allowed; }
+  &--compact { padding: $space-4; } }
+.ac-track { margin-top: $space-5; border-left: 6px solid $line;
+  &--good { border-left-color: $success; } &--warn { border-left-color: $gold; } &--bad { border-left-color: $danger; }
+  &__no { margin: 0 0 $space-2; font-family: $font-mono; color: $ink-soft; }
+  &__title { margin: 0 0 $space-3; display: flex; align-items: center; gap: $space-2; color: $navy; }
+  &--good &__title { color: $success; } &--bad &__title { color: $danger; }
+  &__steps { list-style: none; margin: 0 0 $space-4; padding: 0; display: grid; gap: $space-3; }
+  &__step { display: grid; gap: 0.15rem; padding-left: $space-4; border-left: 4px solid $line; }
+  &__step--done { border-left-color: $success; } &__step--todo { border-left-color: $gold; } &__step--stop { border-left-color: $danger; }
+  &__step span { color: $ink-soft; font-size: $fs-sm; }
+  &__note { margin-top: $space-4; font-size: $fs-xs; text-align: center; } }
+@media print { .ac-regwarn__actions { display: none; } }
 .ac-regno { padding: $space-3 $space-4; background: $surface-alt; border-left: 3px solid $gold; border-radius: $radius-sm; }
 
 // ---- picture or selfie on the sign-up form

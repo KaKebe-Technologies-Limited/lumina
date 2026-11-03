@@ -84,6 +84,64 @@ final class LearnerRegistry
         return true;
     }
 
+    /** A registration number typed or pasted by a person ("laf-ac-2026-000123", with spaces, without dashes ...) in its canonical form, or '' when it is not one. */
+    public static function normaliseNumber(string $v): string
+    {
+        $v = strtoupper((string) preg_replace('/[\s\x{00A0}]+/u', '', trim($v)));
+        return preg_match('/^LAF-?AC-?(\d{4})-?(\d{6})$/', $v, $m) === 1 ? 'LAF-AC-' . $m[1] . '-' . $m[2] : '';
+    }
+
+    /**
+     * WHERE IS MY APPLICATION: what a learner may learn from the registration number alone. Only the STATE is returned (never a name, e-mail or phone).
+     * @return array{found:bool,number:string,registered_on:?string,steps:list<array{label:string,state:string,note:string}>,headline:string,tone:string,can_sign_in:bool}
+     */
+    public static function track(string $input): array
+    {
+        $no = self::normaliseNumber($input);
+        $none = ['found' => false, 'number' => $no, 'registered_on' => null, 'steps' => [], 'headline' => '', 'tone' => 'neutral', 'can_sign_in' => false];
+        if ($no === '' || !self::ready()) {
+            return $none;
+        }
+        $fee = AcademyFees::ready() ? ', fee_status' : ", 'none' AS fee_status";
+        $rej = self::rejectReady() ? ', rejected_at' : ', NULL AS rejected_at';
+        $l = Database::one('SELECT created_at, is_active, email_verified_at, approved_at' . $fee . $rej . ' FROM academy_learners WHERE reg_no = ? LIMIT 1', [$no]);
+        if ($l === null) {
+            return $none;
+        }
+        $active = (int) $l['is_active'] === 1;
+        $rejected = $l['rejected_at'] !== null;
+        $approved = $l['email_verified_at'] !== null;
+        $feeStatus = (string) ($l['fee_status'] ?? 'none');
+        $steps = [['label' => 'Account created', 'state' => 'done', 'note' => 'Your registration number exists in the LAF Academy.']];
+        if ($feeStatus === 'due') {
+            $steps[] = ['label' => 'Sign-up fee', 'state' => 'todo', 'note' => 'The sign-up fee is not paid yet. Pay it, or message the Academy team if you already did.'];
+        } elseif ($feeStatus === 'paid') {
+            $steps[] = ['label' => 'Sign-up fee', 'state' => 'done', 'note' => 'The sign-up fee is paid.'];
+        } elseif ($feeStatus === 'waived') {
+            $steps[] = ['label' => 'Sign-up fee', 'state' => 'done', 'note' => 'The sign-up fee was waived.'];
+        }
+        if ($rejected) {
+            $steps[] = ['label' => 'Approval', 'state' => 'stop', 'note' => 'The application was not approved. Message the Academy team and we will look at it again.'];
+        } elseif ($approved) {
+            $steps[] = ['label' => 'Approval', 'state' => 'done', 'note' => 'Approved' . ($l['approved_at'] !== null ? ' on ' . date('j M Y', strtotime((string) $l['approved_at'])) : '') . '.'];
+        } else {
+            $steps[] = ['label' => 'Approval', 'state' => 'todo', 'note' => 'Waiting for the Academy team to approve the account.'];
+        }
+        $steps[] = ['label' => 'Account active', 'state' => $active && !$rejected ? ($approved ? 'done' : 'todo') : 'stop', 'note' => $rejected ? 'The account cannot be used.' : ($active ? ($approved ? 'The account is active: you can sign in.' : 'It becomes active when it is approved.') : 'The account is switched off. Message the Academy team.')];
+        if ($rejected) {
+            [$headline, $tone] = ['Not approved', 'bad'];
+        } elseif (!$active) {
+            [$headline, $tone] = ['Switched off', 'bad'];
+        } elseif ($feeStatus === 'due') {
+            [$headline, $tone] = ['Waiting for the sign-up fee', 'warn'];
+        } elseif (!$approved) {
+            [$headline, $tone] = ['Waiting for approval', 'warn'];
+        } else {
+            [$headline, $tone] = ['Approved and active', 'good'];
+        }
+        return ['found' => true, 'number' => $no, 'registered_on' => date('j M Y', strtotime((string) $l['created_at'])), 'steps' => $steps, 'headline' => $headline, 'tone' => $tone, 'can_sign_in' => $tone === 'good'];
+    }
+
     public static function format(int $id, string $createdAt): string
     {
         $year = (int) substr($createdAt, 0, 4);

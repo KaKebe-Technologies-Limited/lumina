@@ -32,6 +32,10 @@ $router->post('/academy/verify/whatsapp', [AcademyAccountController::class, 'ver
 $router->get('/academy/verify/{token}', [AcademyAccountController::class, 'verify'])->middleware('throttle:30,600')->name('academy.verify');
 $router->get('/academy/contact', [AcademyContactController::class, 'form'])->name('academy.contact');
 $router->post('/academy/contact', [AcademyContactController::class, 'send'])->middleware('throttle:20,600')->name('academy.contact.send');
+$router->get('/academy/registered', [AcademyAccountController::class, 'registered'])->name('academy.registered');
+$router->get('/academy/registered/continue', [AcademyAccountController::class, 'registeredContinue'])->name('academy.registered.continue');
+$router->get('/academy/track', [AcademyAccountController::class, 'track'])->name('academy.track');
+$router->post('/academy/track', [AcademyAccountController::class, 'track'])->middleware(['honeypot', 'throttle:40,600'])->name('academy.track.post');
 $router->get('/academy/pending', [AcademyAccountController::class, 'pending'])->name('academy.pending');
 $router->post('/academy/fee/report', [AcademyAccountController::class, 'reportFee'])->middleware(['honeypot', 'throttle:10,600'])->name('academy.fee.report');
 $router->post('/academy/fee/pay', [AcademyAccountController::class, 'payFee'])->middleware('throttle:10,600')->name('academy.fee.pay');

@@ -5,7 +5,8 @@
     <div class="container container--narrow">
         <div class="ac-notice card"><div class="card__body">
             <span class="ac-notice__icon" aria-hidden="true"><?= icon('clock', 'icon--xl') ?></span>
-            <p><strong>Thank you for joining the LAF Academy.</strong> Your application is received<?= $regNo !== '' ? ' and your registration number is <strong>' . e($regNo) . '</strong>. Keep it safe.' : '.' ?></p>
+            <p><strong>Thank you for joining the LAF Academy.</strong> Your application is received.</p>
+            <?php if ($regNo !== ''): ?><?= partial('partials/academy-regno', ['regNo' => $regNo]) ?><?php $this->start('scripts'); ?><script src="<?= e(asset('js/academy.js')) ?>" defer></script><?php $this->end(); ?><?php endif; ?>
             <?php if (!empty($fee)): ?>
                 <div class="ac-pending-msgs" role="region" aria-label="Sign-up fee">
                     <h2 class="ac-block__title"><?= icon('credit-card', 'icon--sm') ?> Sign-up fee: <?= e($fee['display']) ?></h2>

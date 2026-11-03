@@ -5,7 +5,8 @@
         <div class="ac-notice card"><div class="card__body">
             <span class="ac-notice__icon" aria-hidden="true"><?= icon('mail', 'icon--xl') ?></span>
             <?php if (!empty($regNo)): ?>
-            <p class="ac-regno">Your application is received. Your registration number is <strong><?= e($regNo) ?></strong>. Keep it safe.</p>
+            <p>Your application is received.</p>
+            <?= partial('partials/academy-regno', ['regNo' => $regNo]) ?><?php $this->start('scripts'); ?><script src="<?= e(asset('js/academy.js')) ?>" defer></script><?php $this->end(); ?>
             <p class="text-muted">You can start learning as soon as you confirm your e-mail address below, or as soon as the Academy team approves your account. You do not have to wait for the e-mail: we review every new account.</p>
             <?php endif; ?>
             <p><?= e(content('academy', 'auth.check_email_text')) ?></p>
