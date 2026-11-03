@@ -70,6 +70,8 @@ final class AcademyLearnersController extends AcademyAdminController
             $where[] = 'l.rejected_at IS NOT NULL';
         } elseif ($status === 'featured' && \App\Services\Academy\FeaturedLearners::ready()) {
             $where[] = 'l.featured_at IS NOT NULL';
+        } elseif ($status === 'nopicture' && \App\Services\Academy\LearnerPortrait::ready()) {
+            $where[] = 'l.is_active = 1 AND l.email_verified_at IS NOT NULL AND l.photo_path IS NULL';
         } elseif ($status === 'unverified') {
             $where[] = 'l.is_active = 1 AND l.email_verified_at IS NULL';
         } else {
@@ -97,7 +99,7 @@ final class AcademyLearnersController extends AcademyAdminController
             . (\App\Services\Academy\AcademyFees::ready() ? ', l.fee_status' . (\App\Services\Academy\LearnerMessages::ready() ? ", (SELECT COUNT(*) FROM academy_messages mw WHERE mw.learner_id = l.id AND mw.sender = 'admin' AND mw.body LIKE '" . \App\Services\Academy\AcademyFees::WELCOME_MARK . "%') AS welcomed" : '') : '') . (LearnerRegistry::ready() ? ', l.reg_no, l.approved_at' : '') . (LearnerAuth::mailColumns() ? ', l.mail_sent_at, l.mail_error' : '') . (LearnerPortrait::ready() ? ', l.photo_path' : '')
             . (CertificateService::approvalReady() ? ', (SELECT COUNT(*) FROM academy_certificates cw WHERE cw.learner_id = l.id AND cw.approved_at IS NULL AND cw.revoked_at IS NULL) AS certs_waiting' : '');
         $rows = Database::all(
-            'SELECT l.id, l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.last_login_at, l.created_at' . (\App\Services\Academy\FeaturedLearners::ready() ? ', l.featured_at' : '') . $extra . ', '
+            'SELECT l.id, l.name, l.email, l.phone, l.country, l.email_verified_at, l.is_active, l.last_login_at, l.created_at' . (\App\Services\Academy\LearnerPortrait::ready() ? ', (l.photo_path IS NULL) AS no_photo' : '') . (\App\Services\Academy\FeaturedLearners::ready() ? ', l.featured_at' : '') . $extra . ', '
             . '(SELECT COUNT(*) FROM academy_enrollments e WHERE e.learner_id = l.id) AS courses, '
             . '(SELECT COUNT(*) FROM academy_certificates c WHERE c.learner_id = l.id AND c.revoked_at IS NULL) AS certificates '
             . 'FROM academy_learners l' . $where . ' ORDER BY l.id DESC LIMIT ? OFFSET ?',
@@ -472,6 +474,35 @@ final class AcademyLearnersController extends AcademyAdminController
             Flash::info('Nothing was sent: this account has no unpaid sign-up fee.');
         }
         return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
+    }
+
+    /** POST admin/academy/learners-remind-no-picture: remind every approved learner without a picture and start the countdown (days). */
+    public function remindNoPicture(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $text = trim((string) $request->post('message', ''));
+        if (mb_strlen($text) < 10) {
+            Flash::error('Write the reminder first (at least a short sentence).');
+            return $this->redirect('admin/academy/learners');
+        }
+        $r = \App\Services\Academy\LearnerPortrait::remindWithoutPicture(Auth::id(), mb_substr($text, 0, 1500), $request->bool('email'), $request->int('days') ?: 7);
+        $this->audit('academy.learner.remind_no_picture', 'academy_learner', null, 'Reminded the learners without a picture, deadline ' . $r['deadline'], ['count' => $r['sent']]);
+        Flash::success($r['sent'] === 0 ? 'Every approved learner has a picture, so nobody needed a reminder.' : 'The reminder was sent to ' . $r['sent'] . ' learner' . ($r['sent'] === 1 ? '' : 's') . '. They have until ' . date('j M Y', strtotime($r['deadline'])) . ' to add a picture.');
+        return $this->redirect('admin/academy/learners');
+    }
+
+    /** POST admin/academy/learners-switch-off-no-picture: after the deadline, switch off the accounts that still have no picture. */
+    public function switchOffNoPicture(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        if (!\App\Services\Academy\LearnerPortrait::deadlinePassed()) {
+            Flash::error('The deadline has not passed yet. Send the reminder first and wait until the deadline is over.');
+            return $this->redirect('admin/academy/learners');
+        }
+        $n = \App\Services\Academy\LearnerPortrait::switchOffWithoutPicture(Auth::id(), $request->bool('email'));
+        $this->audit('academy.learner.switch_off_no_picture', 'academy_learner', null, 'Switched off the accounts that still had no picture after the deadline', ['count' => $n]);
+        Flash::success($n === 0 ? 'Nobody is left without a picture.' : $n . ' account' . ($n === 1 ? ' was' : 's were') . ' switched off. You can switch any of them on again from the learner\'s page.');
+        return $this->redirect('admin/academy/learners');
     }
 
     /** POST admin/academy/learners-remind-approved: one reminder message to every approved learner (portal message, plus e-mail when ticked). */

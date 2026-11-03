@@ -134,6 +134,91 @@ final class LearnerPortrait
         }
     }
 
+    /** Setting that holds the date (Y-m-d) by which learners without a picture must add one, set by the reminder button. */
+    public const DEADLINE_KEY = 'academy_picture_deadline';
+
+    /** Approved, active learners who still have no picture. @return list<array<string,mixed>> */
+    public static function withoutPicture(): array
+    {
+        if (!self::ready()) {
+            return [];
+        }
+        try {
+            return Database::all('SELECT id, name, email FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NOT NULL AND photo_path IS NULL ORDER BY id');
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** The deadline given in the last reminder (Y-m-d) or ''. */
+    public static function deadline(): string
+    {
+        $d = trim((string) \App\Core\Settings::get(self::DEADLINE_KEY, ''));
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) === 1 ? $d : '';
+    }
+
+    /** Has the deadline passed (today is after it)? */
+    public static function deadlinePassed(): bool
+    {
+        $d = self::deadline();
+        return $d !== '' && date('Y-m-d') > $d;
+    }
+
+    public static function defaultReminder(): string
+    {
+        return "Hello {name}, this is the LAF Academy team. Your account has no profile picture yet. Every learner must have one so that the Academy has a record of its learners. "
+            . "Please add yours before {deadline}: sign in, open My account > My picture and upload a clear head-and-shoulders photo (or take a selfie). It stays private. "
+            . "Accounts that still have no picture after that date will be switched off. Sign in here: " . abs_url('academy/login');
+    }
+
+    /**
+     * Remind every approved learner without a picture, and start the countdown: the deadline is $days from today (kept in the settings).
+     * @return array{sent:int,deadline:string}
+     */
+    public static function remindWithoutPicture(?int $adminId, string $text, bool $email, int $days): array
+    {
+        $days = max(1, min(60, $days));
+        $deadline = date('Y-m-d', strtotime('+' . $days . ' day'));
+        \App\Core\Settings::set(self::DEADLINE_KEY, $deadline);
+        \App\Core\Settings::flush();
+        $when = date('j M Y', strtotime($deadline));
+        $sent = 0;
+        foreach (self::withoutPicture() as $l) {
+            $first = trim((string) strtok(trim((string) $l['name']), ' ')) ?: 'there';
+            $body = str_replace(['{name}', '{deadline}'], [$first, $when], $text);
+            if (!LearnerMessages::send((int) $l['id'], 'admin', $body, $adminId)['ok']) {
+                continue;
+            }
+            if ($email) {
+                AcademyMail::teamMessage($l, $body);
+            }
+            $sent++;
+        }
+        return ['sent' => $sent, 'deadline' => $deadline];
+    }
+
+    /**
+     * After the deadline: switch off (is_active = 0) every approved learner who still has no picture. Their progress and certificates are kept; an administrator can switch an account on again.
+     * @return int how many accounts were switched off (0 when the deadline has not passed)
+     */
+    public static function switchOffWithoutPicture(?int $adminId, bool $email): int
+    {
+        if (!self::deadlinePassed()) {
+            return 0;
+        }
+        $n = 0;
+        foreach (self::withoutPicture() as $l) {
+            Database::execute('UPDATE academy_learners SET is_active = 0 WHERE id = ? AND photo_path IS NULL', [(int) $l['id']]);
+            $note = 'Your account was switched off because no profile picture was added by ' . date('j M Y', strtotime(self::deadline())) . '. To get it back, message the Academy team (' . abs_url('academy/contact') . ') and send us your picture.';
+            LearnerMessages::send((int) $l['id'], 'admin', $note, $adminId);
+            if ($email) {
+                AcademyMail::teamMessage($l, $note);
+            }
+            $n++;
+        }
+        return $n;
+    }
+
     /** Learners who agreed to be shown on the public Academy page. @return list<array{id:int,first:string,country:string}> */
     public static function showcase(int $limit = 12): array
     {
