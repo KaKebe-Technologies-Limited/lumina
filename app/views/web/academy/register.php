@@ -66,7 +66,14 @@
                     <?= partial('partials/academy-wa-group', ['style' => 'line']) ?>
                     <p class="ac-form__alt">Questions before you register? <a href="<?= e(url('academy/contact')) ?>">Message the Academy team</a></p>
                     <p class="ac-form__alt">Already have an account? <a href="<?= e(url('academy/login')) ?>">Sign in</a></p>
-                    <p class="ac-form__alt">Applied already? <a href="<?= e(url('academy/track')) ?>">Track my application</a> with your registration number</p>
+                    <div class="ac-trackcta">
+    <span class="ac-trackcta__icon" aria-hidden="true"><?= icon('search', 'icon--lg') ?></span>
+    <div class="ac-trackcta__body">
+        <strong class="ac-trackcta__title">Applied already?</strong>
+        <span class="ac-trackcta__text">Paste your registration number to see if your account is approved and active.</span>
+    </div>
+    <a class="btn btn--cta btn--caps ac-trackcta__btn" href="<?= e(url('academy/track')) ?>">Track my application</a>
+</div>
                 </div>
             </form>
         <?php endif; ?>

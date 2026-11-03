@@ -16,7 +16,14 @@
                 <button class="btn btn--cta btn--caps btn--block" type="submit">Sign in</button>
                 <p class="ac-form__alt"><a href="<?= e(url('academy/forgot')) ?>">Forgotten your password?</a></p>
                 <p class="ac-form__alt">New here? <a href="<?= e(url('academy/register')) ?>">Create a free account</a></p>
-                <p class="ac-form__alt">Waiting for approval? <a href="<?= e(url('academy/track')) ?>">Track my application</a> with your registration number</p>
+                <div class="ac-trackcta">
+    <span class="ac-trackcta__icon" aria-hidden="true"><?= icon('search', 'icon--lg') ?></span>
+    <div class="ac-trackcta__body">
+        <strong class="ac-trackcta__title">Waiting for approval?</strong>
+        <span class="ac-trackcta__text">Paste your registration number to see if your account is approved and active.</span>
+    </div>
+    <a class="btn btn--cta btn--caps ac-trackcta__btn" href="<?= e(url('academy/track')) ?>">Track my application</a>
+</div>
                 <p class="ac-form__alt">Cannot sign in, or waiting for approval? <a href="<?= e(url('academy/contact')) ?>">Message the Academy team</a></p>
             </div>
         </form>

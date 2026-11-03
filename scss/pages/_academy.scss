@@ -297,6 +297,12 @@ $cert-orange: #E0642C;
   &::before, &::after { content: ''; flex: 1; height: 1px; background: $line; } }
 
 // ---- registration number notice on the "check your e-mail" page
+// "Track my application" call-to-action on the sign-in and sign-up pages: a bold gold-edged panel, not a small text link
+.ac-trackcta { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: $space-3 $space-4; margin: $space-5 0 $space-3; padding: $space-4 $space-5; text-align: left; background: #FFF4DC; border: 2px solid $gold; border-radius: $radius-card; box-shadow: $shadow-card;
+  &__icon { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: $navy; color: $gold; }
+  &__title { display: block; font-family: $font-heading; font-size: $fs-lg; font-weight: 800; line-height: 1.2; color: $navy-dark; }
+  &__text { display: block; margin-top: 0.2rem; font-size: $fs-base; color: $ink; }
+  &__btn { grid-column: 1 / -1; width: 100%; justify-content: center; font-size: $fs-md; padding-top: 1rem; padding-bottom: 1rem; } }
 .ac-regwarn { margin: $space-4 0; padding: $space-5; text-align: center; background: #FFF4DC; border: 2px solid $gold; border-radius: $radius-card;
   &__title { margin: 0 0 $space-2; font-weight: 700; color: $orange-text; text-transform: uppercase; letter-spacing: 0.04em; font-size: $fs-sm; }
   &__number { margin: $space-2 0; padding: $space-3 $space-4; font-family: $font-mono; font-size: clamp(1.25rem, 5vw, 2rem); font-weight: 700; letter-spacing: 0.06em; color: $navy-dark; background: $white; border: 1px dashed $navy; border-radius: $radius-sm; user-select: all; word-break: break-all; }
