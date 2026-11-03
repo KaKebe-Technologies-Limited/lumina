@@ -10,6 +10,7 @@ use App\Controllers\Admin\AuditLogController;
 use App\Controllers\Admin\AuthController;
 use App\Controllers\Admin\CustomPagesController;
 use App\Controllers\Admin\DashboardController;
+use App\Controllers\Admin\ErrorLogController;
 use App\Controllers\Admin\FaqsController;
 use App\Controllers\Admin\MaintenanceController;
 use App\Controllers\Admin\ReportsController;
@@ -125,6 +126,7 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
         });
 
         // activity log (admins)
+        $router->get('/error-log', [ErrorLogController::class, 'index'])->name('admin.errorlog')->middleware('can:settings.manage');
         $router->get('/audit-log', [AuditLogController::class, 'index'])->name('admin.audit')->middleware('can:audit.view');
         $router->get('/audit-log/export', [AuditLogController::class, 'export'])->middleware('can:audit.view');
     });
