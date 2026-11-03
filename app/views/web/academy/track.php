@@ -26,7 +26,7 @@
                         <?php endforeach; ?>
                     </ol>
                     <?php if ($result['can_sign_in']): ?><p><a class="btn btn--cta btn--caps" href="<?= e(url('academy/login')) ?>">Sign in</a></p>
-                    <?php else: ?><p class="text-muted">Need help? <a href="<?= e(url('academy/contact')) ?>">Message the Academy team</a>.</p><?php endif; ?>
+                    <?php else: ?><p class="text-muted">Need help? <a href="<?= e(url('academy/contact', ['reg' => $result['number']])) ?>">Message the Academy team</a> (your registration number is filled in for you).</p><?php endif; ?>
                 </div></div>
             <?php endif; ?>
             <p class="text-muted ac-track__note">For your privacy this page shows only the state of the account, never any personal details.</p>

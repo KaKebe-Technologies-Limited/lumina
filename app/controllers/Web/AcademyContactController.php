@@ -25,7 +25,8 @@ final class AcademyContactController extends AcademyBaseController
             return $this->redirect('academy/portal/messages');
         }
         return $this->renderAcademy('web/academy/contact', [
-            'sent' => $request->bool('sent'), 'email' => (string) Session::get('academy_check_email', ''), 'sw' => LearnerAuth::supportWhatsapp(), 'hours' => LearnerAuth::approvalText(),
+            'sent' => $request->bool('sent'), 'email' => (string) Session::get('academy_check_email', ''),
+            'regNo' => \App\Services\Academy\LearnerRegistry::normaliseNumber($request->string('reg')) ?: (string) Session::get('academy_reg_no', ''), 'sw' => LearnerAuth::supportWhatsapp(), 'hours' => LearnerAuth::approvalText(),
         ], [
             'bodyClass' => 'is-academy is-academy-auth',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Message the Academy team', null]],
@@ -43,9 +44,9 @@ final class AcademyContactController extends AcademyBaseController
             Flash::error('You have sent several messages in the last hour. Please wait a little, or use the WhatsApp line.');
             return $this->redirect('academy/contact');
         }
-        $r = LearnerMessages::inquire($request->string('name'), $request->string('email'), $request->string('phone'), $request->string('message'));
+        $r = LearnerMessages::inquire($request->string('name'), $request->string('email'), $request->string('phone'), $request->string('message'), $request->string('reg_no'));
         if (!$r['ok']) {
-            $this->fail(['message' => (string) $r['error']], 'academy/contact');
+            $this->fail([($r['field'] ?? 'message') => (string) $r['error']], 'academy/contact');
         }
         Flash::success('Your message was sent to the Academy team. We will answer you soon.');
         return $this->redirect('academy/contact?sent=1');

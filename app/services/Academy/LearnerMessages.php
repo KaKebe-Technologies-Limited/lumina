@@ -152,8 +152,13 @@ final class LearnerMessages
      * one: the message then goes into that learner's conversation (the registration number shows in the admin), otherwise it is kept as an inquiry. The answer is always the same
      * to the visitor, so the form never tells whether an address has an account. @return array{ok:bool,error:?string}
      */
-    public static function inquire(string $name, string $email, string $phone, string $message): array
+    public static function inquire(string $name, string $email, string $phone, string $message, string $regNo = ''): array
     {
+        $regInput = trim($regNo);
+        $regNo = LearnerRegistry::normaliseNumber($regInput);
+        if ($regInput !== '' && $regNo === '') {
+            return ['ok' => false, 'error' => 'That does not look like a registration number. It looks like LAF-AC-2026-000123 (or leave the box empty).', 'field' => 'reg_no'];
+        }
         $name = trim((string) preg_replace('/\s+/u', ' ', strip_tags($name)));
         $email = LearnerAuth::normaliseEmail($email);
         $phone = trim((string) preg_replace('/[^0-9+()\- ]/', '', $phone));
@@ -169,15 +174,32 @@ final class LearnerMessages
         }
         $learner = self::ready() ? Database::one('SELECT id FROM academy_learners WHERE email = ? LIMIT 1', [$email]) : null;
         if ($learner !== null) {
-            $head = $phone !== '' ? '[Sent from the contact form, phone ' . $phone . ']' . "\n" : "[Sent from the contact form]\n";
+            $head = '[Sent from the contact form' . ($regNo !== '' ? ', registration number ' . $regNo : '') . ($phone !== '' ? ', phone ' . $phone : '') . "]\n";
             $r = self::send((int) $learner['id'], 'learner', $head . $text);
             return ['ok' => $r['ok'], 'error' => $r['ok'] ? null : $r['error']];
         }
         if (!self::inquiriesReady()) {
             return ['ok' => false, 'error' => 'Messages are not available yet. Please use the WhatsApp line.'];
         }
-        Database::insert('academy_inquiries', ['name' => mb_substr($name, 0, 120), 'email' => $email, 'phone' => $phone !== '' ? mb_substr($phone, 0, 40) : null, 'message' => $text]);
+        // the registration number travels as the first line of the message (no extra column): the team sees it and the admin page links it to the learner
+        Database::insert('academy_inquiries', ['name' => mb_substr($name, 0, 120), 'email' => $email, 'phone' => $phone !== '' ? mb_substr($phone, 0, 40) : null, 'message' => ($regNo !== '' ? self::REG_LINE . $regNo . "\n\n" : '') . $text]);
         return ['ok' => true, 'error' => null];
+    }
+
+    /** First words of the line that carries the registration number in an inquiry. */
+    public const REG_LINE = 'Registration number: ';
+
+    /**
+     * The registration number written at the top of an inquiry, the message without that line, and the learner it belongs to (or null).
+     * @return array{reg:string,text:string,learner:?array{id:int,name:string}}
+     */
+    public static function splitInquiry(string $message): array
+    {
+        if (preg_match('/^' . preg_quote(self::REG_LINE, '/') . '(LAF-AC-\d{4}-\d{6})\R\R?/', $message, $m) !== 1) {
+            return ['reg' => '', 'text' => $message, 'learner' => null];
+        }
+        $l = LearnerRegistry::ready() ? Database::one('SELECT id, name FROM academy_learners WHERE reg_no = ? LIMIT 1', [$m[1]]) : null;
+        return ['reg' => $m[1], 'text' => (string) substr($message, strlen($m[0])), 'learner' => $l !== null ? ['id' => (int) $l['id'], 'name' => (string) $l['name']] : null];
     }
 
     /** Unread messages from one learner. */

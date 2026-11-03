@@ -163,6 +163,28 @@ check('the warning screen cannot be opened again without a new sign-up (back to 
 $cold = $req('GET', '/academy/registered', [], tempnam(sys_get_temp_dir(), 'trc'));
 check('a visitor with no sign-up cannot open the warning screen', $cold['code'] === 302);
 @unlink($jr);
+
+// ---- the registration number in "Message the Academy team"
+$cn = $req('GET', '/academy/contact?reg=laf-ac-2026-000777');
+check('contact form: has the registration number field, prefilled from ?reg= (read in any case)', $cn['code'] === 200 && str_contains($cn['body'], 'name="reg_no"') && str_contains($cn['body'], 'value="LAF-AC-2026-000777"'), (string) $cn['code']);
+$bad = \App\Services\Academy\LearnerMessages::inquire('Zed Trk', 'zz-trk-inq1@example.test', '', 'Hello team, my account is waiting', 'not-a-number');
+check('inquire: a wrong registration number is refused with a hint (field reg_no)', !$bad['ok'] && ($bad['field'] ?? '') === 'reg_no');
+$okInq = \App\Services\Academy\LearnerMessages::inquire('Zed Trk', 'zz-trk-inq1@example.test', '+256700111222', 'Hello team, my account is waiting for approval', ' laf-ac-2026-' . substr($waitNo, -6) . ' ');
+check('inquire: with a good number the inquiry is stored', $okInq['ok'] && \App\Services\Academy\LearnerMessages::inquiriesReady());
+$iq = Database::one("SELECT message FROM academy_inquiries WHERE email = 'zz-trk-inq1@example.test' ORDER BY id DESC LIMIT 1");
+$sp = \App\Services\Academy\LearnerMessages::splitInquiry((string) ($iq['message'] ?? ''));
+check('the number is the first line of the stored message, the text follows', str_starts_with((string) ($iq['message'] ?? ''), 'Registration number: ' . $waitNo) && $sp['reg'] === $waitNo && str_starts_with($sp['text'], 'Hello team'), (string) ($iq['message'] ?? ''));
+check('splitInquiry: the number is matched to the learner (name and id) for the admin page', $sp['learner'] !== null && $sp['learner']['id'] === $waitId);
+$none = \App\Services\Academy\LearnerMessages::inquire('Zed Trk', 'zz-trk-inq2@example.test', '', 'Question without a number', '');
+$iq2 = Database::one("SELECT message FROM academy_inquiries WHERE email = 'zz-trk-inq2@example.test' ORDER BY id DESC LIMIT 1");
+check('without a number the inquiry is unchanged (the number stays optional)', $none['ok'] && \App\Services\Academy\LearnerMessages::splitInquiry((string) ($iq2['message'] ?? ''))['reg'] === '' && str_starts_with((string) ($iq2['message'] ?? ''), 'Question'));
+$viaMail = \App\Services\Academy\LearnerMessages::inquire('Zed Trk', 'zz-trk-ok@example.test', '', 'I am an existing learner writing from the form', $okNo);
+$thread = (string) Database::value("SELECT body FROM academy_messages WHERE learner_id = ? AND sender = 'learner' ORDER BY id DESC LIMIT 1", [$okId], '');
+check('a learner found by e-mail gets the message in their own conversation with the number in its first line', $viaMail['ok'] && str_contains($thread, 'registration number ' . $okNo), $thread);
+$tp = $req('POST', '/academy/track', ['number' => 'LAF-AC-2026-999999', '_token' => $tok($req('GET', '/academy/track')['body']), '_hp_ts' => $hp()]);
+check('the tracker (number not found) offers the contact form with the number filled in', str_contains($tp['body'], 'academy/contact?reg=') || str_contains($tp['body'], 'academy/contact'), (string) $tp['code']);
+Database::execute("DELETE FROM academy_inquiries WHERE email LIKE 'zz-trk-%'");
+Database::execute("DELETE FROM academy_messages WHERE learner_id IN (SELECT id FROM academy_learners WHERE email LIKE 'zz-trk-%')");
 @unlink($jar);
 
 $clean();

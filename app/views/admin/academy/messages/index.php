@@ -13,10 +13,10 @@
                     <caption class="visually-hidden">Inquiries from visitors</caption>
                     <thead><tr><th scope="col">From</th><th scope="col">Message</th><th scope="col">When</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
                     <tbody>
-                    <?php foreach ($inquiries as $iq): $open = $iq['handled_at'] === null; $wa = (string) preg_replace('/\D+/', '', (string) $iq['phone']); ?>
+                    <?php foreach ($inquiries as $iq): $open = $iq['handled_at'] === null; $wa = (string) preg_replace('/\D+/', '', (string) $iq['phone']); $sp = \App\Services\Academy\LearnerMessages::splitInquiry((string) $iq['message']); ?>
                         <tr class="<?= $open ? 'is-unread' : 'is-muted' ?>">
                             <td class="cell-main" data-label="From"><span class="cell-title"><?= e($iq['name']) ?><?php if ($open): ?> <span class="badge badge--warning">new</span><?php endif; ?></span><span class="cell-sub"><?= e($iq['email']) ?><?= $iq['phone'] ? ' &middot; ' . e($iq['phone']) : '' ?></span></td>
-                            <td data-label="Message"><?= nl2br(e((string) $iq['message'])) ?></td>
+                            <td data-label="Message"><?php if ($sp['reg'] !== ''): ?><span class="badge badge--info"><?= e($sp['reg']) ?></span><?php if ($sp['learner'] !== null): ?> <a href="<?= e(url('admin/academy/learners/' . $sp['learner']['id'])) ?>">Open <?= e($sp['learner']['name']) ?></a><?php else: ?> <span class="text-muted">(no learner has this number)</span><?php endif; ?><br><?php endif; ?><?= nl2br(e($sp['text'])) ?></td>
                             <td data-label="When"><span class="nowrap"><?= e(format_datetime($iq['created_at'], 'j M, H:i')) ?></span><?php if (!$open): ?><span class="cell-sub">Dealt with <?= e(format_date($iq['handled_at'], 'j M')) ?></span><?php endif; ?></td>
                             <td data-label="Actions" class="nowrap">
                                 <a class="btn btn--outline btn--sm" href="mailto:<?= e($iq['email']) ?>?subject=<?= e(rawurlencode('Your message to the LAF Academy')) ?>"><?= icon('mail', 'icon--sm') ?> E-mail</a>

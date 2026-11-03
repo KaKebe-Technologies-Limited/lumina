@@ -1,5 +1,5 @@
 <?php
-/** Public "Message the Academy team". Vars: $sent (bool), $email (prefill), $sw (support WhatsApp line or null), $hours ("1 hour"). */
+/** Public "Message the Academy team". Vars: $sent (bool), $email (prefill), $regNo (registration number prefill or ''), $sw (support WhatsApp line or null), $hours ("1 hour"). */
 ?>
 <?= partial('partials/page-hero', ['title' => 'Message the Academy team', 'eyebrow' => 'LAF Academy', 'lead' => 'A question about your registration, your approval or the courses? Write to us here: your message goes straight to the Academy team.']) ?>
 <section class="section ac-auth">
@@ -19,6 +19,7 @@
                         <?= partial('partials/form-field', ['name' => 'name', 'label' => 'Your name', 'required' => true, 'maxlength' => 120, 'autocomplete' => 'name']) ?>
                         <?= partial('partials/form-field', ['name' => 'email', 'label' => 'E-mail address', 'type' => 'email', 'required' => true, 'maxlength' => 190, 'autocomplete' => 'email', 'value' => old('email', $email), 'help' => 'The e-mail you registered with, so we can find your account.']) ?>
                     </div>
+                    <?= partial('partials/form-field', ['name' => 'reg_no', 'label' => 'Registration number (recommended)', 'type' => 'text', 'maxlength' => 40, 'autocomplete' => 'off', 'value' => old('reg_no', $regNo ?? ''), 'placeholder' => 'LAF-AC-2026-000123', 'help' => 'It starts with LAF-AC and was shown when you created your account. Adding it helps the team find your account and answer faster. Lost it? Leave it empty.']) ?>
                     <?= partial('partials/form-field', ['name' => 'phone', 'label' => 'Phone or WhatsApp (optional)', 'type' => 'tel', 'maxlength' => 40, 'autocomplete' => 'tel']) ?>
                     <?= partial('partials/form-field', ['name' => 'message', 'label' => 'Your message', 'type' => 'textarea', 'rows' => 5, 'required' => true, 'maxlength' => 2000, 'placeholder' => 'For example: I registered yesterday and my account is not approved yet.']) ?>
                     <button class="btn btn--cta btn--caps btn--block" type="submit"><?= icon('send', 'icon--sm') ?> Send my message</button>
