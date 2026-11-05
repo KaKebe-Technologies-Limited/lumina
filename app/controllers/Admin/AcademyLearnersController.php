@@ -70,6 +70,8 @@ final class AcademyLearnersController extends AcademyAdminController
             $where[] = 'l.rejected_at IS NOT NULL';
         } elseif ($status === 'featured' && \App\Services\Academy\FeaturedLearners::ready()) {
             $where[] = 'l.featured_at IS NOT NULL';
+        } elseif ($status === 'notstarted') {
+            $where[] = \App\Services\Academy\NotStarted::WHERE;
         } elseif ($status === 'nopicture' && \App\Services\Academy\LearnerPortrait::ready()) {
             $where[] = 'l.is_active = 1 AND l.email_verified_at IS NOT NULL AND l.photo_path IS NULL';
         } elseif ($status === 'unverified') {
@@ -474,6 +476,48 @@ final class AcademyLearnersController extends AcademyAdminController
             Flash::info('Nothing was sent: this account has no unpaid sign-up fee.');
         }
         return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
+    }
+
+    /** POST admin/academy/learners-remind-not-started: portal message (and e-mail) to every approved learner who has not started a course. */
+    public function remindNotStarted(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $text = trim((string) $request->post('message', ''));
+        if (mb_strlen($text) < 10) {
+            Flash::error('Write the reminder first (at least a short sentence).');
+            return $this->redirect('admin/academy/learners');
+        }
+        $n = \App\Services\Academy\NotStarted::remind(Auth::id(), mb_substr($text, 0, 1500), $request->bool('email'));
+        $this->audit('academy.learner.remind_not_started', 'academy_learner', null, 'Reminded the approved learners who have not started a course', ['count' => $n, 'email' => $request->bool('email')]);
+        Flash::success($n === 0 ? 'Every approved learner has started a course, so nobody needed a reminder.' : 'The reminder was sent to ' . $n . ' learner' . ($n === 1 ? '' : 's') . ' who have not started a course.');
+        return $this->redirect('admin/academy/learners');
+    }
+
+    /** POST admin/academy/learners-not-started-whatsapp-all: the approved WhatsApp template to everyone who has not started (needs the WhatsApp API); otherwise the guided list opens. */
+    public function notStartedWhatsAppAll(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        if (!\App\Services\Academy\NotStarted::whatsAppApiReady()) {
+            Flash::info('This site is not connected to the WhatsApp Business API with a template for this reminder, so it cannot send by itself. Use "Start sending to all" below: it opens each chat with the message typed.');
+            return $this->redirect('admin/academy/learners-not-started-whatsapp');
+        }
+        $r = \App\Services\Academy\NotStarted::whatsAppAll();
+        $this->audit('academy.learner.not_started_whatsapp_all', 'academy_learner', null, 'Sent the WhatsApp reminder to the learners who have not started a course', ['sent' => $r['sent'], 'failed' => $r['failed']]);
+        $msg = $r['sent'] . ' WhatsApp reminder' . ($r['sent'] === 1 ? '' : 's') . ' sent.' . ($r['nonumber'] > 0 ? ' ' . $r['nonumber'] . ' learner' . ($r['nonumber'] === 1 ? ' has' : 's have') . ' no usable number.' : '') . ($r['failed'] > 0 ? ' ' . $r['failed'] . ' could not be sent' . ($r['error'] ? ' (' . $r['error'] . ')' : '') . '.' : '');
+        $r['failed'] > 0 && $r['sent'] === 0 ? Flash::error($msg) : Flash::success($msg);
+        return $this->redirect('admin/academy/learners');
+    }
+
+    /** GET admin/academy/learners-not-started-whatsapp: one WhatsApp button per learner who has not started (opens WhatsApp with the reminder typed), and "start sending to all". */
+    public function notStartedWhatsApp(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $rows = [];
+        foreach (\App\Services\Academy\NotStarted::learners() as $row) {
+            $row['wa'] = \App\Services\Academy\NotStarted::whatsAppUrl($row);
+            $rows[] = $row;
+        }
+        return $this->render('admin/academy/learners/not-started-whatsapp', ['rows' => $rows], ['title' => 'WhatsApp reminders', 'nav' => 'academy_learners', 'breadcrumbs' => $this->crumbs('Learners', ['WhatsApp reminders', null])]);
     }
 
     /** POST admin/academy/learners-remind-no-picture: remind every approved learner without a picture and start the countdown (days). */

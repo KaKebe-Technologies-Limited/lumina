@@ -341,6 +341,10 @@ final class ReportCatalog
             ['last_login_at' => 'Last sign-in', 'days' => 'Days away', 'name' => 'Name', 'email' => 'E-mail', 'courses' => 'Courses'],
             static fn(array $r): array => ["SELECT l.last_login_at, DATEDIFF(NOW(), l.last_login_at) AS days, l.name, l.email, (SELECT COUNT(*) FROM academy_enrollments e WHERE e.learner_id = l.id) AS courses FROM academy_learners l WHERE l.is_active = 1 AND l.last_login_at IS NOT NULL AND l.last_login_at < DATE_SUB(NOW(), INTERVAL 30 DAY) ORDER BY l.last_login_at ASC", []],
             ['courses'], false);
+        $add('academy', 'academy-not-started', 'Approved learners who have not started a course', 'Approved, active learners with no completed lesson and no quiz attempt: remind them by e-mail and WhatsApp.', $A,
+            ['approved_at' => 'Approved', 'days' => 'Days since approval', 'reg_no' => 'Reg no', 'name' => 'Name', 'email' => 'E-mail', 'phone' => 'Phone', 'whatsapp' => 'WhatsApp', 'courses' => 'Enrolled in'],
+            static fn(array $r): array => ["SELECT l.approved_at, DATEDIFF(NOW(), COALESCE(l.approved_at, l.email_verified_at)) AS days, l.reg_no, l.name, l.email, l.phone, l.whatsapp, (SELECT COUNT(*) FROM academy_enrollments e WHERE e.learner_id = l.id) AS courses FROM academy_learners l WHERE " . \App\Services\Academy\NotStarted::WHERE . " ORDER BY l.id", []],
+            ['courses'], false);
         $add('academy', 'academy-no-picture', 'Approved learners without a picture', 'Approved, active learners who have not added a profile picture: remind them or switch them off after the deadline.', $A,
             ['approved_at' => 'Approved', 'reg_no' => 'Reg no', 'name' => 'Name', 'email' => 'E-mail', 'phone' => 'Phone', 'last_login_at' => 'Last sign-in'],
             static fn(array $r): array => ["SELECT l.approved_at, l.reg_no, l.name, l.email, l.phone, l.last_login_at FROM academy_learners l WHERE l.is_active = 1 AND l.email_verified_at IS NOT NULL AND l.photo_path IS NULL ORDER BY l.id", []],

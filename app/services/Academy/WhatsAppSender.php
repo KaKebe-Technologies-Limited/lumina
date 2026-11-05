@@ -76,6 +76,12 @@ final class WhatsAppSender
         return self::enabled() && self::cfg('WHATSAPP_REMINDER_TEMPLATE') !== '';
     }
 
+    /** True when the template named by the .env key $envKey is set and the API is set up (used by the "have not started a course" reminder: WHATSAPP_NOT_STARTED_TEMPLATE). */
+    public static function templateEnabled(string $envKey): bool
+    {
+        return self::enabled() && self::cfg($envKey) !== '';
+    }
+
     /** True when the certificate-fee reminder can be sent from the site: the API is set up AND WHATSAPP_CERT_REMINDER_TEMPLATE names an approved template. */
     public static function certReminderEnabled(): bool
     {

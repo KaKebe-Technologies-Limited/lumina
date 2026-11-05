@@ -48,6 +48,25 @@ if ($manager) {
         </div>
     </div>
 <?php endif; ?>
+<?php $nsN = $manager ? count(\App\Services\Academy\NotStarted::learners()) : 0; ?>
+<?php if ($manager && $nsN > 0 && \App\Services\Academy\LearnerMessages::ready()): ?>
+    <div class="alert alert--info aac-note" role="status" style="display:block">
+        <strong class="aac-note__title"><?= icon('book-open', 'icon--sm') ?> <?= $nsN ?> approved learner<?= $nsN === 1 ? ' has' : 's have' ?> not started a course yet.</strong>
+        <p>Nudge them to begin: by e-mail and a message in the learner portal, and on WhatsApp. <a href="<?= e(url('admin/academy/learners', ['status' => 'notstarted'])) ?>">Show only these learners</a></p>
+        <details><summary style="cursor:pointer"><strong>Write and send the e-mail and portal message</strong></summary>
+            <form method="post" action="<?= e(url('admin/academy/learners-remind-not-started')) ?>" data-confirm="Send this reminder to all <?= $nsN ?> learners who have not started a course?" style="margin-top:.75rem">
+                <?= csrf_field() ?>
+                <div class="field"><label class="field__label" for="ns-msg">Reminder</label><textarea class="textarea" id="ns-msg" name="message" rows="5" maxlength="1500" required><?= e(\App\Services\Academy\NotStarted::defaultMessage()) ?></textarea><span class="field__help"><code>{name}</code> becomes the first name.</span></div>
+                <label class="aac-remind__check"><input type="checkbox" name="email" value="1" checked> Also send it by e-mail</label>
+                <button class="btn btn--primary btn--sm" type="submit"><?= icon('send', 'icon--sm') ?> Send to the <?= $nsN ?> learners</button>
+            </form>
+        </details>
+        <div class="aac-actions">
+            <form method="post" action="<?= e(url('admin/academy/learners-not-started-whatsapp-all')) ?>" class="inline-form" data-confirm="<?= e(\App\Services\Academy\NotStarted::whatsAppApiReady() ? 'Send the WhatsApp reminder to all ' . $nsN . ' learners who have not started a course?' : 'Open the WhatsApp list: you send each message from WhatsApp with one press.') ?>"><?= csrf_field() ?><button class="btn btn--whatsapp btn--sm" type="submit"><?= icon('whatsapp', 'icon--sm') ?> <?= \App\Services\Academy\NotStarted::whatsAppApiReady() ? 'Send the WhatsApp reminder to all' : 'Remind on WhatsApp' ?></button></form>
+            <a class="btn btn--outline btn--sm" href="<?= e(url('admin/academy/learners-not-started-whatsapp')) ?>"><?= icon('whatsapp', 'icon--sm') ?> WhatsApp list, one by one</a>
+        </div>
+    </div>
+<?php endif; ?>
 <?php $noPicN = $manager ? count(\App\Services\Academy\LearnerPortrait::withoutPicture()) : 0;
 $picDeadline = \App\Services\Academy\LearnerPortrait::deadline(); $picPassed = \App\Services\Academy\LearnerPortrait::deadlinePassed(); ?>
 <?php if ($manager && $noPicN > 0 && \App\Services\Academy\LearnerMessages::ready()): ?>
@@ -106,7 +125,7 @@ $approvedIn = $manager ? count(\App\Services\Academy\LearnerMessages::approvedLe
 <form class="filters" method="get" action="<?= e(url('admin/academy/learners')) ?>" role="search">
     <div class="field field--grow"><label class="field__label" for="f-q">Search</label><input class="input" id="f-q" type="search" name="q" value="<?= e($f['q']) ?>" placeholder="Name, reg no, e-mail or phone" maxlength="80"></div>
     <div class="field"><label class="field__label" for="f-status">Status</label><select class="select" id="f-status" name="status"><option value="">Any</option>
-        <?php foreach (['active' => 'Active', 'inactive' => 'Switched off', 'unverified' => 'Awaiting approval'] + (\App\Services\Academy\FeaturedLearners::ready() ? ['featured' => 'Featured on the website'] : []) + (\App\Services\Academy\LearnerPortrait::ready() ? ['nopicture' => 'Approved, no picture'] : []) + (\App\Services\Academy\LearnerRegistry::rejectReady() ? ['rejected' => 'Rejected'] : []) as $k => $l): ?><option value="<?= e($k) ?>"<?= $f['status'] === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
+        <?php foreach (['active' => 'Active', 'inactive' => 'Switched off', 'unverified' => 'Awaiting approval'] + (\App\Services\Academy\FeaturedLearners::ready() ? ['featured' => 'Featured on the website'] : []) + (\App\Services\Academy\LearnerPortrait::ready() ? ['nopicture' => 'Approved, no picture'] : []) + ['notstarted' => 'Approved, no course started'] + (\App\Services\Academy\LearnerRegistry::rejectReady() ? ['rejected' => 'Rejected'] : []) as $k => $l): ?><option value="<?= e($k) ?>"<?= $f['status'] === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
     <div class="field"><label class="field__label" for="f-login">Sign-in</label><select class="select" id="f-login" name="login"><?php foreach (\App\Services\Academy\LearnerRegistry::LOGIN_FILTER as $k => $l): ?><option value="<?= e($k) ?>"<?= ($f['login'] ?? '') === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
     <div class="field"><label class="field__label" for="f-course">Course</label><select class="select" id="f-course" name="course"><option value="0">Any course</option>
         <?php foreach ($courses as $c): ?><option value="<?= (int) $c['id'] ?>"<?= (int) $f['course'] === (int) $c['id'] ? ' selected' : '' ?>><?= e($c['title']) ?></option><?php endforeach; ?></select></div>

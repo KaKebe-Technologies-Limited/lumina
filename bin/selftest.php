@@ -259,6 +259,7 @@ set_time_limit(0); require __DIR__ . '/selftest-academy-no-picture.php';        
 set_time_limit(0); require __DIR__ . '/selftest-bono-knowledge.php';              // Bono AI: built-in knowledge (taught answers + passages)
 set_time_limit(0); require __DIR__ . '/selftest-file-check.php';              // Admin > File check (missing / outdated files)
 set_time_limit(0); require __DIR__ . '/selftest-academy-follow.php';              // Academy: follow and subscribe to our social media pages at sign-up
+set_time_limit(0); require __DIR__ . '/selftest-academy-not-started.php';              // Academy: reminder (e-mail, portal, WhatsApp) for approved learners who have not started a course
 set_time_limit(0); require __DIR__ . '/selftest-visitors.php';                         // Admin > Visitors: counting rules, no IP stored, country + page filters
 set_time_limit(0); require __DIR__ . '/selftest-academy-payments.php';                       // Academy payments dashboard: Pesapal + hand-confirmed + reported, figures, filters
 set_time_limit(0); require __DIR__ . '/selftest-pesapal.php';                    // Pesapal payment gateway: client, donations, shop orders, endpoints (mock transport)
