@@ -74,6 +74,12 @@ final class LearnerAuth
     }
 
     /** How new learners get in: "approval" (an administrator approves, nothing is e-mailed: the default), "email" (confirm by link or code, or be approved) or "open". */
+    /** Must a new learner confirm that they follow and subscribe to our social media pages? (Settings > LAF Academy; on by default; only when at least one page address is set) */
+    public static function followRequired(): bool
+    {
+        return trim((string) setting('academy_register_follow_required', '1')) !== '0' && social_links('all') !== [];
+    }
+
     public static function signupMode(): string
     {
         $m = (string) setting('academy_signup_mode', 'approval');

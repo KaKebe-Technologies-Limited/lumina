@@ -42,6 +42,7 @@
                         <?php if (error('photo')): ?><div class="field__error" role="alert"><?= e((string) error('photo')) ?></div><?php endif; ?>
                     </div>
                     <?php endif; ?>
+                    <?= partial('partials/academy-follow', ['required' => \App\Services\Academy\LearnerAuth::followRequired()]) ?>
                     <div class="field<?= error('agree') ? ' field--error' : '' ?>">
                         <label class="check"><input type="checkbox" name="agree" value="1"<?= old('agree') ? ' checked' : '' ?> required><span><?= e(content('academy', 'auth.consent')) ?></span></label>
                         <?php if (error('agree')): ?><div class="field__error"><?= e((string) error('agree')) ?></div><?php endif; ?>

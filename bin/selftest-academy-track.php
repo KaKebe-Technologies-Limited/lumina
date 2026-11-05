@@ -32,7 +32,7 @@ if (!function_exists('check')) {
 }
 
 echo "-- academy: registration number, tracking and sign-in --\n";
-$keys = ['academy_register_photo_required', 'academy_signup_mode', 'academy_registration_open', 'academy_signup_fee', 'academy_enabled'];
+$keys = ['academy_register_photo_required', 'academy_register_follow_required', 'academy_signup_mode', 'academy_registration_open', 'academy_signup_fee', 'academy_enabled'];
 $before = [];
 foreach ($keys as $k) {
     $before[$k] = Settings::isCustomised($k) ? Settings::get($k) : null;
@@ -45,6 +45,7 @@ $clean();
 Settings::set('academy_enabled', '1');
 Settings::set('academy_registration_open', '1');
 Settings::set('academy_register_photo_required', '0');
+Settings::set('academy_register_follow_required', '0');
 Settings::reset('academy_signup_fee');
 Settings::set('academy_signup_mode', 'approval');
 Settings::flush();

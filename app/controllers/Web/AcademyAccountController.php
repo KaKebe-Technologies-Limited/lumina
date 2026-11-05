@@ -48,6 +48,10 @@ final class AcademyAccountController extends AcademyBaseController
         if (!$request->bool('agree')) {
             $this->fail(['agree' => 'Please tick the box to continue.'], 'academy/register');
         }
+        // following and subscribing to our social media pages is REQUIRED (when pages are set): checked first, so nothing is created without it
+        if (LearnerAuth::followRequired() && !$request->bool('follow')) {
+            $this->fail(['follow' => 'Please follow and subscribe to our pages, then tick the box to continue.'], 'academy/register');
+        }
         // the picture is REQUIRED: checked before anything is created, so a missing or unusable picture never leaves a half-made account behind
         if (LearnerPortrait::requiredAtSignup() && ($pp = LearnerPortrait::problem($request->file('photo'))) !== '') {
             $this->fail(['photo' => $pp . ' (A file chosen earlier has to be chosen again.)'], 'academy/register');
@@ -130,6 +134,27 @@ final class AcademyAccountController extends AcademyBaseController
             return $this->redirect('academy');
         }
         return preg_match('~^https?://~i', $next) ? $this->sendToGateway($next) : $this->redirect($next);
+    }
+
+    /** GET/POST academy/follow: the "follow and subscribe" step for an account made with Google (the sign-up form asks it for the others). */
+    public function follow(Request $request): Response
+    {
+        $l = $this->learner();
+        if ($l === null) {
+            return $this->loginRedirect();
+        }
+        if ($request->isPost()) {
+            if (LearnerAuth::followRequired() && !$request->bool('follow')) {
+                $this->fail(['follow' => 'Please follow and subscribe to our pages, then tick the box to continue.'], 'academy/follow');
+            }
+            $next = (string) \App\Core\Session::pull('academy_follow_next', 'academy/dashboard');
+            return $this->redirect($next !== '' ? $next : 'academy/dashboard');
+        }
+        return $this->renderAcademy('web/academy/follow', [], [
+            'bodyClass' => 'is-academy is-academy-auth',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Follow our pages', null]],
+            'meta' => ['title' => 'Follow our pages', 'robots' => 'noindex,nofollow'],
+        ], true);
     }
 
     /** GET/POST academy/track: "where is my application?" - paste the registration number, see the state of the account (nothing personal is shown). */
@@ -363,6 +388,13 @@ final class AcademyAccountController extends AcademyBaseController
             return $pay['ok'] ? $this->sendToGateway((string) $pay['link']) : $this->redirect('academy/pending');
         }
         LearnerAuth::signIn($res['learner']);
+        if ($res['created'] && LearnerAuth::followRequired()) {                      // a new Google account has not seen the sign-up form: ask for the follow here, then go on
+            $go = LearnerPortrait::requiredAtSignup() && empty(LearnerPortrait::of((int) $res['learner']['id'])['photo_path']) ? 'academy/account#picture'
+                : (LearnerAuth::missingContact((array) $res['learner']) ? 'academy/account#details' : $this->nextAfterLogin());
+            \App\Core\Session::put('academy_follow_next', $go);
+            Flash::info('Welcome to the LAF Academy! One last step: follow and subscribe to our pages.');
+            return $this->redirect('academy/follow');
+        }
         if ($res['created'] && LearnerPortrait::requiredAtSignup() && empty(LearnerPortrait::of((int) $res['learner']['id'])['photo_path'])) {
             Flash::info('Welcome to the LAF Academy! Please add your picture to continue: take a selfie or attach a clear photo. Only you and the Academy team can see it.');
             return $this->redirect('academy/account#picture');

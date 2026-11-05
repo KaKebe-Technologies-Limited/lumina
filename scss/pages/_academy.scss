@@ -298,6 +298,11 @@ $cert-orange: #E0642C;
 
 // ---- registration number notice on the "check your e-mail" page
 // "Track my application" call-to-action on the sign-in and sign-up pages: a bold gold-edged panel, not a small text link
+.ac-follow { margin: $space-4 0; padding: $space-4; background: #FFF4DC; border: 2px solid $gold; border-radius: $radius-card;
+  &__title { margin: 0 0 $space-2; display: flex; align-items: center; gap: $space-2; font-family: $font-heading; font-size: $fs-md; font-weight: 800; color: $navy-dark; }
+  &__text { margin: 0 0 $space-3; color: $ink; font-size: $fs-sm; }
+  &__links { list-style: none; margin: 0 0 $space-3; padding: 0; display: flex; flex-wrap: wrap; gap: $space-2; }
+  &__check { display: flex; align-items: flex-start; gap: $space-2; font-weight: 600; cursor: pointer; } }
 .ac-trackcta { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: $space-3 $space-4; margin: $space-5 0 $space-3; padding: $space-4 $space-5; text-align: left; background: #FFF4DC; border: 2px solid $gold; border-radius: $radius-card; box-shadow: $shadow-card;
   &__icon { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: $navy; color: $gold; }
   &__title { display: block; font-family: $font-heading; font-size: $fs-lg; font-weight: 800; line-height: 1.2; color: $navy-dark; }

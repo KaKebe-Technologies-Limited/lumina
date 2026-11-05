@@ -70,7 +70,8 @@ $post = static function (string $path, array $form, ?string &$jar, string $from)
 $jL = null;
 $jP = null;
 $photoWas = \App\Core\Settings::isCustomised('academy_register_photo_required') ? (string) \App\Core\Settings::get('academy_register_photo_required') : null;
-\App\Core\Settings::set('academy_register_photo_required', '0');       // these checks sign up without a picture (own test: selftest-academy-photo-required.php)
+\App\Core\Settings::set('academy_register_photo_required', '0');
+\App\Core\Settings::set('academy_register_follow_required', '0');       // these checks sign up without a picture (own test: selftest-academy-photo-required.php)
 \App\Core\Settings::flush();
 $pw = 'Sentence-for-test-77';
 $reg = $post('/academy/register', ['name' => 'Zed Lre One', 'email' => 'zz-lre-one@example.test', 'password' => $pw, 'phone' => '+256700000001', 'country' => 'Uganda', 'whatsapp' => '0772 123 456', 'agree' => '1'], $jL, '/academy/register');
@@ -251,6 +252,7 @@ $noAdmin = $req('GET', '/admin/academy/learners', [], $jL2);
 check('access: a learner cannot open the admin learner list', in_array($noAdmin['code'], [302, 303, 401, 403], true));
 
 $photoWas === null ? \App\Core\Settings::reset('academy_register_photo_required') : \App\Core\Settings::set('academy_register_photo_required', $photoWas);
+\App\Core\Settings::reset('academy_register_follow_required');
 \App\Core\Settings::flush();
 $clean();
 if (!empty($standalone)) {

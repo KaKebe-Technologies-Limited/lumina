@@ -46,10 +46,11 @@ $acSet = static function (string $k, ?string $v): void {
     Settings::flush();
 };
 $acBefore = [];
-foreach (['academy_enabled', 'academy_registration_open', 'academy_signup_mode', 'academy_exam_requires_lessons', 'academy_register_photo_required'] as $k) {
+foreach (['academy_enabled', 'academy_registration_open', 'academy_signup_mode', 'academy_exam_requires_lessons', 'academy_register_photo_required', 'academy_register_follow_required'] as $k) {
     $acBefore[$k] = Settings::isCustomised($k) ? (string) setting($k, '') : null;
 }
-$acSet('academy_register_photo_required', '0');           // these checks sign up without a picture (the picture rule has its own test: selftest-academy-photo-required.php)
+$acSet('academy_register_photo_required', '0');
+$acSet('academy_register_follow_required', '0');               // (the follow rule has its own test: selftest-academy-follow.php)           // these checks sign up without a picture (the picture rule has its own test: selftest-academy-photo-required.php)
 $acRestore = static function () use ($acBefore): void {
     foreach ($acBefore as $k => $v) {
         $v === null ? Settings::reset($k) : Settings::set($k, $v);

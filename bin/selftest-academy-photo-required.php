@@ -32,7 +32,7 @@ if (!function_exists('check')) {
 }
 
 echo "-- academy: picture required at sign-up --\n";
-$keys = ['academy_register_photo_required', 'academy_signup_mode', 'academy_registration_open', 'academy_signup_fee', 'academy_enabled'];
+$keys = ['academy_register_photo_required', 'academy_register_follow_required', 'academy_signup_mode', 'academy_registration_open', 'academy_signup_fee', 'academy_enabled'];
 $before = [];
 foreach ($keys as $k) {
     $before[$k] = Settings::isCustomised($k) ? Settings::get($k) : null;
@@ -53,6 +53,7 @@ Settings::set('academy_registration_open', '1');
 Settings::set('academy_signup_mode', 'approval');
 Settings::reset('academy_signup_fee');
 Settings::reset('academy_register_photo_required');
+Settings::set('academy_register_follow_required', '0');
 Settings::flush();
 
 check('the picture is required by default (pictures can be stored)', LearnerPortrait::ready() && LearnerPortrait::requiredAtSignup());
