@@ -49,8 +49,18 @@ final class AcademyAccountController extends AcademyBaseController
             $this->fail(['agree' => 'Please tick the box to continue.'], 'academy/register');
         }
         // following and subscribing to our social media pages is REQUIRED (when pages are set): checked first, so nothing is created without it
-        if (LearnerAuth::followRequired() && !$request->bool('follow')) {
-            $this->fail(['follow' => 'Please follow and subscribe to our pages, then tick the box to continue.'], 'academy/register');
+        $social = ['handles' => [], 'errors' => []];
+        if (LearnerAuth::followRequired()) {
+            $social = \App\Services\Academy\AcademySocial::collect(static fn(string $k): string => $request->string($k));
+            $errs = $social['errors'];
+            if (!\App\Services\Academy\AcademySocial::allOpened()) {
+                $errs['follow'] = 'Please open each of our pages (the buttons above), follow or subscribe, then tick the box.';
+            } elseif (!$request->bool('follow')) {
+                $errs['follow'] = 'Please follow and subscribe to our pages, then tick the box to continue.';
+            }
+            if ($errs !== []) {
+                $this->fail($errs, 'academy/register');
+            }
         }
         // the picture is REQUIRED: checked before anything is created, so a missing or unusable picture never leaves a half-made account behind
         if (LearnerPortrait::requiredAtSignup() && ($pp = LearnerPortrait::problem($request->file('photo'))) !== '') {
@@ -62,6 +72,9 @@ final class AcademyAccountController extends AcademyBaseController
         ], $request->ip());
         if (!$res['ok']) {
             $this->fail($res['errors'], 'academy/register');
+        }
+        if (isset($res['learner']['id']) && LearnerAuth::followRequired()) {
+            \App\Services\Academy\AcademySocial::save((int) $res['learner']['id'], $social['handles']);          // the usernames and the pages opened, for the team's check
         }
         // the picture (attached or a selfie): kept private; it was checked above when it is required, so a problem here is rare and never stops the sign-up
         $photo = $request->file('photo');
@@ -136,6 +149,17 @@ final class AcademyAccountController extends AcademyBaseController
         return preg_match('~^https?://~i', $next) ? $this->sendToGateway($next) : $this->redirect($next);
     }
 
+    /** GET academy/go/{key}: open one of our social media pages. The click is remembered (the "follow" tick unlocks when every page was opened), then the visitor is sent on. */
+    public function go(Request $request, string $key): Response
+    {
+        $page = \App\Services\Academy\AcademySocial::pages()[$key] ?? null;
+        if ($page === null) {
+            throw new \App\Core\HttpException(404, 'Not found');
+        }
+        \App\Services\Academy\AcademySocial::markOpened($key);
+        return Response::redirect((string) $page['url'], 302);
+    }
+
     /** GET/POST academy/follow: the "follow and subscribe" step for an account made with Google (the sign-up form asks it for the others). */
     public function follow(Request $request): Response
     {
@@ -144,8 +168,18 @@ final class AcademyAccountController extends AcademyBaseController
             return $this->loginRedirect();
         }
         if ($request->isPost()) {
-            if (LearnerAuth::followRequired() && !$request->bool('follow')) {
-                $this->fail(['follow' => 'Please follow and subscribe to our pages, then tick the box to continue.'], 'academy/follow');
+            if (LearnerAuth::followRequired()) {
+                $social = \App\Services\Academy\AcademySocial::collect(static fn(string $k): string => $request->string($k));
+                $errs = $social['errors'];
+                if (!\App\Services\Academy\AcademySocial::allOpened()) {
+                    $errs['follow'] = 'Please open each of our pages (the buttons above), follow or subscribe, then tick the box.';
+                } elseif (!$request->bool('follow')) {
+                    $errs['follow'] = 'Please follow and subscribe to our pages, then tick the box to continue.';
+                }
+                if ($errs !== []) {
+                    $this->fail($errs, 'academy/follow');
+                }
+                \App\Services\Academy\AcademySocial::save((int) $l['id'], $social['handles']);
             }
             $next = (string) \App\Core\Session::pull('academy_follow_next', 'academy/dashboard');
             return $this->redirect($next !== '' ? $next : 'academy/dashboard');

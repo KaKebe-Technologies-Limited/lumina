@@ -2,6 +2,32 @@
 (function () {
   'use strict';
 
+  // follow and subscribe: the "I follow" tick unlocks when every page was opened from the form
+  var follow = document.querySelector('[data-follow][data-follow-required]');
+  if (follow) {
+    var links = follow.querySelectorAll('[data-follow-link]');
+    var tick = follow.querySelector('[data-follow-tick]');
+    var hint = follow.querySelector('[data-follow-hint]');
+    var openedKeys = {};
+    links.forEach(function (a) { if (a.classList.contains('is-opened')) openedKeys[a.getAttribute('data-follow-link')] = true; });
+    var update = function () {
+      var all = true;
+      links.forEach(function (a) { if (!openedKeys[a.getAttribute('data-follow-link')]) all = false; });
+      if (tick) { tick.disabled = !all; if (!all) tick.checked = false; }
+      if (hint) hint.hidden = all;
+    };
+    links.forEach(function (a) {
+      a.addEventListener('click', function () {
+        openedKeys[a.getAttribute('data-follow-link')] = true;
+        a.classList.add('is-opened');
+        var mark = a.querySelector('.ac-follow__done');
+        if (mark) mark.hidden = false;
+        update();
+      });
+    });
+    update();
+  }
+
   // registration number box: copy button, print button, and the "I have saved it" tick that unlocks Continue
   var regBox = document.querySelector('.ac-regwarn');
   if (regBox) {

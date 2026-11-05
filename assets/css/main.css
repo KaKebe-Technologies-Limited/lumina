@@ -25147,6 +25147,28 @@ fieldset.ac-q legend + * {
   cursor: pointer;
 }
 
+.ac-follow__hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: #A5521A;
+}
+
+.ac-follow__handles {
+  margin: 0 0 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #D9A441;
+}
+
+.ac-follow__links .is-opened {
+  background: #E7F5EC;
+  border-color: #287A52;
+  color: #287A52;
+}
+
+.ac-follow__done {
+  font-weight: 800;
+}
+
 .ac-trackcta {
   display: grid;
   grid-template-columns: auto 1fr;

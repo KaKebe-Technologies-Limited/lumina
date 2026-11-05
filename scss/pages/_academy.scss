@@ -302,7 +302,11 @@ $cert-orange: #E0642C;
   &__title { margin: 0 0 $space-2; display: flex; align-items: center; gap: $space-2; font-family: $font-heading; font-size: $fs-md; font-weight: 800; color: $navy-dark; }
   &__text { margin: 0 0 $space-3; color: $ink; font-size: $fs-sm; }
   &__links { list-style: none; margin: 0 0 $space-3; padding: 0; display: flex; flex-wrap: wrap; gap: $space-2; }
-  &__check { display: flex; align-items: flex-start; gap: $space-2; font-weight: 600; cursor: pointer; } }
+  &__check { display: flex; align-items: flex-start; gap: $space-2; font-weight: 600; cursor: pointer; }
+  &__hint { margin: $space-2 0 0; font-size: $fs-xs; color: $orange-text; }
+  &__handles { margin: 0 0 $space-3; padding-top: $space-3; border-top: 1px dashed $gold; }
+  &__links .is-opened { background: $success-bg; border-color: $success; color: $success; }
+  &__done { font-weight: 800; } }
 .ac-trackcta { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: $space-3 $space-4; margin: $space-5 0 $space-3; padding: $space-4 $space-5; text-align: left; background: #FFF4DC; border: 2px solid $gold; border-radius: $radius-card; box-shadow: $shadow-card;
   &__icon { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: $navy; color: $gold; }
   &__title { display: block; font-family: $font-heading; font-size: $fs-lg; font-weight: 800; line-height: 1.2; color: $navy-dark; }

@@ -345,6 +345,12 @@ final class ReportCatalog
             ['approved_at' => 'Approved', 'reg_no' => 'Reg no', 'name' => 'Name', 'email' => 'E-mail', 'phone' => 'Phone', 'last_login_at' => 'Last sign-in'],
             static fn(array $r): array => ["SELECT l.approved_at, l.reg_no, l.name, l.email, l.phone, l.last_login_at FROM academy_learners l WHERE l.is_active = 1 AND l.email_verified_at IS NOT NULL AND l.photo_path IS NULL ORDER BY l.id", []],
             [], false);
+        $add('academy', 'academy-social-follow', 'Social follow check', 'The usernames new learners gave on our social media pages and whether the team verified them.', $A,
+            ['created_at' => 'Signed up', 'reg_no' => 'Reg no', 'name' => 'Name', 'email' => 'E-mail', 'instagram' => 'Instagram', 'tiktok' => 'TikTok', 'x' => 'X', 'verified' => 'Verified'],
+            function (array $r) use ($rng): array {
+                [$w, $p] = $rng($r, 's.created_at');
+                return ["SELECT s.created_at, l.reg_no, l.name, l.email, JSON_UNQUOTE(JSON_EXTRACT(s.handles, '$.instagram')) AS instagram, JSON_UNQUOTE(JSON_EXTRACT(s.handles, '$.tiktok')) AS tiktok, JSON_UNQUOTE(JSON_EXTRACT(s.handles, '$.x')) AS x, IF(s.verified_at IS NULL, 'no', 'yes') AS verified FROM academy_social s JOIN academy_learners l ON l.id = s.learner_id WHERE 1 = 1$w ORDER BY s.created_at DESC", $p];
+            });
         $add('academy', 'academy-by-country', 'Learners by country', 'Where learners come from.', $A,
             ['country' => 'Country', 'learners' => 'Learners', 'signed_in' => 'Signed in'],
             function (array $r) use ($rng): array {

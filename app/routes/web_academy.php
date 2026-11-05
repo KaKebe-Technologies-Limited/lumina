@@ -34,6 +34,7 @@ $router->get('/academy/contact', [AcademyContactController::class, 'form'])->nam
 $router->post('/academy/contact', [AcademyContactController::class, 'send'])->middleware('throttle:20,600')->name('academy.contact.send');
 $router->get('/academy/registered', [AcademyAccountController::class, 'registered'])->name('academy.registered');
 $router->get('/academy/registered/continue', [AcademyAccountController::class, 'registeredContinue'])->name('academy.registered.continue');
+$router->get('/academy/go/{key}', [AcademyAccountController::class, 'go'])->where('key', '[a-z0-9_]+')->middleware('throttle:200,600')->name('academy.go');
 $router->get('/academy/follow', [AcademyAccountController::class, 'follow'])->name('academy.follow');
 $router->post('/academy/follow', [AcademyAccountController::class, 'follow'])->middleware('throttle:30,600')->name('academy.follow.post');
 $router->get('/academy/track', [AcademyAccountController::class, 'track'])->name('academy.track');

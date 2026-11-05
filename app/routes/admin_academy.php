@@ -16,6 +16,7 @@ use App\Controllers\Admin\AcademyLearnersController;
 use App\Controllers\Admin\AcademyMessagesController;
 use App\Controllers\Admin\AcademyPartnersController;
 use App\Controllers\Admin\AcademyPaymentsController;
+use App\Controllers\Admin\AcademySocialController;
 
 $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:academy.teach']], function ($router) {
     $router->get('', [AcademyAdminController::class, 'index'])->name('admin.academy.index');
@@ -65,6 +66,11 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->get('/challenges/{id}/judge', [AcademyChallengesAdminController::class, 'judge'])->name('admin.academy.challenges.judge');
     $router->post('/challenges/{id}/judge/{eid}', [AcademyChallengesAdminController::class, 'saveJudgment'])->middleware('throttle:300,60')->name('admin.academy.challenges.judge.save');
     $router->get('/challenges/entries/{eid}/file/{part}', [AcademyChallengesAdminController::class, 'entryFile'])->middleware('throttle:120,60')->name('admin.academy.challenges.entry.file');
+
+    // social follow check: the usernames learners gave on our social media pages, verified by the team
+    $router->get('/social', [AcademySocialController::class, 'index'])->name('admin.academy.social');
+    $router->post('/social/{id}/verify', [AcademySocialController::class, 'verify'])->middleware('throttle:200,60')->name('admin.academy.social.verify');
+    $router->post('/social/{id}/unverify', [AcademySocialController::class, 'unverify'])->middleware('throttle:200,60')->name('admin.academy.social.unverify');
 
     // learners (facilitators: only the learners of their courses; the controller limits what they can do)
     $router->get('/learners', [AcademyLearnersController::class, 'index'])->name('admin.academy.learners');

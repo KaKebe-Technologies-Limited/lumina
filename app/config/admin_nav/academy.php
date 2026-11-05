@@ -20,6 +20,8 @@ return [
             'badge' => static fn(): int => can('academy.manage') ? \App\Services\Academy\LearnerMessages::unreadForAdmin() : 0, 'badge_tone' => 'yellow'],
         ['key' => 'academy_certificates', 'label' => 'Certificates',    'url' => 'admin/academy/certificates', 'icon' => 'award',     'can' => 'academy.manage', 'order' => 50, 'badge' => null],
         ['key' => 'academy_payments',     'label' => 'Payments',        'url' => 'admin/academy/payments',     'icon' => 'credit-card', 'can' => 'academy.manage', 'order' => 48, 'badge' => null],
+        ['key' => 'academy_social',       'label' => 'Social follow check', 'url' => 'admin/academy/social', 'icon' => 'heart', 'can' => 'academy.manage', 'order' => 52,
+            'badge' => static fn(): int => can('academy.manage') ? \App\Services\Academy\AcademySocial::counts()['unverified'] : 0, 'badge_tone' => 'yellow'],
         ['key' => 'academy_challenges',   'label' => 'Challenges',      'url' => 'admin/academy/challenges',   'icon' => 'target',    'can' => 'academy.teach',  'order' => 35, 'badge' => null],
         ['key' => 'academy_applications', 'label' => 'Facilitator applications', 'url' => 'admin/academy/facilitator-applications', 'icon' => 'user-plus', 'can' => 'academy.manage', 'order' => 55, 'badge' => null],
         ['key' => 'academy_facilitators','label' => 'Facilitators',    'url' => 'admin/academy/facilitators', 'icon' => 'user-plus', 'can' => 'academy.manage', 'order' => 60, 'badge' => null],
