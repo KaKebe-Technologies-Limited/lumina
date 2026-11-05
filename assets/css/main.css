@@ -25817,49 +25817,215 @@ fieldset.ac-q legend + * {
   color: rgba(255, 255, 255, 0.9);
 }
 
+.fund-band {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(900px 420px at 15% -10%, rgba(217, 164, 65, 0.22), transparent 60%), radial-gradient(800px 400px at 100% 110%, rgba(201, 106, 34, 0.2), transparent 60%), #0B1B33;
+}
+
+.fund-band__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(217, 164, 65, 0.16);
+  color: #D9A441;
+}
+
+.fund-band--home .section-head__title {
+  font-size: clamp(2rem, 4.6vw, 3.4rem);
+}
+
+.fund-band__stats {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.fund-band__stats li {
+  padding: 1rem;
+  text-align: center;
+  border: 1px solid rgba(217, 164, 65, 0.35);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.fund-band__stats b {
+  display: block;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  line-height: 1.1;
+  color: #D9A441;
+}
+
+.fund-band__stats span {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
 .fund-band__grid {
   list-style: none;
   margin: 2rem 0 0;
   padding: 0;
   display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
 }
 
-.fund-band__item {
-  position: relative;
-  display: block;
-  overflow: hidden;
-  border-radius: 24px;
-  border: 2px solid rgba(217, 164, 65, 0.4);
-  text-decoration: none;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+.fund-band__soon {
+  margin: 1.5rem auto 0;
+  max-width: 46rem;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  border: 1px dashed rgba(217, 164, 65, 0.6);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.92);
 }
 
-.fund-band__item img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
+.fund-band__soon b {
+  color: #D9A441;
 }
 
-.fund-band__item span {
-  position: absolute;
-  inset: auto 0 0 0;
-  padding: 1rem 0.75rem 0.5rem;
-  font-weight: 700;
+.fund-band__soon a {
   color: #FFFFFF;
-  background: linear-gradient(180deg, transparent, rgba(11, 27, 51, 0.92));
-}
-
-.fund-band__item:hover {
-  transform: translateY(-3px);
-  border-color: #D9A441;
+  font-weight: 700;
 }
 
 .fund-band__cta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
   margin: 2rem 0 0;
-  text-align: center;
+}
+
+.fund-spot {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-decoration: none;
+  background: #FFFFFF;
+  border-radius: 24px;
+  border: 2px solid transparent;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fund-spot:hover, .fund-spot:focus-visible {
+  transform: translateY(-6px);
+  border-color: #D9A441;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.5);
+}
+
+.fund-spot__cover {
+  display: block;
+  aspect-ratio: 16 / 9;
+  background: #0B1B33;
+}
+
+.fund-spot__cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fund-spot__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  padding: 1rem 1rem 1.5rem;
+}
+
+.fund-spot__title {
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  color: #142B4A;
+}
+
+.fund-spot__tag {
+  font-size: 0.9375rem;
+  font-style: italic;
+  color: #5B6472;
+}
+
+.fund-spot__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.fund-spot__chips em {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #F3EFE5;
+  color: #142B4A;
+  font-size: 0.8rem;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.fund-spot__chips em.is-gold {
+  background: #D9A441;
+  color: #0B1B33;
+}
+
+.fund-spot__go {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  color: #A5521A;
+}
+
+.topbar__item--fund {
+  font-weight: 800;
+}
+
+.topbar__item--fund .icon {
+  color: #A5521A;
+}
+
+.site-header__fund {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border: 2px solid #D9A441;
+  border-radius: 999px;
+  background: rgba(217, 164, 65, 0.12);
+  color: #D9A441;
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-header__fund:hover, .site-header__fund:focus-visible {
+  background: #D9A441;
+  color: #0B1B33;
+}
+
+@media (min-width: 992px) {
+  .site-header__fund {
+    display: inline-flex;
+  }
+}
+
+.site-nav__fund {
+  margin-bottom: 0.5rem;
 }
 
 .fund-hero {

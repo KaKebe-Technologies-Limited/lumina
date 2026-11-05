@@ -65,6 +65,10 @@ if ($quick):
     </ul>
 <?php section_end(); endif; ?>
 
+<?php /* ------------------------------------------------------------------ 2a. FUND A PROJECT: the first thing below the hero (our most important call to action) */ ?>
+<?php $fundHome = true; ?>
+<?= partial('partials/fund-band', ['fundHome' => true]) ?>
+
 <?php /* ------------------------------------------------------------------ 2b. STATISTICS (numbers from Admin > Stats) */ ?>
 <?php
 if ($stats):
@@ -283,9 +287,6 @@ if ($storyCards):
     section_end();
 endif;
 ?>
-
-<?php /* ------------------------------------------------------------------ 8b. FUND A PROJECT (the costed project proposals open for funding) */ ?>
-<?= partial('partials/fund-band') ?>
 
 <?php /* ------------------------------------------------------------------ 9. LATEST NEWSLETTER (newest published issue; hidden when there is none) */ ?>
 <?= partial('web/newsletter/_home-teaser') ?>

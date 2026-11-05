@@ -146,6 +146,15 @@ foreach (['' => 'home', 'donate' => 'donate', 'projects' => 'projects'] as $path
     }
 }
 check('the Fund a project band is on the home, Donate and Projects pages', $hits === [], implode(',', $hits));
+$home = $req('GET', '/')['body'];
+$posFund = strpos($home, 'id="fund"');
+$posNext = strpos($home, 'home-focus');
+check('on the home page the spotlight comes right after the hero and the quick links, before everything else', $posFund !== false && $posNext !== false && $posFund < $posNext && substr_count($home, 'fund-band__grid') === 1, json_encode([$posFund, $posNext]));
+$fh = FundProjects::highlights();
+check('the highlights: 4 projects, the smallest gift is USD 5, the total is about USD 1.05 million, one card each', $fh['projects'] === 4 && count($fh['cards']) === 4 && $fh['min_gift_usd'] === 5.0 && $fh['total_usd'] === 1052985.0 && count($fh['soon']) === 1);
+check('the home spotlight shows the numbers (USD 1.05M, From USD 5) and each project\'s launch package and smallest gift', str_contains($home, 'USD 1.05M') && str_contains($home, 'From USD 5') && str_contains($home, 'Launch USD 106K') && str_contains($home, 'Give from USD 75') && str_contains($home, 'Coming next'));
+check('quick links to Fund a project: the top bar, the header and the mobile menu', preg_match_all('~href="[^"]*/fund-a-project"~', $home) >= 4 && str_contains($home, 'topbar__item--fund') && str_contains($home, 'site-header__fund') && str_contains($home, 'site-nav__fund'));
+check('usdShort: 1,052,985 -> USD 1.05M, 292,306 -> USD 292K, 75 -> USD 75', FundProjects::usdShort(1052985) === 'USD 1.05M' && FundProjects::usdShort(292306) === 'USD 292K' && FundProjects::usdShort(75) === 'USD 75');
 check('the sitemap lists the hub and the project pages', str_contains(\App\Services\Web\SitemapBuilder::xml(), 'fund-a-project/green-horizons'));
 
 // ---- pledges

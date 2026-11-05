@@ -40,6 +40,39 @@ final class FundProjects
         return array_values((array) (self::config()['partner_gets'] ?? []));
     }
 
+    /**
+     * The highlights shown in the spotlight bands: how many costed projects, what they ask for in total, the smallest gift and the project-by-project entry points.
+     * @return array{projects:int,total_usd:float,min_gift_usd:float,cards:list<array<string,mixed>>,soon:list<array<string,mixed>>}
+     */
+    public static function highlights(): array
+    {
+        $cards = [];
+        $soon = [];
+        $total = 0.0;
+        $min = PHP_FLOAT_MAX;
+        foreach (self::all() as $p) {
+            if (($p['status'] ?? '') !== 'proposal') {
+                $soon[] = $p;
+                continue;
+            }
+            $gift = (float) min(array_column($p['items'], 'usd'));
+            $min = min($min, $gift);
+            $total += (float) $p['budget']['usd'];
+            $cards[] = $p + ['total_usd' => (float) $p['budget']['usd'], 'launch_usd' => (float) $p['packages'][1]['usd'], 'gift_usd' => $gift];
+        }
+        return ['projects' => count($cards), 'total_usd' => $total, 'min_gift_usd' => $min === PHP_FLOAT_MAX ? 0.0 : $min, 'cards' => $cards, 'soon' => $soon];
+    }
+
+    /** USD 1,052,985 -> "USD 1.05M"; 292,306 -> "USD 292K"; 106,146 -> "USD 106K"; 75 -> "USD 75". */
+    public static function usdShort(float|int $usd): string
+    {
+        $usd = (float) $usd;
+        if ($usd >= 1.0e6) {
+            return 'USD ' . number_format($usd / 1.0e6, 2) . 'M';
+        }
+        return $usd >= 1.0e4 ? 'USD ' . number_format($usd / 1.0e3, 0) . 'K' : 'USD ' . number_format($usd);
+    }
+
     /** UGX 1,096,147,200 -> "UGX 1.10 billion"; 398,046,000 -> "UGX 398 million". */
     public static function short(float|int $ugx): string
     {

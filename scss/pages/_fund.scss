@@ -43,13 +43,34 @@
 .fund-note { margin: $space-6 auto 0; max-width: 62ch; text-align: center; font-size: $fs-sm; color: $ink-soft; }
 .fund-cta { text-align: center; color: $white; h2 { color: $white; } p { color: rgba($white, 0.9); } }
 
-// ---- the band on other pages ---------------------------------------------------------------------------------------
-.fund-band { &__grid { list-style: none; margin: $space-6 0 0; padding: 0; display: grid; gap: $space-4; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
-  &__item { position: relative; display: block; overflow: hidden; border-radius: $radius-card; border: 2px solid rgba($gold, 0.4); text-decoration: none; transition: transform 0.2s ease, border-color 0.2s ease;
-    img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
-    span { position: absolute; inset: auto 0 0 0; padding: $space-4 $space-3 $space-2; font-weight: 700; color: $white; background: linear-gradient(180deg, transparent, rgba($navy-dark, 0.92)); }
-    &:hover { transform: translateY(-3px); border-color: $gold; } }
-  &__cta { margin: $space-6 0 0; text-align: center; } }
+// ---- the spotlight band (top of the home page, Donate and Projects pages) ------------------------------------------------
+.fund-band { position: relative; overflow: hidden; background: radial-gradient(900px 420px at 15% -10%, rgba($gold, 0.22), transparent 60%), radial-gradient(800px 400px at 100% 110%, rgba($orange, 0.2), transparent 60%), $navy-dark;
+  &__eyebrow { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.9rem; border-radius: $radius-pill; background: rgba($gold, 0.16); color: $gold; }
+  &--home .section-head__title { font-size: clamp(2rem, 4.6vw, 3.4rem); }
+  &__stats { list-style: none; margin: $space-5 0 0; padding: 0; display: grid; gap: $space-3; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    li { padding: $space-4; text-align: center; border: 1px solid rgba($gold, 0.35); border-radius: $radius-card; background: rgba($white, 0.05); }
+    b { display: block; font-family: $font-display; font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.1; color: $gold; }
+    span { display: block; margin-top: 0.3rem; font-size: $fs-sm; color: rgba($white, 0.88); } }
+  &__grid { list-style: none; margin: $space-6 0 0; padding: 0; display: grid; gap: $space-5; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+  &__soon { margin: $space-5 auto 0; max-width: 46rem; padding: $space-3 $space-4; text-align: center; border: 1px dashed rgba($gold, 0.6); border-radius: $radius; color: rgba($white, 0.92); b { color: $gold; } a { color: $white; font-weight: 700; } }
+  &__cta { display: flex; flex-wrap: wrap; justify-content: center; gap: $space-3; margin: $space-6 0 0; } }
+.fund-spot { height: 100%; display: flex; flex-direction: column; overflow: hidden; text-decoration: none; background: $white; border-radius: $radius-card; border: 2px solid transparent; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35); transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  &:hover, &:focus-visible { transform: translateY(-6px); border-color: $gold; box-shadow: 0 22px 54px rgba(0, 0, 0, 0.5); }
+  &__cover { display: block; aspect-ratio: 16 / 9; background: $navy-dark; img { display: block; width: 100%; height: 100%; object-fit: cover; } }
+  &__body { display: flex; flex-direction: column; gap: $space-2; flex: 1; padding: $space-4 $space-4 $space-5; }
+  &__title { font-family: $font-display; font-size: $fs-lg; line-height: 1.2; color: $navy; }
+  &__tag { font-size: $fs-sm; font-style: italic; color: $ink-soft; }
+  &__chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.2rem;
+    em { padding: 0.2rem 0.65rem; border-radius: $radius-pill; background: $tint-cool; color: $navy; font-size: 0.8rem; font-style: normal; font-weight: 600; }
+    em.is-gold { background: $gold; color: $navy-dark; } }
+  &__go { margin-top: auto; padding-top: $space-3; display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; color: $orange-text; } }
+
+// ---- quick links to the section: the top bar, the header and the drawer ---------------------------------------------------------
+.topbar__item--fund { font-weight: 800; .icon { color: $orange-dark; } }
+.site-header__fund { display: none; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; border: 2px solid $gold; border-radius: $radius-pill; background: rgba($gold, 0.12); color: $gold; font-weight: 800; font-size: 0.85rem; text-decoration: none; white-space: nowrap;
+  &:hover, &:focus-visible { background: $gold; color: $navy-dark; }
+  @include respond(lg) { display: inline-flex; } }
+.site-nav__fund { margin-bottom: $space-2; }
 
 // ---- a project page ------------------------------------------------------------------------------------------------
 .fund-hero { padding: $space-5 0 $space-7; background: $surface;
