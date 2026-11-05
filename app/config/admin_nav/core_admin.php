@@ -14,6 +14,7 @@ return [
         ['key' => 'users', 'label' => 'Users', 'url' => 'admin/users', 'icon' => 'users', 'can' => 'users.manage', 'order' => 20],
         ['key' => 'roles', 'label' => 'Roles', 'url' => 'admin/roles', 'icon' => 'lock', 'can' => 'roles.manage', 'order' => 25],
         ['key' => 'audit', 'label' => 'Activity log', 'url' => 'admin/audit-log', 'icon' => 'history', 'can' => 'audit.view', 'order' => 30],
+        ['key' => 'filecheck', 'label' => 'File check', 'url' => 'admin/file-check', 'icon' => 'check-circle', 'can' => 'settings.manage', 'order' => 34],
         ['key' => 'errorlog', 'label' => 'Error log', 'url' => 'admin/error-log', 'icon' => 'alert-triangle', 'can' => 'settings.manage', 'order' => 35],
         ['key' => 'profile', 'label' => 'My profile', 'url' => 'admin/profile', 'icon' => 'user', 'can' => 'dashboard.view', 'order' => 40],
     ],
