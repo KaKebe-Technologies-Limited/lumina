@@ -284,6 +284,9 @@ if ($storyCards):
 endif;
 ?>
 
+<?php /* ------------------------------------------------------------------ 8b. FUND A PROJECT (the costed project proposals open for funding) */ ?>
+<?= partial('partials/fund-band') ?>
+
 <?php /* ------------------------------------------------------------------ 9. LATEST NEWSLETTER (newest published issue; hidden when there is none) */ ?>
 <?= partial('web/newsletter/_home-teaser') ?>
 

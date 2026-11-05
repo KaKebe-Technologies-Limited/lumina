@@ -171,6 +171,8 @@ $scriptOn = $showFilters;
     </div>
 </section>
 
+<?= partial('partials/fund-band') ?>
+
 <?= partial('partials/projects-cta') ?>
 
 <?php if ($scriptOn): ?>

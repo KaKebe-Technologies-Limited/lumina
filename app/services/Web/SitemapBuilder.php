@@ -39,6 +39,12 @@ final class SitemapBuilder
             $add($p['route'], $modified[$slug] ?? null, $slug === 'home' ? '1.0' : '0.8');
         }
 
+        // ---- fund a project: the hub and the project pages (app/config/fundraising/projects.php) ---------------------------------------
+        $add('fund-a-project', null, '0.8');
+        foreach (\App\Services\Fund\FundProjects::all() as $fp) {
+            $add('fund-a-project/' . $fp['slug'], null, '0.7');
+        }
+
         // ---- detail pages ----------------------------------------------------------------------------------------
         $groups = [
             ['programs',   'SELECT slug, updated_at FROM programs WHERE is_active = 1 ORDER BY sort_order, id',                                            '/programs/'],

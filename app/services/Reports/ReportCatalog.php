@@ -86,6 +86,12 @@ final class ReportCatalog
                 [$w, $p] = $rng($r, 'd.created_at');
                 return ["SELECT d.created_at, IF(d.is_anonymous = 1, 'Anonymous', d.donor_name) AS donor, d.donor_email, d.amount, d.currency, d.method, d.status, d.source, d.reference, d.receipt_no FROM donations d WHERE 1 = 1$w ORDER BY d.created_at DESC", $p];
             }, ['amount']);
+        $add('donations', 'donations-project-pledges', 'Project pledges', 'Pledges made on the Fund a project pages: the project, the contribution chosen and how much.', $A,
+            ['created_at' => 'Date', 'project' => 'Project', 'contribution' => 'Contribution', 'donor' => 'Donor', 'donor_email' => 'E-mail', 'amount' => 'Amount', 'currency' => 'Currency', 'method' => 'Method', 'status' => 'Status'],
+            function (array $r) use ($rng): array {
+                [$w, $p] = $rng($r, 'd.created_at');
+                return ["SELECT d.created_at, SUBSTRING_INDEX(SUBSTRING_INDEX(d.reference, '|', 1), ':', -1) AS project, TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(d.message, '\n', 2), '\n', -1)) AS contribution, IF(d.is_anonymous = 1, 'Anonymous', d.donor_name) AS donor, d.donor_email, d.amount, d.currency, d.method, d.status FROM donations d WHERE d.reference LIKE 'PROJECT:%'$w ORDER BY d.created_at DESC", $p];
+            }, ['amount']);
         $add('donations', 'donations-by-month', 'Donations by month', 'Number and total of donations received each month, per currency.', $A,
             ['month' => 'Month', 'currency' => 'Currency', 'donations' => 'Donations', 'total' => 'Total received'],
             function (array $r) use ($rng): array {

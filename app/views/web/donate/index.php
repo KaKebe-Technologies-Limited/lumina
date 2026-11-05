@@ -240,6 +240,8 @@ section_begin('donate', 'pledge', ['class' => 'donate-pledge', 'labelledby' => '
 
 <?php /* ------------------------------------------------------------------ FAQ with photo */ ?>
 <?php if ($faqs): ?>
+<?= partial('partials/fund-band') ?>
+
 <?php section_begin('donate', 'faq', ['class' => 'section--tint donate-faq', 'attrs' => ['aria-label' => strip_highlight((string) content('donate', 'faq.title'))]]); ?>
     <?= partial('partials/faq-split', [
         'faqs'    => $faqs,

@@ -585,3 +585,32 @@ Q: I did not receive the confirmation e-mail
 Q: My account was switched off
 Q: Why was my Academy account switched off?
 A: Check your spam folder first, and use the resend option on the check-your-e-mail page. If your account was switched off (for example because no profile picture was added by the deadline), message the Academy team at /academy/contact with your registration number and your picture, and we will help you.
+
+## Fund a project
+Q: Can I fund a specific project?
+Q: How can I support a particular project?
+Q: Which projects can I fund?
+Q: Where can I pick a project to donate to?
+Q: Can I sponsor a scholarship?
+Q: Can I sponsor a laptop or a clinic day?
+Q: Can I plant trees through your programme?
+A: Yes. The Fund a project page (/fund-a-project) lists our costed project proposals for Gulu and Pader in Northern Uganda: Digital Inclusion (solar-powered ICT hubs and digital skills), Books, Brains and Brighter Futures (scholarships and mentorship), Green Horizons (trees and clean energy), Healthy Futures (mobile clinics and community wellness), and Voices of Change (youth and women leadership, proposal in preparation). On each project page you can fund the whole programme, a Year 1 launch package, a co-funding share, one priced contribution such as a laptop, a scholar for a year, 100 trees or one clinic day, or any amount. You then send a pledge and we contact you to complete the gift.
+
+## Project pledge
+Q: Is a project pledge a payment?
+Q: What happens after I pledge to a project?
+Q: How do I complete my project pledge?
+A: A project pledge is a record of your intention to give: no money is taken on the website. After you send it we contact you, usually within a few working days, with the details to complete your gift by bank transfer, mobile money or PayPal, and you can use the payment details on the Donate page and mention the project name. We report back to you on how your gift is used.
+
+## Project costs
+Q: How much does a project cost?
+Q: How much does a scholarship cost?
+Q: How much does a solar powered hub cost?
+Q: What is the Year 1 package?
+A: The four costed proposals each run for 36 months (2027 to 2029). Digital Inclusion is about UGX 1.10 billion (USD 292,306); Books, Brains and Brighter Futures about UGX 1.04 billion (USD 277,832); Green Horizons about UGX 763 million (USD 203,450); Healthy Futures about UGX 1.05 billion (USD 279,397). Each has a Year 1 package to start small, and priced contributions, for example one secondary scholar for a year is UGX 600,000 (about USD 160), a learning kit UGX 40,000 (USD 11), 100 trees UGX 130,000 (USD 35), and a laptop for a learner workstation UGX 2,100,000 (USD 560). See the project page for the full price list.
+
+## Full project proposal
+Q: Can I get the full proposal?
+Q: Can I see the detailed budget of a project?
+Q: Can I visit the project sites?
+A: Yes. Funders can ask for the full grant proposal and the detailed budget of any project, and we welcome visits to Gulu and Pader. Use the "Request the full proposal" button on the project page, or contact us through the Contact page or on WhatsApp.
