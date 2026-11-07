@@ -2,6 +2,18 @@
 $tabs = ['' => 'All', 'unverified' => 'To check', 'verified' => 'Verified'];
 ?>
 <?= partial('partials/admin/page-header', ['title' => 'Social follow check', 'subtitle' => 'New learners must follow and subscribe to our pages and give their usernames. Open each username, look it up in the followers of the page, then mark the learner as verified.']) ?>
+<div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin:0 0 1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--surface)">
+    <div style="flex:1 1 18rem">
+        <strong>Follow and subscribe at sign-up</strong>
+        <div><?php if ($followSwitch && $hasPages): ?><span class="badge badge--success badge--dot">ON: new learners must follow our pages</span><?php elseif ($followSwitch): ?><span class="badge badge--warning badge--dot">ON, but no social media pages are set (nothing to follow)</span><?php else: ?><span class="badge badge--warning badge--dot">OFF: new learners sign up without this step</span><?php endif; ?></div>
+        <span class="text-muted">Switching it off hides the follow step for everyone who signs up from now on. The usernames already collected are kept. Switch it on again at any time.</span>
+    </div>
+    <form method="post" action="<?= e(url('admin/academy/social/switch')) ?>">
+        <?= csrf_field() ?>
+        <input type="hidden" name="state" value="<?= $followSwitch ? 'off' : 'on' ?>">
+        <button class="btn <?= $followSwitch ? 'btn--outline' : 'btn--primary' ?>" type="submit"><?= $followSwitch ? 'Switch follow and subscribe OFF' : 'Switch follow and subscribe ON' ?></button>
+    </form>
+</div>
 <?php if (!$ready): ?>
     <div class="alert alert--warning" role="status"><strong>The database update is missing.</strong> In phpMyAdmin import <code>database/updates/2026-11-academy-social-follow.sql</code> (safe to repeat). Until then only the opened pages are required at sign-up and no username is kept.</div>
 <?php else: ?>

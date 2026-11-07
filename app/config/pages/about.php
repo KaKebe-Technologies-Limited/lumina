@@ -133,6 +133,8 @@ return [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Location', 'help' => $hlHelp],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Located in Pece-Laroo Division in Gulu City Council, Lumina Africa Foundation is a growing community-based organisation. Our primary geographic focus is Northern Uganda.'],
+                ['key' => 'image', 'label' => 'Photo across the top of the block (optional: upload your own or pick from the library)', 'type' => 'image', 'default' => 'assets/img/site/photo-04.jpg',
+                    'alt' => 'Our team and community members in Gulu, Northern Uganda'],
                 ['key' => 'address_label', 'label' => 'Label before the address', 'type' => 'text', 'default' => 'Address'],
                 ['key' => 'map_title', 'label' => 'Map: description for screen readers', 'type' => 'text', 'default' => 'Map showing the location of Lumina Africa Foundation'],
             ],

@@ -40,6 +40,7 @@ $router->post('/involvement/ambassadors', [AmbassadorsController::class, 'submit
     ->middleware(['page.published:ambassadors', 'honeypot', 'throttle:15,600']);
 
 // Fund a project: the proposed projects, their price lists and the pledge form (a record of intent, never a payment)
+$router->get('/northern-uganda-story', [\App\Controllers\Web\StoryController::class, 'index'])->name('story.northern-uganda');
 $router->get('/fund-a-project', [\App\Controllers\Web\FundController::class, 'index'])->name('fund');
 $router->get('/fund-a-project/{slug}', [\App\Controllers\Web\FundController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('fund.project');
 $router->post('/fund-a-project/{slug}/pledge', [\App\Controllers\Web\FundController::class, 'pledge'])->where('slug', '[a-z0-9-]+')->name('fund.pledge')->middleware(['honeypot', 'throttle:6,600']);

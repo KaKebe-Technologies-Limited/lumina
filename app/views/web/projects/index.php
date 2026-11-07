@@ -76,6 +76,9 @@ $scriptOn = $showFilters;
     'actions' => $actions,
 ]) ?>
 
+<?php /* ------------------------------------------------------------------ FUND A PROJECT (the most important section: straight under the hero) */ ?>
+<?= partial('partials/fund-band') ?>
+
 <?php /* ------------------------------------------------------------------ RESPONSIBLE-DEVELOPMENT NOTICE (always on, directly above the list) */ ?>
 <section class="section pi-intro">
     <div class="container container--narrow">
@@ -170,8 +173,6 @@ $scriptOn = $showFilters;
         <?php endif; ?>
     </div>
 </section>
-
-<?= partial('partials/fund-band') ?>
 
 <?= partial('partials/projects-cta') ?>
 

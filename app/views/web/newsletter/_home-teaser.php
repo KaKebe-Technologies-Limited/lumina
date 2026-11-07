@@ -40,7 +40,7 @@ if ($nlIssue !== null):
         'align'   => 'center',
     ]); ?>
     <article class="nl-teaser<?= $nlPdf ? ' nl-teaser--pdf' : '' ?>" data-reveal data-nl-teaser="<?= (int) $nlIssue['id'] ?>">
-        <a class="nl-teaser__media<?= trim((string) ($nlIssue['cover_image'] ?? '')) === '' ? ' nl-teaser__media--ph' : '' ?>" href="<?= e($nlHref) ?>" tabindex="-1" aria-hidden="true">
+        <a class="nl-teaser__media<?= !\App\Services\Newsletter\NewsletterContent::imageExists((string) ($nlIssue['cover_image'] ?? '')) ? ' nl-teaser__media--ph' : '' ?>" href="<?= e($nlHref) ?>" tabindex="-1" aria-hidden="true">
             <?= partial('web/newsletter/_cover', ['issue' => $nlIssue, 'loading' => 'lazy', 'caption' => true, 'alt' => '']) ?>
         </a>
         <div class="nl-teaser__body">

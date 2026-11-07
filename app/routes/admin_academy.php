@@ -69,6 +69,7 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
 
     // social follow check: the usernames learners gave on our social media pages, verified by the team
     $router->get('/social', [AcademySocialController::class, 'index'])->name('admin.academy.social');
+    $router->post('/social/switch', [AcademySocialController::class, 'switch'])->name('admin.academy.social.switch');
     $router->post('/social/{id}/verify', [AcademySocialController::class, 'verify'])->middleware('throttle:200,60')->name('admin.academy.social.verify');
     $router->post('/social/{id}/unverify', [AcademySocialController::class, 'unverify'])->middleware('throttle:200,60')->name('admin.academy.social.unverify');
 

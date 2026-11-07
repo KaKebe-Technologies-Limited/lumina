@@ -1,0 +1,67 @@
+// The focus areas as an interactive wheel (partials/focus-wheel.php, assets/js/focus-wheel.js). Technology & Innovation is the TOP node: larger, golden and glowing. Colours: $focus-tones (_focus.scss).
+.fw { display: grid; gap: $space-7; align-items: start; max-width: 72rem; margin-inline: auto; @include respond(lg) { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: $space-8; }
+
+  // ---- the wheel
+  &__wheel-wrap { padding: 2.5rem 1rem 3.5rem; @include respond(lg) { position: sticky; top: 6rem; } }
+  &__wheel { position: relative; width: #{'min(34rem, 100%)'}; aspect-ratio: 1; margin-inline: auto; }
+  &__ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  &__orbit { fill: none; stroke: rgba($navy, 0.18); stroke-width: 2; stroke-dasharray: 3 9; stroke-linecap: round; transform-origin: 200px 200px; animation: fw-spin 60s linear infinite;
+    &--inner { stroke: rgba($gold, 0.55); animation-direction: reverse; animation-duration: 40s; } }
+  &__spoke { stroke: rgba($navy, 0.2); stroke-width: 2; stroke-dasharray: 5 7; transition: stroke 0.3s ease, stroke-width 0.3s ease; }
+  &[data-active="0"] &__spoke--0, &[data-active="1"] &__spoke--1, &[data-active="2"] &__spoke--2, &[data-active="3"] &__spoke--3, &[data-active="4"] &__spoke--4, &[data-active="5"] &__spoke--5 { stroke: $gold; stroke-width: 4; stroke-dasharray: none; filter: drop-shadow(0 0 6px rgba($gold, 0.8)); }
+
+  &__hub { position: absolute; left: 50%; top: 50%; display: grid; place-items: center; align-content: center; gap: 0.3rem; width: 19%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; text-align: center; background: radial-gradient(circle at 35% 30%, $white, #{mix($white, $gold, 82%)}); border: 3px solid $gold; box-shadow: 0 0 0 10px rgba($gold, 0.14), 0 14px 40px rgba($navy-dark, 0.25); }
+  &__hub-logo { width: 46%; height: auto; border-radius: 50%; }
+  &__hub-text { max-width: 86%; font-family: $font-heading; font-size: #{'clamp(0.42rem, 1.2vw, 0.64rem)'}; font-weight: 800; letter-spacing: 0.06em; line-height: 1.2; text-transform: uppercase; color: $navy; }
+
+  // ---- the nodes (centre of each one sits on the ring)
+  &__node { --c1: #{$navy}; --c2: #{$navy-dark}; --size: 19%; position: absolute; display: grid; justify-items: center; width: var(--size); aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; color: $white; text-decoration: none; z-index: 2; transition: scale 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.3), box-shadow 0.3s ease;
+    @each $name, $c in $focus-tones { &.fw__node--#{$name} { --c1: #{nth($c, 1)}; --c2: #{nth($c, 2)}; --t: #{nth($c, 3)}; } }
+    &-icon { display: grid; place-items: center; align-self: center; width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: 0 10px 26px rgba($navy-dark, 0.35), inset 0 2px 0 rgba($white, 0.3); border: 4px solid $white; .icon { width: 44%; height: 44%; } }
+    &-label { position: absolute; top: calc(100% + 0.5rem); left: 50%; transform: translateX(-50%); padding: 0.3rem 0.8rem; border-radius: $radius-pill; background: $white; border: 2px solid var(--c1); box-shadow: 0 6px 16px rgba($navy-dark, 0.18); font-family: $font-heading; font-weight: 800; font-size: #{'clamp(0.62rem, 1.8vw, 0.8rem)'}; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; color: var(--t, #{$navy}); transition: background 0.25s ease, color 0.25s ease; }
+    &:hover, &:focus-visible, &.is-active { scale: 1.12; z-index: 4; }
+    &.is-active .fw__node-icon, &:hover .fw__node-icon { box-shadow: 0 0 0 7px rgba($gold, 0.45), 0 16px 34px rgba($navy-dark, 0.4); }
+    &.is-active .fw__node-label, &:hover .fw__node-label { background: var(--c1); color: $white; }
+    &:focus-visible { outline: 3px solid $navy; outline-offset: 5px; }
+
+    // the lead: Technology & Innovation, top of the wheel
+    &.is-lead { --size: 27%; z-index: 3;
+      .fw__node-icon { background: linear-gradient(135deg, #F2C46B, $gold 45%, #B87808); border-color: $white; box-shadow: 0 0 0 8px rgba($gold, 0.35), 0 0 40px rgba($gold, 0.9), 0 14px 34px rgba($navy-dark, 0.4); animation: fw-glow 2.6s ease-in-out infinite; .icon { color: $navy-dark; } }
+      &::before, &::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba($gold, 0.8); animation: fw-ping 2.8s ease-out infinite; pointer-events: none; }
+      &::after { animation-delay: 1.4s; }
+      .fw__node-label { background: $navy-dark; border-color: $gold; color: $gold; font-size: #{'clamp(0.68rem, 2vw, 0.9rem)'}; } } }
+  &__lead-badge { position: absolute; z-index: 5; top: -1.7rem; left: 50%; transform: translateX(-50%); padding: 0.25rem 0.8rem; border-radius: $radius-pill; background: $gold; color: $navy-dark; font-weight: 800; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; box-shadow: 0 6px 16px rgba($navy-dark, 0.25); }
+
+  // ---- the panels
+  &__panels { position: relative; }
+  .fw-panel { --c1: #{$navy}; --c2: #{$navy-dark}; --bg: #{$surface}; --t: #{$navy};
+    @each $name, $c in $focus-tones { &--#{$name} { --c1: #{nth($c, 1)}; --c2: #{nth($c, 2)}; --t: #{nth($c, 3)}; --bg: #{nth($c, 4)}; } }
+    position: relative; padding: $space-6 $space-5 $space-5; border-radius: $radius-panel; background: linear-gradient(160deg, $white 30%, var(--bg)); border: 1px solid $line; border-top: 8px solid var(--c1); box-shadow: $shadow-card;
+    &:not(:first-child) { margin-top: $space-5; }
+    &__head { display: flex; align-items: center; gap: $space-4; }
+    &__icon { flex: none; display: grid; place-items: center; width: 4.4rem; height: 4.4rem; border-radius: 50%; color: $white; background: linear-gradient(135deg, var(--c1), var(--c2)); box-shadow: 0 8px 20px rgba($navy-dark, 0.25); }
+    &__kicker { display: block; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--t); }
+    &__photo { position: relative; margin: (-$space-6) (-$space-5) $space-4; aspect-ratio: 16 / 7; overflow: hidden; border-radius: $radius-panel $radius-panel 0 0; img { display: block; width: 100%; height: 100%; object-fit: cover; } &::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba($navy-dark, 0.45), transparent 60%); } }
+    &__badge { position: absolute; z-index: 1; left: $space-4; bottom: $space-3; padding: 0.25rem 0.8rem; border-radius: $radius-pill; background: $white; color: var(--t); font-weight: 800; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    &__title { margin: 0.15rem 0 0; font-size: #{'clamp(1.4rem, 3.4vw, 2rem)'}; line-height: 1.15; color: var(--t); }
+    &__text { margin: $space-4 0 $space-4; font-size: 1.15rem; line-height: 1.6; color: $ink; }
+    &__sub { margin: 0 0 $space-2; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: $ink-soft; }
+    &__list { list-style: none; margin: 0 0 $space-4; padding: 0; display: grid; gap: $space-2; }
+    &__list a, &__static { display: flex; align-items: center; gap: $space-3; padding: 0.7rem 1rem; border-radius: 1rem; background: $white; border: 1px solid $line; color: $navy; text-decoration: none; font-weight: 700; transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
+    &__list a:hover, &__list a:focus-visible { transform: translateX(8px); background: var(--c1); border-color: var(--c1); color: $white; box-shadow: 0 10px 24px rgba($navy-dark, 0.22); .fw-panel__n { background: $white; color: var(--c1); } }
+    &__n { flex: none; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--c1); color: $white; font-size: 0.85rem; font-weight: 800; transition: background 0.25s ease, color 0.25s ease; }
+    &__lbl { flex: 1; }
+    &__cta { margin-top: $space-2; } }
+
+  // with the script: one panel at a time (fading in); without it every panel is shown
+  &.is-ready .fw-panel { display: none; margin-top: 0; }
+  &.is-ready .fw-panel.is-active { display: block; animation: fw-in 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) both; } }
+
+@keyframes fw-spin { to { transform: rotate(360deg); } }
+@keyframes fw-glow { 0%, 100% { box-shadow: 0 0 0 8px rgba($gold, 0.3), 0 0 30px rgba($gold, 0.7), 0 14px 34px rgba($navy-dark, 0.4); } 50% { box-shadow: 0 0 0 14px rgba($gold, 0.18), 0 0 56px rgba($gold, 1), 0 14px 34px rgba($navy-dark, 0.4); } }
+@keyframes fw-ping { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(1.8); opacity: 0; } }
+@keyframes fw-in { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fw__orbit, .fw__node.is-lead .fw__node-icon, .fw__node.is-lead::before, .fw__node.is-lead::after, .fw.is-ready .fw-panel.is-active { animation: none; } }
+
+.fw--n5 .fw__node, .fw--n6 .fw__node { --size: 17%; }
+.fw--n5 .fw__node.is-lead, .fw--n6 .fw__node.is-lead { --size: 25%; }

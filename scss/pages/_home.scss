@@ -66,11 +66,7 @@ $b1-pages: '.page-home, .page-about, .page-programs, .page-projects, .page-invol
     // a text block that is alone in a two-column split (its photo is missing) stays a readable column
     .split > :only-child { grid-column: 1 / -1; max-width: 46rem; margin-inline: auto; }
 
-    // ---- 1. HERO: let the three-line headline breathe (the shared copy column is narrower than the headline wants) -------
-    .hero-photo__title { text-wrap: balance; font-size: fluid(2.4rem, '1.2rem + 3vw', 3.6rem); }
-    .hero-photo__copy { @include respond(lg) { max-width: 50rem; } }
-    .hero-photo__lead { max-width: 34rem; }
-    .hero-photo::before { @include respond(lg) { background: linear-gradient(90deg, rgba($navy-dark, 0.92) 0%, rgba($navy-dark, 0.8) 46%, rgba($navy-dark, 0.62) 66%, rgba($navy-dark, 0.08) 100%); } }
+    // ---- 1. HERO: styled in components/_hero-photo.scss (photo stage, animation) -------------------------------------
 
     // ---- 2. HOW WE HELP: outlined cards (2 x 2) + tall rounded photo --------------------------------------------------
     // text + cards first, photo underneath until lg (a tablet text column is too narrow for a tall side photo: the photo

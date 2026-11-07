@@ -78,6 +78,11 @@ final class HomeController extends Controller
             }
         }
         unset($r);
+        // the wheel on the home page lists each program's own projects (links to their pages), never invented ones
+        foreach ($rows as &$r) {
+            $r['wheel_projects'] = $this->safe(static fn(): array => Database::all('SELECT title, slug FROM projects WHERE program_id = ? AND is_active = 1 AND slug <> ? ORDER BY is_featured DESC, sort_order ASC, id ASC LIMIT 5', [(int) $r['id'], (string) $r['slug']]));
+        }
+        unset($r);
         return $rows;
     }
 

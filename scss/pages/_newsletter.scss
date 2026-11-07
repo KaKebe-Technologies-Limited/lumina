@@ -274,7 +274,7 @@
     // ---- archive card: PDF badge on the picture ---------------------------------------------------------------------------------------
     .nl-card__media { position: relative; }
     .nl-card__pdf-badge { position: absolute; top: $space-3; left: $space-3; padding: 0.15rem 0.65rem; border-radius: $radius-pill; background: $gold; color: $navy-dark; font-family: $font-heading; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.04em; line-height: 1.6; box-shadow: $shadow-sm; }
-    .nl-card .nl-cover-ph { position: absolute; inset: 0; }
+    .nl-card .nl-cover-ph, .nl-card .nl-cover-mag { position: absolute; inset: 0; }
     .nl-card__format { display: none; }          // the badge on the picture says it; the small one is for the cases where the picture is not visible
 
     // ---- after the issue: previous / next, archive link, share ---------------------------------------------------------------------
@@ -448,7 +448,7 @@
     background: $tint-cool;
     @include respond(md) { aspect-ratio: auto; min-height: 21rem; }
     .nl-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 28%; }
-    .nl-cover-ph { position: absolute; inset: 0; }
+    .nl-cover-ph, .nl-cover-mag { position: absolute; inset: 0; }
 }
 .nl-teaser__body { display: flex; flex-direction: column; justify-content: center; gap: $space-3; padding: $space-5; min-width: 0; @include respond(md) { padding: $space-7; } @include respond(lg) { padding: $space-8; } }
 .nl-teaser__meta { display: flex; flex-wrap: wrap; align-items: center; gap: $space-2 $space-3; margin: 0; font-size: $fs-sm; color: $ink-soft; .badge .icon { width: 0.9em; height: 0.9em; } }
@@ -548,3 +548,12 @@
         .nl-print-source { display: block; margin: 8mm 0 0; padding-top: 3mm; border-top: 1px solid #999; font-size: 10pt; word-break: break-all; }
     }
 }
+
+// The magazine-style cover shown when an issue has no cover picture (or its file is missing): a photo, a navy veil, the masthead, the title and the issue.
+.nl-cover-mag { position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: $space-2; width: 100%; height: 100%; min-height: 12rem; padding: $space-5; overflow: hidden; background: $navy-dark; color: $white; text-align: left;
+    &__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; }
+    &__veil { position: absolute; inset: 0; background: linear-gradient(0deg, rgba($navy-dark, 0.94) 8%, rgba($navy-dark, 0.55) 55%, rgba($navy-dark, 0.25)); }
+    &::before { content: ''; position: absolute; inset: $space-3; border: 2px solid rgba($gold, 0.7); border-radius: $radius-card; pointer-events: none; }
+    &__mast { position: relative; align-self: flex-start; padding: 0.25rem 0.8rem; border-radius: $radius-pill; background: $gold; color: $navy-dark; font-weight: 800; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    &__title { position: relative; font-family: $font-heading; font-weight: 800; font-size: #{'clamp(1.4rem, 3.4vw, 2.1rem)'}; line-height: 1.1; text-transform: uppercase; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55); }
+    &__issue { position: relative; font-size: 0.85rem; font-weight: 700; color: $gold; letter-spacing: 0.04em; } }

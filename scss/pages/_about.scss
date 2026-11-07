@@ -117,6 +117,33 @@ $ia-field-border: #8791A0;        // 3.2:1 on white (WCAG 1.4.11 for form-field 
     // the photo of the FAQ-with-photo block (shared partial: no width/height attributes): reserve its box, no layout shift
     .faq-split__media img { aspect-ratio: 4 / 3; @include respond(lg) { aspect-ratio: 1 / 1; } }
 
+    // redesigned location block (About): info + actions + tracker on the left, tall map on the right
+    .loc { display: grid; gap: $space-7; align-items: stretch; @include respond(lg) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: $space-8; } }
+    .loc__info .ia-address { margin-top: $space-5; }
+    .loc__actions { display: flex; flex-wrap: wrap; gap: $space-3; margin-top: $space-5; }
+    .loc__map { position: relative; display: flex; .ia-map { flex: 1; aspect-ratio: auto; min-height: 22rem; @include respond(lg) { min-height: 34rem; } } }
+    .loc__pin { position: absolute; left: $space-4; bottom: $space-4; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: $radius-pill; background: $navy-dark; color: $white; font-weight: 700; font-size: 0.85rem; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28); .icon { color: $gold; } }
+    .loc__track { margin-top: $space-6; padding: $space-5 $space-5 $space-5; border-radius: $radius-panel; background: linear-gradient(145deg, $navy, $navy-dark); color: $white; box-shadow: $shadow-card;
+        &-title { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 $space-2; font-size: 1.15rem; color: $white; .icon { color: $gold; } }
+        &-text { margin: 0 0 $space-4; color: rgba($white, 0.82); font-size: 0.95rem; }
+        &-row { display: flex; flex-wrap: wrap; gap: $space-3; }
+        &-input { flex: 1 1 12rem; min-width: 0; min-height: 2.75rem; padding: 0 1rem; border: 2px solid rgba($white, 0.25); border-radius: $radius-pill; background: rgba($white, 0.08); color: $white; font: inherit;
+            &::placeholder { color: rgba($white, 0.55); }
+            &:focus { outline: none; border-color: $gold; background: rgba($white, 0.14); } } }
+
+    // location block v2: photo banner with the words over it, then map + actions/tracker
+    .loc2__hero { position: relative; overflow: hidden; border-radius: $radius-panel; min-height: 20rem; display: flex; align-items: flex-end; background: linear-gradient(145deg, $navy, $navy-dark); box-shadow: $shadow-card; }
+    .loc2__photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .loc2__veil { position: relative; width: 100%; padding: $space-7 $space-5 $space-5; color: $white; background: linear-gradient(0deg, rgba($navy-dark, 0.92) 25%, rgba($navy-dark, 0.35) 100%); @include respond(lg) { padding: $space-8 $space-7 $space-6; } }
+    .loc2__hero--plain .loc2__veil { background: none; }
+    .loc2__eyebrow { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.9rem; border-radius: $radius-pill; background: rgba($gold, 0.18); color: $gold; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .loc2__title { margin: $space-3 0 $space-2; color: $white; font-size: clamp(2rem, 4.4vw, 3.2rem); }
+    .loc2__lead { max-width: 44rem; margin: 0; color: rgba($white, 0.9); font-size: 1.05rem; }
+    .loc2__address { display: inline-flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: $space-4 0 0; padding: 0.6rem 1.1rem; border-radius: $radius-pill; background: rgba($white, 0.14); border: 1px solid rgba($white, 0.28); .icon { color: $gold; } }
+    .loc2__body { display: grid; gap: $space-6; margin-top: $space-6; @include respond(lg) { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: stretch; } }
+    .loc2__map { position: relative; display: flex; .ia-map { flex: 1; aspect-ratio: auto; min-height: 22rem; } }
+    .loc2__side { display: flex; flex-direction: column; justify-content: center; .loc__track { margin-top: $space-5; } }
+
     // map frame
     .ia-map {
         overflow: hidden;

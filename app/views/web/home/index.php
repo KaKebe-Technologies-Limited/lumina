@@ -20,6 +20,7 @@ $pill = static function (array $b, string $class): string {
 $titled = static fn(array $rows): array => array_values(array_filter($rows, static fn(array $r): bool => trim((string) ($r['title'] ?? '')) !== ''));
 
 $heroOn = section_on('home', 'hero');
+$this->start('scripts'); ?><script src="<?= e(asset('js/hero.js')) ?>" defer></script><?php $this->end();
 ?>
 <?php /* ------------------------------------------------------------------ 1. HERO (photo, headline with one highlighted phrase, orange button + video lightbox) */ ?>
 <?php
@@ -35,7 +36,15 @@ if ($heroOn) {
         'eyebrow' => content('home', 'hero.eyebrow'),
         'title'   => content('home', 'hero.title'),
         'lead'    => H::fill((string) content('home', 'hero.lead')),
-        'image'   => content_img('home', 'hero.image'),
+        'more'    => H::fill((string) content('home', 'hero.lead_more')),
+        'moreLabel' => (string) content('home', 'hero.more_label'),
+        'lessLabel' => (string) content('home', 'hero.less_label'),
+        'slides'  => array_values(array_filter(array_map(static function (string $k, string $cap): ?array {
+            $i = content_img('home', $k);
+            return $i['has'] ? ['src' => $i['src'], 'alt' => $i['alt'], 'caption' => (string) content('home', $cap)] : null;
+        }, ['hero.image', 'hero.image2', 'hero.image3'], ['hero.image_caption', 'hero.image2_caption', 'hero.image3_caption']))),
+        'stats'   => $stats,
+        'rotate'  => (string) content('home', 'hero.rotate'),
         'buttons' => $heroButtons,
         'video'   => ['url' => content('home', 'hero.video_url'), 'label' => content('home', 'hero.video_label'), 'title' => content('home', 'hero.video_title')],
         'focus'   => (string) content('home', 'hero.image_focus'),
@@ -86,24 +95,9 @@ if ($focus):
     section_begin('home', 'focus', ['class' => 'home-focus', 'labelledby' => 'focus-title']);
     echo partial('partials/section-head', ['eyebrow' => content('home', 'focus.eyebrow'), 'title' => content('home', 'focus.title'), 'lead' => content('home', 'focus.intro'), 'align' => 'center', 'id' => 'focus-title']);
     $focusWord = trim((string) content('home', 'focus.label'));
-    $tones = ['red', 'green', 'gold', 'purple'];
+    $this->start('scripts'); ?><script src="<?= e(asset('js/focus-wheel.js')) ?>" defer></script><?php $this->end();
 ?>
-    <ol class="focus-list">
-        <?php foreach ($focus as $i => $f): $fHref = link_url((string) ($f['url'] ?? '')); $tone = $tones[$i % 4]; ?>
-            <li class="focus-row focus-row--<?= e($tone) ?>" data-reveal>
-                <?php if ($fHref !== ''): ?><a class="focus-row__link" href="<?= e($fHref) ?>"><span class="visually-hidden"><?= e($f['title']) ?></span></a><?php endif; ?>
-                <div class="focus-row__ribbon" aria-hidden="true">
-                    <?php if ($focusWord !== ''): ?><span class="focus-row__word"><?= e($focusWord) ?></span><?php endif; ?>
-                    <span class="focus-row__num"><?= str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT) ?></span>
-                </div>
-                <div class="focus-row__body">
-                    <h3 class="focus-row__title"><?= e($f['title']) ?></h3>
-                    <p class="focus-row__text"><?= e((string) ($f['text'] ?? '')) ?></p>
-                </div>
-                <span class="focus-row__icon" aria-hidden="true"><?= icon((string) ($f['icon'] ?? 'check-circle'), 'icon--xl') ?></span>
-            </li>
-        <?php endforeach; ?>
-    </ol>
+    <?= partial('partials/focus-wheel', ['areas' => $focus, 'word' => $focusWord, 'hub' => logo_url(120), 'hubText' => (string) content('home', 'focus.hub_text')]) ?>
     <?php $focusTag = trim((string) content('home', 'focus.tagline')); if ($focusTag !== ''): ?><p class="focus-tagline"><span><?= e($focusTag) ?></span></p><?php endif; ?>
 <?php section_end(); endif; ?>
 
@@ -113,10 +107,24 @@ $progBtn = $pill(content_btn('home', 'programs.cta'), 'btn--primary btn--caps');
 if ($programs):
     section_begin('home', 'programs', ['class' => 'home-programs', 'labelledby' => 'programs-title']);
     echo partial('partials/section-head', ['eyebrow' => content('home', 'programs.eyebrow'), 'title' => content('home', 'programs.title'), 'lead' => content('home', 'programs.intro'), 'align' => 'center', 'id' => 'programs-title']);
+    // each program becomes a circle: Technology, Digital Inclusion & Innovation leads (top of the wheel); hovering shows its projects, clicking opens the program
+    $pwStatus = \App\Models\Program::statusLabels();
+    $pwTones = ['gold', 'red', 'green', 'purple', 'blue', 'red'];
+    $pwAreas = [];
+    foreach ($programs as $k => $p) {
+        $full = (string) $p['title'];
+        $short = preg_match('/^Sustainable Development Goals/i', $full) === 1 ? 'SDGs' : trim((string) preg_replace('/\s*(,|&| and |\().*$/i', '', $full));
+        $lines = [];
+        foreach ((array) ($p['wheel_projects'] ?? []) as $pr) {
+            $lines[] = str_replace('|', '/', (string) $pr['title']) . ' | projects/' . $pr['slug'];
+        }
+        $text = trim((string) ($p['tagline'] ?? '')) !== '' ? trim((string) $p['tagline']) : excerpt((string) ($p['summary'] ?? ''), 140);
+        $pwAreas[] = ['icon' => (!empty($p['icon']) && in_array($p['icon'], \App\Core\Icons::names(), true)) ? $p['icon'] : 'target', 'title' => $full, 'label' => $short, 'text' => $text !== '' ? $text : excerpt((string) ($p['summary'] ?? ''), 140),
+            'url' => 'programs/' . $p['slug'], 'projects' => implode("\n", $lines), 'image' => (string) ($p['image'] ?? ''), 'badge' => (string) ($pwStatus[(string) ($p['status'] ?? '')] ?? ''), 'cta' => $cardCta !== '' ? $cardCta . ': ' . $short : 'Open ' . $short, 'tone' => $pwTones[$k % count($pwTones)]];
+    }
+    $this->start('scripts'); ?><script src="<?= e(asset('js/focus-wheel.js')) ?>" defer></script><?php $this->end();
+    echo partial('partials/focus-wheel', ['areas' => $pwAreas, 'word' => 'Program', 'hub' => logo_url(120), 'hubText' => (string) content('home', 'programs.hub_text'), 'leadWord' => 'Our lead program', 'leadBadge' => 'Lead program']);
 ?>
-    <div class="home-cards">
-        <?php foreach ($programs as $p): ?><?= partial('partials/program-card', ['program' => $p, 'cta' => $cardCta !== '' ? $cardCta : null]) ?><?php endforeach; ?>
-    </div>
     <?php if ($progBtn !== ''): ?><p class="section__footer"><?= $progBtn ?></p><?php endif; ?>
 <?php section_end(); endif; ?>
 

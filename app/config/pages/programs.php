@@ -19,7 +19,7 @@ return [
     'title' => 'Programs',
     'route' => '/programs',
     'help'  => 'Our planned programs: the three program pillars, cross-cutting priorities, implementation approach, who we intend to serve, partnerships and our commitment to responsible development. The pillars are edited in Admin > Programs and their proposed areas of intervention in Admin > Projects.',
-    'nav'   => ['label' => 'Programs', 'order' => 30, 'header' => true, 'footer' => true],
+    'nav'   => ['label' => 'Programs', 'order' => 40, 'header' => true, 'footer' => true],
     'seo'   => [
         'title'       => 'Our Planned Programs',
         'description' => 'Our planned interventions focus on three interconnected pillars: Health, Education, and Technology & Innovation.',

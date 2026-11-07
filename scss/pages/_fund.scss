@@ -66,10 +66,12 @@
   &__go { margin-top: auto; padding-top: $space-3; display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; color: $orange-text; } }
 
 // ---- quick links to the section: the top bar, the header and the drawer ---------------------------------------------------------
-.topbar__item--fund { font-weight: 800; .icon { color: $orange-dark; } }
-.site-header__fund { display: none; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; border: 2px solid $gold; border-radius: $radius-pill; background: rgba($gold, 0.12); color: $gold; font-weight: 800; font-size: 0.85rem; text-decoration: none; white-space: nowrap;
-  &:hover, &:focus-visible { background: $gold; color: $navy-dark; }
-  @include respond(lg) { display: inline-flex; } }
+.topbar__item--fund { font-weight: 800; .icon { color: $gold; } }
+.site-header__fund { display: none; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; border: 2px solid $navy; border-radius: $radius-pill; background: transparent; color: $navy; font-weight: 800; font-size: 0.85rem; text-decoration: none; white-space: nowrap;
+  &:hover, &:focus-visible { background: $navy; color: $white; }
+  // the menu already needs the room next to the logo and Donate: the pill joins only on wide screens, full wording on the widest
+  @media (min-width: 1500px) { display: inline-flex; } }
+.site-header__fund-more { display: none; @media (min-width: 1900px) { display: inline; } }
 .site-nav__fund { margin-bottom: $space-2; }
 
 // ---- a project page ------------------------------------------------------------------------------------------------
@@ -148,3 +150,17 @@
   &__sum { margin: $space-4 auto; max-width: 34rem; text-align: left; display: grid; gap: $space-2; div { display: grid; gap: 0.1rem; padding: $space-3; background: $surface; border-radius: $radius; } dt { font-size: $fs-xs; text-transform: uppercase; letter-spacing: 0.05em; color: $ink-soft; } dd { margin: 0; color: $navy; } }
   &__next { max-width: 40rem; margin: 0 auto $space-5; padding-left: 1.2rem; text-align: left; display: grid; gap: $space-2; color: $ink; }
   &__note { margin: $space-5 0 0; font-size: $fs-sm; color: $ink-soft; } }
+
+// breathing room under the band on the Projects and Donate pages (the home page keeps it flush with its neighbours)
+.fund-band:not(.fund-band--home) { margin-bottom: $space-7; @include respond(lg) { margin-bottom: $space-8; } }
+
+// Floating "Fund a project" tab: right edge, mid-screen, on every public page
+.fund-tab { position: fixed; right: 0; top: 52%; z-index: $z-header; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.85rem 0.6rem; writing-mode: vertical-rl; transform: translateY(-50%) rotate(180deg);
+  background: linear-gradient(180deg, $gold, $orange); color: $navy-dark; font-family: $font-heading; font-weight: 800; font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  border-radius: 0 $radius $radius 0; box-shadow: -4px 6px 22px rgba(0, 0, 0, 0.28); animation: fund-tab-pulse 3.2s ease-in-out infinite; transition: padding 0.2s ease, filter 0.2s ease;
+  .icon { width: 1.1em; height: 1.1em; transform: rotate(90deg); }
+  &:hover, &:focus-visible { padding-right: 0.95rem; filter: brightness(1.06); animation: none; color: $navy-dark; }
+  &:focus-visible { outline: 3px solid $white; outline-offset: 2px; }
+  @media print { display: none; }
+  @media (prefers-reduced-motion: reduce) { animation: none; } }
+@keyframes fund-tab-pulse { 0%, 70%, 100% { box-shadow: -4px 6px 22px rgba(0, 0, 0, 0.28), 0 0 0 0 rgba($gold, 0.55); } 85% { box-shadow: -4px 6px 22px rgba(0, 0, 0, 0.28), 0 0 0 12px rgba($gold, 0); } }

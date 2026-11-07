@@ -49,10 +49,10 @@ if (!$tbShowAddress && !$tbShowEmail && !$tbShowPhone && !$tbShowLink && $tbCloc
             <?php endif; ?>
         </div>
         <div class="topbar__group">
-            <?php if ($tbShowEmail): ?><a class="topbar__item topbar__item--email" href="mailto:<?= e($tbEmail) ?>"><?= icon('mail') ?><span><?= e($tbEmail) ?></span></a><?php endif; ?>
-            <?php if ($tbShowPhone): ?><a class="topbar__item topbar__item--phone" href="<?= e(phone_href($tbPhone)) ?>"><?= icon('phone') ?><span><?= e($tbPhone) ?></span></a><?php endif; ?>
-            <a class="topbar__item topbar__item--fund" href="<?= e(url('fund-a-project')) ?>"><?= icon('heart') ?><span>Fund a project</span></a>
-            <?php if ($tbPortal): ?><a class="topbar__item topbar__item--portal" href="<?= e(url($tbKnows ? 'academy/dashboard' : 'academy/login')) ?>"><?= icon('user') ?><span><?= $tbKnows ? 'My learner portal' : 'Learner login' ?></span></a><?php endif; ?>
+            <?php if ($tbShowEmail): ?><a class="topbar__item topbar__item--email" href="mailto:<?= e($tbEmail) ?>" aria-label="E-mail <?= e($tbEmail) ?>"><?= icon('mail') ?><span class="tb-long"><?= e($tbEmail) ?></span><span class="tb-short" aria-hidden="true">Email</span></a><?php endif; ?>
+            <?php if ($tbShowPhone): ?><a class="topbar__item topbar__item--phone" href="<?= e(phone_href($tbPhone)) ?>" aria-label="Call <?= e($tbPhone) ?>"><?= icon('phone') ?><span class="tb-long"><?= e($tbPhone) ?></span><span class="tb-short" aria-hidden="true">Call</span></a><?php endif; ?>
+            <a class="topbar__item topbar__item--fund" href="<?= e(url('fund-a-project')) ?>" aria-label="Fund a project"><?= icon('heart') ?><span class="tb-long">Fund a project</span><span class="tb-short" aria-hidden="true">Fund</span></a>
+            <?php if ($tbPortal): ?><a class="topbar__item topbar__item--portal" href="<?= e(url($tbKnows ? 'academy/dashboard' : 'academy/login')) ?>" aria-label="<?= $tbKnows ? 'My learner portal' : 'Learner login' ?>"><?= icon('user') ?><span class="tb-long"><?= $tbKnows ? 'My learner portal' : 'Learner login' ?></span><span class="tb-short" aria-hidden="true"><?= $tbKnows ? 'My portal' : 'Login' ?></span></a><?php endif; ?>
             <?php if ($tbShowLink): ?><a class="topbar__item topbar__item--link" href="<?= e($tbHref) ?>"<?= is_external($tbHref) ? ' target="_blank" rel="noopener noreferrer"' : '' ?>><?= icon($tbIcon) ?><span><?= e($tbLabel) ?></span></a><?php endif; ?>
         </div>
     </div>

@@ -112,7 +112,6 @@ try {
             <?php $ftRight = array_filter([$ftRegNo !== '' && $ftRegLabel !== '' ? $ftRegLabel . ' ' . $ftRegNo : '', $ftCredit]); ?>
             <?php if ($ftRight): ?><span><?= e(implode(' · ', $ftRight)) ?></span><?php endif; ?>
             <?php foreach ($ftLegal as $lg): ?><a href="<?= e($lg['url']) ?>"><?= e($lg['label']) ?></a><?php endforeach; ?>
-            <a class="site-footer__admin" href="<?= e(url('admin/login')) ?>" rel="nofollow"><?= icon('lock', 'icon--sm') ?> Admin login</a>
             <?= partial('partials/pwa-install', ['part' => 'button']) ?>
         </div>
     </div>

@@ -40,6 +40,7 @@ final class SitemapBuilder
         }
 
         // ---- fund a project: the hub and the project pages (app/config/fundraising/projects.php) ---------------------------------------
+        $add('northern-uganda-story', null, '0.7');
         $add('fund-a-project', null, '0.8');
         foreach (\App\Services\Fund\FundProjects::all() as $fp) {
             $add('fund-a-project/' . $fp['slug'], null, '0.7');

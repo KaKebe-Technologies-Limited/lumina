@@ -16,7 +16,7 @@ return [
     'title' => 'Projects',
     'route' => '/projects',
     'help'  => 'Our planned projects: the proposed areas of intervention of the three planned program pillars. Individual projects are edited in Admin > Projects (set the program pillar and the status there).',
-    'nav'   => ['label' => 'Projects', 'order' => 40, 'header' => true, 'footer' => true],
+    'nav'   => ['label' => 'Projects', 'order' => 30, 'header' => true, 'footer' => true],
     'seo'   => [
         'title'       => 'Our Planned Projects',
         'description' => 'Our planned interventions focus on three interconnected pillars: Health, Education, and Technology & Innovation.',

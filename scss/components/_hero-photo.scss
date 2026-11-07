@@ -1,5 +1,5 @@
-// Full-bleed photographic home hero (partials/hero-photo.php). The next block should be a .sheet that overlaps its bottom edge.
-// Text sits on a navy-dark gradient that is >= 0.66 opaque where the copy is, so white text stays AA on any photo.
+// Home hero (partials/hero-photo.php): words on the left, an interactive photo stage on the right (assets/js/hero.js). The text never sits on a face: the photo has its own frame.
+// White text stays AA: the section is solid navy with soft glow orbs behind it.
 .hero-photo {
     position: relative;
     isolation: isolate;
@@ -8,29 +8,69 @@
     min-height: 34rem;
     padding-block: $space-8 calc(var(--radius-sheet) + #{$space-8});
     color: $white;
-    background: $navy-dark;
+    background: radial-gradient(900px 520px at 90% 10%, rgba($gold, 0.16), transparent 60%), linear-gradient(150deg, $navy, $navy-dark 70%);
     overflow: hidden;
-    @include respond(lg) { min-height: #{'min(46rem, 82vh)'}; padding-block: $space-9 calc(var(--radius-sheet) + #{$space-8}); }
+    @include respond(lg) { min-height: #{'min(46rem, 86vh)'}; padding-block: $space-9 calc(var(--radius-sheet) + #{$space-8}); }
 
-    &__bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: var(--focus, 60% 30%); }
-    &::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        background: linear-gradient(180deg, rgba($navy-dark, 0.7), rgba($navy-dark, 0.82));        // phones + tablets: even veil (white text >= 6:1 even over a white wall)
-        @include respond(lg) { background: linear-gradient(90deg, rgba($navy-dark, 0.9) 0%, rgba($navy-dark, 0.74) 50%, rgba($navy-dark, 0.55) 66%, rgba($navy-dark, 0.1) 100%); }
-    }
-    &__inner { @include container($container); width: 100%; }
-    &__copy { max-width: 36rem; @include respond(xl) { max-width: 39rem; } }
-    &__title {
-        color: $white;
-        font-size: fluid(2.4rem, '1.2rem + 4vw', 4.5rem);
-        font-weight: 500;
-        line-height: 1.08;
-        letter-spacing: -0.018em;
-    }
+    // slow floating glow orbs
+    &__orb { position: absolute; z-index: -1; border-radius: 50%; filter: blur(40px); pointer-events: none; }
+    &__orb--a { width: 26rem; height: 26rem; left: -8rem; bottom: -6rem; background: rgba($orange, 0.22); animation: hp-float 14s ease-in-out infinite; }
+    &__orb--b { width: 20rem; height: 20rem; right: 30%; top: -6rem; background: rgba($gold, 0.2); animation: hp-float 18s ease-in-out infinite reverse; }
+
+    &__inner { @include container($container-wide); width: 100%; display: grid; gap: $space-7; align-items: center; &--stage { @include respond(lg) { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: $space-8; } } }
+    &__copy { max-width: 38rem; @include respond(xl) { max-width: 42rem; } }
+    &__title { color: $white; font-size: fluid(2.3rem, '1.2rem + 3.2vw', 4rem); font-weight: 500; line-height: 1.08; letter-spacing: -0.018em; text-wrap: balance; }
+    &__title .hl { display: inline-block; transition: opacity 0.38s ease, transform 0.38s ease; &.is-out { opacity: 0; transform: translateY(0.3em); } }
     &__lead { max-width: 33rem; margin-top: $space-4; font-size: fluid(1.05rem, '1rem + 0.4vw', 1.25rem); line-height: 1.6; color: rgba($white, 0.92); }
     &__actions { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; margin-top: $space-6; }
     .eyebrow { margin-bottom: $space-4; }
+
+    // read more / show less
+    &__more { max-width: 33rem; margin-top: $space-3; font-size: fluid(1rem, '0.95rem + 0.3vw', 1.15rem); line-height: 1.65; color: rgba($white, 0.88); }
+    &__toggle { display: none; align-items: center; gap: 0.35rem; margin-top: $space-3; padding: 0.25rem 0; border: 0; background: none; color: $gold; font: inherit; font-weight: 800; font-size: 0.95rem; letter-spacing: 0.04em; cursor: pointer; text-decoration: underline; text-underline-offset: 4px;
+        &:hover, &:focus-visible { color: $white; }
+        .icon { transition: transform 0.25s ease; }
+        &[aria-expanded="true"] .icon { transform: rotate(180deg); } }
+
+    // the photo stage
+    &__stage { position: relative; width: 100%; max-width: 34rem; margin-inline: auto; @include respond(lg) { max-width: none; } }
+    &__frame { position: relative; aspect-ratio: 5 / 4; border-radius: 2.2rem 2.2rem 2.2rem 8rem; border: 6px solid rgba($white, 0.92); background: $navy-dark; box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45); transition: transform 0.25s ease-out; will-change: transform; @include respond(lg) { aspect-ratio: 1 / 1; max-height: 34rem; } }
+    &__frame::after { content: ''; position: absolute; inset: 1.1rem -1.1rem -1.1rem 1.1rem; z-index: -1; border: 3px solid $gold; border-radius: inherit; opacity: 0.8; }
+    &__slide { position: absolute; inset: 0; margin: 0; overflow: hidden; border-radius: inherit; opacity: 0; transition: opacity 0.9s ease; pointer-events: none;
+        &.is-active { opacity: 1; pointer-events: auto; }
+        picture { display: contents; }
+        .hero-photo__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--focus, 60% 25%); transform: scale(1.02); }
+        &.is-active .hero-photo__img { animation: hp-zoom 9s ease-out forwards; } }
+    &__slide:not(:first-of-type) .hero-photo__img { object-position: 50% 30%; }
+    &__slide::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba($navy-dark, 0.7), transparent 45%); }
+    // the caption sits on a solid navy plate, clear of the rounded corner, so it reads on any photo
+    &__caption { position: absolute; z-index: 2; left: 4.5rem; right: $space-4; bottom: $space-4; width: fit-content; max-width: calc(100% - 5.5rem); margin-left: auto; padding: 0.6rem 1.1rem; border-radius: $radius-pill; background: rgba($navy-dark, 0.88); border: 1px solid rgba($gold, 0.55); font-family: $font-heading; font-size: 1.05rem; font-weight: 700; line-height: 1.25; color: $white; text-shadow: none; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35); @include respond(lg) { left: 6rem; max-width: calc(100% - 7rem); } }
+
+    // floating stat chips
+    &__chips { list-style: none; margin: 0; padding: 0; }
+    &__chip { position: absolute; z-index: 3; display: flex; flex-direction: column; padding: 0.7rem 1rem; border-radius: 1.1rem; background: rgba($white, 0.96); color: $navy; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35); animation: hp-bob 6s ease-in-out infinite;
+        strong { font-family: $font-heading; font-size: 1.55rem; line-height: 1.1; color: $orange-text; }
+        span { font-size: 0.78rem; font-weight: 700; color: $navy; }
+        &--1 { top: -5%; right: 9%; }
+        &--2 { top: 54%; left: -8%; animation-delay: -2s; }
+        &--3 { top: 30%; left: -8%; animation-delay: -4s; }
+        @media (max-width: 639px) { padding: 0.45rem 0.7rem; strong { font-size: 1.15rem; } &--1 { right: 4%; } &--2 { left: 2%; } &--3 { left: 2%; top: 22%; } } }
+
+    // arrows and dots
+    &__nav { display: none; align-items: center; justify-content: center; gap: $space-3; margin-top: $space-5; }
+    &__arrow { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border: 2px solid rgba($white, 0.6); border-radius: 50%; background: transparent; color: $white; cursor: pointer; transition: background 0.2s ease, color 0.2s ease; &:hover, &:focus-visible { background: $gold; border-color: $gold; color: $navy-dark; } }
+    &__dots { display: flex; gap: 0.5rem; }
+    &__dot { width: 0.8rem; height: 0.8rem; padding: 0; border: 0; border-radius: 999px; background: rgba($white, 0.4); cursor: pointer; transition: width 0.3s ease, background 0.3s ease; &.is-active { width: 2rem; background: $gold; } }
 }
+// the extras only appear when JavaScript is there to run them
+.js .hero-photo__toggle { display: inline-flex; }
+.js .hero-photo__more[hidden] { display: none; }
+.js .hero-photo__nav { display: flex; }
+// without JavaScript only the first photo shows
+.hero-photo__slide:first-of-type { opacity: 1; }
+.js .hero-photo__slide:first-of-type:not(.is-active) { opacity: 0; }
+
+@keyframes hp-zoom { from { transform: scale(1.02); } to { transform: scale(1.1); } }
+@keyframes hp-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes hp-float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(30px, -24px); } }
+@media (prefers-reduced-motion: reduce) { .hero-photo__orb, .hero-photo__chip, .hero-photo__slide.is-active .hero-photo__img { animation: none; } .hero-photo__slide { transition: none; } }

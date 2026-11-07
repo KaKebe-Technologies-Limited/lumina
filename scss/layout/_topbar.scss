@@ -1,15 +1,15 @@
-@mixin topbar-rule { padding-inline-start: $space-4; border-inline-start: 1px solid rgba($navy-dark, 0.25); }
+@mixin topbar-rule { padding-inline-start: $space-4; border-inline-start: 1px solid rgba($white, 0.22); }
 
 // Thin gold strip above the header (partials/topbar.php). navy-dark text on gold = 7.0:1. Scrolls away (the header is the sticky part).
 // Layout: one tidy row on desktop. Left: address and the live clock; right: e-mail, phone and the quick link as a navy pill.
 // Items are separated by hairlines. When the strip is too narrow the address shortens with an ellipsis (never wraps over a neighbour);
 // on small screens it becomes a compact centred row (phone + quick link, then the clock).
 .topbar {
-    background: $gold;
-    color: $navy-dark;
+    background: $navy-dark;
+    color: rgba($white, 0.92);
     font-size: 0.8125rem;
     line-height: 1.3;
-    border-bottom: 1px solid rgba($navy-dark, 0.14);
+    border-bottom: 1px solid rgba($gold, 0.3);
     letter-spacing: 0.005em;
 
     &__inner {
@@ -24,8 +24,8 @@
     }
     &__group { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.2rem $space-4; min-width: 0; }
     &__item { display: inline-flex; align-items: center; gap: 0.45rem; min-width: 0; color: inherit; text-decoration: none; font-weight: 500; white-space: nowrap; .icon { width: 0.95rem; height: 0.95rem; flex: none; opacity: 0.85; } }
-    a.topbar__item:hover { color: $navy-dark; text-decoration: underline; text-underline-offset: 3px; }
-    a.topbar__item:focus-visible { outline: 2px solid $navy-dark; outline-offset: 3px; border-radius: 4px; }
+    a.topbar__item:hover { color: $gold; text-decoration: underline; text-underline-offset: 3px; }
+    a.topbar__item:focus-visible { outline: 2px solid $gold; outline-offset: 3px; border-radius: 4px; }
 
     // hairlines between neighbours, added only at widths where the neighbour before is visible (see the breakpoints below)
     
@@ -34,14 +34,14 @@
     &__item--link {
         padding: 0.3rem 0.9rem;
         border-radius: 999px;
-        background: $navy-dark;
-        color: $gold;
+        background: $gold;
+        color: $navy-dark;
         font-weight: 700;
         letter-spacing: 0.01em;
         transition: background-color 0.15s ease, transform 0.15s ease;
         .icon { opacity: 1; }
     }
-    a.topbar__item--link:hover { background: $navy; color: $white; text-decoration: none; }
+    a.topbar__item--link:hover { background: $white; color: $navy-dark; text-decoration: none; }
     @media (prefers-reduced-motion: no-preference) { a.topbar__item--link:hover { transform: translateY(-1px); } }
 
     // phones: the phone number and the quick link; e-mail from 576px, the single row from 992px, the address only from 1400px (it needs the room)
@@ -81,7 +81,7 @@
     font-feature-settings: 'tnum' 1;
     .icon { width: 0.95rem; height: 0.95rem; flex: none; }
 
-    &__label { font-weight: 700; max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; &::after { content: ':'; } }
+    &__label { font-weight: 700; max-width: 14em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; &::after { content: ':'; } }
     &__time { display: inline-flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 0 0.3em; min-width: 0; }
     &__date, &__year, &__hms, &__tz { white-space: nowrap; }
     &__sep { margin-inline: 0.25em; }
@@ -97,3 +97,64 @@
 
 // A page printed from the browser must not carry a frozen "now" in its header
 @media print { .clock { display: none; } }
+
+// ---- PHONES ONLY (below 768px; tablets and desktops keep the strip exactly as it was): a tidy two-part bar.
+// Top: the live clock on one centred line. Below: four equal tiles (icon over a short word: Call, Email, Fund, Login) and the quick link as a full-width gold button.
+.tb-short { display: none; }
+@media (max-width: 767.98px) {
+  .topbar { padding-block: 0.15rem 0.5rem; border-bottom: 0;
+    &__inner { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.35rem; min-height: 0; padding-block: 0.2rem 0; justify-items: stretch; }
+    &__group:first-child { justify-content: center; }
+    .clock { flex-wrap: nowrap; justify-content: center; font-size: 0.78rem; color: rgba($white, 0.85); .icon { color: $gold; } &__time { flex-wrap: nowrap; white-space: nowrap; } }
+    &__group + &__group { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.2rem, 1fr)); gap: 0.4rem; width: 100%; }
+    &__item { min-width: 0; }
+    // the tiles
+    .topbar__item--phone, .topbar__item--email, .topbar__item--fund, .topbar__item--portal { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; padding: 0.5rem 0.2rem; border: 0; border-radius: 0.9rem; background: rgba($white, 0.09); box-shadow: inset 0 0 0 1px rgba($gold, 0.28); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em; color: $white; text-align: center; transition: background 0.2s ease;
+      .icon { width: 1.25rem; height: 1.25rem; color: $gold; } &:active, &:hover { background: rgba($gold, 0.22); text-decoration: none; color: $white; } }
+    .topbar__item--fund .icon { color: $gold; }
+    .tb-long { display: none; }
+    .tb-short { display: inline; }
+    // the quick link: a full-width gold button under the tiles
+    .topbar__item--link { grid-column: 1 / -1; justify-content: center; padding: 0.6rem 1rem; border-radius: 0.9rem; font-size: 0.9rem; }
+  }
+}
+
+// ---- DESKTOP AND TABLET (768px and up): a bigger, roomier strip, in three steps so nothing ever collides: it grows with the screen. The clock keeps one line; the address shows only on very wide screens.
+@media (min-width: 768px) {
+  .topbar { font-size: 0.9375rem; border-bottom-width: 2px;
+    &__inner { min-height: 3.5rem; padding-block: 0.6rem; gap: 0.4rem 1.25rem; }
+    &__group { gap: 0.3rem 1.1rem; }
+    &__item { gap: 0.5rem; font-weight: 600; .icon { width: 1.15rem; height: 1.15rem; } }
+    &__item--link { padding: 0.5rem 1.15rem; font-size: 0.95rem; font-weight: 800; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3); }
+    .clock { font-size: 0.9375rem; .icon { width: 1.15rem; height: 1.15rem; } &__label { font-weight: 800; } }
+    &__item--address { display: none; } }
+}
+@media (min-width: 1200px) {
+  .topbar { font-size: 0.9375rem;
+    &__inner { min-height: 3.75rem; gap: 0.5rem 1.5rem; justify-content: space-between; }
+    &__group { gap: 0.3rem 1.5rem; }
+    // balanced: no hairlines, equal spacing, the clock never shrinks into its neighbour
+    &__item--phone, &__item--portal, &__item--fund { padding-inline-start: 0; border-inline-start: 0; }
+    &__group:first-child > .clock { padding-inline-start: 0; border-inline-start: 0; }
+    &__item--link { padding: 0.55rem 1.25rem; font-size: 0.95rem; }
+    &__item--email { display: none; }                  // the e-mail shows again on very wide screens, where there is room for it
+    .clock { font-size: 0.9375rem; flex: 0 0 auto; flex-wrap: nowrap; white-space: nowrap; &__time { flex-wrap: nowrap; } &__label { display: none; } }
+    &__group:first-child { flex: 0 0 auto; min-width: 0; }
+    &__group + &__group { flex: 0 1 auto; justify-content: flex-end; } }
+}
+@media (min-width: 1500px) {
+  .topbar { font-size: 1rem; &__inner { min-height: 4rem; gap: 0.5rem 2rem; } &__group { gap: 0.3rem 1.9rem; } .clock { font-size: 1rem; } &__item--link { font-size: 1rem; padding: 0.6rem 1.4rem; } }
+}
+@media (min-width: 1700px) {
+  .topbar { font-size: 1.0625rem;
+    &__inner { min-height: 4.25rem; padding-block: 0.8rem; gap: 0.5rem 2.25rem; }
+    &__group { gap: 0.3rem 2.2rem; }
+    &__item { gap: 0.65rem; .icon { width: 1.35rem; height: 1.35rem; } }
+    &__item--link { padding: 0.65rem 1.6rem; font-size: 1.05rem; }
+    .clock { font-size: 1.0625rem; .icon { width: 1.35rem; height: 1.35rem; } &__label { display: inline; } } }
+}
+// only on very wide screens is there room for the address and the e-mail next to the bigger type
+@media (min-width: 2100px) {
+  .topbar { &__item--address, &__item--email { display: inline-flex; }
+    &__item--address { min-width: 0; > span { overflow: hidden; text-overflow: ellipsis; } } }
+}

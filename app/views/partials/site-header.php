@@ -71,7 +71,7 @@ $hdCartUnits = $hdShopOn ? \App\Services\Shop\CartService::units() : 0;
             <?php if ($hdShopOn): ?>
                 <a class="site-header__cart" href="<?= e(url('shop/cart')) ?>" data-shop-cart-link data-aria="<?= e(content('shop', 'cart.header_aria')) ?>" data-aria-one="<?= e(content('shop', 'cart.header_aria_one')) ?>" aria-label="<?= e(str_replace('{n}', (string) $hdCartUnits, (string) content('shop', $hdCartUnits === 1 ? 'cart.header_aria_one' : 'cart.header_aria'))) ?>"<?= $hdCartUnits > 0 ? '' : ' hidden' ?>><?= icon('shopping-bag') ?><span class="site-header__cart-count" data-shop-count><?= (int) $hdCartUnits ?></span></a>
             <?php endif; ?>
-            <a class="site-header__fund" href="<?= e(url('fund-a-project')) ?>"><?= icon('heart', 'icon--sm') ?> Fund a project</a>
+            <a class="site-header__fund" aria-label="Fund a project" href="<?= e(url('fund-a-project')) ?>"><?= icon('heart', 'icon--sm') ?> Fund<span class="site-header__fund-more"> a project</span></a>
             <?php foreach ($hdButtons as $btn): ?>
                 <?php if (!empty($btn['children'])): ?>
                     <?php /* a button entry that has child pages (e.g. Shop under Donate): the pill opens a small list on hover / keyboard focus; the drawer lists them too */ ?>

@@ -19,7 +19,7 @@ final class App
             Session::start();      // lazy: only really starts when a session cookie exists (see Session)
             $router = new Router();
             self::loadRoutes($router);
-            $response = self::maintenanceGate($request) ?? self::oversizedPost($request) ?? $router->dispatch($request);
+            $response = self::preLaunchGate($request) ?? self::maintenanceGate($request) ?? self::oversizedPost($request) ?? $router->dispatch($request);
         } catch (ValidationException $e) {
             $response = self::validationResponse($e, $request);
         } catch (\Throwable $e) {
@@ -187,6 +187,16 @@ final class App
         };
         foreach ($files as $file) {
             $load($file);
+        }
+    }
+
+    /** Before the launch moment (app/config/launch.php) the public site is closed: visitors get only the launch pop-up with its countdown (app/core/PreLaunch.php). */
+    private static function preLaunchGate(Request $request): ?Response
+    {
+        try {
+            return PreLaunch::isLocked($request) ? PreLaunch::response() : null;
+        } catch (\Throwable) {
+            return null;                 // the gate must never break the site
         }
     }
 

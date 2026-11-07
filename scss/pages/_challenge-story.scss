@@ -1,0 +1,35 @@
+// pages/_challenge-story.scss - "The Challenge We Address": strong opening + photo collage, four questions answered, a call to act. Markup: app/views/web/about/_narrative.php.
+.cq {
+  &__top { display: grid; gap: $space-7; align-items: center; @include respond(lg) { grid-template-columns: 1.05fr 1fr; gap: $space-9; } }
+  &__eyebrow { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.9rem; border-radius: $radius-pill; background: rgba($orange, 0.14); color: $orange-text; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  &__title { margin: $space-4 0 $space-3; color: $navy; font-size: #{'clamp(2.1rem, 4.6vw, 3.4rem)'}; line-height: 1.1; }
+  &__lead { margin: 0; padding-left: $space-4; border-left: 4px solid $gold; font-family: $font-heading; font-style: italic; font-size: #{'clamp(1.2rem, 2.2vw, 1.6rem)'}; line-height: 1.5; color: $navy; }
+
+  // collage: three photos overlapping at angles
+  &__collage { position: relative; min-height: 22rem; @include respond(lg) { min-height: 28rem; } }
+  &__photo { position: absolute; margin: 0; overflow: hidden; border: 6px solid $white; border-radius: $radius-card; box-shadow: 0 20px 46px rgba($navy-dark, 0.3);
+    img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    &--1 { top: 0; left: 0; width: 68%; height: 72%; transform: rotate(-2.5deg); }
+    &--2 { right: 0; top: 14%; width: 44%; height: 46%; transform: rotate(3deg); z-index: 2; }
+    &--3 { left: 22%; bottom: 0; width: 56%; height: 40%; transform: rotate(1.5deg); z-index: 3; } }
+  &__collage--1 &__photo--1 { width: 100%; height: 100%; transform: none; }
+  &__collage--2 &__photo--2 { top: auto; bottom: 0; }
+
+  // the questions
+  &__grid { list-style: none; margin: $space-8 0 0; padding: 0; display: grid; gap: $space-5; @include respond(md) { grid-template-columns: repeat(2, 1fr); gap: $space-6; } }
+  &-card { display: flex; flex-direction: column; overflow: hidden; border-radius: $radius-panel; background: $white; border: 1px solid $line; box-shadow: $shadow-card; transition: transform 0.25s ease, box-shadow 0.25s ease; &:hover { transform: translateY(-4px); box-shadow: $shadow-lg; }
+    &__photo { margin: 0; aspect-ratio: 16 / 8; overflow: hidden; img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; } }
+    &:hover &__photo img { transform: scale(1.05); }
+    &__body { position: relative; padding: $space-6 $space-5 $space-5; flex: 1; }
+    &__icon { position: absolute; top: -1.6rem; left: $space-5; display: grid; place-items: center; width: 3.2rem; height: 3.2rem; border-radius: 50%; background: $gold; color: $navy-dark; border: 4px solid $white; box-shadow: 0 8px 20px rgba($navy-dark, 0.2); .icon { width: 1.4rem; height: 1.4rem; } }
+    &:not(:has(.cq-card__photo)) &__icon { position: static; margin-bottom: $space-3; border: 0; }
+    &__q { margin: 0 0 $space-2; font-size: 1.4rem; color: $navy; }
+    &__a { margin: 0; font-size: 1.05rem; line-height: 1.7; color: $ink; } }
+
+  // call to act
+  &__cta { display: flex; flex-direction: column; gap: $space-5; align-items: flex-start; margin-top: $space-8; padding: $space-6 $space-5; border-radius: $radius-panel; color: $white; background: radial-gradient(500px 260px at 0% 0%, rgba($gold, 0.28), transparent 70%), linear-gradient(145deg, $navy, $navy-dark); box-shadow: $shadow-lg;
+    @include respond(lg) { flex-direction: row; align-items: center; justify-content: space-between; padding: $space-7; }
+    &-title { margin: 0 0 $space-2; color: $white; font-size: #{'clamp(1.5rem, 3vw, 2.2rem)'}; }
+    &-text { margin: 0; color: rgba($white, 0.86); font-size: 1.1rem; }
+    &-actions { display: flex; flex-wrap: wrap; gap: $space-3; } } }
+@media (prefers-reduced-motion: reduce) { .cq-card, .cq-card__photo img { transition: none; } }

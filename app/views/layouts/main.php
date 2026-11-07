@@ -114,6 +114,8 @@ if (!empty($breadcrumbs) && is_array($breadcrumbs)) {
 
 <button class="back-to-top" type="button" data-back-to-top aria-label="<?= e(content('global', 'footer.back_to_top')) ?>"><?= icon('arrow-up') ?></button>
 
+<?= partial('partials/fund-tab') ?>
+<?= partial('partials/launch-popup') ?>
 <?= partial('partials/translate') ?>
 <?= partial('partials/pwa-install') ?>
 <?php if (\App\Services\Bono\BonoEngine::enabled()): ?>

@@ -12,6 +12,14 @@ $heroImg = content_img('about', 'hero.image');
 $mapUrl = trim((string) setting('map_embed_url', ''));
 $mapOk = (bool) preg_match('~^https://(www\.google\.com/maps|maps\.google\.com)/~i', $mapUrl);
 $addressLine = implode(', ', array_filter([trim((string) setting('address', '')), trim((string) setting('city_country', ''))]));
+$mapQuery = $addressLine !== '' ? $addressLine : 'Pece-Laroo Division, Gulu City, Uganda';
+if (!$mapOk) {                                   // no embed link saved in Settings: the keyless Google embed of the address still gives a live map
+    $mapUrl = 'https://www.google.com/maps?q=' . rawurlencode($mapQuery) . '&output=embed';
+    $mapOk = true;
+}
+$dirUrl = 'https://www.google.com/maps/dir/?api=1&destination=' . rawurlencode($mapQuery);
+$locPhone = trim((string) setting('phone_1', ''));
+$locWa = whatsapp_url();
 $stats = [];
 try {
     $stats = Stat::forGroup('home');
@@ -43,6 +51,9 @@ section_begin('about', 'story', ['class' => 'about-story', 'labelledby' => $stor
         </div>
     </div>
 <?php section_end(); ?>
+
+<?php /* ------------------------------------------------------------------ THE NORTHERN UGANDA STORY (flow with arrows + link to the full story) */ ?>
+<?= partial('partials/nu-flow') ?>
 
 <?php /* ------------------------------------------------------------------ FIGURES (stats table; hidden while empty) */ ?>
 <?php if ($stats): ?>
@@ -127,25 +138,42 @@ $quoteEyebrow = trim((string) content('about', 'quote.eyebrow')); ?>
 <?php section_end(); ?>
 
 <?php /* ------------------------------------------------------------------ LOCATION */ ?>
-<?php section_begin('about', 'location', ['class' => 'about-location', 'labelledby' => 'about-loc-title']); ?>
-    <div class="split split--start<?= $mapOk ? '' : ' ia-split--solo' ?>">
-        <div data-reveal>
-            <?= partial('partials/section-head', ['eyebrow' => (string) content('about', 'location.eyebrow'), 'title' => (string) content('about', 'location.title'), 'lead' => (string) content('about', 'location.text'), 'id' => 'about-loc-title']) ?>
-            <?php if ($addressLine !== ''): ?>
-                <div class="feature-card feature-card--row ia-address">
-                    <span class="feature-card__icon"><?= icon('map-pin') ?></span>
-                    <div class="feature-card__body">
-                        <h3 class="feature-card__title"><?= e(content('about', 'location.address_label')) ?></h3>
-                        <p class="feature-card__text"><?= e($addressLine) ?></p>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
-        <?php if ($mapOk): ?>
-            <div class="ia-map" data-reveal>
-                <iframe src="<?= e($mapUrl) ?>" title="<?= e(content('about', 'location.map_title')) ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+<?php $locImg = content_img('about', 'location.image'); section_begin('about', 'location', ['class' => 'about-location', 'labelledby' => 'about-loc-title']); ?>
+    <div class="loc2">
+        <div class="loc2__hero<?= $locImg['has'] ? '' : ' loc2__hero--plain' ?>" data-reveal>
+            <?php if ($locImg['has']): ?><img class="loc2__photo" src="<?= e($locImg['src']) ?>" alt="<?= e($locImg['alt']) ?>" loading="lazy"><?php endif; ?>
+            <div class="loc2__veil">
+                <span class="loc2__eyebrow"><?= icon('map-pin', 'icon--sm') ?> <?= e((string) content('about', 'location.eyebrow') ?: 'Find us') ?></span>
+                <h2 class="loc2__title" id="about-loc-title"><?= e(content('about', 'location.title')) ?></h2>
+                <p class="loc2__lead"><?= e(content('about', 'location.text')) ?></p>
+                <?php if ($addressLine !== ''): ?><p class="loc2__address"><?= icon('map-pin', 'icon--sm') ?> <strong><?= e(content('about', 'location.address_label')) ?>:</strong> <?= e($addressLine) ?></p><?php endif; ?>
             </div>
-        <?php endif; ?>
+        </div>
+        <div class="loc2__body">
+            <div class="loc2__map" data-reveal>
+                <div class="ia-map">
+                    <iframe src="<?= e($mapUrl) ?>" title="<?= e(content('about', 'location.map_title')) ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+                </div>
+                <span class="loc__pin"><?= icon('map-pin', 'icon--sm') ?> Gulu City, Northern Uganda</span>
+            </div>
+            <div class="loc2__side" data-reveal>
+                <div class="loc__actions">
+                    <a class="btn btn--cta btn--caps" href="<?= e($dirUrl) ?>" target="_blank" rel="noopener noreferrer"><?= icon('map-pin', 'icon--sm') ?> Get directions</a>
+                    <?php if ($locPhone !== ''): ?><a class="btn btn--outline btn--caps" href="tel:<?= e(preg_replace('/[^0-9+]/', '', $locPhone)) ?>"><?= icon('phone', 'icon--sm') ?> Call us</a><?php endif; ?>
+                    <?php if ($locWa !== ''): ?><a class="btn btn--outline btn--caps" href="<?= e($locWa) ?>" target="_blank" rel="noopener noreferrer"><?= icon('whatsapp', 'icon--sm') ?> WhatsApp</a><?php endif; ?>
+                </div>
+                <form class="loc__track" method="post" action="<?= e(url('academy/track')) ?>" novalidate>
+                    <?= csrf_field() ?><?= honeypot_field() ?>
+                    <h3 class="loc__track-title"><?= icon('search', 'icon--sm') ?> Track my application</h3>
+                    <p class="loc__track-text">Applied to the LAF Academy? Paste your registration number to see whether your account exists, is approved and is active.</p>
+                    <div class="loc__track-row">
+                        <label class="visually-hidden" for="loc-track-no">Registration number</label>
+                        <input class="loc__track-input" id="loc-track-no" type="text" name="number" maxlength="40" autocomplete="off" placeholder="LAF-AC-2026-000123" required>
+                        <button class="btn btn--cta btn--caps" type="submit">Check</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 <?php section_end(); ?>
 

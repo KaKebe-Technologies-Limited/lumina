@@ -10,19 +10,24 @@ use App\Services\Newsletter\NewsletterContent;
 use App\Services\Newsletter\NewsletterRenderer as R;
 
 $cover = (string) ($issue['cover_image'] ?? '');
-$cover = NewsletterContent::validImagePath($cover) ? $cover : '';
+$cover = NewsletterContent::imageExists($cover) ? $cover : '';          // a path whose file is not on the server (a lost upload) must not print a broken picture
 $loading = ($loading ?? 'lazy') === 'eager' ? 'eager' : 'lazy';
 $alt = isset($alt) ? (string) $alt : (string) ($issue['cover_alt'] ?? '');
 if ($cover !== ''):
     $size = R::imageSize($cover); ?>
 <img class="nl-cover-img" src="<?= e(img_url($cover)) ?>" alt="<?= e($alt) ?>"<?= $size ? ' width="' . $size[0] . '" height="' . $size[1] . '"' : '' ?> loading="<?= $loading ?>" decoding="async">
 <?php else:
-    $number = (int) ($issue['issue_number'] ?? 0);
+    // no cover (or its file is missing): a magazine-style cover, a Gulu photo behind the title and the issue, so the card is never an empty box
     $isPdf = (string) ($issue['kind'] ?? 'online') === 'pdf';
-    $text = trim((string) content('newsletter', 'pdf.card_fallback')); ?>
-<span class="nl-cover-ph<?= $isPdf ? ' nl-cover-ph--pdf' : '' ?>" aria-hidden="true">
-    <?php if ($number > 0): ?><span class="nl-cover-ph__num"><?= $number ?></span>
-    <?php else: ?><span class="nl-cover-ph__icon"><?= icon($isPdf ? 'file-text' : 'newspaper', 'icon--xl') ?></span><?php endif; ?>
-    <?php if (!empty($caption) && $text !== ''): ?><span class="nl-cover-ph__text"><?= e($text) ?></span><?php endif; ?>
+    $photos = ['assets/img/site/mentorship/lacekocot-0270.jpg', 'assets/img/site/mentorship/lacekocot-0409.jpg', 'assets/img/site/mentorship/lacekocot-0601.jpg', 'assets/img/site/mentorship/lacekocot-0343.jpg'];
+    $photo = $photos[abs((int) ($issue['id'] ?? 0)) % count($photos)];
+    $photo = is_file(BASE_PATH . '/' . $photo) ? $photo : '';
+    $label = R::issueLabel($issue); ?>
+<span class="nl-cover-mag<?= $isPdf ? ' nl-cover-mag--pdf' : '' ?>" aria-hidden="true">
+    <?php if ($photo !== ''): ?><img class="nl-cover-mag__bg" src="<?= e(asset(substr($photo, strlen('assets/')))) ?>" alt="" loading="<?= $loading ?>" decoding="async"><?php endif; ?>
+    <span class="nl-cover-mag__veil"></span>
+    <span class="nl-cover-mag__mast"><?= e((string) setting('site_name', 'Lumina Africa Foundation')) ?></span>
+    <span class="nl-cover-mag__title"><?= e((string) ($issue['title'] ?? '')) ?></span>
+    <?php if ($label !== ''): ?><span class="nl-cover-mag__issue"><?= e($label) ?></span><?php endif; ?>
 </span>
 <?php endif; ?>
