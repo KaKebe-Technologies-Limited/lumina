@@ -1,0 +1,15 @@
+// Admin > E-mail and sign-in (views/admin/connections/index.php)
+.conn-grid { display: grid; gap: $space-5; @include respond(xl) { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
+.conn-card__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3; margin-bottom: $space-4; }
+.conn-card__title { display: flex; align-items: center; gap: 0.5rem; margin: 0; font-size: 1.25rem; color: $navy; .icon { color: $orange-text; } }
+.conn-facts { display: grid; gap: 0.6rem; margin: 0 0 $space-4; div { display: grid; gap: 0.1rem; padding-bottom: 0.6rem; border-bottom: 1px dashed $line; } dt { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: $ink-soft; } dd { margin: 0; font-weight: 600; color: $navy; overflow-wrap: anywhere; } }
+.conn-test { display: flex; flex-wrap: wrap; gap: $space-3; align-items: flex-end; margin-bottom: $space-4; .field { flex: 1 1 16rem; margin: 0; } }
+.conn-sub { margin: $space-5 0 $space-2; font-size: 1.05rem; color: $navy; }
+.conn-code { margin: $space-3 0; padding: $space-3 $space-4; overflow-x: auto; border-radius: $radius-card; background: $navy-dark; color: #F2E3BD; font-size: 0.85rem; line-height: 1.6; }
+.conn-copy { margin: $space-2 0; padding: $space-3 $space-4; border-radius: $radius-card; background: rgba($gold, 0.16); border: 1px dashed $gold; code { font-weight: 800; color: $navy; overflow-wrap: anywhere; } }
+.conn-checks { list-style: none; margin: 0 0 $space-4; padding: 0; display: grid; gap: $space-3;
+  li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: $space-3; align-items: start; padding: $space-3; border-radius: $radius-card; background: $surface; }
+  li > div { display: grid; gap: 0.25rem; min-width: 0; } code { overflow-wrap: anywhere; font-size: 0.82rem; }
+  .is-ok .icon { color: #138A45; } .is-bad .icon { color: $orange-text; } .is-info .icon { color: $navy; } }
+.conn-steps { padding-left: 1.2rem; display: grid; gap: $space-3; li { line-height: 1.6; } }
+.conn-limit { display: flex; gap: 0.5rem; align-items: flex-start; margin-top: $space-4; .icon { flex: none; margin-top: 0.2rem; color: $orange-text; } }

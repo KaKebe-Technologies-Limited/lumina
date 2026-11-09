@@ -13,6 +13,7 @@ use App\Controllers\Admin\DashboardController;
 use App\Controllers\Admin\ErrorLogController;
 use App\Controllers\Admin\FileCheckController;
 use App\Controllers\Admin\FaqsController;
+use App\Controllers\Admin\ConnectionsController;
 use App\Controllers\Admin\MaintenanceController;
 use App\Controllers\Admin\ReportsController;
 use App\Controllers\Admin\RolesController;
@@ -79,6 +80,9 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
         $router->post('/roles/{id}', [RolesController::class, 'update'])->middleware('can:roles.manage');
         $router->post('/roles/{id}/delete', [RolesController::class, 'delete'])->middleware('can:roles.manage');
 
+        // e-mail (SMTP / Gmail) and Google sign-in: status, a test message, the steps (admins only; no secret is ever shown)
+        $router->get('/connections', [ConnectionsController::class, 'index'])->name('admin.connections')->middleware('can:settings.manage');
+        $router->post('/connections/test-mail', [ConnectionsController::class, 'testMail'])->middleware(['can:settings.manage', 'throttle:20,600']);
         // website on / off (maintenance page for visitors; admins only)
         $router->get('/maintenance', [MaintenanceController::class, 'index'])->name('admin.maintenance')->middleware('can:settings.manage');
         $router->post('/maintenance/toggle', [MaintenanceController::class, 'toggle'])->middleware('can:settings.manage');

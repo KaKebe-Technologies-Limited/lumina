@@ -9,6 +9,7 @@ return [
     'order' => 50,
     'items' => [
         ['key' => 'maintenance', 'label' => 'Website on / off', 'url' => 'admin/maintenance', 'icon' => 'clock', 'can' => 'settings.manage', 'order' => 5],
+        ['key' => 'connections', 'label' => 'E-mail and sign-in', 'url' => 'admin/connections', 'icon' => 'mail', 'can' => 'settings.manage', 'order' => 8],
         ['key' => 'settings', 'label' => 'Site settings', 'url' => 'admin/settings', 'icon' => 'settings', 'can' => 'settings.manage', 'order' => 10],
         ['key' => 'bono', 'label' => 'Bono AI', 'url' => 'admin/bono', 'icon' => 'message-circle', 'can' => 'settings.manage', 'order' => 15],
         ['key' => 'users', 'label' => 'Users', 'url' => 'admin/users', 'icon' => 'users', 'can' => 'users.manage', 'order' => 20],

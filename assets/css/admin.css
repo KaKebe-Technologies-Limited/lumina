@@ -24548,3 +24548,173 @@ tr.is-unread td {
     background: rgba(217, 164, 65, 0.25);
   }
 }
+
+.conn-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1200px) {
+  .conn-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.conn-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.conn-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.25rem;
+  color: #142B4A;
+}
+
+.conn-card__title .icon {
+  color: #A5521A;
+}
+
+.conn-facts {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+}
+
+.conn-facts div {
+  display: grid;
+  gap: 0.1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px dashed #E5DED0;
+}
+
+.conn-facts dt {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5B6472;
+}
+
+.conn-facts dd {
+  margin: 0;
+  font-weight: 600;
+  color: #142B4A;
+  overflow-wrap: anywhere;
+}
+
+.conn-test {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.conn-test .field {
+  flex: 1 1 16rem;
+  margin: 0;
+}
+
+.conn-sub {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.05rem;
+  color: #142B4A;
+}
+
+.conn-code {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  border-radius: 24px;
+  background: #0B1B33;
+  color: #F2E3BD;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.conn-copy {
+  margin: 0.5rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 24px;
+  background: rgba(217, 164, 65, 0.16);
+  border: 1px dashed #D9A441;
+}
+
+.conn-copy code {
+  font-weight: 800;
+  color: #142B4A;
+  overflow-wrap: anywhere;
+}
+
+.conn-checks {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.conn-checks li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.75rem;
+  border-radius: 24px;
+  background: #FAF8F2;
+}
+
+.conn-checks li > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.conn-checks code {
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+}
+
+.conn-checks .is-ok .icon {
+  color: #138A45;
+}
+
+.conn-checks .is-bad .icon {
+  color: #A5521A;
+}
+
+.conn-checks .is-info .icon {
+  color: #142B4A;
+}
+
+.conn-steps {
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.conn-steps li {
+  line-height: 1.6;
+}
+
+.conn-limit {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-top: 1rem;
+}
+
+.conn-limit .icon {
+  flex: none;
+  margin-top: 0.2rem;
+  color: #A5521A;
+}
