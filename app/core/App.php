@@ -105,8 +105,10 @@ final class App
         if ((string) Config::get('app.url', '') === '') {
             throw new \RuntimeException('APP_URL is not set. Set APP_URL=https://your-domain in .env (required when APP_ENV is not "local").');
         }
+        // the www / bare-domain twin of APP_URL is sent to the one canonical address FIRST (even when both names are allowed): the session cookie, the Google sign-in return and every e-mailed link
+        // belong to one host, so a visitor who started on www must not come back on the bare domain
+        self::redirectWwwSibling($request);
         if (!$request->hostAllowed()) {
-            self::redirectWwwSibling($request);
             throw new HttpException(400, 'Bad request');
         }
     }
