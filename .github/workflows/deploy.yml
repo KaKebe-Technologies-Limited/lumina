@@ -1,0 +1,65 @@
+# Deploy the site to Hostinger over FTPS, in place: only changed files are sent, the site stays up, and the database, .env, uploads and storage are never touched.
+#
+# Set up once (GitHub: repo Settings > Secrets and variables > Actions):
+#   Secrets:    FTP_SERVER (e.g. ftp.luminaafricafoundation.com), FTP_USERNAME, FTP_PASSWORD   (hPanel > Files > FTP Accounts)
+#   Secret:     FTP_DIR    (the folder on the server, normally  public_html/  , with the trailing slash; for staging use e.g.  public_html/staging/ )
+#   Variable (optional): AUTO_DEPLOY = true   -> every push to main deploys by itself. Leave it unset to deploy only with the "Run workflow" button.
+#
+# Run it by hand: GitHub > Actions > "Deploy to Hostinger" > Run workflow (tick "dry run" first to see what WOULD be sent without sending anything).
+# Full checklist for deploy day: docs/DEPLOY.md
+
+name: Deploy to Hostinger
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: list what would be uploaded, upload nothing'
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Upload changed files
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || vars.AUTO_DEPLOY == 'true'
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Upload to the server (FTPS)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          server-dir: ${{ secrets.FTP_DIR }}
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          # never delete or overwrite what only the live server has
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            .env
+            .env.*
+            uploads/**
+            storage/**
+            vendor/**
+            node_modules/**
+            docs/**
+            bin/**
+            scss/**
+            tools/**
+            database/**
+            README.md
+            **/*.map
