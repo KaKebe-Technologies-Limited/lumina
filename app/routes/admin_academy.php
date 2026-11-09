@@ -68,6 +68,9 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->get('/challenges/entries/{eid}/file/{part}', [AcademyChallengesAdminController::class, 'entryFile'])->middleware('throttle:120,60')->name('admin.academy.challenges.entry.file');
 
     // social follow check: the usernames learners gave on our social media pages, verified by the team
+    // statistics dashboard: learners by topic and country (aggregates)
+    $router->get('/statistics', [\App\Controllers\Admin\AcademyStatsController::class, 'index'])->name('admin.academy.statistics');
+    $router->get('/statistics/export', [\App\Controllers\Admin\AcademyStatsController::class, 'export'])->middleware('throttle:30,60')->name('admin.academy.statistics.export');
     $router->get('/social', [AcademySocialController::class, 'index'])->name('admin.academy.social');
     $router->post('/social/switch', [AcademySocialController::class, 'switch'])->name('admin.academy.social.switch');
     $router->post('/social/{id}/verify', [AcademySocialController::class, 'verify'])->middleware('throttle:200,60')->name('admin.academy.social.verify');

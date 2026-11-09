@@ -11,6 +11,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Services\Academy\AcademyAccess;
 use App\Services\Academy\CertificateService;
+use App\Services\Academy\AcademyStats;
 use App\Services\Academy\ClassService;
 use App\Services\Academy\ContentInstaller;
 use App\Services\Academy\PartnerCourses;
@@ -39,6 +40,7 @@ final class AcademyController extends AcademyBaseController
         $counts = [];
         $stats = ['courses' => 0, 'lessons' => 0, 'learners' => 0, 'certificates' => 0];
         $upcoming = [];
+        $glance = ['topics' => [], 'countries' => ['rows' => [], 'total' => 0, 'countries' => 0]];
         $partners = [];
         $partnerTotal = 0;
         $challenges = [];
@@ -53,6 +55,7 @@ final class AcademyController extends AcademyBaseController
                 'learners' => (int) Database::value('SELECT COUNT(*) FROM academy_learners WHERE is_active = 1', [], 0),
                 'certificates' => (int) Database::value('SELECT COUNT(*) FROM academy_certificates WHERE revoked_at IS NULL', [], 0),
             ];
+            $glance = ['topics' => AcademyStats::byTopic(), 'countries' => AcademyStats::byCountry(6)];
             $upcoming = array_slice(ClassService::listing()['upcoming'], 0, 3);
             $partnerAll = Database::tableExists('academy_partner_courses') ? PartnerCourses::visible() : [];
             $partnerTotal = count($partnerAll);
@@ -68,12 +71,33 @@ final class AcademyController extends AcademyBaseController
         }
         $filtered = $filters['q'] !== '' || $filters['category'] !== '' || $filters['level'] !== '';
         return $this->renderAcademy('web/academy/index', [
-            'courses' => $courses, 'counts' => $counts, 'filters' => $filters, 'filtered' => $filtered, 'stats' => $stats, 'upcoming' => $upcoming, 'partners' => $partners, 'partnerTotal' => $partnerTotal, 'challenges' => $challenges, 'winners' => $winners,
+            'courses' => $courses, 'counts' => $counts, 'filters' => $filters, 'filtered' => $filtered, 'stats' => $stats, 'glance' => $glance, 'upcoming' => $upcoming, 'partners' => $partners, 'partnerTotal' => $partnerTotal, 'challenges' => $challenges, 'winners' => $winners,
             'categories' => CourseService::categoryLabels(), 'levels' => CourseService::LEVELS,
         ], [
             'bodyClass' => 'is-academy is-academy-home',
             'breadcrumbs' => [[$this->academyLabel(), null]],
             'meta' => $filtered ? ['robots' => 'noindex,follow', 'canonical' => '/academy'] : [],
+        ]);
+    }
+
+    /** The public dashboard: the Academy in numbers (aggregates only). */
+    public function impact(Request $request): Response
+    {
+        $this->gate();
+        $d = ['overview' => [], 'topics' => [], 'countries' => ['rows' => [], 'total' => 0, 'countries' => 0], 'months' => [], 'funnel' => []];
+        $ready = false;
+        try {
+            if (Database::tableExists('academy_learners') && Database::tableExists('academy_enrollments')) {
+                $d = AcademyStats::publicData();
+                $ready = true;
+            }
+        } catch (\Throwable) {
+            $ready = false;
+        }
+        return $this->renderAcademy('web/academy/impact', ['d' => $d, 'ready' => $ready], [
+            'bodyClass' => 'is-academy is-academy-impact',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['The Academy in numbers', null]],
+            'meta' => ['title' => 'The LAF Academy in numbers', 'description' => 'Learners by topic and by country, growth by month and certificates issued: the LAF Academy dashboard.'],
         ]);
     }
 

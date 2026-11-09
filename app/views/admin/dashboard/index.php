@@ -42,6 +42,19 @@ $greet = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good ev
     </div>
 <?php endif; ?>
 
+<?php if (!empty($academy) && (int) $academy['overview']['learners'] > 0): ?>
+    <section class="card dash-academy" aria-labelledby="dash-academy-title">
+        <div class="card__header"><h2 class="card__title" id="dash-academy-title"><?= icon('book', 'icon--sm') ?> LAF Academy at a glance</h2><a class="btn btn--ghost btn--sm" href="<?= e(url('admin/academy/statistics')) ?>">All statistics <?= icon('arrow-right', 'icon--arrow') ?></a></div>
+        <div class="card__body ad-page ad-page--admin">
+            <?= partial('partials/academy-charts', ['part' => 'kpis', 'overview' => $academy['overview']]) ?>
+            <div class="ad-grid">
+                <div class="ad-panel"><h3 class="ad-panel__title"><?= icon('layers', 'icon--sm') ?> Learners by topic</h3><?= partial('partials/academy-charts', ['part' => 'topics', 'topics' => $academy['topics'], 'limit' => 6]) ?></div>
+                <div class="ad-panel"><h3 class="ad-panel__title"><?= icon('globe', 'icon--sm') ?> Learners by country</h3><?= partial('partials/academy-charts', ['part' => 'countries', 'countries' => $academy['countries']]) ?></div>
+            </div>
+        </div>
+    </section>
+<?php endif; ?>
+
 <div class="card-grid card-grid--main-aside">
     <div class="dash-main">
         <?php if ($chart !== null): ?>

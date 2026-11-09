@@ -48,6 +48,28 @@ $cta = content_btn('academy', 'cta.button');
     </div>
 </section>
 
+<?php /* ------------------------------------------------------------------ DASHBOARD GLANCE: learners by topic and by country, with a link to the full dashboard */ ?>
+<?php if (!empty($glance['topics']) && array_sum(array_column($glance['topics'], 'learners')) > 0): ?>
+<section class="section ad-page ad-page--glance" aria-labelledby="ad-glance-title">
+    <div class="container">
+        <header class="ad-glance-head" data-reveal>
+            <h2 id="ad-glance-title">Our learners at a glance</h2>
+            <a class="btn btn--outline btn--caps btn--sm" href="<?= e(url('academy/impact')) ?>"><?= icon('bar-chart', 'icon--sm') ?> Open the full dashboard</a>
+        </header>
+        <div class="ad-grid">
+            <article class="ad-panel" data-reveal>
+                <h3 class="ad-panel__title"><?= icon('layers', 'icon--sm') ?> Learners by topic</h3>
+                <?= partial('partials/academy-charts', ['part' => 'topics', 'topics' => $glance['topics'], 'limit' => 6]) ?>
+            </article>
+            <article class="ad-panel" data-reveal>
+                <h3 class="ad-panel__title"><?= icon('globe', 'icon--sm') ?> Learners by country</h3>
+                <?= partial('partials/academy-charts', ['part' => 'countries', 'countries' => $glance['countries']]) ?>
+            </article>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
 <?php section_begin('academy', 'steps', ['class' => 'section--tint', 'labelledby' => 'ac-steps-title']); ?>
     <?= partial('partials/section-head', ['eyebrow' => (string) content('academy', 'steps.eyebrow'), 'title' => (string) content('academy', 'steps.title'), 'align' => 'center', 'id' => 'ac-steps-title']) ?>
     <?php if ($steps): ?>

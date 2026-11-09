@@ -1,0 +1,70 @@
+// LAF Academy dashboard charts (partials/academy-charts.php): KPI tiles, horizontal bars, donut + legend, monthly columns, funnel. Plain HTML + CSS.
+// Shared by the public site (main.css) and the admin (admin.css), so it only uses the brand tokens.
+.ad-empty { margin: 0; padding: $space-5; border-radius: $radius-card; background: $surface; color: $ink-soft; text-align: center; }
+
+// ---- KPI tiles
+.ad-kpis { list-style: none; margin: 0; padding: 0; display: grid; gap: $space-3; grid-template-columns: repeat(2, minmax(0, 1fr)); @include respond(md) { grid-template-columns: repeat(3, minmax(0, 1fr)); } @include respond(xl) { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.ad-kpi { position: relative; display: grid; gap: 0.15rem; padding: $space-4 $space-4 $space-3; border-radius: $radius-card; background: $white; border: 1px solid $line; border-top: 4px solid $gold; box-shadow: $shadow-card;
+  b { font-family: $font-heading; font-size: #{'clamp(1.8rem, 4vw, 2.6rem)'}; line-height: 1.05; color: $navy; font-variant-numeric: tabular-nums; }
+  &__label { font-size: 0.85rem; font-weight: 700; color: $ink-soft; }
+  &__icon { position: absolute; top: $space-3; right: $space-3; display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: rgba($gold, 0.2); color: $orange-text; .icon { width: 1.1rem; height: 1.1rem; } } }
+
+// ---- horizontal bars (learners by topic)
+.ad-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: $space-3; }
+.ad-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.3rem 1rem; align-items: center;
+  &__label { display: inline-flex; align-items: center; gap: 0.45rem; font-weight: 700; color: $navy; min-width: 0; .icon { color: $orange-text; flex: none; } }
+  &__track { grid-column: 1 / -1; grid-row: 2; display: block; height: 0.8rem; border-radius: 999px; background: rgba($navy, 0.08); overflow: hidden; }
+  &__fill { display: block; height: 100%; width: var(--w, 0); min-width: 0.3rem; border-radius: inherit; background: linear-gradient(90deg, var(--c, #{$navy}), color-mix(in srgb, var(--c, #{$navy}) 70%, #fff)); transform-origin: left; animation: ad-grow 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+  &__value { font-size: 0.9rem; color: $ink-soft; white-space: nowrap; b { color: $navy; font-size: 1.05rem; } > span { color: $ink-soft; } } }
+
+// ---- donut + legend (learners by country)
+.ad-donut-wrap { display: grid; gap: $space-5; align-items: center; justify-items: center; grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr)); }
+.ad-donut { position: relative; width: 13rem; aspect-ratio: 1; border-radius: 50%; box-shadow: 0 12px 30px rgba($navy-dark, 0.18); animation: ad-spin-in 1s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  &__hole { position: absolute; inset: 24%; display: grid; place-content: center; text-align: center; border-radius: 50%; background: $white; box-shadow: inset 0 2px 8px rgba($navy-dark, 0.12);
+    b { font-family: $font-heading; font-size: 2.1rem; line-height: 1; color: $navy; } span { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: $ink-soft; } } }
+.ad-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; width: 100%;
+  li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.6rem; padding: 0.4rem 0; border-bottom: 1px dashed $line; }
+  &__dot { width: 0.9rem; height: 0.9rem; border-radius: 50%; background: var(--c, #{$navy}); }
+  &__name { font-weight: 700; color: $navy; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  &__n { white-space: nowrap; color: $ink-soft; b { color: $navy; } } }
+
+// ---- monthly columns
+.ad-cols { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 0.35rem; align-items: end; height: 13rem; padding-top: 1.4rem; }
+.ad-col { display: grid; grid-template-rows: 1fr auto; height: 100%; gap: 0.35rem; min-width: 0;
+  &__bars { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 100%; }
+  &__bar { position: relative; display: block; flex: 1 1 0; max-width: 1.4rem; height: var(--h, 0); min-height: 3px; border-radius: 6px 6px 0 0; transform-origin: bottom; animation: ad-rise 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+    i { position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); font-style: normal; font-size: 0.68rem; font-weight: 800; color: $ink-soft; }
+    &--a { background: linear-gradient(180deg, $navy-light, $navy); } &--b { background: linear-gradient(180deg, $gold, $orange); } }
+  &__label { text-align: center; font-size: 0.72rem; font-weight: 700; color: $ink-soft; } }
+.ad-key { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; align-items: center; margin: $space-3 0 0; font-size: 0.82rem; font-weight: 700; color: $ink-soft;
+  &__dot { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 3px; &--a { background: $navy; } &--b { background: $gold; } } }
+
+// ---- funnel (sign-up to certificate)
+.ad-funnel { list-style: none; margin: 0; padding: 0; display: grid; gap: $space-2; }
+.ad-funnel__step { display: grid; gap: 0.2rem 1rem; align-items: center; @include respond(md) { grid-template-columns: minmax(0, 1fr) 8.5rem; } }
+.ad-funnel__bar { display: flex; align-items: center; width: var(--w, 100%); min-width: 9rem; padding: 0.55rem 1rem; border-radius: 0 999px 999px 0; background: var(--c, #{$navy}); color: $white; font-weight: 700; font-size: 0.92rem; animation: ad-grow 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) both; transform-origin: left; }
+.ad-funnel__n { white-space: nowrap; color: $ink-soft; b { color: $navy; font-size: 1.05rem; } }
+
+@keyframes ad-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes ad-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes ad-spin-in { from { transform: rotate(-90deg) scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ad-bar__fill, .ad-col__bar, .ad-funnel__bar, .ad-donut { animation: none; } }
+
+// ---- page furniture shared by the public dashboard and the admin page
+.ad-page { padding-block: $space-7; }
+.ad-page--glance { background: $surface; }
+.ad-glance-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3; margin-bottom: $space-5; h2 { margin: 0; color: $navy; } }
+.ad-grid { display: grid; gap: $space-5; margin-top: $space-6; @include respond(lg) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ad-panel { padding: $space-5; border-radius: $radius-panel; background: $white; border: 1px solid $line; box-shadow: $shadow-card;
+  &__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: $space-3; }
+  &__title { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.2rem; font-size: 1.3rem; color: $navy; .icon { color: $orange-text; } }
+  &__sub { margin: 0 0 $space-4; color: $ink-soft; font-size: 0.95rem; }
+  &--wide { @include respond(lg) { grid-column: 1 / -1; } } }
+.ad-note { display: flex; align-items: center; gap: 0.5rem; margin: $space-5 0 0; color: $ink-soft; font-size: 0.9rem; .icon { color: $orange-text; flex: none; } }
+// admin: the card already has its own padding and border
+.ad-page--admin { padding-block: 0; }
+.ad-page--admin .ad-panel { padding: 0; border: 0; box-shadow: none; background: transparent; }
+.ad-page--admin .ad-grid { margin-top: $space-4; }
+.ad-page--admin .ad-kpi { box-shadow: none; }
+.ad-page--admin .table-wrap { margin-top: $space-4; }
+.ad-heat { background: rgba($gold, var(--a, 0)); font-weight: 700; }

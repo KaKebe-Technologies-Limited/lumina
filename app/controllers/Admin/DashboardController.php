@@ -113,6 +113,18 @@ final class DashboardController extends AdminController
             can('settings.manage') ? ['icon' => 'settings', 'label' => 'Contact details and settings', 'url' => 'admin/settings'] : null,
         ]));
 
+        // LAF Academy at a glance (aggregates: learners by topic and by country); only for people who manage the Academy, and never an error if the tables are missing
+        $academy = null;
+        if (can('academy.manage')) {
+            try {
+                if (\App\Core\Database::tableExists('academy_learners') && \App\Core\Database::tableExists('academy_enrollments')) {
+                    $academy = ['overview' => \App\Services\Academy\AcademyStats::overview(), 'topics' => \App\Services\Academy\AcademyStats::byTopic(), 'countries' => \App\Services\Academy\AcademyStats::byCountry(6)];
+                }
+            } catch (\Throwable) {
+                $academy = null;
+            }
+        }
+
         return $this->render('admin/dashboard/index', [
             'user'      => $this->user(),
             'tiles'     => $tiles,
@@ -124,6 +136,7 @@ final class DashboardController extends AdminController
             'checklist' => $content ? DashboardData::contentChecklist() : [],
             'launch'    => $this->launchItems(),
             'canInbox'  => $inbox,
+            'academy'   => $academy,
         ], ['title' => 'Dashboard', 'nav' => 'dashboard']);
     }
 

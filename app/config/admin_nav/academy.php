@@ -9,6 +9,7 @@ return [
     'order' => 39,
     'items' => [
         ['key' => 'academy',              'label' => 'Overview',        'url' => 'admin/academy',              'icon' => 'book',      'can' => 'academy.teach',  'order' => 10, 'badge' => null],
+        ['key' => 'academy_statistics',   'label' => 'Statistics',      'url' => 'admin/academy/statistics',   'icon' => 'bar-chart', 'can' => 'academy.manage', 'order' => 12, 'badge' => null],
         ['key' => 'academy_courses',      'label' => 'Courses',         'url' => 'admin/academy/courses',      'icon' => 'layers',    'can' => 'academy.teach',  'order' => 20, 'badge' => null],
         ['key' => 'academy_partners',     'label' => 'Partner courses', 'url' => 'admin/academy/partner-courses', 'icon' => 'globe',    'can' => 'academy.manage', 'order' => 25, 'badge' => null],
         ['key' => 'academy_classes',     'label' => 'Virtual classes', 'url' => 'admin/academy/classes',      'icon' => 'video',     'can' => 'academy.teach',  'order' => 30, 'badge' => null],
