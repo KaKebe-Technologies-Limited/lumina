@@ -62,11 +62,18 @@ final class AcademyCertificatesController extends AcademyAdminController
             array_map(static fn(array $r): array => [$r['code'], $r['learner_name'], $r['learner_email'], $r['learner_country'], \App\Services\Academy\LearnerPhones::dialCode($r['learner_country']), \App\Services\Academy\LearnerPhones::display($r['learner_phone'], $r['learner_country']), (string) ($r['learner_whatsapp'] ?? '') !== '' ? '+' . $r['learner_whatsapp'] : '', $r['course_title'], $r['score_pct'], $r['hours'], $r['issued_at'], $r['revoked_at'] ? 'withdrawn' : 'valid'], $rows));
     }
 
-    /** Open the PDF of any certificate, also one that still waits for approval (to look at it before approving). */
+    /**
+     * Open the PDF of a certificate: ONLY one that has been issued (the learner passed, the certificate is approved and not withdrawn). A certificate that still waits for
+     * approval or for its fee, or that was withdrawn, cannot be viewed: approve it first, then view it.
+     */
     public function preview(Request $request, int $id): Response
     {
         $this->authorize('academy.manage');
         $c = Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]) ?? throw new HttpException(404, 'Not found');
+        if ($c['revoked_at'] !== null || !CertificateService::isApproved($c)) {
+            Flash::error($c['revoked_at'] !== null ? 'That certificate was withdrawn, so it cannot be viewed.' : 'That certificate has not been issued yet. Approve it first, then you can view it.');
+            return $this->redirect('admin/academy/certificates');
+        }
         return Response::text(CertificateService::pdf($c), 200, 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="LAF-Academy-certificate-' . $c['code'] . '.pdf"')
             ->header('Cache-Control', 'private, no-store')

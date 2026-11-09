@@ -4,7 +4,7 @@
 <?php if (!empty($waiting)): ?>
     <div class="alert alert--warning" role="status">
         <strong><?= (int) $waiting ?> certificate<?= (int) $waiting === 1 ? '' : 's' ?> waiting for your approval.</strong>
-        A learner cannot open or download it, and the public check page does not know it, until you approve it. Look at the PDF first if you like.
+        A learner cannot open or download it, and the public check page does not know it, until you approve it. A certificate can be viewed only once it has been issued.
         <div class="aac-actions">
             <form method="post" action="<?= e(url('admin/academy/certificates-approve-all')) ?>" class="inline-form" data-confirm="Approve all <?= (int) $waiting ?> waiting certificates?"><?= csrf_field() ?>
                 <label class="check"><input type="checkbox" name="email" value="1" checked><span>E-mail each learner</span></label>
@@ -70,7 +70,7 @@
                 <td data-label="Status"><?= $c['revoked_at'] ? '<span class="badge badge--danger">Withdrawn</span>' : ($isWaiting ? (\App\Services\Academy\AcademyFees::certDue($c) ? '<span class="badge badge--warning">Fee unpaid</span>' : '<span class="badge badge--warning">Waiting for approval</span>') : '<span class="badge badge--success">Valid</span>') ?><?php if (!empty($c['emailed_at'])): ?><span class="cell-sub">E-mailed <?= e(format_date($c['emailed_at'], 'j M')) ?></span><?php endif; ?></td>
                 <td class="col-actions"><div class="table__actions">
                     <?php if ($isWaiting): ?>
-                        <a class="btn btn--ghost btn--icon" href="<?= e(url('admin/academy/certificates/' . $id . '/preview')) ?>" target="_blank" rel="noopener" title="Look at the PDF" aria-label="Preview: <?= e($c['code']) ?>"><?= icon('eye', 'icon--sm') ?></a>
+                        <span class="cell-sub">Not issued yet: approve it to view it</span>
                         <?php if (\App\Services\Academy\AcademyFees::certDue($c)): ?><form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/mark-fee-paid')) ?>" class="inline-form" data-confirm="Mark the fee of <?= e($c['code']) ?> as PAID? Do this after you have seen the money (for example in the Daraza dashboard)."><?= csrf_field() ?><input type="hidden" name="back" value="<?= e($status) ?>"><button class="btn btn--outline btn--sm" type="submit">Mark fee paid</button></form><?php endif; ?>
                         <form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/approve')) ?>" class="inline-form"<?= \App\Services\Academy\AcademyFees::certDue($c) ? ' data-confirm="The certificate fee is not paid. Waive it and approve this certificate?"' : '' ?>><?= csrf_field() ?><?= \App\Services\Academy\AcademyFees::certDue($c) ? '<input type="hidden" name="waive" value="1">' : '' ?><input type="hidden" name="back" value="<?= e($status) ?>"><button class="btn btn--primary btn--sm" type="submit"><?= \App\Services\Academy\AcademyFees::certDue($c) ? 'Release (waive the fee)' : 'Approve' ?></button><button class="btn btn--outline btn--sm" type="submit" name="email" value="1"><?= \App\Services\Academy\AcademyFees::certDue($c) ? 'Release and e-mail' : 'Approve and e-mail' ?></button></form>
                         <details class="aac-edit"><summary class="btn btn--ghost btn--sm">Decline</summary>
@@ -79,6 +79,7 @@
                                 <button class="btn btn--primary btn--sm" type="submit">Decline and tell the learner</button></form></details>
                     <?php endif; ?>
                     <?php if (!$c['revoked_at'] && !$isWaiting): ?>
+                        <a class="btn btn--primary btn--sm" href="<?= e(url('admin/academy/certificates/' . $id . '/preview')) ?>" target="_blank" rel="noopener" title="Open the certificate (issued)" aria-label="View certificate <?= e($c['code']) ?>"><?= icon('eye', 'icon--sm') ?> View certificate</a>
                         <a class="btn btn--ghost btn--icon" href="<?= e(url('academy/certificate/' . $c['code'] . '/pdf')) ?>" target="_blank" rel="noopener" title="Open the PDF" aria-label="PDF: <?= e($c['code']) ?>"><?= icon('download', 'icon--sm') ?></a>
                         <form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/email')) ?>" class="inline-form" data-confirm="E-mail certificate <?= e($c['code']) ?> to the learner?"><?= csrf_field() ?><button class="btn btn--ghost btn--icon" type="submit" title="E-mail it to the learner" aria-label="E-mail: <?= e($c['code']) ?>"><?= icon('mail', 'icon--sm') ?></button></form>
                         <details class="aac-edit"><summary class="btn btn--outline btn--sm">Withdraw</summary>

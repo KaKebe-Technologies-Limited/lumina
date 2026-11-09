@@ -113,7 +113,6 @@ $lid = (int) $l['id']; ?>
                 <div class="aac-actions">
                     <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/approve-certificates')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--primary btn--sm" type="submit">Approve</button><button class="btn btn--outline btn--sm" type="submit" name="email" value="1">Approve and e-mail</button></form>
                     <?php foreach ($waitingHere as $wc): ?>
-                        <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/academy/certificates/' . (int) $wc['id'] . '/preview')) ?>" target="_blank" rel="noopener">Preview <?= e($wc['code']) ?></a>
                         <details class="aac-edit"><summary class="btn btn--outline btn--sm">Decline</summary>
                             <form method="post" action="<?= e(url('admin/academy/certificates/' . (int) $wc['id'] . '/decline')) ?>" class="aac-edit__form" data-confirm="Decline this request?"><?= csrf_field() ?><input type="hidden" name="back" value="learner:<?= $lid ?>">
                                 <div class="field"><label class="field__label" for="dc-<?= (int) $wc['id'] ?>">Message to the learner (optional)</label><input class="input" id="dc-<?= (int) $wc['id'] ?>" name="reason" maxlength="300"></div>
@@ -123,7 +122,7 @@ $lid = (int) $l['id']; ?>
         <?php endif; ?>
         <ul class="aac-list"><?php foreach ($certs as $c): ?>
             <?php $waitingCert = !\App\Services\Academy\CertificateService::isApproved($c); ?>
-            <li><a href="<?= e($waitingCert ? url('admin/academy/certificates/' . (int) $c['id'] . '/preview') : url('academy/certificate/' . $c['code'])) ?>" target="_blank" rel="noopener"><?= e($c['code']) ?></a> <span><?= e($c['course_title']) ?> &middot; <?= e(format_date($c['issued_at'], 'j M Y')) ?><?= $c['revoked_at'] ? ' &middot; withdrawn' : ($waitingCert ? ' &middot; <a href="' . e(url('admin/academy/certificates', ['status' => 'waiting'])) . '">waiting for approval</a>' : '') ?></span></li>
+            <li><?php if ($waitingCert): ?><code><?= e($c['code']) ?></code><?php else: ?><a href="<?= e(url('academy/certificate/' . $c['code'])) ?>" target="_blank" rel="noopener"><?= e($c['code']) ?></a><?php endif; ?> <span><?= e($c['course_title']) ?> &middot; <?= e(format_date($c['issued_at'], 'j M Y')) ?><?= $c['revoked_at'] ? ' &middot; withdrawn' : ($waitingCert ? ' &middot; <a href="' . e(url('admin/academy/certificates', ['status' => 'waiting'])) . '">waiting for approval</a>' : '') ?></span></li>
         <?php endforeach; ?></ul>
         <?php if ($available !== [] || $enrolments !== []): $all = \App\Core\Database::all("SELECT id, title FROM academy_courses WHERE status <> 'archived' ORDER BY title"); ?>
             <form method="post" action="<?= e(url('admin/academy/learners/' . $lid . '/certificate')) ?>" class="aac-inline" data-confirm="Issue a certificate for this course to <?= e($l['name']) ?> without an exam?"><?= csrf_field() ?>

@@ -19,7 +19,9 @@ return [
         // learners' unread messages (administrators only): a yellow number
         ['key' => 'academy_messages',     'label' => 'Messages',        'url' => 'admin/academy/messages',     'icon' => 'message-circle', 'can' => 'academy.manage', 'order' => 45,
             'badge' => static fn(): int => can('academy.manage') ? \App\Services\Academy\LearnerMessages::unreadForAdmin() : 0, 'badge_tone' => 'yellow'],
-        ['key' => 'academy_certificates', 'label' => 'Certificates',    'url' => 'admin/academy/certificates', 'icon' => 'award',     'can' => 'academy.manage', 'order' => 50, 'badge' => null],
+        ['key' => 'academy_certificates', 'label' => 'Certificates',    'url' => 'admin/academy/certificates', 'icon' => 'award',     'can' => 'academy.manage', 'order' => 50,
+            // the number of certificates still WAITING to be issued (approved) - a yellow number so the administrator knows at a glance
+            'badge' => static fn(): int => can('academy.manage') ? \App\Services\Academy\CertificateService::pendingCount() : 0, 'badge_tone' => 'yellow'],
         ['key' => 'academy_payments',     'label' => 'Payments',        'url' => 'admin/academy/payments',     'icon' => 'credit-card', 'can' => 'academy.manage', 'order' => 48, 'badge' => null],
         ['key' => 'academy_social',       'label' => 'Social follow check', 'url' => 'admin/academy/social', 'icon' => 'heart', 'can' => 'academy.manage', 'order' => 52,
             'badge' => static fn(): int => can('academy.manage') ? \App\Services\Academy\AcademySocial::counts()['unverified'] : 0, 'badge_tone' => 'yellow'],

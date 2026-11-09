@@ -120,7 +120,8 @@ check('http: a waiting certificate is unknown to the public check page and PDF (
 $list = $req('GET', '/admin/academy/certificates?status=waiting', [], $jA);
 check('http: the administrator list shows it as waiting for approval with the Approve buttons', $list['code'] === 200 && str_contains($list['body'], $c['code']) && str_contains($list['body'], 'Waiting for approval') && str_contains($list['body'], 'Approve and e-mail') && str_contains($list['body'], 'Approve all'));
 $prev = $req('GET', '/admin/academy/certificates/' . $c['id'] . '/preview', [], $jA);
-check('http: the administrator can look at the PDF before approving; an editor cannot (403)', $prev['code'] === 200 && str_starts_with($prev['body'], '%PDF-') && $req('GET', '/admin/academy/certificates/' . $c['id'] . '/preview', [], $jE)['code'] === 403);
+check('http: a certificate that is not issued yet cannot be viewed (the administrator is sent back to the list, no PDF); an editor gets 403', in_array($prev['code'], [302, 303], true) && !str_starts_with($prev['body'], '%PDF-') && $req('GET', '/admin/academy/certificates/' . $c['id'] . '/preview', [], $jE)['code'] === 403);
+check('http: the list shows no "View certificate" button for the waiting certificate, and the sidebar shows the yellow number of waiting certificates', !str_contains($list['body'], 'View certificate ' . $c['code']) && str_contains($list['body'], 'admin-nav__badge--yellow') && preg_match('~href="[^"]*admin/academy/certificates"(?:(?!</a>).)*admin-nav__badge--yellow"[^>]*><span class="visually-hidden">New: </span>' . CertificateService::pendingCount() . '<~s', $list['body']) === 1, (string) CertificateService::pendingCount());
 check('http: an editor cannot approve (403)', $post('/admin/academy/certificates/' . $c['id'] . '/approve', [], $jE, '/admin')['code'] === 403 && !CertificateService::isApproved((array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [(int) $c['id']])));
 
 $mailsBefore = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
@@ -130,6 +131,10 @@ check('http: "Approve" makes it available, records who approved it, and sends no
 $pub = $req('GET', '/academy/certificate/' . $c['code'], [], $jP);
 $pubPdf = $req('GET', '/academy/certificate/' . $c['code'] . '/pdf', [], $jP);
 check('http: once approved, the check page and the PDF work for everyone', $pub['code'] === 200 && str_contains($pub['body'], 'genuine certificate') && $pubPdf['code'] === 200 && str_starts_with($pubPdf['body'], '%PDF-'));
+$viewAfter = $req('GET', '/admin/academy/certificates/' . $c['id'] . '/preview', [], $jA);
+check('http: once issued, the administrator can view the certificate (PDF); an editor still cannot', $viewAfter['code'] === 200 && str_starts_with($viewAfter['body'], '%PDF-') && $req('GET', '/admin/academy/certificates/' . $c['id'] . '/preview', [], $jE)['code'] === 403);
+$listAfter = $req('GET', '/admin/academy/certificates?q=' . rawurlencode((string) $c['code']), [], $jA);
+check('http: the list now has the "View certificate" button for it', $listAfter['code'] === 200 && str_contains($listAfter['body'], 'View certificate ' . $c['code']));
 check('model: it is now active for the learner and counted as approved', CertificateService::activeFor((int) $la['id'], (int) $course['id']) !== null && CertificateService::pendingFor((int) $la['id'], (int) $course['id']) === null);
 
 $em = $post('/admin/academy/certificates/' . $c['id'] . '/email', [], $jA, '/admin/academy/certificates');
@@ -186,7 +191,7 @@ check('request: asking again says it is already waiting and makes no second cert
 $lgList = $req('GET', '/admin/academy/learners?q=zz-lce-g', [], $jA);
 check('http: the learner list shows "1 waiting" and an "Approve certificate" button on that learner', $lgList['code'] === 200 && str_contains($lgList['body'], '1 waiting') && str_contains($lgList['body'], 'Approve certificate'));
 $lgPage = $req('GET', '/admin/academy/learners/' . $lg['id'], [], $jA);
-check('http: the learner page offers Approve, Approve and e-mail, Preview and Decline for the waiting certificate', $lgPage['code'] === 200 && str_contains($lgPage['body'], 'Waiting for approval') && str_contains($lgPage['body'], 'Approve and e-mail') && str_contains($lgPage['body'], 'Decline') && str_contains($lgPage['body'], '/preview'));
+check('http: the learner page offers Approve, Approve and e-mail and Decline (no Preview) for the waiting certificate', $lgPage['code'] === 200 && str_contains($lgPage['body'], 'Waiting for approval') && str_contains($lgPage['body'], 'Approve and e-mail') && str_contains($lgPage['body'], 'Decline') && !str_contains($lgPage['body'], '/preview'));
 check('http: an editor cannot approve or decline from the learner page (403)', $post('/admin/academy/learners/' . $lg['id'] . '/approve-certificates', [], $jE, '/admin')['code'] === 403 && $post('/admin/academy/certificates/' . $rg['cert']['id'] . '/decline', [], $jE, '/admin')['code'] === 403);
 $mailsBeforeAp = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
 $apLearner = $post('/admin/academy/learners/' . $lg['id'] . '/approve-certificates', ['email' => '1'], $jA, '/admin/academy/learners/' . $lg['id']);
