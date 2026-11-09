@@ -151,6 +151,7 @@ return [
         'shop.export'       => ['admin'],           // download shop orders as CSV
         'shop.delete'       => ['admin'],           // delete products and orders
         'documents.sign'    => ['admin'],           // DOCUMENTS: manage signatories and their signature images, apply signatures and build signed PDFs (docs/DOCUMENTS-SIGNATURES.md): admin only by default
+        'letters.manage'    => ['admin'],           // OFFICIAL LETTERS: write letters, preview them as PDF and e-mail them to one or many addresses: admin only by default
         'academy.manage'    => ['admin'],           // LAF ACADEMY, everything: all courses, learners, certificates, facilitators, settings, starter courses (docs/ACADEMY.md)
         'academy.fees'      => ['admin'],           // LAF ACADEMY: switch the sign-up fee ON or OFF (learners then sign up free / pay again). Give it to any role that may decide this
         'academy.teach'     => ['admin'],           // LAF ACADEMY, teaching: the facilitator role. Own courses (lessons, quizzes), virtual classes, the learners of those courses

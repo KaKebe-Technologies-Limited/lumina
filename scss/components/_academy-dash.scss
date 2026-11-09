@@ -77,3 +77,13 @@
 .ad-share__sub { margin: $space-5 0 0; font-size: 1rem; color: $navy; }
 .ad-share__count { margin: 0.4rem 0 0; font-size: 0.85rem; .is-over { color: $danger; font-weight: 800; } }
 .dash-academy__links { display: inline-flex; flex-wrap: wrap; gap: $space-2; }
+
+// ---- Admin > Official letters (forms, PDF preview frame) ----
+.ad-letter-grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(#{'min(100%, 420px)'}, 1fr)); margin-bottom: 1.25rem; align-items: start; }
+.ad-letter-row { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(#{'min(100%, 200px)'}, 1fr)); }
+.ad-letter-sub { margin: 1.4rem 0 .6rem; font-size: 1rem; }
+.ad-letter-sub2 { margin-left: 1.6rem; }
+.ad-letter-frame { width: 100%; height: #{'min(80vh, 900px)'}; border: 1px solid var(--border, #ddd); border-radius: 10px; background: #fff; }
+.ad-letter-contacts { max-height: 14rem; overflow: auto; border: 1px solid var(--border, #ddd); border-radius: 10px; padding: .6rem .9rem; margin: 0 0 1rem; }
+.ad-letter-contacts .check { display: block; }
+.ad-letter-rcpt td { font-size: .85rem; color: var(--text-muted, #5b6478); }

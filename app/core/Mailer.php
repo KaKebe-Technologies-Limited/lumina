@@ -18,7 +18,7 @@ namespace App\Core;
  *   Mailer::attempt($to, $subject, $text, $opts)     // ['ok'=>bool,'error'=>?string,'transient'=>bool] - for queues that retry (newsletter)
  *   Mailer::notify('New contact message', $body, $visitorEmail);   // to Settings notify_email (fallback email_primary)
  *
- * $opts: reply_to, from, from_name, html, headers (['List-Unsubscribe' => '<https://..>', ...]), return_path (envelope sender; default = from),
+ * $opts: reply_to, from, from_name, html, headers (['List-Unsubscribe' => '<https://..>', ...]), return_path (envelope sender; default = from), (opts: bcc = hidden recipients)
  *   to_name / reply_to_name (display names; to_name only with exactly one recipient),
  *   calendar (['method' => 'REQUEST'|'CANCEL'|'PUBLISH', 'content' => iCalendar text]): an inline text/calendar alternative part, so mail apps show native Accept / Decline,
  *   attachments (list of ['filename' => 'invite.ics', 'content' => bytes, 'type' => 'application/ics']): wraps the message in multipart/mixed (max 5 files, 5 MB).
@@ -64,6 +64,15 @@ final class Mailer
                 Log::warning('Mailer: no valid recipient', ['subject' => $subject]);
                 return self::fail('No valid recipient address.', false);
             }
+            // hidden recipients (opts 'bcc'): they receive the message but are in no header, so nobody sees the others; the visible 'to' list may be just the sender's own address
+            $bcc = [];
+            foreach ((array) ($opts['bcc'] ?? []) as $addr) {
+                $addr = trim((string) $addr);
+                if (self::validEmail($addr) && !in_array($addr, $recipients, true) && !in_array($addr, $bcc, true)) {
+                    $bcc[] = $addr;
+                }
+            }
+            $envelope = array_merge($recipients, $bcc);
             $msg = self::compose($recipients, $subject, $text, $opts);
             $driver = (string) Config::get('mail.driver');
 
@@ -73,12 +82,13 @@ final class Mailer
                     @mkdir($dir, 0775, true);
                 }
                 $file = $dir . '/' . date('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.eml';
-                $ok = file_put_contents($file, self::raw($msg, true)) !== false;
+                $ok = file_put_contents($file, ($bcc !== [] ? 'X-Envelope-Bcc: ' . implode(', ', $bcc) . "
+" : '') . self::raw($msg, true)) !== false;
                 return $ok ? ['ok' => true, 'error' => null, 'transient' => false] : self::fail('The message could not be written to storage/mail.', true);
             }
             if ($driver === 'smtp') {
                 $smtp = self::smtp();
-                $smtp->send($msg['envelope_from'], $recipients, self::raw($msg, true));
+                $smtp->send($msg['envelope_from'], $envelope, self::raw($msg, true));
                 return ['ok' => true, 'error' => null, 'transient' => false];
             }
 
