@@ -28,6 +28,9 @@ final class AcademyLearnController extends AcademyBaseController
         if ($l === null) {
             return $this->loginRedirect('Please sign in or create a free account to start this course.');
         }
+        if (($gate = $this->pictureGate($l)) !== null) {
+            return $gate;
+        }
         $course = CourseService::bySlug($slug) ?? throw new HttpException(404, 'Not found');
         $tree = CourseService::tree((int) $course['id']);
         if ($tree['lessons'] === 0) {
@@ -48,6 +51,9 @@ final class AcademyLearnController extends AcademyBaseController
         if ($l === null) {
             return $this->loginRedirect();
         }
+        if (($gate = $this->pictureGate($l)) !== null) {
+            return $gate;
+        }
         $course = CourseService::bySlug($slug, true) ?? throw new HttpException(404, 'Not found');
         $res = CertificateService::request($l, $course);
         if (!$res['ok']) {
@@ -67,6 +73,9 @@ final class AcademyLearnController extends AcademyBaseController
         if ($l === null) {
             return $this->loginRedirect();
         }
+        if (($gate = $this->pictureGate($l)) !== null) {
+            return $gate;
+        }
         $course = CourseService::bySlug($slug, true) ?? throw new HttpException(404, 'Not found');
         CourseService::unenroll((int) $l['id'], (int) $course['id']);
         Flash::success('You left "' . $course['title'] . '" and its progress was cleared. Certificates you earned stay valid.');
@@ -84,6 +93,9 @@ final class AcademyLearnController extends AcademyBaseController
         $l = $this->learner();
         if ($l === null) {
             return $this->loginRedirect();
+        }
+        if (($gate = $this->pictureGate($l)) !== null) {
+            return $gate;
         }
         $course = CourseService::bySlug($slug) ?? throw new HttpException(404, 'Not found');
         $enr = CourseService::enrollment((int) $l['id'], (int) $course['id']);

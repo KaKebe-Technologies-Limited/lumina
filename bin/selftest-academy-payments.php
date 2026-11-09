@@ -84,7 +84,7 @@ check('the "certificate fees" filter shows only certificates', $onlyCert !== [] 
 $onlyRep = PaymentsReport::events(PaymentsReport::filters('30', 'all', 'reported'), 500);
 check('the "reported" filter shows only reported payments', $onlyRep !== [] && count(array_filter($onlyRep, static fn(array $x): bool => $x['status'] !== 'reported')) === 0);
 check('the daily series has one entry per day, with today counted', count(PaymentsReport::daily($mine, PaymentsReport::filters('7', 'all', 'all'))) === 7 && PaymentsReport::daily($mine, PaymentsReport::filters('7', 'all', 'all'))[6]['n'] >= 3);
-check('a bad filter falls back safely', PaymentsReport::filters('x', 'y', 'z') === ['period' => '30', 'type' => 'all', 'status' => 'all']);
+check('a bad filter falls back safely', PaymentsReport::filters('x', 'y', 'z') === ['login' => '', 'period' => '30', 'type' => 'all', 'status' => 'all']);
 
 // ---- acknowledge the payment and welcome (portal message; the body starts with a fixed phrase that also marks "already welcomed")
 $notW = array_values(array_filter(AcademyFees::paidLearners(true), static fn(array $r): bool => in_array((int) $r['id'], [$a, $b, $e], true)));

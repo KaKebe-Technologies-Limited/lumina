@@ -38,7 +38,7 @@ use App\Services\Academy\WhatsAppSender;
 Database::execute("DELETE FROM academy_learners WHERE email LIKE 'zz-lcd-%'");
 Database::execute('DELETE FROM rate_limits');
 $mk = static fn(string $tag): int => (int) Database::insert('academy_learners', [
-    'name' => 'Zed Lcd ' . $tag, 'email' => 'zz-lcd-' . $tag . '@example.test', 'password_hash' => Auth::hashPassword('Secret-12345'), 'email_verified_at' => null, 'is_active' => 1,
+    'name' => 'Zed Lcd ' . $tag, 'email' => 'zz-lcd-' . $tag . '@example.test', 'password_hash' => Auth::hashPassword('Secret-12345'), 'email_verified_at' => null, 'photo_path' => 'zz/zz-lcd.jpg', 'is_active' => 1,
 ]);
 $ip = '203.0.113.50';
 

@@ -42,7 +42,10 @@ $clean = static function (): void {
     Database::execute('DELETE FROM rate_limits');
 };
 $clean();
-$pw = 'Sentence-for-test-88';
+
+$photoRuleWas = \App\Core\Settings::get('academy_register_photo_required', null);
+\App\Core\Settings::set('academy_register_photo_required', '0');     // these tests make learners without a picture: the picture rule is tested in selftest-academy-photo-gate.php
+\App\Core\Settings::flush();$pw = 'Sentence-for-test-88';
 $mk = static fn(string $tag): int => (int) Database::insert('academy_learners', [
     'name' => 'Zed Lpo ' . $tag, 'email' => 'zz-lpo-' . $tag . '@example.test', 'password_hash' => Auth::hashPassword($pw), 'phone' => '+256700000010', 'country' => 'Uganda', 'whatsapp' => '256772000010',
     'email_verified_at' => date('Y-m-d H:i:s'), 'is_active' => 1,
@@ -293,6 +296,8 @@ Database::execute('DELETE FROM academy_learners WHERE id = ?', [$b]);
 check('messages: deleting a learner deletes the conversation with the team', (int) Database::value('SELECT COUNT(*) FROM academy_messages WHERE learner_id = ?', [$b], 0) === 0);
 
 $clean();
+$photoRuleWas === null ? \App\Core\Settings::reset('academy_register_photo_required') : \App\Core\Settings::set('academy_register_photo_required', (string) $photoRuleWas);
+\App\Core\Settings::flush();
 if (!empty($standalone)) {
     echo PHP_EOL . ($fail === 0 ? 'ALL CHECKS PASSED' : "{$fail} check(s) FAILED.") . PHP_EOL;
     exit($fail === 0 ? 0 : 1);

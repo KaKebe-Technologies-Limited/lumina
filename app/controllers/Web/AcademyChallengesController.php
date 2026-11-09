@@ -37,6 +37,9 @@ final class AcademyChallengesController extends AcademyBaseController
         if ($l === null) {
             return $this->loginRedirect('Please sign in or create a free account to take part.');
         }
+        if (($gate = $this->pictureGate($l)) !== null) {
+            return $gate;
+        }
         return [$l, ChallengeService::entryOf((int) $c['id'], (int) $l['id'])];
     }
 

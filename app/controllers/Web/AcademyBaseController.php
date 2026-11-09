@@ -23,6 +23,20 @@ abstract class AcademyBaseController extends Controller
         }
     }
 
+    /**
+     * A signed-in learner who must still add a picture (LearnerPortrait::mustAdd: Google accounts and new accounts) is kept on the picture step: every screen that needs the account calls
+     * this and gets the redirect to "My profile > My picture" until a picture is saved. null = nothing to do.
+     * @param array<string,mixed> $learner
+     */
+    protected function pictureGate(array $learner): ?Response
+    {
+        if (!\App\Services\Academy\LearnerPortrait::mustAdd((int) $learner['id'])) {
+            return null;
+        }
+        Flash::info('One more step: please add your picture to continue. Take a selfie or attach a clear photo of your face. Only you and the Academy team can see it.');
+        return $this->redirect('academy/account#picture');
+    }
+
     protected function learner(): ?array
     {
         return LearnerAuth::current();

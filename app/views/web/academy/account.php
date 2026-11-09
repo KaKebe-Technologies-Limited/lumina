@@ -1,6 +1,9 @@
 <?php /** My account. Vars: $me, $portrait (photo_path, photo_consent_at), $portraitReady. */ ?>
 <?php $this->start('head'); ?><link rel="stylesheet" href="<?= e(asset('css/portal.min.css')) ?>"><?php $this->end(); ?>
 <?= partial('partials/page-hero', ['title' => 'My profile', 'eyebrow' => 'LAF Academy | My portal', 'lead' => 'Your details, your bio, your contact numbers and your picture.']) ?>
+<?php if (\App\Services\Academy\LearnerPortrait::mustAdd((int) $me['id'])): ?>
+    <div class="container"><p class="opp-notice ac-must-photo" role="alert"><?= icon('camera', 'icon--sm') ?> <strong>Add your picture to continue.</strong> Every LAF Academy learner has a picture on their account (also when you sign in with Google). Take a selfie or attach a clear photo of your face below. Only you and the Academy team can see it. Your courses open as soon as it is saved.</p></div>
+<?php endif; ?>
 <section class="section ac-auth">
     <div class="container container--narrow">
         <?= partial('web/academy/portal/_nav', ['me' => $me, 'tab' => 'profile', 'unread' => $unread ?? 0, 'portrait' => $portrait]) ?>

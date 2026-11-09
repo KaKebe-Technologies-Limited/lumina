@@ -52,7 +52,7 @@ if ($course === null) {
 }
 $mk = static fn(string $tag): array => (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [(int) Database::insert('academy_learners', [
     'reg_no' => 'LAF-AC-LK-' . $tag, 'name' => 'Zz Lk Person ' . $tag, 'email' => 'zz-lk-' . $tag . '@example.test', 'password_hash' => Auth::hashPassword('Secret-12345'),
-    'email_verified_at' => date('Y-m-d H:i:s'), 'approved_at' => date('Y-m-d H:i:s'), 'is_active' => 1, 'country' => 'Uganda',
+    'email_verified_at' => date('Y-m-d H:i:s'), 'approved_at' => date('Y-m-d H:i:s'), 'is_active' => 1, 'country' => 'Uganda', 'photo_path' => 'zz/zz-lk.jpg',
 ])]);
 $a = $mk('a');
 $b = $mk('b');

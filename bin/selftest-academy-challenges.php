@@ -110,7 +110,10 @@ $clean = static function (): void {
     Database::execute('DELETE FROM rate_limits');
 };
 $clean();
-$mailsBefore = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
+
+$photoRuleWas = \App\Core\Settings::get('academy_register_photo_required', null);
+\App\Core\Settings::set('academy_register_photo_required', '0');     // these tests make learners without a picture: the picture rule is tested in selftest-academy-photo-gate.php
+\App\Core\Settings::flush();$mailsBefore = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
 $mailText = static function (string $to) use ($mailsBefore): string {
     $out = '';
     foreach (array_diff(glob(STORAGE_PATH . '/mail/*.eml') ?: [], $mailsBefore) as $f) {
@@ -460,6 +463,8 @@ $clean();
 check('cleanup: no zz-chal rows are left', Database::value("SELECT COUNT(*) FROM academy_challenges WHERE title LIKE 'zz-chal%'", [], 0) === 0 && Database::value("SELECT COUNT(*) FROM users WHERE email LIKE 'zz-chal-%'", [], 0) === 0
     && Database::value("SELECT COUNT(*) FROM academy_learners WHERE email LIKE 'zz-chal-%'", [], 0) === 0);
 
+$photoRuleWas === null ? \App\Core\Settings::reset('academy_register_photo_required') : \App\Core\Settings::set('academy_register_photo_required', (string) $photoRuleWas);
+\App\Core\Settings::flush();
 if (!empty($standalone)) {
     echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
     exit($fail === 0 ? 0 : 1);

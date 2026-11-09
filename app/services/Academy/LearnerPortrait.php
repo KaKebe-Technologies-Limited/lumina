@@ -70,6 +70,33 @@ final class LearnerPortrait
         return ['photo_path' => $r['photo_path'] ?? null, 'photo_consent_at' => $r['photo_consent_at'] ?? null];
     }
 
+    /** Accounts created on or after this moment must have a picture to use the Academy (the day the picture became a requirement); Google accounts always. Setting academy_photo_gate_from overrides it. */
+    public const GATE_FROM = '2026-11-03 00:00:00';
+
+    /**
+     * MUST this learner add a picture before using the Academy? Yes when pictures are required (Settings > LAF Academy) and the account has none AND it is a Google account (Google sign-up
+     * never shows the form that asks for a picture) or an account made since pictures became required. Older accounts without a picture are handled by the reminder and deadline
+     * (Admin > Learners), not locked out all at once. Used to keep the learner on the picture step until it is done.
+     */
+    public static function mustAdd(int $learnerId): bool
+    {
+        static $memo = [];
+        if (isset($memo[$learnerId])) {
+            return $memo[$learnerId];
+        }
+        if (!self::requiredAtSignup()) {
+            return $memo[$learnerId] = false;
+        }
+        $r = Database::one('SELECT photo_path, google_sub, created_at FROM academy_learners WHERE id = ?', [$learnerId]);
+        if ($r === null || trim((string) ($r['photo_path'] ?? '')) !== '') {
+            return $memo[$learnerId] = false;
+        }
+        $from = trim((string) \App\Core\Settings::get('academy_photo_gate_from', '')) ?: self::GATE_FROM;
+        $fromTs = strtotime($from) ?: strtotime(self::GATE_FROM);
+        $google = trim((string) ($r['google_sub'] ?? '')) !== '';
+        return $memo[$learnerId] = $google || (strtotime((string) $r['created_at']) ?: 0) >= $fromTs;
+    }
+
     /** @return array{ok:bool,error:string} */
     public static function save(int $learnerId, array $file, bool $consent): array
     {

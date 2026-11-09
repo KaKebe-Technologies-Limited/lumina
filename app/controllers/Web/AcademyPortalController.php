@@ -35,7 +35,13 @@ final class AcademyPortalController extends AcademyBaseController
     private function who(): array
     {
         $l = $this->learner();
-        return $l === null ? [null, $this->loginRedirect()] : [$l, null];
+        if ($l === null) {
+            return [null, $this->loginRedirect()];
+        }
+        if (($gate = $this->pictureGate($l)) !== null) {
+            return [null, $gate];
+        }
+        return [$l, null];
     }
 
     /** @param array<string,mixed> $data */
