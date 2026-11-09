@@ -30,7 +30,9 @@ final class AcademyStatsController extends AcademyAdminController
                 'matrix'    => AcademyStats::topicByCountry(6),
             ];
         }
-        return $this->render('admin/academy/statistics', ['d' => $d, 'ready' => $ready], ['title' => 'Academy statistics', 'nav' => 'academy_statistics', 'breadcrumbs' => $this->crumbs('Statistics')]);
+        $link = abs_url('academy/impact', ['utm_source' => 'social', 'utm_medium' => 'social', 'utm_campaign' => 'academy-stats']);
+        $share = $ready ? ['link' => $link, 'caption' => AcademyStats::shareCaption($link)['caption'], 'pages' => social_links('all')] : null;
+        return $this->render('admin/academy/statistics', ['d' => $d, 'ready' => $ready, 'share' => $share], ['title' => 'Academy statistics', 'nav' => 'academy_statistics', 'breadcrumbs' => $this->crumbs('Statistics')]);
     }
 
     public function export(Request $request): Response

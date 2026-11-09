@@ -97,7 +97,9 @@ final class AcademyController extends AcademyBaseController
         return $this->renderAcademy('web/academy/impact', ['d' => $d, 'ready' => $ready], [
             'bodyClass' => 'is-academy is-academy-impact',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['The Academy in numbers', null]],
-            'meta' => ['title' => 'The LAF Academy in numbers', 'description' => 'Learners by topic and by country, growth by month and certificates issued: the LAF Academy dashboard.'],
+            'meta' => ['title' => 'The LAF Academy in numbers', 'description' => $ready && !empty($d['overview']['learners'])
+                ? number_format((int) $d['overview']['learners']) . ' learners from ' . (int) $d['overview']['countries'] . ' countries, ' . number_format((int) $d['overview']['courses']) . ' free courses and ' . number_format((int) $d['overview']['certificates']) . ' certificates issued: the LAF Academy dashboard, by topic and by country.'
+                : 'Learners by topic and by country, growth by month and certificates issued: the LAF Academy dashboard.', 'og_image' => abs_url('assets/img/site/mentorship/lacekocot-0601.jpg')],
         ]);
     }
 

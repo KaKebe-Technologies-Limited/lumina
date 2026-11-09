@@ -9,6 +9,42 @@ $exp = static fn(string $w): string => url('admin/academy/statistics/export', ['
     <div class="alert alert--warning" role="status"><strong>The Academy tables are missing.</strong> Open Admin > LAF Academy once so the Academy installs itself, then come back.</div>
 <?php else: ?>
     <div class="ad-page ad-page--admin">
+        <?php if (!empty($share)): ?>
+        <details class="card ad-share" id="share" data-share-box>
+            <summary class="card__body ad-share__sum"><span><?= icon('send', 'icon--sm') ?> <strong>Share these numbers on social media</strong></span><span class="btn btn--primary btn--sm">Share</span></summary>
+            <div class="card__body">
+                <p class="text-muted">The post below is written from the real figures above (totals only: no names, no e-mails) and links to the public dashboard. Edit the words if you like, then press a button: that network opens with your post ready to publish. Nothing is posted until you confirm it there.</p>
+                <div class="field"><label class="field__label" for="share-caption">The post</label>
+                    <textarea class="textarea" id="share-caption" rows="7" maxlength="1500" data-share-caption data-share-link="<?= e($share['link']) ?>"><?= e($share['caption']) ?></textarea></div>
+                <p class="ad-share__count text-muted"><span data-share-count>0</span> characters. X allows 280 (a link counts as 23): shorten the post for X if the counter is red.</p>
+                <div class="ad-share__row">
+                    <?php foreach ([
+                        ['facebook', 'Facebook', 'facebook', 'https://www.facebook.com/sharer/sharer.php?u={url}&quote={text}'],
+                        ['x', 'X', 'x', 'https://twitter.com/intent/tweet?text={text}'],
+                        ['linkedin', 'LinkedIn', 'linkedin', 'https://www.linkedin.com/sharing/share-offsite/?url={url}'],
+                        ['whatsapp', 'WhatsApp', 'whatsapp', 'https://wa.me/?text={text}'],
+                        ['telegram', 'Telegram', 'telegram', 'https://t.me/share/url?url={url}&text={text}'],
+                    ] as [$k, $label, $icon, $tpl]): ?>
+                        <button class="btn btn--outline btn--sm" type="button" data-share-to="<?= e($tpl) ?>"><?= icon($icon, 'icon--sm') ?> <?= e($label) ?></button>
+                    <?php endforeach; ?>
+                    <button class="btn btn--ghost btn--sm" type="button" data-share-copy><?= icon('copy', 'icon--sm') ?> <span data-share-copy-label>Copy the post</span></button>
+                </div>
+                <?php if (!empty($share['pages'])): ?>
+                    <h3 class="ad-share__sub">Post on our own pages</h3>
+                    <p class="text-muted">Instagram, TikTok and YouTube cannot be shared from a link: copy the post, then open our page and paste it (add a screenshot of the dashboard).</p>
+                    <div class="ad-share__row">
+                        <?php foreach ($share['pages'] as $pg): ?>
+                            <a class="btn btn--ghost btn--sm" href="<?= e($pg['url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon((string) $pg['icon'], 'icon--sm') ?> Open our <?= e($pg['label']) ?> page</a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <p class="text-muted">Our social media page addresses are not set yet: add them in Admin > Social media to get a button for each page here.</p>
+                <?php endif; ?>
+            </div>
+        </details>
+        <?php $this->start('scripts'); ?><script src="<?= e(asset('js/admin-share-stats.js')) ?>" defer></script><?php $this->end(); ?>
+        <?php endif; ?>
+
         <?= partial('partials/academy-charts', ['part' => 'kpis', 'overview' => $o]) ?>
 
         <div class="ad-grid">

@@ -169,6 +169,39 @@ final class AcademyStats
         return ['countries' => $top, 'rows' => $out];
     }
 
+    /**
+     * The words of a social media post about the Academy numbers, written ONLY from the real figures (no name, no e-mail, nothing invented): learners and countries, courses and
+     * lessons, certificates, the busiest topic and the biggest country, and the public dashboard address. Empty parts are left out.
+     * @return array{caption:string,facts:list<string>}
+     */
+    public static function shareCaption(string $link): array
+    {
+        $o = self::overview();
+        $topics = array_values(array_filter(self::byTopic(), static fn(array $t): bool => $t['learners'] > 0));
+        $countries = self::byCountry(1)['rows'];
+        $facts = [];
+        if ($o['learners'] > 0) {
+            $facts[] = number_format((int) $o['learners']) . ' learners' . ($o['countries'] > 1 ? ' from ' . (int) $o['countries'] . ' countries' : '');
+        }
+        if ($o['courses'] > 0) {
+            $facts[] = number_format((int) $o['courses']) . ' free courses and ' . number_format((int) $o['lessons']) . ' lessons';
+        }
+        if ($o['certificates'] > 0) {
+            $facts[] = number_format((int) $o['certificates']) . ' certificates issued';
+        }
+        if ($topics !== []) {
+            $facts[] = 'most popular topic: ' . $topics[0]['label'] . ' (' . number_format((int) $topics[0]['learners']) . ' learners)';
+        }
+        if (($countries[0]['n'] ?? 0) > 0 && !str_starts_with((string) $countries[0]['country'], 'Other countries')) {
+            $facts[] = 'most learners from ' . $countries[0]['country'] . ' (' . number_format((int) $countries[0]['n']) . ')';
+        }
+        $lines = ['The LAF Academy in numbers: ' . ($facts !== [] ? implode(', ', $facts) . '.' : 'free ICT skills for young people in Northern Uganda and beyond.')];
+        $lines[] = 'Learn free, at your own pace, and earn a certificate: ' . $link;
+        $tags = trim((string) setting('social_hashtags', '#LuminaAfricaFoundation #Uganda #CommunityDevelopment'));
+        $lines[] = trim($tags . ' #LAFAcademy #DigitalSkills');
+        return ['caption' => implode("\n\n", array_filter($lines)), 'facts' => $facts];
+    }
+
     /** Everything the public dashboard shows. @return array<string,mixed> */
     public static function publicData(): array
     {

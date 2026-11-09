@@ -144,6 +144,14 @@ check('admin: Statistics shows the numbers, learners by topic and country, the m
 check('admin: the sidebar has the Statistics link', str_contains($ad['body'], 'admin/academy/statistics'));
 $dash = $req('/admin', null, $ja);
 check('admin: the main Dashboard has the "LAF Academy at a glance" block with a link to the statistics', $dash['code'] === 200 && str_contains($dash['body'], 'LAF Academy at a glance') && str_contains($dash['body'], 'admin/academy/statistics'), (string) $dash['code']);
+check('admin: the Dashboard block has a "Share on social media" button', str_contains($dash['body'], 'Share on social media') && str_contains($dash['body'], 'statistics#share'));
+$cap = AcademyStats::shareCaption('https://example.org/academy/impact');
+check('share: the post is written from the real numbers, with the link and the hashtags', str_contains($cap['caption'], 'The LAF Academy in numbers') && str_contains($cap['caption'], ' learners') && str_contains($cap['caption'], 'https://example.org/academy/impact') && str_contains($cap['caption'], '#LuminaAfricaFoundation') && $cap['facts'] !== [], $cap['caption']);
+check('share: the post holds no name and no e-mail', !str_contains($cap['caption'], 'Zz Stat') && !str_contains($cap['caption'], '@example.test'));
+check('admin: the Statistics page has the "Share these numbers on social media" panel with the post and the five network buttons', str_contains($ad['body'], 'Share these numbers on social media') && str_contains($ad['body'], 'data-share-caption') && substr_count($ad['body'], 'data-share-to=') === 5 && str_contains($ad['body'], 'facebook.com/sharer') && str_contains($ad['body'], 'wa.me') && str_contains($ad['body'], 'admin-share-stats.js'));
+check('admin: the post in the box links to the public dashboard with a campaign tag', str_contains($ad['body'], 'academy/impact') && str_contains($ad['body'], 'utm_campaign=academy-stats'));
+check('admin: the share script is served', $req('/assets/js/admin-share-stats.js')['code'] === 200);
+check('public: the dashboard page has a description with the numbers and a picture for link previews', preg_match('~<meta name="description" content="[^"]*\d+ learners from \d+ countries~', $pub['body']) === 1 && str_contains($pub['body'], 'og:image'), 'meta');
 $csv = $req('/admin/academy/statistics/export?what=countries', null, $ja);
 check('admin: the country CSV downloads with the learner counts (and no personal details)', $csv['code'] === 200 && str_contains($csv['type'], 'csv') && str_contains($csv['body'], 'Country,Learners') && str_contains($csv['body'], 'Uganda') && !str_contains($csv['body'], '@example.test'), $csv['type']);
 $csvT = $req('/admin/academy/statistics/export?what=topics', null, $ja);

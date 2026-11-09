@@ -1430,6 +1430,58 @@ html {
   font-weight: 700;
 }
 
+.ad-share {
+  margin-bottom: 1rem;
+}
+
+.ad-share__sum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.ad-share__sum::-webkit-details-marker {
+  display: none;
+}
+
+.ad-share__sum > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ad-share__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.ad-share__sub {
+  margin: 1.5rem 0 0;
+  font-size: 1rem;
+  color: #142B4A;
+}
+
+.ad-share__count {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+}
+
+.ad-share__count .is-over {
+  color: #B83232;
+  font-weight: 800;
+}
+
+.dash-academy__links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .filter-bar {
   display: flex;
   flex-wrap: wrap;

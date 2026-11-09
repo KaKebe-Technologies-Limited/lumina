@@ -68,3 +68,12 @@
 .ad-page--admin .ad-kpi { box-shadow: none; }
 .ad-page--admin .table-wrap { margin-top: $space-4; }
 .ad-heat { background: rgba($gold, var(--a, 0)); font-weight: 700; }
+
+// ---- Share these numbers (admin statistics page)
+.ad-share { margin-bottom: $space-4; }
+.ad-share__sum { display: flex; align-items: center; justify-content: space-between; gap: $space-3; cursor: pointer; list-style: none; &::-webkit-details-marker { display: none; } }
+.ad-share__sum > span:first-child { display: inline-flex; align-items: center; gap: 0.5rem; }
+.ad-share__row { display: flex; flex-wrap: wrap; gap: $space-2; margin: $space-3 0; }
+.ad-share__sub { margin: $space-5 0 0; font-size: 1rem; color: $navy; }
+.ad-share__count { margin: 0.4rem 0 0; font-size: 0.85rem; .is-over { color: $danger; font-weight: 800; } }
+.dash-academy__links { display: inline-flex; flex-wrap: wrap; gap: $space-2; }

@@ -44,7 +44,7 @@ $greet = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good ev
 
 <?php if (!empty($academy) && (int) $academy['overview']['learners'] > 0): ?>
     <section class="card dash-academy" aria-labelledby="dash-academy-title">
-        <div class="card__header"><h2 class="card__title" id="dash-academy-title"><?= icon('book', 'icon--sm') ?> LAF Academy at a glance</h2><a class="btn btn--ghost btn--sm" href="<?= e(url('admin/academy/statistics')) ?>">All statistics <?= icon('arrow-right', 'icon--arrow') ?></a></div>
+        <div class="card__header"><h2 class="card__title" id="dash-academy-title"><?= icon('book', 'icon--sm') ?> LAF Academy at a glance</h2><span class="dash-academy__links"><a class="btn btn--outline btn--sm" href="<?= e(url('admin/academy/statistics#share')) ?>"><?= icon('send', 'icon--sm') ?> Share on social media</a> <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/academy/statistics')) ?>">All statistics <?= icon('arrow-right', 'icon--arrow') ?></a></span></div>
         <div class="card__body ad-page ad-page--admin">
             <?= partial('partials/academy-charts', ['part' => 'kpis', 'overview' => $academy['overview']]) ?>
             <div class="ad-grid">
