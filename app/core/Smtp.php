@@ -209,7 +209,15 @@ final class Smtp
         if ($reply[0] === 235) {
             return;
         }
-        throw new MailException('The mail server rejected the SMTP login (' . $reply[0] . '). Check MAIL_USERNAME and MAIL_PASSWORD.', $reply[0], $reply[0] >= 400 && $reply[0] < 500, null, true);
+        // say what the server said (scrubbed: no password, no address) and what it usually means, so the administrator knows what to do
+        $said = $this->scrub((string) ($reply[1][0] ?? ''));
+        $hint = match (true) {
+            $reply[0] === 454 => 'This is usually temporary: Google blocks the sign-in for a while after several attempts or from a new server. Wait about an hour, then try again; if it keeps happening, create a new App Password and open https://accounts.google.com/DisplayUnlockCaptcha while signed in to that Google account.',
+            $reply[0] === 534 => 'The account needs an App Password (turn on 2-Step Verification, then create one): the normal password is refused.',
+            $reply[0] === 535 => 'The user name or password was not accepted: MAIL_USERNAME must be the full address and MAIL_PASSWORD the 16-letter App Password (no spaces), kept in quotes.',
+            default => 'Check MAIL_USERNAME and MAIL_PASSWORD.',
+        };
+        throw new MailException('The mail server rejected the SMTP login (' . $reply[0] . ($said !== '' ? ' ' . $said : '') . '). ' . $hint, $reply[0], $reply[0] >= 400 && $reply[0] < 500, null, true);
     }
 
     private function isLoopback(): bool

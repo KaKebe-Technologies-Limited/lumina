@@ -101,7 +101,8 @@ final class LearnerMessages
                 continue;
             }
             $failed++;
-            if (++$streak >= 3) {
+            // a refused LOGIN is the same for every learner and each further try is another failed login (Google then blocks the account for longer): stop at once
+            if (++$streak >= 3 || str_contains((string) AcademyMail::lastError(), 'SMTP login')) {
                 $stopped = AcademyMail::lastError() ?: 'The mail server did not accept the messages.';
                 break;
             }
