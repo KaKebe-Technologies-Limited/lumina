@@ -566,6 +566,29 @@ final class AcademyLearnersController extends AcademyAdminController
         return $this->redirect('admin/academy/learners');
     }
 
+    /**
+     * POST admin/academy/learners-signin-guides: e-mail every approved learner the numbered "how to sign in" guide, a batch at a time (setting academy_bulk_mail_per_run,
+     * default 100, so a mail account with a daily limit is never emptied in one go). Press again to continue with those still waiting.
+     */
+    public function signInGuides(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $per = max(10, min(400, (int) setting('academy_bulk_mail_per_run', '100')));
+        $login = LearnerRegistry::loginMode($request->string('login'));
+        $r = \App\Services\Academy\LearnerMessages::sendSignInGuides(Auth::id(), $login, $request->bool('again'), $per);
+        $this->audit('academy.learner.signin_guides', 'academy_learner', null, 'Sent the sign-in guide to approved learners (' . strtolower(LearnerRegistry::LOGIN_FILTER[$login]) . ')', ['sent' => $r['sent'], 'failed' => $r['failed'], 'remaining' => $r['remaining']]);
+        if ($r['total'] === 0) {
+            Flash::info('Every approved learner in this group has already been sent the sign-in guide. Tick "send again" to send it to them once more.');
+        } elseif ($r['stopped'] !== null && $r['stopped'] !== 'time') {
+            Flash::error('Sent to ' . $r['sent'] . ' learner' . ($r['sent'] === 1 ? '' : 's') . ', then the mail server stopped accepting messages: ' . $r['stopped'] . ' (a free Gmail account allows about 500 a day). ' . $r['remaining'] . ' still waiting: press the button again later.');
+        } elseif ($r['remaining'] > 0) {
+            Flash::success('Sent to ' . $r['sent'] . ' learner' . ($r['sent'] === 1 ? '' : 's') . '. ' . $r['remaining'] . ' still waiting: press the button again to send the next batch.' . ($r['failed'] > 0 ? ' ' . $r['failed'] . ' could not be e-mailed and will be tried again.' : ''));
+        } else {
+            Flash::success('The sign-in guide was sent to ' . $r['sent'] . ' approved learner' . ($r['sent'] === 1 ? '' : 's') . '. Everyone in this group has it now.' . ($r['failed'] > 0 ? ' ' . $r['failed'] . ' could not be e-mailed and will be tried again next time.' : ''));
+        }
+        return $this->redirect('admin/academy/learners');
+    }
+
     /** POST admin/academy/learners-remind-fee-all: the same reminder to every learner whose sign-up fee is still unpaid. */
     public function remindFeeAll(Request $request): Response
     {

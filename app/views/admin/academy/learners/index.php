@@ -97,6 +97,28 @@ $picDeadline = \App\Services\Academy\LearnerPortrait::deadline(); $picPassed = \
 <?php $approvedN = $manager ? count(\App\Services\Academy\LearnerMessages::approvedLearners()) : 0;
 $approvedIn = $manager ? count(\App\Services\Academy\LearnerMessages::approvedLearners('yes')) : 0; ?>
 <?php if ($manager && $approvedN > 0 && \App\Services\Academy\LearnerMessages::ready()): ?>
+    <?php $guideWaiting = count(\App\Services\Academy\LearnerMessages::signInPending()); $guideWaitingNew = count(\App\Services\Academy\LearnerMessages::signInPending('no')); $perRun = max(10, min(400, (int) setting('academy_bulk_mail_per_run', '100'))); ?>
+    <details class="card" style="margin-bottom:1rem"<?= $guideWaiting > 0 ? ' open' : '' ?>><summary class="card__body" style="cursor:pointer"><strong><?= icon('mail', 'icon--sm') ?> Send the sign-in guide to all approved learners (<?= $guideWaiting ?> still waiting)</strong></summary>
+        <div class="card__body">
+            <p>Each approved learner gets an e-mail (and a copy in their portal) with the steps to sign in, written with <strong>their own</strong> e-mail address and registration number:</p>
+            <ol class="text-muted">
+                <li>Open the sign-in page (link and button).</li>
+                <li>Type the e-mail address they registered with, or their registration number. Learners who joined with Google are told to press "Continue with Google" instead.</li>
+                <li>Type the password. Forgot it? The "Forgot your password?" link e-mails a new one.</li>
+                <li>Press Sign in: they arrive in their learner portal with their courses, certificates and messages. Who to write to if it does not work.</li>
+            </ol>
+            <p class="text-muted">To protect the mail account (a free Gmail account sends about 500 a day), the guide goes out <strong><?= $perRun ?> at a time</strong>. After each batch the page tells you how many are still waiting: press the button again later, or tomorrow, to send the next batch. Nobody is written to twice.</p>
+            <form method="post" action="<?= e(url('admin/academy/learners-signin-guides')) ?>" data-confirm="E-mail the sign-in guide to the next batch of approved learners (up to <?= $perRun ?>)?">
+                <?= csrf_field() ?>
+                <div class="field"><label class="field__label" for="guide-login">Who gets it</label><select class="select" id="guide-login" name="login">
+                    <option value="no">Those who have never signed in (<?= $guideWaitingNew ?> still waiting) - recommended</option>
+                    <option value="">All approved learners (<?= $guideWaiting ?> still waiting)</option>
+                    <option value="yes">Only those who have signed in before</option></select></div>
+                <label class="aac-remind__check"><input type="checkbox" name="again" value="1"> Send again, also to learners who already got the guide</label>
+                <button class="btn btn--primary btn--sm" type="submit"><?= icon('send', 'icon--sm') ?> Send the next batch</button>
+            </form>
+        </div>
+    </details>
     <details class="card" style="margin-bottom:1rem"><summary class="card__body" style="cursor:pointer"><strong><?= icon('bell', 'icon--sm') ?> Send a reminder to all approved learners (<?= $approvedN ?>)</strong></summary>
         <div class="card__body">
             <p class="text-muted">Each approved learner gets this as a message in the learner portal, and by e-mail if you tick the box. <code>{name}</code> becomes the learner's first name. Edit the words as you like.</p>

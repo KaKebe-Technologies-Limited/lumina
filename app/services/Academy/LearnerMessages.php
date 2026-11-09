@@ -41,10 +41,72 @@ final class LearnerMessages
     {
         try {
             $lc = LearnerRegistry::loginSql(LearnerRegistry::loginMode($login), 'last_login_at');
-            return Database::all('SELECT id, name, email FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NOT NULL' . ($lc !== null ? ' AND ' . $lc : '') . ' ORDER BY id');
+            return Database::all('SELECT id, name, email, reg_no, google_sub FROM academy_learners WHERE is_active = 1 AND email_verified_at IS NOT NULL' . ($lc !== null ? ' AND ' . $lc : '') . ' ORDER BY id');
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /** The portal message that records "this learner was sent the sign-in guide" (also what they read in the portal). It starts with the fixed words below, which is how a later run knows who is done. */
+    public const SIGNIN_MARK = 'How to sign in to your LAF Academy account';
+
+    /** The short portal copy of the sign-in guide. */
+    public static function signInGuideText(array $l): string
+    {
+        $reg = trim((string) ($l['reg_no'] ?? ''));
+        return self::SIGNIN_MARK . ': open ' . abs_url('academy/login') . ', type your e-mail address' . ($reg !== '' ? ' or your registration number (' . $reg . ')' : '') . ' and your password, then press Sign in. Forgot your password? Use the link on that page. We have also e-mailed you these steps.';
+    }
+
+    /** Approved learners who have NOT been sent the sign-in guide yet (or all when $again). @return list<array<string,mixed>> */
+    public static function signInPending(string $login = '', bool $again = false): array
+    {
+        $all = self::approvedLearners($login);
+        if ($again || !self::ready()) {
+            return $all;
+        }
+        $done = [];
+        foreach (Database::all("SELECT DISTINCT learner_id FROM academy_messages WHERE sender = 'admin' AND body LIKE ?", [self::SIGNIN_MARK . '%']) as $r) {
+            $done[(int) $r['learner_id']] = true;
+        }
+        return array_values(array_filter($all, static fn(array $l): bool => !isset($done[(int) $l['id']])));
+    }
+
+    /**
+     * E-mail the numbered sign-in guide to approved learners, a limited number per run (the mail account has a daily limit and a request has a time limit). A learner counts as done
+     * once the e-mail went out AND the portal copy was saved, so pressing the button again continues with those still waiting and never writes to anybody twice (unless $again).
+     * Stops at once when the mail server keeps refusing (for example the daily limit of the account).
+     * @return array{sent:int,failed:int,remaining:int,total:int,stopped:?string}
+     */
+    public static function sendSignInGuides(?int $adminId, string $login, bool $again, int $maxEmails, int $maxSeconds = 40): array
+    {
+        $todo = self::signInPending($login, $again);
+        $total = count($todo);
+        $sent = 0;
+        $failed = 0;
+        $streak = 0;
+        $stopped = null;
+        $t0 = microtime(true);
+        foreach ($todo as $l) {
+            if ($sent >= $maxEmails) {
+                break;
+            }
+            if (microtime(true) - $t0 > $maxSeconds) {
+                $stopped = 'time';
+                break;
+            }
+            if (AcademyMail::signInGuide($l)) {
+                self::send((int) $l['id'], 'admin', self::signInGuideText($l), $adminId);
+                $sent++;
+                $streak = 0;
+                continue;
+            }
+            $failed++;
+            if (++$streak >= 3) {
+                $stopped = AcademyMail::lastError() ?: 'The mail server did not accept the messages.';
+                break;
+            }
+        }
+        return ['sent' => $sent, 'failed' => $failed, 'remaining' => max(0, $total - $sent), 'total' => $total, 'stopped' => $stopped];
     }
 
     /** The default words of the reminder to approved learners; {name} becomes the learner's first name. */

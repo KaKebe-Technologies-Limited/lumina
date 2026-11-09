@@ -112,6 +112,7 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->get('/learners-not-started-whatsapp', [AcademyLearnersController::class, 'notStartedWhatsApp'])->middleware('throttle:60,60')->name('admin.academy.learners.not_started_whatsapp');
     $router->post('/learners-remind-no-picture', [AcademyLearnersController::class, 'remindNoPicture'])->middleware('throttle:5,60')->name('admin.academy.learners.remind_no_picture');
     $router->post('/learners-switch-off-no-picture', [AcademyLearnersController::class, 'switchOffNoPicture'])->middleware('throttle:5,60')->name('admin.academy.learners.switch_off_no_picture');
+    $router->post('/learners-signin-guides', [AcademyLearnersController::class, 'signInGuides'])->middleware('throttle:30,60')->name('admin.academy.learners.signin_guides');
     $router->post('/learners-remind-approved', [AcademyLearnersController::class, 'remindApproved'])->middleware('throttle:5,60')->name('admin.academy.learners.remind_approved');
     $router->post('/learners-remind-fee-all', [AcademyLearnersController::class, 'remindFeeAll'])->middleware('throttle:5,60')->name('admin.academy.learners.remind_fee_all');
     $router->post('/learners-remind-fee-whatsapp-all', [AcademyLearnersController::class, 'remindFeeWhatsAppAll'])->middleware('throttle:5,60')->name('admin.academy.learners.remind_fee_whatsapp_all');

@@ -130,6 +130,36 @@ final class AcademyMail
         ], ['label' => 'Open my messages', 'url' => abs_url('academy/portal/messages')]);
     }
 
+    /**
+     * "How to sign in": sent to approved learners. A clear numbered procedure with THEIR e-mail address and registration number, the forgot-password route, the Google route for
+     * accounts made with Google, and who to write to. $learner needs name, email and (optional) reg_no, google_sub.
+     */
+    public static function signInGuide(array $learner): bool
+    {
+        $login = abs_url('academy/login');
+        $email = (string) $learner['email'];
+        $reg = trim((string) ($learner['reg_no'] ?? ''));
+        $google = trim((string) ($learner['google_sub'] ?? '')) !== '';
+        $support = self::supportEmail();
+        $steps = [
+            'Step 1. Open the sign-in page: ' . $login,
+            $google
+                ? 'Step 2. You created your account with Google, so press the "Continue with Google" button and choose the Google account ' . $email . '. You do not need a password.'
+                : 'Step 2. In the first box type the e-mail address you registered with (' . $email . ')' . ($reg !== '' ? ' or your registration number (' . $reg . ')' : '') . '.',
+        ];
+        if (!$google) {
+            $steps[] = 'Step 3. In the second box type your password. Forgot it? Press "Forgot your password?" on the sign-in page, or open ' . abs_url('academy/forgot') . ', and we will e-mail you a link to choose a new one.';
+        }
+        $steps[] = 'Step ' . ($google ? '3' : '4') . '. Press "Sign in". You arrive in your learner portal: open your courses, continue your lessons and find your certificates and messages.';
+        $paragraphs = [
+            'Hello ' . self::first((string) $learner['name']) . ',',
+            'Good news: your LAF Academy account is approved and ready to use. Here is exactly how to sign in:',
+            implode("\n\n", $steps),
+            'If something does not work: check that the address has no spaces or capital-letter mistakes, use the "Forgot your password?" link, or write to the Academy team' . ($support !== '' ? ' at ' . $support : ' through ' . abs_url('academy/contact')) . ' and tell us your ' . ($reg !== '' ? 'registration number (' . $reg . ')' : 'e-mail address') . '.',
+        ];
+        return self::send($email, 'How to sign in to your LAF Academy account', $paragraphs, ['label' => 'Sign in to the LAF Academy', 'url' => $login]);
+    }
+
     /** The application was rejected (only when the administrator ticks "also e-mail"; best effort). */
     public static function rejected(array $learner, string $reason): bool
     {
