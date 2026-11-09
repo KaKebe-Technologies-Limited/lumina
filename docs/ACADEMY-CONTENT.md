@@ -161,6 +161,7 @@ File names: `NN-slug.php` where NN is the order number below. Targets per course
 | 680 | digital-content-creation-masterclass | Digital Content Creation Masterclass: From Beginner to Paid Creator | marketing | beginner |
 | 690 | robotics-automation | Robotics and Automation: Build, Program and Innovate | hardware | beginner |
 | 700 | web-development-claude-code | Web Development with Claude Code: From First Page to Live Application | web | beginner |
+| 710 | chatgpt-productivity-learning-creativity | ChatGPT for Productivity, Learning, Creativity and Entrepreneurship | ai | beginner |
 
 **Interactive lessons (courses 420 and later):** every lesson holds two "Quick check" cards, a blockquote in exactly this form, which the site turns into a click-to-reveal question (assets/js/academy.js):
 `<blockquote><p><strong>Quick check:</strong> the question?</p><p>Answer: the answer and one reason.</p></blockquote>`
