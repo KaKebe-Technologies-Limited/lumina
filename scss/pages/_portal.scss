@@ -114,3 +114,16 @@
 // ---- the team's messages on the "waiting for approval" page (an applicant who signed in with the right password)
 .ac-pending-msgs { margin: $space-5 0; padding: $space-4 $space-5; text-align: left; background: #FFF8D6; border-left: 4px solid #FFD21F; border-radius: $radius;
   &__item { margin: $space-3 0; padding: $space-3 $space-4; background: $white; border: 1px solid $line; border-radius: $radius; line-height: 1.5; overflow-wrap: anywhere; &--me { background: $surface-alt; } } }
+
+// ---- the BLURRED certificate preview (a certificate that is not issued yet): the redacted picture is blurred, a veil says why, and the three steps are listed beside it
+.ac-locked { display: grid; gap: $space-5; margin-top: $space-5; @include respond(lg) { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; }
+  &__frame { position: relative; overflow: hidden; border-radius: $radius-panel; box-shadow: 0 14px 40px rgba($navy, 0.18); background: #FAF8F2; }
+  .ac-cert-svg--locked { margin: 0; max-width: none; box-shadow: none; filter: blur(6px) saturate(0.85); transform: scale(1.03); pointer-events: none; user-select: none; -webkit-user-select: none; }
+  &__veil { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 0.4rem; padding: $space-4; text-align: center; color: $white; background: radial-gradient(ellipse at center, rgba($navy-dark, 0.62), rgba($navy-dark, 0.35) 70%);
+    strong { font-family: $font-heading; font-size: #{'clamp(1.1rem, 2.6vw, 1.6rem)'}; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5); } span { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: $gold; } }
+  &__lock { display: grid; place-items: center; width: 4.4rem; height: 4.4rem; border-radius: 50%; background: $gold; color: $navy-dark; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); .icon { width: 2.1rem; height: 2.1rem; } }
+  &__steps { list-style: none; margin: $space-4 0; padding: 0; display: grid; gap: $space-4;
+    li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: $space-3; align-items: start; } p { margin: 0.2rem 0 0; font-size: 0.95rem; color: $ink-soft; } }
+  &__n { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: rgba($navy, 0.1); color: $navy; font-weight: 800; .icon { width: 1.1rem; height: 1.1rem; } }
+  &__steps .is-done &__n, &__steps .is-done .ac-locked__n { background: #138A45; color: $white; }
+  &__actions { display: flex; flex-wrap: wrap; gap: $space-3; } }

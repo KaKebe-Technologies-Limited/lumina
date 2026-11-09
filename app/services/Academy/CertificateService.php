@@ -340,6 +340,27 @@ final class CertificateService
         return (array) Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]);
     }
 
+    /**
+     * The certificate drawn with its details REPLACED by placeholders (name, course, score, hours, date, number and the QR code of the check page): the layout, wording and
+     * signature are the real ones, but nothing that identifies the learner or the certificate is in the picture. The learner page shows this behind a blur until the certificate is
+     * issued (the fee paid and the administrator's approval), so the blur is only decoration: the real details are never sent.
+     * @param array<string,mixed> $cert a certificate row
+     */
+    public static function lockedSvg(array $cert): string
+    {
+        $kind = ($cert['kind'] ?? 'course') === 'challenge' ? 'challenge' : 'course';
+        $mask = $cert;
+        $mask['learner_name'] = 'XXXXXXXX XXXXXXXXX';
+        $mask['course_title'] = 'XXXXXXXXXXXX XXXXXXXXXX XXXXXXXX';
+        $mask['code'] = 'LAF-XXXX-XXXXXX';
+        $mask['score_pct'] = null;
+        $mask['hours'] = null;
+        $mask['award'] = $kind === 'challenge' ? 'XXXXXXXXXX' : '';
+        $mask['issued_at'] = '2026-01-01 00:00:00';
+        $mask['approved_at'] = '2026-01-01 00:00:00';
+        return self::svg($mask);
+    }
+
     /** @return array{heading:string,intro:string,statement:string,scoreLabel:string} the wording of a certificate by its kind */
     public static function texts(array $cert): array
     {

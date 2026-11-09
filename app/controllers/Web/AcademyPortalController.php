@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Database;
 use App\Core\Flash;
+use App\Core\HttpException;
 use App\Core\RateLimit;
 use App\Core\Request;
 use App\Core\Response;
@@ -94,6 +96,29 @@ final class AcademyPortalController extends AcademyBaseController
         return $this->page('certificates', 'certificates', 'My certificates', $l, [
             'certificates' => CertificateService::forLearner($id), 'waiting' => CertificateService::pendingForLearner($id),
             'requestable' => array_values(array_filter(CourseService::dashboard($id), static fn(array $c): bool => !empty($c['cert_requestable']))),
+        ]);
+    }
+
+    /**
+     * GET academy/portal/certificates/{id}/preview: the learner's own certificate that is NOT issued yet, drawn blurred with every detail hidden (CertificateService::lockedSvg),
+     * with what is missing (the fee, or the administrator's approval). An issued certificate goes to the normal page; someone else's certificate is a 404.
+     */
+    public function certificatePreview(Request $request, int|string $id): Response
+    {
+        [$l, $redirect] = $this->who();
+        if ($redirect !== null) {
+            return $redirect;
+        }
+        $c = Database::one('SELECT * FROM academy_certificates WHERE id = ? AND learner_id = ?', [(int) $id, (int) $l['id']]) ?? throw new HttpException(404, 'Not found');
+        if ($c['revoked_at'] !== null) {
+            throw new HttpException(404, 'Not found');
+        }
+        if (CertificateService::isApproved($c)) {
+            return $this->redirect('academy/certificate/' . $c['code']);
+        }
+        return $this->page('certificate-preview', 'certificates', 'Certificate preview', $l, [
+            'cert' => $c, 'locked' => CertificateService::lockedSvg($c), 'fee' => AcademyFees::certDue($c) ? AcademyFees::configured('cert') : null,
+            'canPay' => AcademyFees::certDue($c) && \App\Services\Pesapal\PesapalPayments::ready(),
         ]);
     }
 

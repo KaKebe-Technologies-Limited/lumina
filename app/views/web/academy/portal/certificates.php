@@ -31,6 +31,7 @@ use App\Services\Academy\CertificateService;
                     <?php else: ?>
                     <p class="opp-notice ac-cert-wait"><?= e(CertificateService::waitingNotice()) ?></p>
                     <?php endif; ?>
+                    <p><a class="btn btn--outline btn--caps btn--sm" href="<?= e(url('academy/portal/certificates/' . (int) $w['id'] . '/preview')) ?>"><?= icon('eye', 'icon--sm') ?> View a preview (blurred)</a></p>
                     <p class="text-muted">Filed on <?= e(format_date($w['issued_at'], 'j M Y')) ?>.</p>
                 </article>
             <?php endforeach; ?>

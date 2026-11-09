@@ -65,6 +65,7 @@ $router->post('/academy/account/delete', [AcademyAccountController::class, 'dele
 $router->get('/academy/dashboard', [AcademyPortalController::class, 'overview'])->name('academy.dashboard');
 $router->get('/academy/portal/courses', [AcademyPortalController::class, 'courses'])->name('academy.portal.courses');
 $router->get('/academy/portal/certificates', [AcademyPortalController::class, 'certificates'])->name('academy.portal.certificates');
+$router->get('/academy/portal/certificates/{id}/preview', [AcademyPortalController::class, 'certificatePreview'])->where('id', '[0-9]+')->name('academy.portal.certificates.preview');
 $router->post('/academy/portal/certificates/{id}/pay', [AcademyPortalController::class, 'payCertificate'])->where('id', '[0-9]+')->middleware('throttle:10,600')->name('academy.portal.certificates.pay');
 $router->get('/academy/portal/messages', [AcademyPortalController::class, 'messages'])->name('academy.portal.messages');
 $router->post('/academy/portal/messages', [AcademyPortalController::class, 'sendMessage'])->middleware('throttle:30,600')->name('academy.portal.messages.send');

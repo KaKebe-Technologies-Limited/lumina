@@ -882,3 +882,126 @@
 .ac-pending-msgs__item--me {
   background: #F3EFE5;
 }
+
+.ac-locked {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 992px) {
+  .ac-locked {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.ac-locked__frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 40px;
+  box-shadow: 0 14px 40px rgba(20, 43, 74, 0.18);
+  background: #FAF8F2;
+}
+
+.ac-locked .ac-cert-svg--locked {
+  margin: 0;
+  max-width: none;
+  box-shadow: none;
+  filter: blur(6px) saturate(0.85);
+  transform: scale(1.03);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ac-locked__veil {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 1rem;
+  text-align: center;
+  color: #FFFFFF;
+  background: radial-gradient(ellipse at center, rgba(11, 27, 51, 0.62), rgba(11, 27, 51, 0.35) 70%);
+}
+
+.ac-locked__veil strong {
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: clamp(1.1rem, 2.6vw, 1.6rem);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
+}
+
+.ac-locked__veil span {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #D9A441;
+}
+
+.ac-locked__lock {
+  display: grid;
+  place-items: center;
+  width: 4.4rem;
+  height: 4.4rem;
+  border-radius: 50%;
+  background: #D9A441;
+  color: #0B1B33;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.ac-locked__lock .icon {
+  width: 2.1rem;
+  height: 2.1rem;
+}
+
+.ac-locked__steps {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.ac-locked__steps li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.ac-locked__steps p {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+  color: #5B6472;
+}
+
+.ac-locked__n {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: rgba(20, 43, 74, 0.1);
+  color: #142B4A;
+  font-weight: 800;
+}
+
+.ac-locked__n .icon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.ac-locked__steps .is-done .ac-locked__n, .ac-locked__steps .is-done .ac-locked__n {
+  background: #138A45;
+  color: #FFFFFF;
+}
+
+.ac-locked__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
