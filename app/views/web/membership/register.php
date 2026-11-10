@@ -259,7 +259,7 @@ $minor = !empty($minor);
                     <legend class="mb-group__legend"><span><?= e($legend['payment']) ?></span></legend>
                     <p class="mb-note" role="note"><?= icon('banknote') ?> <span><?= e($c('form.payment_note')) ?></span></p>
                     <div class="form-grid">
-                        <?= partial('web/membership/_choice', ['name' => 'payment_method', 'label' => $lab('payment_method'), 'options' => $options['payment_methods'], 'required' => true, 'help' => $hlp('payment_method')]) ?>
+                        <?= partial('web/membership/_choice', ['name' => 'payment_method', 'label' => $lab('payment_method'), 'options' => (static function (array $o): array { if (\App\Services\DarazaPay\DarazaPayments::enabled('membership') && !\App\Services\Payments\PaymentOptions::manual() && isset($o['mobile_money'])) { return ['mobile_money' => 'MTN or Airtel mobile money'] + array_intersect_key($o, ['daraza' => 1]); } return $o; })($options['payment_methods']), 'required' => true, 'help' => $hlp('payment_method')]) ?>
                         <div class="field--full">
                             <p class="mb-feeline" data-fee-line data-template="<?= e($feeTpl) ?>"<?= $sel === null ? ' hidden' : '' ?>><?= $sel !== null ? e(str_replace('{fee}', $sel['fee_label'], $feeTpl)) : '' ?></p>
                         </div>

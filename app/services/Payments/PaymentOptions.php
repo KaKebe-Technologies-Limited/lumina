@@ -11,6 +11,7 @@ use App\Core\Settings;
  *   online  - Pesapal and the other online gateways (card, wallets)
  *   link    - the Daraza payment link ("Pay with Daraza" opens a page on daraza.net)
  *   manual  - bank details and mobile-money numbers shown for the payer to pay by hand, then report the transaction
+ *   other   - shop only: cash on delivery and booking
  * They are on by default, so a website that does not use this page behaves exactly as before.
  */
 final class PaymentOptions
@@ -19,6 +20,7 @@ final class PaymentOptions
         'online' => ['Pesapal and other online gateways', 'Card and wallet payments on a hosted page.'],
         'link'   => ['Daraza payment link', 'The "Pay with Daraza" button that opens a payment link on daraza.net.'],
         'manual' => ['Bank and manual mobile-money details', 'Account numbers shown for the payer to pay by hand, then send the transaction ID.'],
+        'other'  => ['Pay on delivery and booking (shop)', 'Cash on delivery and "reserve and pay later" at the shop checkout.'],
     ];
 
     /** The ways to pay as visitors meet them, with the default order (Admin > Payment options changes the order). */
@@ -27,6 +29,7 @@ final class PaymentOptions
         'online' => ['Card and online (Pesapal, Flutterwave)', 'Visa, Mastercard and wallets on a secure hosted page.'],
         'link'   => ['Daraza payment link', 'The "Pay with Daraza" button.'],
         'manual' => ['Bank and manual mobile-money details', 'Account numbers shown for the payer to pay by hand.'],
+        'other'  => ['Pay on delivery and booking (shop)', 'Cash on delivery and reserve-and-pay-later at the shop checkout.'],
     ];
 
     /** Position of a way in the list shown to visitors (1 = first). */

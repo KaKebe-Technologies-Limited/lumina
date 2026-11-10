@@ -156,7 +156,7 @@ final class PaymentMethods
     /** Where this method sits among the ways to pay (Admin > Payment options > order); cash on delivery and booking come after all of them. */
     private static function wayRank(string $key): int
     {
-        $way = ['mobile' => 'mobile', 'pesapal' => 'online', 'flutterwave' => 'online', 'daraza' => 'link', 'momo' => 'manual', 'bank' => 'manual'][$key] ?? null;
+        $way = ['mobile' => 'mobile', 'pesapal' => 'online', 'flutterwave' => 'online', 'daraza' => 'link', 'momo' => 'manual', 'bank' => 'manual', 'cod' => 'other', 'book' => 'other'][$key] ?? null;
         return $way === null ? 10 : \App\Services\Payments\PaymentOptions::rank($way);
     }
 
@@ -168,7 +168,7 @@ final class PaymentMethods
         if ($key === 'mobile') {
             return \App\Services\DarazaPay\DarazaPayments::on('shop');         // its switch is in Admin > Payment options
         }
-        $group = ['pesapal' => 'online', 'flutterwave' => 'online', 'daraza' => 'link', 'momo' => 'manual', 'bank' => 'manual'][$key] ?? null;
+        $group = ['pesapal' => 'online', 'flutterwave' => 'online', 'daraza' => 'link', 'momo' => 'manual', 'bank' => 'manual', 'cod' => 'other', 'book' => 'other'][$key] ?? null;
         if ($group !== null && !\App\Services\Payments\PaymentOptions::on($group)) {
             return false;                                                         // switched off for the whole site in Admin > Payment options
         }

@@ -39,7 +39,7 @@ if (!function_exists('check')) {
 
 echo "-- payment options --\n";
 $keys = ['pay_opt_online', 'pay_opt_link', 'pay_opt_manual', 'daraza_api_shop_on', 'daraza_api_project_on', 'daraza_api_membership_on', 'daraza_api_donation_on', 'daraza_api_usd_rate',
-    'daraza_donate_on', 'daraza_url', 'daraza_label', 'pay_rank_mobile', 'pay_rank_online', 'pay_rank_link', 'pay_rank_manual', 'shop_open', 'shop_pay_momo_enabled', 'academy_pay_mobile_money', 'membership_mobile_money'];
+    'daraza_donate_on', 'daraza_url', 'daraza_label', 'pay_opt_other', 'pay_rank_other', 'pay_rank_mobile', 'pay_rank_online', 'pay_rank_link', 'pay_rank_manual', 'shop_open', 'shop_pay_momo_enabled', 'academy_pay_mobile_money', 'membership_mobile_money'];
 $prev = [];
 foreach ($keys as $k) {
     $prev[$k] = Settings::get($k, '');
@@ -112,9 +112,9 @@ check('shop: when Daraza confirms, the order is PAID and recorded in the shop le
 check('shop: a paid order cannot be paid again', !DarazaPayments::beginShop($order)['ok']);
 
 // ---- the order the ways are shown in
-check('order: by default mobile money, card, Daraza link, then manual details', PaymentOptions::ranked() === ['mobile', 'online', 'link', 'manual']);
+check('order: by default mobile money, card, Daraza link, then manual details', PaymentOptions::ranked() === ['mobile', 'online', 'link', 'manual', 'other']);
 PaymentOptions::saveRanks(['mobile' => 3, 'online' => 1, 'link' => 4, 'manual' => 2]);
-check('order: the admin can change it (card first, then manual, then mobile money, then the link)', PaymentOptions::ranked() === ['online', 'manual', 'mobile', 'link'], json_encode(PaymentOptions::ranked()));
+check('order: the admin can change it (card first, then manual, then mobile money, then the link)', PaymentOptions::ranked() === ['online', 'manual', 'mobile', 'link', 'other'], json_encode(PaymentOptions::ranked()));
 Settings::setMany(['shop_pay_momo_enabled' => '1', 'shop_momo_mtn_number' => '0777000111']);
 Settings::flush();
 $keysInOrder = array_column(PaymentMethods::all(), 'key');
@@ -179,11 +179,19 @@ check('admin: the Payment options page lists every place, the three earlier opti
     && str_contains($pg['body'], 'Daraza payment link') && str_contains($pg['body'], 'Mobile money only'), (string) $pg['code']);
 $mo = $req('/admin/daraza/api', ['_token' => $tok($pg['body']), 'preset' => 'mobile_only'], $ja);
 Settings::flush();
-check('admin: "Mobile money only" turns mobile money on everywhere and the earlier ways off', $mo['code'] === 302 && !PaymentOptions::online() && !PaymentOptions::link() && !PaymentOptions::manual() && DarazaPayments::on('shop') && DarazaPayments::on('membership') && DarazaPayments::on('project'));
+check('admin: "Mobile money only" is refused while the server has no API key (visitors would have no way to pay)', $mo['code'] === 302 && PaymentOptions::online() && PaymentOptions::link() && PaymentOptions::manual());
+// what the preset sets (the server here has no key, so the same settings are applied directly)
+$presetSave = ['daraza_api_shop_on' => '1', 'daraza_api_project_on' => '1', 'daraza_api_membership_on' => '1', 'daraza_api_donation_on' => '1'];
+Settings::setMany($presetSave);
+PaymentOptions::save(['online' => false, 'link' => false, 'manual' => false, 'other' => false]);
+check('"Mobile money only": shop checkout offers mobile money and nothing else (no card, no bank, no cash on delivery, no booking)', array_values(array_column(array_filter(PaymentMethods::all(), static fn($m) => $m['enabled']), 'key')) === ['mobile']);
+check('"Mobile money only": donations, project gifts, membership and the Academy are on for mobile money', DarazaPayments::on('shop') && DarazaPayments::on('membership') && DarazaPayments::on('project') && DarazaPayments::on('donation'));
+PaymentOptions::save(['online' => true, 'link' => true, 'manual' => true, 'other' => true]);
+check('everything else can be switched back on at any time (cash on delivery returns)', PaymentMethods::enabled('cod') && PaymentMethods::enabled('pesapal'));
 $pg2 = $req('/admin/daraza/api', null, $ja);
 $rs = $req('/admin/daraza/api', ['_token' => $tok($pg2['body']), 'preset' => 'restore'], $ja);
 Settings::flush();
-check('admin: "Switch the earlier ways back on" restores them (nothing was lost)', $rs['code'] === 302 && PaymentOptions::online() && PaymentOptions::link() && PaymentOptions::manual());
+check('admin: "Switch the earlier ways back on" restores them (nothing was lost)', $rs['code'] === 302 && PaymentOptions::online() && PaymentOptions::link() && PaymentOptions::manual() && PaymentOptions::on('other'));
 $don = $req('/donate', null, $ja);
 check('the donate page opens (the banner appears only when the key and the switch are on)', $don['code'] === 200);
 

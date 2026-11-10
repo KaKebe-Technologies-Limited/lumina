@@ -41,12 +41,16 @@ final class DarazaApiController extends AdminController
         $save = [];
         $opts = [];
         if ($preset === 'mobile_only') {
+            if (!DarazaApi::hasKey()) {
+                Flash::error('Add DARAZA_API_KEY to the server .env file first. Otherwise visitors would have no way to pay.');
+                return $this->redirect('admin/daraza/api');
+            }
             foreach (array_keys(DarazaPayments::PURPOSES) as $k) {
                 $save['daraza_api_' . $k . '_on'] = '1';
             }
-            $opts = ['online' => false, 'link' => false, 'manual' => false];
+            $opts = ['online' => false, 'link' => false, 'manual' => false, 'other' => false];
         } elseif ($preset === 'restore') {
-            $opts = ['online' => true, 'link' => true, 'manual' => true];
+            $opts = ['online' => true, 'link' => true, 'manual' => true, 'other' => true];
         } else {
             foreach (array_keys(DarazaPayments::PURPOSES) as $k) {
                 $save['daraza_api_' . $k . '_on'] = $request->bool('on_' . $k) ? '1' : '0';
