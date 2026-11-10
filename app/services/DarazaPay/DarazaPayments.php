@@ -64,19 +64,28 @@ final class DarazaPayments
         return self::on($purpose) && DarazaApi::hasKey() && self::install();
     }
 
-    /** Minor units + currency -> whole UGX (rounded up to 100), or null when it cannot be charged in UGX or is out of range (500 to 5,000,000). */
-    public static function ugx(int $minor, string $currency): ?int
+    public const MIN_UGX = 500;
+    public const MAX_UGX = 5000000;
+
+    /** Minor units + currency -> whole UGX (rounded up to 100 for dollars), or null when it cannot be turned into UGX. No limits applied. */
+    public static function rawUgx(int $minor, string $currency): ?int
     {
         $currency = strtoupper($currency);
         $major = $minor / Money::SCALE;
         if ($currency === 'UGX') {
-            $u = (int) ceil($major);
-        } elseif ($currency === 'USD' && self::rate() > 0) {
-            $u = (int) (ceil($major * self::rate() / 100) * 100);
-        } else {
-            return null;
+            return (int) ceil($major);
         }
-        return $u >= 500 && $u <= 5000000 ? $u : null;
+        if ($currency === 'USD' && self::rate() > 0) {
+            return (int) (ceil($major * self::rate() / 100) * 100);
+        }
+        return null;
+    }
+
+    /** Minor units + currency -> whole UGX (rounded up to 100), or null when it cannot be charged in UGX or is out of range (500 to 5,000,000). */
+    public static function ugx(int $minor, string $currency): ?int
+    {
+        $u = self::rawUgx($minor, $currency);
+        return $u !== null && $u >= self::MIN_UGX && $u <= self::MAX_UGX ? $u : null;
     }
 
     // ------------------------------------------------------------------------------------------------------------- collect
@@ -119,12 +128,15 @@ final class DarazaPayments
         if ($fresh['payment_status'] === 'paid') {
             return ['ok' => false, 'error' => 'already_paid'];
         }
-        if ($fresh['payment_method'] !== 'mobile' || $fresh['status'] !== 'pending' || !in_array($fresh['payment_status'], ['unpaid', 'pending', 'failed'], true)) {
-            return ['ok' => false, 'error' => 'not_payable'];
+        $deposit = \App\Services\Shop\CodDeposit::requiredFor($fresh);                    // pay on delivery: the DEPOSIT is paid now, the balance on delivery
+        if (!($fresh['payment_method'] === 'mobile' || $deposit) || $fresh['status'] !== 'pending' || !in_array($fresh['payment_status'], ['unpaid', 'pending', 'failed'], true)) {
+            return ['ok' => false, 'error' => $deposit && (int) \App\Services\Shop\PaymentService::paidMinor((int) $fresh['id']) > 0 ? 'already_paid' : 'not_payable'];
         }
-        $r = self::begin('shop', (int) $fresh['id'], Money::fromDb($fresh['total']), (string) $fresh['currency'], ['name' => (string) $fresh['customer_name'], 'email' => (string) $fresh['customer_email'], 'phone' => (string) ($fresh['customer_phone'] ?? '')]);
+        $total = Money::fromDb($fresh['total']);
+        $amount = $deposit ? \App\Services\Shop\CodDeposit::amountMinor($total, (string) $fresh['currency']) : $total;
+        $r = self::begin('shop', (int) $fresh['id'], $amount, (string) $fresh['currency'], ['name' => (string) $fresh['customer_name'], 'email' => (string) $fresh['customer_email'], 'phone' => (string) ($fresh['customer_phone'] ?? '')]);
         if ($r['ok']) {
-            Database::execute("UPDATE shop_orders SET payment_status = 'pending', hold_until = ? WHERE id = ? AND payment_status IN ('unpaid','failed')", [\App\Services\Shop\OrderService::holdUntil('mobile'), (int) $fresh['id']]);
+            Database::execute("UPDATE shop_orders SET payment_status = 'pending', hold_until = ? WHERE id = ? AND payment_status IN ('unpaid','failed')", [\App\Services\Shop\OrderService::holdUntil($deposit ? 'cod' : 'mobile'), (int) $fresh['id']]);
         }
         return $r;
     }
@@ -249,8 +261,9 @@ final class DarazaPayments
             } elseif ($row['purpose'] === 'academy_cert') {
                 \App\Services\Academy\AcademyFees::markCertPaid((int) $row['ref_id'], $ref);
             } elseif ($row['purpose'] === 'shop') {
+                $codOrder = (string) Database::value('SELECT payment_method FROM shop_orders WHERE id = ?', [(int) $row['ref_id']], '') === 'cod';
                 \App\Services\Shop\PaymentService::markPaid((int) $row['ref_id'], [
-                    'method' => 'mobile', 'reference' => $ref, 'amount' => (int) $row['amount_minor'], 'currency' => (string) $row['currency'], 'source' => 'gateway',
+                    'method' => 'mobile', 'deposit' => $codOrder, 'reference' => $ref, 'amount' => (int) $row['amount_minor'], 'currency' => (string) $row['currency'], 'source' => 'gateway',
                     'gateway_id' => (string) ($row['request_id'] ?? ''), 'meta' => 'Daraza mobile money ' . ((int) ($row['method'] ?? 0) === 2 ? 'Airtel' : 'MTN'),
                 ]);
             } elseif ($row['purpose'] === 'membership') {

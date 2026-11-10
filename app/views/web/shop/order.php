@@ -55,6 +55,8 @@ $tone = $cancelled ? 'danger' : ($isPaid ? 'success' : ($o['payment_status'] ===
             <div class="sh-order__main">
                 <?php if ($isPaid): ?>
                     <div class="sh-alert sh-alert--success" role="status"><?= icon('check-circle', 'icon--sm') ?> <span><?= e(content('shop', 'order.paid_note')) ?></span></div>
+                <?php elseif ($pay['deposit'] !== null && !$cancelled && \App\Services\Shop\PaymentService::paidMinor((int) $o['id']) > 0): ?>
+                    <div class="sh-alert sh-alert--success" role="status"><?= icon('check-circle', 'icon--sm') ?> <span><strong>Deposit received.</strong> Your order is confirmed. The balance of <strong><?= e($text['balance']) ?></strong> is paid when the goods are delivered or picked up.</span></div>
                 <?php elseif ($cancelled): ?>
                     <div class="sh-alert sh-alert--info" role="status"><?= icon('info', 'icon--sm') ?> <span><?= e(content('shop', $o['status'] === 'refunded' ? 'order.refunded_note' : 'order.closed_note')) ?></span></div>
                 <?php else: ?>
@@ -87,10 +89,13 @@ $tone = $cancelled ? 'danger' : ($isPaid ? 'success' : ($o['payment_status'] ===
                             <p class="sh-refline"><?= icon('info', 'icon--sm') ?> <strong><?= e(str_replace('{order_number}', (string) $o['order_number'], (string) content('shop', 'payment.reference_line'))) ?></strong></p>
                         <?php endif; ?>
 
+                        <?php if ($pay['deposit'] !== null): $dep = $pay['deposit']; $depCur = (string) $o['currency']; ?>
+                            <p class="sh-alert sh-alert--info" role="status"><?= icon('info', 'icon--sm') ?> <span>Pay on delivery: pay a deposit of <strong><?= e(\App\Services\Shop\Money::format($dep['deposit'], $depCur)) ?></strong> (<?= (int) $dep['pct'] ?>%) now with MTN or Airtel mobile money to confirm your order. The balance of <strong><?= e(\App\Services\Shop\Money::format($dep['balance'], $depCur)) ?></strong> is paid when the goods are delivered or picked up.</span></p>
+                        <?php endif; ?>
                         <?php if ($pay['can_pay_online']): ?>
                             <form method="post" action="<?= e(url('shop/pay/' . $token)) ?>" class="sh-payform">
                                 <?= csrf_field() ?>
-                                <button class="btn btn--cta btn--caps btn--lg" type="submit"><?= icon('lock', 'icon--sm') ?> <?= e(content('shop', in_array($o['payment_status'], ['failed', 'pending'], true) ? 'order.pay_again_label' : 'order.pay_now_label')) ?> &middot; <?= e($text['balance']) ?></button>
+                                <button class="btn btn--cta btn--caps btn--lg" type="submit"><?= icon('lock', 'icon--sm') ?> <?= e(content('shop', in_array($o['payment_status'], ['failed', 'pending'], true) ? 'order.pay_again_label' : 'order.pay_now_label')) ?> &middot; <?= e($pay['deposit'] !== null ? \App\Services\Shop\Money::format($pay['deposit']['deposit'], (string) $o['currency']) : $text['balance']) ?></button>
                             </form>
                         <?php endif; ?>
 

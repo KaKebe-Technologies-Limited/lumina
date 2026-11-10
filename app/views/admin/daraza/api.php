@@ -1,5 +1,5 @@
 <?php
-/** Admin > Payment options. Vars: $ready, $hasKey, $mode, $places (purpose => name, on), $options (earlier option => label, help, on), $rate, $rows (recent ledger rows). */
+/** Admin > Payment options. Vars: $depositPct, $ready, $hasKey, $mode, $places (purpose => name, on), $options (earlier option => label, help, on), $rate, $rows (recent ledger rows). */
 $net = [1 => 'MTN', 2 => 'Airtel'];
 $badge = ['paid' => 'badge--success', 'failed' => 'badge--danger', 'unknown' => 'badge--warning', 'collecting' => 'badge--warning', 'pending' => 'badge--outline'];
 ?>
@@ -30,6 +30,10 @@ DARAZA_ENV=sandbox</pre>
             <div class="field"><label class="field__label" for="usd-rate">Uganda shillings for 1 US dollar</label>
                 <input class="input" id="usd-rate" name="usd_rate" type="number" min="0" max="100000" value="<?= (int) $rate ?>" placeholder="3700">
                 <div class="field__help">Mobile money is charged in UGX. A price or fee set in USD is converted with this rate and rounded up to the next 100 UGX. Leave 0 to offer mobile money only for amounts set in UGX.</div></div>
+
+            <div class="field"><label class="field__label" for="dep-pct">Pay on delivery: deposit paid now (%)</label>
+                <input class="input" id="dep-pct" name="deposit_pct" type="number" min="0" max="100" value="<?= (int) $depositPct ?>" placeholder="60">
+                <div class="field__help">In the shop a buyer who chooses "Pay on delivery" first pays this share of the order total with mobile money (calculated automatically, rounded up to the next UGX 100), and the rest when the goods arrive. The order is confirmed when the deposit is paid. Use 0 for no deposit (then pay on delivery needs nothing now), or 100 to take everything now.</div></div>
 
             <h3 class="ad-letter-sub">Ways to pay, in the order visitors see them</h3>
             <p class="text-muted">Every way that is switched on appears together on the donate page, the shop checkout, project gifts and the Academy fee pages. Give each a position (1 = shown first and as the main button). A way you switch off disappears from the whole website; nothing is deleted, so its settings, links and keys stay and you can switch it back on whenever you like.</p>

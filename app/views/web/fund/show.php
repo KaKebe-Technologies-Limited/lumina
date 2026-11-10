@@ -24,7 +24,7 @@ $proposalMail = 'mailto:' . (string) setting('email_info', setting('email_primar
                 <a class="btn btn--cta btn--caps" href="#give"><?= icon('heart', 'icon--sm') ?> <?= $coming ? 'Register your interest' : 'Choose how to give' ?></a>
                 <?php if (!$coming): ?><a class="btn btn--photo btn--caps" href="<?= e($proposalMail) ?>"><?= icon('mail', 'icon--sm') ?> Request the full proposal</a><?php endif; ?>
             </div>
-            <p class="fund-hero__note">A proposed project seeking funding. Your gift is recorded as a pledge: no money is taken on this website.</p>
+            <p class="fund-hero__note">A proposed project seeking funding. Choose what you would like to give, then press Give now.</p>
         </div>
     </div>
 </section>
@@ -34,7 +34,7 @@ $proposalMail = 'mailto:' . (string) setting('email_info', setting('email_primar
         <div class="container container--narrow">
             <div class="fund-soon">
                 <h2>The full proposal is being prepared</h2>
-                <p><?= e($p['summary']) ?> We are writing the proposal and budget now. If you would like to support this work, or hear first when it is ready, tell us below: your pledge is a record of intent and we will contact you with the details.</p>
+                <p><?= e($p['summary']) ?> We are writing the proposal and budget now. If you would like to support this work, or hear first when it is ready, tell us below: we will contact you with the details.</p>
             </div>
         </div>
     </section>
@@ -108,7 +108,7 @@ $proposalMail = 'mailto:' . (string) setting('email_info', setting('email_primar
 <section class="section section--tint" id="give" aria-labelledby="fund-give">
     <div class="container">
         <header class="section-head section-head--center"><span class="eyebrow"><?= $coming ? 'Register your interest' : 'Choose how to give' ?></span><h2 class="section-head__title" id="fund-give"><?= $coming ? 'Support ' . e($p['short']) : 'Fund the whole project, or pick one contribution' ?></h2>
-            <p class="section-head__lead"><?= $coming ? 'Tell us how much you would like to give and we will be in touch.' : 'Every choice below is real and priced. Pick one, add your details and send your pledge: we contact you to complete the gift.' ?></p></header>
+            <p class="section-head__lead"><?= $coming ? 'Tell us how much you would like to give and we will be in touch.' : 'Every choice below is real and priced. Pick one, add your details and press Give now: the amount is filled in for you.' ?></p></header>
 
         <form class="fund-form" method="post" action="<?= e(url('fund-a-project/' . $p['slug'] . '/pledge')) ?>" data-fund-form data-rate="3750" novalidate>
             <?= csrf_field() ?><?= honeypot_field() ?>
@@ -161,7 +161,7 @@ $proposalMail = 'mailto:' . (string) setting('email_info', setting('email_primar
 
             <aside class="fund-form__side" aria-live="polite">
                 <div class="fund-summary" data-fund-summary>
-                    <h3 class="fund-summary__title">Your pledge</h3>
+                    <h3 class="fund-summary__title">Your gift</h3>
                     <p class="fund-summary__chosen" data-fund-chosen><?= $coming ? 'A gift of my choice' : 'Nothing chosen yet. Pick a package or a contribution.' ?></p>
                     <div class="fund-summary__row" data-fund-qty-row hidden>
                         <label for="fund-qty">How many?</label>
@@ -180,6 +180,7 @@ $proposalMail = 'mailto:' . (string) setting('email_info', setting('email_primar
                     </div>
                     <?php if (error('currency')): ?><div class="field__error" role="alert"><?= e((string) error('currency')) ?></div><?php endif; ?>
                     <p class="fund-summary__total" data-fund-total hidden>Total: <strong data-fund-total-value></strong></p>
+                    <p class="fund-summary__big" data-fund-big hidden role="status">One mobile-money payment can be up to UGX 5,000,000. For a larger gift, press Give now and we will contact you to arrange the payment.</p>
                 </div>
 
                 <div class="fund-details">
@@ -188,11 +189,13 @@ $proposalMail = 'mailto:' . (string) setting('email_info', setting('email_primar
                     <?= partial('partials/form-field', ['name' => 'donor_email', 'label' => 'E-mail address', 'type' => 'email', 'required' => true, 'maxlength' => 190, 'autocomplete' => 'email']) ?>
                     <?= partial('partials/form-field', ['name' => 'donor_phone', 'label' => 'Phone or WhatsApp (optional)', 'type' => 'tel', 'maxlength' => 40, 'autocomplete' => 'tel']) ?>
                     <?php if (isset($methods['mobile_now'])): ?><?= partial('partials/pay-banner', ['compact' => true, 'text' => 'You can pay now with MTN or Airtel']) ?><?php endif; ?>
+                    <?php if (count($methods) > 1): ?>
                     <?= partial('partials/form-field', ['name' => 'method', 'label' => 'How would you like to give?', 'type' => 'select', 'required' => true, 'options' => $methods, 'value' => old('method') ?: (isset($methods['mobile_now']) ? 'mobile_now' : array_key_first($methods))]) ?>
+                    <?php else: ?><input type="hidden" name="method" value="<?= e((string) array_key_first($methods)) ?>"><?php endif; ?>
                     <?= partial('partials/form-field', ['name' => 'message', 'label' => 'Message (optional)', 'type' => 'textarea', 'rows' => 3, 'maxlength' => 1500, 'placeholder' => 'Tell us anything you would like us to know, or how you would like to be recognised.']) ?>
                     <?= partial('partials/form-field', ['name' => 'is_anonymous', 'label' => 'I would like my gift to stay anonymous', 'type' => 'checkbox']) ?>
-                    <button class="btn btn--cta btn--caps btn--block" type="submit"><?= icon('heart', 'icon--sm') ?> Send my pledge</button>
-                    <p class="fund-details__note"><?= isset($methods['mobile_now']) ? 'Choose "Pay now" to pay by MTN or Airtel mobile money straight away. With any other choice this only records your intention to give: no money is taken here and we contact you with the details.' : 'This records your intention to give. No money is taken here: we contact you with the details to complete your gift.' ?></p>
+                    <button class="btn btn--cta btn--caps btn--block" type="submit"><?= icon('heart', 'icon--sm') ?> <span data-fund-give>Give now</span></button>
+                    <p class="fund-details__note"><?= isset($methods['mobile_now']) ? 'Press Give now to pay with MTN or Airtel mobile money. You approve the payment on your phone.' : 'Press Give now and we will contact you with the details to complete your gift.' ?></p>
                 </div>
             </aside>
         </form>

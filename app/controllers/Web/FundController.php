@@ -136,12 +136,20 @@ final class FundController extends Controller
             'ip' => $request->ip(),
         ];
         $pay = $record['method'] === 'mobile_now';
+        $big = false;
         if ($pay) {
             $minor = \App\Services\Shop\Money::parse(number_format((float) $record['amount'], 2, '.', ''));
-            if ($minor === null || \App\Services\DarazaPay\DarazaPayments::ugx($minor, $currency) === null) {
-                $this->fail(['method' => 'Mobile money takes gifts in Uganda shillings (UGX 500 to 5,000,000), or in US dollars when the website has a rate. Please choose UGX, or another way to give.'], $back);
+            $raw = $minor === null ? null : \App\Services\DarazaPay\DarazaPayments::rawUgx($minor, $currency);
+            if ($raw !== null && $raw > \App\Services\DarazaPay\DarazaPayments::MAX_UGX) {
+                // one mobile-money payment is limited to UGX 5,000,000: a larger gift is recorded and the team arranges it with the donor
+                $pay = false;
+                $big = true;
+                $record['method'] = 'other';
+            } elseif ($minor === null || \App\Services\DarazaPay\DarazaPayments::ugx($minor, $currency) === null) {
+                $this->fail(['method' => 'Mobile money takes gifts in Uganda shillings (UGX 500 to 5,000,000), or in US dollars when the website has a rate. Please choose UGX.'], $back);
+            } else {
+                $record['method'] = 'mobile_money';
             }
-            $record['method'] = 'mobile_money';
         }
         $donationId = Donation::create($record);
         if ($pay) {
@@ -150,10 +158,11 @@ final class FundController extends Controller
                 \App\Core\Mailer::notify('Project gift started: ' . $p['short'], "A donor started a mobile-money gift to a project (it is recorded as received only when the payment is confirmed).\n\nProject: {$p['title']}\nContribution: {$label}\nAmount: " . number_format((float) $record['amount'], 2) . " {$currency}\nName: {$record['donor_name']}\nEmail: {$record['donor_email']}\n\nManage it: " . abs_url('admin/donations') . "\n", $record['donor_email']);
                 return $this->redirect((string) $b['url']);
             }
-            Flash::error('We could not open the mobile-money page just now. Your pledge was saved and we will contact you. You can also try again in a minute.');
+            Flash::error('We could not open the mobile-money page just now. Your gift was saved and we will contact you. You can also try again in a minute.');
         }
 
-        $body = "New PROJECT pledge (a record of intent - no payment was taken)\n\nProject: {$p['title']}\nContribution: {$label}" . ($detail !== '' ? "\n{$detail}" : '') . "\n"
+        $body = "New PROJECT gift request (no payment was taken yet)\n" . ($big ? "This amount is above the UGX 5,000,000 limit of one mobile-money payment: please contact the donor to arrange it.\n" : '') . "\n"
+            . "Project: {$p['title']}\nContribution: {$label}" . ($detail !== '' ? "\n{$detail}" : '') . "\n"
             . 'Amount: ' . number_format((float) $record['amount'], 2) . " {$record['currency']}\n\n"
             . "Name: {$record['donor_name']}" . ($record['is_anonymous'] ? " (asked to stay anonymous)\n" : "\n")
             . "Email: {$record['donor_email']}\nPhone: " . ($record['donor_phone'] ?? '-') . "\nMethod: {$record['method']}\n\n"
@@ -162,7 +171,7 @@ final class FundController extends Controller
             Log::warning('Project pledge notification e-mail could not be sent', ['email' => $record['donor_email']]);
         }
 
-        Session::put('fund_thanks', ['slug' => $slug, 'label' => $label, 'detail' => $detail, 'amount' => (float) $record['amount'], 'currency' => $currency, 'method' => (string) $record['method'], 'name' => (string) $record['donor_name']]);
+        Session::put('fund_thanks', ['slug' => $slug, 'label' => $label, 'detail' => $detail, 'amount' => (float) $record['amount'], 'currency' => $currency, 'method' => (string) $record['method'], 'name' => (string) $record['donor_name'], 'big' => $big]);
         return $this->redirect('fund-a-project/' . $slug . '/thanks');
     }
 

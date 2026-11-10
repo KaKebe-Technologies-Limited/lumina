@@ -97,8 +97,8 @@ final class ShopCheckoutController extends Controller
             }
             Log::warning('Shop: the Pesapal payment page could not be opened', ['order' => $order['order_number'], 'error' => (string) ($r['error'] ?? '')]);
         }
-        if ($method === 'mobile') {
-            $r = \App\Services\DarazaPay\DarazaPayments::beginShop($order);
+        if ($method === 'mobile' || ($method === 'cod' && \App\Services\Shop\CodDeposit::requiredFor($order))) {
+            $r = \App\Services\DarazaPay\DarazaPayments::beginShop($order);          // pay on delivery: the deposit is paid now
             if ($r['ok']) {
                 return $this->redirect((string) $r['url']);                        // our own page: the phone number, the approval on the phone
             }

@@ -39,7 +39,7 @@ if (!function_exists('check')) {
 
 echo "-- payment options --\n";
 $keys = ['pay_opt_online', 'pay_opt_link', 'pay_opt_manual', 'daraza_api_shop_on', 'daraza_api_project_on', 'daraza_api_membership_on', 'daraza_api_donation_on', 'daraza_api_usd_rate',
-    'daraza_donate_on', 'daraza_url', 'daraza_label', 'donate_url', 'pay_opt_other', 'pay_rank_other', 'pay_rank_mobile', 'pay_rank_online', 'pay_rank_link', 'pay_rank_manual', 'shop_open', 'shop_pay_momo_enabled', 'academy_pay_mobile_money', 'membership_mobile_money'];
+    'daraza_donate_on', 'daraza_url', 'daraza_label', 'donate_url', 'pay_opt_other', 'pay_rank_other', 'pay_rank_mobile', 'pay_rank_online', 'pay_rank_link', 'pay_rank_manual', 'shop_cod_deposit_pct', 'shop_pay_cod_enabled', 'shop_open', 'shop_pay_momo_enabled', 'academy_pay_mobile_money', 'membership_mobile_money'];
 $prev = [];
 foreach ($keys as $k) {
     $prev[$k] = Settings::get($k, '');
@@ -135,6 +135,42 @@ Settings::flush();
 check('donate buttons: with mobile money on, every Donate button opens the "Give online" section', str_ends_with(donate_online_url(), '/donate#give-online'), donate_online_url());
 Settings::setMany(['daraza_api_donation_on' => '0']);
 
+// ---- pay on delivery: a 60% deposit paid now with mobile money
+use App\Services\Shop\CodDeposit;
+use App\Services\Shop\PaymentService;
+Settings::setMany(['shop_cod_deposit_pct' => '', 'shop_pay_cod_enabled' => '1']);
+Settings::flush();
+check('deposit: 60% by default', CodDeposit::pct() === 60 && CodDeposit::active());
+check('deposit: worked out from the total and rounded UP to the next UGX 100 (UGX 25,550 -> 15,330 -> 15,400; UGX 1,000,000 -> 600,000)', CodDeposit::amountMinor(2555000, 'UGX') === 1540000 && CodDeposit::amountMinor(100000000, 'UGX') === 60000000);
+check('deposit: never more than the total, and the balance is the rest', CodDeposit::split(5000, 'UGX')['deposit'] <= 5000 && CodDeposit::split(5000000, 'UGX')['deposit'] + CodDeposit::split(5000000, 'UGX')['balance'] === 5000000);
+Settings::setMany(['daraza_api_shop_on' => '0']);
+Settings::flush();
+check('deposit: pay on delivery is not offered while the deposit cannot be paid (mobile money for the shop is off)', !PaymentMethods::enabled('cod'));
+Settings::setMany(['daraza_api_shop_on' => '1']);
+Settings::flush();
+check('deposit: pay on delivery is offered once mobile money is on', PaymentMethods::enabled('cod') && CodDeposit::ready());
+Settings::setMany(['shop_cod_deposit_pct' => '0', 'daraza_api_shop_on' => '0']);
+Settings::flush();
+check('deposit: with the rule switched off (0%) pay on delivery needs nothing', PaymentMethods::enabled('cod') && !CodDeposit::active());
+Settings::setMany(['shop_cod_deposit_pct' => '', 'daraza_api_shop_on' => '1']);
+Settings::flush();
+$cres = OrderService::create(['name' => 'Zz Po Shopper', 'email' => 'zz-po-shop@example.test', 'phone' => '0772123456', 'address' => '', 'note' => '', 'consent' => true], [$line], 'pickup', 'cod', ['notify' => false, 'ip_hash' => 'x']);
+check('deposit: an order can be placed with pay on delivery', $cres['ok'] === true, json_encode($cres['error'] ?? null));
+$cod = (array) ($cres['order'] ?? []);
+check('deposit: the order is held until the deposit is paid (it expires like an online order)', strtotime((string) $cod['hold_until']) - time() <= \App\Services\Shop\ShopSettings::int('shop_gateway_hold_hours', 1, 720) * 3600 + 120);
+$cb = DarazaPayments::beginShop($cod);
+check('deposit: the payment page is for 60% of UGX 50,000 = UGX 30,000', $cb['ok'] && (int) Database::value('SELECT amount_ugx FROM daraza_payments WHERE reference = ?', [basename((string) $cb['url'])]) === 30000, json_encode($cb));
+$cc = DarazaPayments::collect(basename((string) $cb['url']), '0772123456', 0);
+$cd = Database::one('SELECT status, payment_status FROM shop_orders WHERE id = ?', [(int) $cod['id']]);
+check('deposit: when the deposit is paid the order is CONFIRMED and waits for the balance (not flagged for review)', $cc['state'] === 'paid' && $cd['status'] === 'confirmed' && $cd['payment_status'] === 'pending', json_encode($cd));
+check('deposit: the ledger holds UGX 30,000 and UGX 20,000 is left', PaymentService::paidMinor((int) $cod['id']) === 3000000 && PaymentService::balanceMinor(OrderService::find((int) $cod['id'])) === 2000000);
+check('deposit: a second deposit is not asked for', !DarazaPayments::beginShop($cod)['ok']);
+$bal = PaymentService::markPaid((int) $cod['id'], ['method' => 'cod', 'reference' => 'ZZ-BAL', 'amount' => 2000000, 'currency' => 'UGX', 'source' => 'staff', 'notify' => false]);
+check('deposit: staff record the balance on delivery and the order is paid in full', $bal['ok'] && Database::value('SELECT payment_status FROM shop_orders WHERE id = ?', [(int) $cod['id']]) === 'paid');
+Database::execute("DELETE FROM shop_orders WHERE id = ?", [(int) $cod['id']]);
+Settings::setMany(['shop_cod_deposit_pct' => '']);
+Settings::flush();
+
 // ---- gifts to a project, and donations
 Database::execute("INSERT INTO donations (donor_name, donor_email, amount, currency, method, status, source) VALUES ('Zz Po Donor','zz-po-d@example.test',30000,'UGX','mobile_money','pledged','pledge_form')");
 $did = (int) Database::value('SELECT LAST_INSERT_ID()');
@@ -198,6 +234,8 @@ PaymentOptions::save(['online' => false, 'link' => false, 'manual' => false, 'ot
 check('"Mobile money only": shop checkout offers mobile money and nothing else (no card, no bank, no cash on delivery, no booking)', array_values(array_column(array_filter(PaymentMethods::all(), static fn($m) => $m['enabled']), 'key')) === ['mobile']);
 check('"Mobile money only": donations, project gifts, membership and the Academy are on for mobile money', DarazaPayments::on('shop') && DarazaPayments::on('membership') && DarazaPayments::on('project') && DarazaPayments::on('donation'));
 PaymentOptions::save(['online' => true, 'link' => true, 'manual' => true, 'other' => true]);
+Settings::set('shop_cod_deposit_pct', '0');
+Settings::flush();
 check('everything else can be switched back on at any time (cash on delivery returns)', PaymentMethods::enabled('cod') && PaymentMethods::enabled('pesapal'));
 $pg2 = $req('/admin/daraza/api', null, $ja);
 $rs = $req('/admin/daraza/api', ['_token' => $tok($pg2['body']), 'preset' => 'restore'], $ja);

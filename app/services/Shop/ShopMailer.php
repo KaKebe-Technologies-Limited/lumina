@@ -50,6 +50,22 @@ final class ShopMailer
         }
     }
 
+    /** A pay-on-delivery order: the deposit arrived, the order is confirmed and the balance is paid when the goods are handed over. */
+    public static function depositReceived(array $order, int $depositMinor): void
+    {
+        $items = OrderService::items((int) $order['id']);
+        $cur = (string) $order['currency'];
+        $total = Money::fromDb($order['total']);
+        $left = max(0, $total - PaymentService::paidMinor((int) $order['id']));
+        $to = (string) $order['customer_email'];
+        if (Mailer::validEmail($to)) {
+            $text = 'Hello ' . trim((string) strtok((string) $order['customer_name'], ' ')) . ",\n\nWe have received your deposit of " . Money::format($depositMinor, $cur) . ' for order ' . $order['order_number'] . '. Your order is confirmed.'
+                . "\n\nThe balance of " . Money::format($left, $cur) . " is paid when the goods are delivered or picked up.\n\nYour order: " . abs_url('shop/order/' . $order['token']);
+            Mailer::send($to, 'Deposit received for order ' . $order['order_number'], $text);
+        }
+        self::sendStaff('staff_new', $order, $items);
+    }
+
     public static function statusChanged(array $order, string $to): void
     {
         self::sendCustomer('status', $order, OrderService::items((int) $order['id']), $to);

@@ -372,12 +372,48 @@
       $$('input[data-shop-pay]', form).forEach(function (x) { var wrap = x.closest('.sh-pay'); if (wrap) { wrap.classList.toggle('is-on', x.checked); } });
       if (text && submit) { text.textContent = r && r.value === 'flutterwave' ? submit.getAttribute('data-label-pay') : submit.getAttribute('data-label'); }
     }
+    // ---- Pay now / Pay on delivery: one of the two; the other is greyed out and cannot be used
+    var boxes = $$('[data-shop-mode-box]', form);
+    function syncMode(fromClick) {
+      var picked = $('input[data-shop-mode]:checked', form);
+      if (!picked) {
+        // a single way to pay (no choice to make) or nothing chosen yet
+        var one = $('input[data-shop-pay]:checked', form);
+        if (!one) { return; }
+        picked = { value: one.closest('[data-shop-mode-box]') ? one.closest('[data-shop-mode-box]').getAttribute('data-shop-mode-box') : '' };
+      }
+      boxes.forEach(function (box) {
+        var mine = box.getAttribute('data-shop-mode-box') === picked.value;
+        box.classList.toggle('is-chosen', mine);
+        box.classList.toggle('is-off', !mine);
+        $$('input[data-shop-pay]', box).forEach(function (x) {
+          x.disabled = !mine && boxes.length > 1;
+          if (!mine && x.checked) { x.checked = false; }
+        });
+        if (mine && fromClick && !$('input[data-shop-pay]:checked', box)) {
+          var first = $('input[data-shop-pay]:not(:disabled)', box);
+          if (first) { first.checked = true; }
+        }
+      });
+      syncPay();
+    }
+    function syncDeposit() {
+      var r = $('input[data-shop-delivery]:checked', form);
+      var now = $('[data-shop-deposit-now]', form);
+      var left = $('[data-shop-deposit-left]', form);
+      if (r && now && r.hasAttribute('data-deposit')) { now.textContent = r.getAttribute('data-deposit'); }
+      if (r && left && r.hasAttribute('data-balance')) { left.textContent = r.getAttribute('data-balance'); }
+    }
     form.addEventListener('change', function (e) {
+      if (e.target.matches('input[data-shop-mode]')) { syncMode(true); }
+      if (e.target.matches('input[data-shop-delivery]')) { syncDeposit(); }
       if (e.target.matches('input[data-shop-delivery]')) { syncDelivery(); }
       if (e.target.matches('input[data-shop-pay]')) { syncPay(); }
     });
     syncDelivery();
     syncPay();
+    syncDeposit();
+    syncMode(false);
 
     var summary = $('[data-shop-errors]', form);
     if (summary) { summary.focus(); if (!reduce && summary.scrollIntoView) { summary.scrollIntoView({ block: 'center' }); } }

@@ -324,7 +324,9 @@ final class PaymentService
                     }
                     return ['ok' => false, 'review' => true];
                 }
-                if ($online && ($amount === null || $amount <= 0 || $currency !== $o['currency'] || $amount < $total)) {
+                // a pay-on-delivery order is confirmed by its DEPOSIT (a share of the total paid now): that part payment is expected, not a mismatch
+                $isDeposit = $online && !empty($p['deposit']) && (string) $o['payment_method'] === 'cod' && $amount !== null && $amount > 0 && $currency === $o['currency'] && $amount >= CodDeposit::amountMinor($total, (string) $o['currency']);
+                if ($online && ($amount === null || $amount <= 0 || $currency !== $o['currency'] || ($amount < $total && !$isDeposit))) {
                     // the gateway says "paid" but not for this order's money: flag, do not pay
                     $why = $currency !== $o['currency'] ? 'currency' : 'amount';
                     if ($o['payment_status'] !== 'paid' && self::ledgerWrite($orderId, $o, $method, max(0, (int) $amount), $currency, $reference, 'review', $source, $p, 'Amount or currency does not match (' . $why . ')')) {
@@ -362,10 +364,10 @@ final class PaymentService
                     );
                     OrderService::addLog($orderId, 'payment', 'Payment received: ' . Money::format((int) $amount, (string) $o['currency']) . ' (' . $method . ', ' . $source . ').' . ($autoConfirm ? ' Order confirmed.' : ''), $userId);
                 } else {
-                    Database::execute("UPDATE shop_orders SET payment_status = 'pending', hold_until = NULL, payment_reference = COALESCE(?, payment_reference) WHERE id = ?", [$reference, $orderId]);
+                    Database::execute("UPDATE shop_orders SET payment_status = 'pending', hold_until = NULL, payment_reference = COALESCE(?, payment_reference)" . ($isDeposit ? ", status = IF(status = 'pending', 'confirmed', status)" : '') . ' WHERE id = ?', [$reference, $orderId]);
                     OrderService::addLog($orderId, 'payment', 'Part payment received: ' . Money::format((int) $amount, (string) $o['currency']) . '; ' . Money::format($total - $paid, (string) $o['currency']) . ' still to pay.', $userId);
                 }
-                return ['ok' => true, 'paid' => $full, 'partial' => !$full];
+                return ['ok' => true, 'paid' => $full, 'partial' => !$full, 'deposit' => $isDeposit && !$full];
             });
         } catch (ShopException $e) {
             return ['ok' => false, 'error' => $e->errorCode];
@@ -375,6 +377,13 @@ final class PaymentService
         $out['order'] = $order;
         if ($online) {
             AuditLog::record('shop.payment', 'order', $order['order_number'] ?? $orderId, 'Online payment ' . (!empty($out['review']) ? 'flagged for review' : (!empty($out['duplicate']) ? 'repeated (ignored)' : 'recorded')), ['source' => $source, 'method' => $method]);
+        }
+        if (!empty($out['deposit']) && $notify && $order !== null) {
+            try {
+                ShopMailer::depositReceived($order, (int) ($p['amount'] ?? 0));
+            } catch (\Throwable $e) {
+                Log::error('Shop deposit e-mail failed', ['order' => $order['order_number'], 'error' => $e::class]);
+            }
         }
         if (!empty($out['paid']) && $notify && $order !== null) {
             try {

@@ -168,6 +168,9 @@ final class PaymentMethods
         if ($key === 'mobile') {
             return \App\Services\DarazaPay\DarazaPayments::on('shop');         // its switch is in Admin > Payment options
         }
+        if ($key === 'cod' && CodDeposit::active() && !CodDeposit::ready()) {
+            return false;                                                      // pay on delivery asks for a deposit paid now: it is offered only while that can be paid
+        }
         $group = ['pesapal' => 'online', 'flutterwave' => 'online', 'daraza' => 'link', 'momo' => 'manual', 'bank' => 'manual', 'cod' => 'other', 'book' => 'other'][$key] ?? null;
         if ($group !== null && !\App\Services\Payments\PaymentOptions::on($group)) {
             return false;                                                         // switched off for the whole site in Admin > Payment options

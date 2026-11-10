@@ -395,6 +395,7 @@ final class OrderService
         $interval = match ($paymentMethod) {
             'momo', 'bank', 'daraza' => 'P' . ShopSettings::int('shop_manual_hold_days', 1, 60) . 'D',
             'flutterwave', 'pesapal', 'mobile' => 'PT' . ShopSettings::int('shop_gateway_hold_hours', 1, 720) . 'H',
+            'cod'          => CodDeposit::active() ? 'PT' . ShopSettings::int('shop_gateway_hold_hours', 1, 720) . 'H' : 'P' . ShopSettings::int('shop_hold_days', 1, 90) . 'D',   // a deposit is due now
             default        => 'P' . ShopSettings::int('shop_hold_days', 1, 90) . 'D',
         };
         return $now->add(new \DateInterval($interval))->format('Y-m-d H:i:s');
@@ -685,7 +686,8 @@ final class OrderService
             'paid'                  => $order['payment_status'] === 'paid',
             'can_enter_reference'   => in_array($m, ['momo', 'bank', 'daraza'], true) && $open,
             'daraza_url'            => $m === 'daraza' ? \App\Services\Daraza::url('shop') : '',
-            'can_pay_online'        => in_array($m, ['flutterwave', 'pesapal', 'mobile'], true) && $open && PaymentMethods::ready($m),
+            'can_pay_online'        => (in_array($m, ['flutterwave', 'pesapal', 'mobile'], true) && $open && PaymentMethods::ready($m)) || ($m === 'cod' && $open && CodDeposit::active() && CodDeposit::ready()),
+            'deposit'               => $m === 'cod' && CodDeposit::active() ? CodDeposit::split(Money::fromDb($order['total']), (string) $order['currency']) : null,
             'awaiting_verification' => $order['payment_status'] === 'pending' && in_array($m, ['momo', 'bank', 'daraza'], true) && (string) ($order['payment_reference'] ?? '') !== '',
         ];
     }

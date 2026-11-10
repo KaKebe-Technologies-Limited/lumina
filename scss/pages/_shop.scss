@@ -571,3 +571,20 @@
   .sh-alert { border: 2px solid CanvasText; }
   .sh-qty__btn:disabled { opacity: 1; color: GrayText; }
 }
+
+// ---- checkout: "Pay now" or "Pay on delivery" (only one; the other is greyed out)
+.sh-modes { display: grid; gap: $space-4; }
+.sh-mode { border: 2px solid $line; border-radius: 18px; background: $white; overflow: hidden; transition: border-color .15s, opacity .15s, background .15s;
+  &.is-chosen { border-color: $navy; box-shadow: 0 0 0 1px $navy; }
+  &.is-off { opacity: .5; background: $tint-cool; filter: grayscale(.6); }
+  &.is-off .sh-mode__body { pointer-events: none; }
+}
+.sh-mode__head { display: flex; align-items: center; gap: $space-3; padding: $space-4; cursor: pointer; input[type='radio'] { flex: none; width: 1.25rem; height: 1.25rem; accent-color: $navy; } }
+.sh-mode__icon { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%; background: $tint-cool; color: $navy; flex: none; }
+.sh-mode.is-chosen .sh-mode__icon { background: $navy; color: $gold; }
+.sh-mode__title { display: grid; gap: .15rem; strong { font-family: $font-heading; color: $navy; font-size: 1.05rem; } small { color: $ink-soft; font-size: $fs-sm; } }
+.sh-mode__body { padding: 0 $space-4 $space-4; display: grid; gap: $space-3; }
+.sh-deposit { display: grid; grid-template-columns: 1fr 1fr; gap: $space-3; padding: $space-3 $space-4; border-radius: 14px; background: #fff8e0; border: 1px solid #f0dcb0;
+  div { display: grid; gap: .1rem; } span { font-size: $fs-sm; color: $ink-soft; } strong { font-family: $font-heading; color: $navy; font-size: 1.1rem; } }
+.fund-summary__big { margin: $space-3 0 0; padding: $space-3; border-radius: 12px; background: #fff8e0; border: 1px solid #f0dcb0; font-size: $fs-sm; }
+@media (max-width: 480px) { .sh-deposit { grid-template-columns: 1fr; } }

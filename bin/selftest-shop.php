@@ -235,6 +235,7 @@ check('registry page "shop" has the wording the code reads', content('shop', 'he
 
 // settings for the rest of the run
 $zzSet('shop_open', '1');
+$zzSet('shop_cod_deposit_pct', '0');          // pay on delivery without a deposit: the deposit rule has its own tests (selftest-payment-options.php)
 $zzSet('shop_order_prefix', 'ZZT');
 $zzSet('shop_currency', 'UGX');
 $zzSet('shop_max_qty', '10');

@@ -27,7 +27,7 @@ final class DarazaApiController extends AdminController
             $places[$k] = ['name' => $name, 'on' => DarazaPayments::on($k)];
         }
         return $this->render('admin/daraza/api', [
-            'ready' => $ok, 'hasKey' => DarazaApi::hasKey(), 'mode' => DarazaApi::mode(), 'places' => $places, 'rate' => DarazaPayments::rate(),
+            'ready' => $ok, 'hasKey' => DarazaApi::hasKey(), 'mode' => DarazaApi::mode(), 'places' => $places, 'rate' => DarazaPayments::rate(), 'depositPct' => \App\Services\Shop\CodDeposit::pct(),
             'options' => array_map(static fn(string $k): array => ['label' => PaymentOptions::OPTIONS[$k][0], 'help' => PaymentOptions::OPTIONS[$k][1], 'on' => PaymentOptions::on($k)], array_combine(array_keys(PaymentOptions::OPTIONS), array_keys(PaymentOptions::OPTIONS))),
             'ways' => array_map(static fn(string $k): array => ['key' => $k, 'label' => PaymentOptions::WAYS[$k][0], 'help' => PaymentOptions::WAYS[$k][1], 'rank' => PaymentOptions::rank($k)], PaymentOptions::ranked()),
             'rows' => $ok ? DarazaPayments::recent(40) : [], 'balance' => null,
@@ -62,6 +62,9 @@ final class DarazaApiController extends AdminController
         }
         if (!in_array($preset, ['mobile_only', 'restore'], true)) {
             $save['daraza_api_usd_rate'] = (string) max(0, min(100000, $request->int('usd_rate')));
+            if (trim($request->string('deposit_pct')) !== '') {
+                $save['shop_cod_deposit_pct'] = (string) max(0, min(100, $request->int('deposit_pct')));
+            }
         }
         Settings::setMany($save);
         PaymentOptions::save($opts);

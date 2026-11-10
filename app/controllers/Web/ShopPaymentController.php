@@ -34,7 +34,7 @@ final class ShopPaymentController extends Controller
         if ($order === null) {
             $this->abort(404);
         }
-        if (($order['payment_method'] ?? '') === 'mobile') {
+        if (($order['payment_method'] ?? '') === 'mobile' || \App\Services\Shop\CodDeposit::requiredFor($order)) {
             $m = \App\Services\DarazaPay\DarazaPayments::beginShop($order);
             if ($m['ok']) {
                 return $this->redirect((string) $m['url']);

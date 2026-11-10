@@ -24202,6 +24202,128 @@ html.cal-lock {
   }
 }
 
+.sh-modes {
+  display: grid;
+  gap: 1rem;
+}
+
+.sh-mode {
+  border: 2px solid #E5DED0;
+  border-radius: 18px;
+  background: #FFFFFF;
+  overflow: hidden;
+  transition: border-color .15s, opacity .15s, background .15s;
+}
+
+.sh-mode.is-chosen {
+  border-color: #142B4A;
+  box-shadow: 0 0 0 1px #142B4A;
+}
+
+.sh-mode.is-off {
+  opacity: .5;
+  background: #F3EFE5;
+  filter: grayscale(0.6);
+}
+
+.sh-mode.is-off .sh-mode__body {
+  pointer-events: none;
+}
+
+.sh-mode__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  cursor: pointer;
+}
+
+.sh-mode__head input[type='radio'] {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: #142B4A;
+}
+
+.sh-mode__icon {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: #F3EFE5;
+  color: #142B4A;
+  flex: none;
+}
+
+.sh-mode.is-chosen .sh-mode__icon {
+  background: #142B4A;
+  color: #D9A441;
+}
+
+.sh-mode__title {
+  display: grid;
+  gap: .15rem;
+}
+
+.sh-mode__title strong {
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: #142B4A;
+  font-size: 1.05rem;
+}
+
+.sh-mode__title small {
+  color: #5B6472;
+  font-size: 0.9375rem;
+}
+
+.sh-mode__body {
+  padding: 0 1rem 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.sh-deposit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  background: #fff8e0;
+  border: 1px solid #f0dcb0;
+}
+
+.sh-deposit div {
+  display: grid;
+  gap: .1rem;
+}
+
+.sh-deposit span {
+  font-size: 0.9375rem;
+  color: #5B6472;
+}
+
+.sh-deposit strong {
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: #142B4A;
+  font-size: 1.1rem;
+}
+
+.fund-summary__big {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #fff8e0;
+  border: 1px solid #f0dcb0;
+  font-size: 0.9375rem;
+}
+
+@media (max-width: 480px) {
+  .sh-deposit {
+    grid-template-columns: 1fr;
+  }
+}
+
 .page-newsletter .nl-share {
   display: flex;
   flex-direction: column;

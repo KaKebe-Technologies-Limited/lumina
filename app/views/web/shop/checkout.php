@@ -5,6 +5,7 @@
  * shop.js: shows the address only for delivery, switches the button text for an online payment and moves focus to the error summary.
  */
 use App\Services\Shop\CartService;
+use App\Services\Shop\CodDeposit;
 use App\Services\Shop\Money;
 use App\Services\Shop\PaymentMethods;
 use App\Services\Shop\PricingService;
@@ -19,7 +20,9 @@ $buyLines = CartService::purchasable($cart['lines']);
 $quotes = [];
 foreach (ShopSettings::deliveryMethods() as $dm) {          // totals for each way of getting the order, so the summary follows the choice without a reload
     $dq = PricingService::quote($buyLines, $dm);
-    $quotes[$dm] = ['fee' => (string) PricingService::texts($dq)['fee_label'], 'total' => (string) PricingService::texts($dq)['total_text']];
+    $split = CodDeposit::split((int) $dq['total'], ShopSettings::currency());
+    $quotes[$dm] = ['fee' => (string) PricingService::texts($dq)['fee_label'], 'total' => (string) PricingService::texts($dq)['total_text'],
+        'deposit' => Money::format($split['deposit'], ShopSettings::currency()), 'balance' => Money::format($split['balance'], ShopSettings::currency())];
 }
 $deliveryMethods = ShopSettings::deliveryMethods();
 $deliveryNow = (string) old('delivery', $delivery);
@@ -87,7 +90,7 @@ foreach ($methods as $m) {
                     <div class="sh-choices">
                         <?php foreach ($deliveryMethods as $m): ?>
                             <label class="sh-pick<?= $deliveryNow === $m ? ' is-on' : '' ?>">
-                                <input type="radio" name="delivery" value="<?= e($m) ?>"<?= $deliveryNow === $m ? ' checked' : '' ?> data-shop-delivery data-fee="<?= e($quotes[$m]['fee'] ?? '') ?>" data-total="<?= e($quotes[$m]['total'] ?? '') ?>">
+                                <input type="radio" name="delivery" value="<?= e($m) ?>"<?= $deliveryNow === $m ? ' checked' : '' ?> data-shop-delivery data-fee="<?= e($quotes[$m]['fee'] ?? '') ?>" data-total="<?= e($quotes[$m]['total'] ?? '') ?>" data-deposit="<?= e($quotes[$m]['deposit'] ?? '') ?>" data-balance="<?= e($quotes[$m]['balance'] ?? '') ?>">
                                 <span class="sh-pick__icon"><?= icon($m === 'pickup' ? 'map-pin' : 'package') ?></span>
                                 <span class="sh-pick__text">
                                     <strong><?= e(content('shop', 'checkout.delivery_' . $m)) ?></strong>
@@ -110,25 +113,63 @@ foreach ($methods as $m) {
 
                 <fieldset class="sh-step" id="pay-group" tabindex="-1">
                     <legend class="sh-step__title"><span class="sh-step__num" aria-hidden="true">3</span><?= e(content('shop', 'checkout.payment_title')) ?></legend>
-                    <?php foreach ($methods as $mm0) { if ($mm0['key'] === 'mobile') { echo partial('partials/pay-banner', ['text' => 'You can pay with MTN or Airtel Mobile Money']); break; } } ?>
-                    <div class="sh-choices sh-choices--pay">
-                        <?php foreach ($methods as $m): $mid = 'pay-' . $m['key']; ?>
-                            <div class="sh-pay<?= $selected === $m['key'] ? ' is-on' : '' ?>">
-                                <label class="sh-pick" for="<?= e($mid) ?>">
-                                    <input type="radio" id="<?= e($mid) ?>" name="payment" value="<?= e($m['key']) ?>"<?= $selected === $m['key'] ? ' checked' : '' ?> data-shop-pay="<?= e($m['key']) ?>">
-                                    <span class="sh-pick__icon"><?= icon($m['key'] === 'mobile' ? 'phone' : (in_array($m['key'], ['flutterwave', 'pesapal'], true) ? 'shield' : ($m['key'] === 'daraza' ? 'external-link' : ($m['key'] === 'bank' ? 'banknote' : ($m['key'] === 'momo' ? 'smartphone' : ($m['key'] === 'book' ? 'calendar' : 'hand-heart'))))) )?></span>
-                                    <span class="sh-pick__text"><strong><?= e($m['label']) ?></strong><?php if ($m['instructions'] !== ''): ?><span class="sh-pick__sub"><?= e($m['instructions']) ?></span><?php endif; ?></span>
-                                </label>
-                                <?php $payDetails = in_array($m['key'], ['momo', 'bank'], true) ? PaymentMethods::details($m['key']) : []; ?>
-                                <?php if ($payDetails !== []): // the instructions say "send the total to the numbers below": show them here too, not only on the order page ?>
-                                    <dl class="sh-paydetails sh-paydetails--checkout">
-                                        <?php foreach ($payDetails as $d): ?>
-                                            <div><dt><?= e($d['label']) ?><?= isset($d['name']) && $d['name'] !== '' ? ' <span>(' . e($d['name']) . ')</span>' : '' ?></dt><dd><?= e($d['number'] ?? $d['value'] ?? '') ?></dd></div>
-                                        <?php endforeach; ?>
-                                    </dl>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
+                    <?php
+                    // two ways to pay, and only ONE can be used: "Pay now" (the whole amount) or "Pay on delivery" (a deposit now, the rest on delivery). Choosing one greys out the other.
+                    $laterKeys = ['cod', 'book'];
+                    $nowMethods = array_values(array_filter($methods, static fn(array $m): bool => !in_array($m['key'], $laterKeys, true)));
+                    $laterMethods = array_values(array_filter($methods, static fn(array $m): bool => in_array($m['key'], $laterKeys, true)));
+                    $both = $nowMethods !== [] && $laterMethods !== [];
+                    $mode = in_array($selected, $laterKeys, true) ? 'later' : ($selected !== '' ? 'now' : '');
+                    if ($mode === '' && !$both) {
+                        $mode = $nowMethods !== [] ? 'now' : 'later';
+                    }
+                    $depositOn = CodDeposit::active();
+                    $dq0 = $quotes[$deliveryNow] ?? ['deposit' => '', 'balance' => ''];
+                    $icons = ['mobile' => 'phone', 'flutterwave' => 'shield', 'pesapal' => 'shield', 'daraza' => 'external-link', 'bank' => 'banknote', 'momo' => 'smartphone', 'cod' => 'package', 'book' => 'calendar'];
+                    foreach ($methods as $mm0) { if ($mm0['key'] === 'mobile') { echo partial('partials/pay-banner', ['text' => 'You can pay with MTN or Airtel Mobile Money']); break; } }
+                    $renderPick = static function (array $m, string $selected) use ($icons): void {
+                        $mid = 'pay-' . $m['key']; ?>
+                        <div class="sh-pay<?= $selected === $m['key'] ? ' is-on' : '' ?>">
+                            <label class="sh-pick" for="<?= e($mid) ?>">
+                                <input type="radio" id="<?= e($mid) ?>" name="payment" value="<?= e($m['key']) ?>"<?= $selected === $m['key'] ? ' checked' : '' ?> data-shop-pay="<?= e($m['key']) ?>">
+                                <span class="sh-pick__icon"><?= icon($icons[$m['key']] ?? 'credit-card') ?></span>
+                                <span class="sh-pick__text"><strong><?= e($m['label']) ?></strong><?php if ($m['instructions'] !== ''): ?><span class="sh-pick__sub"><?= e($m['instructions']) ?></span><?php endif; ?></span>
+                            </label>
+                            <?php $payDetails = in_array($m['key'], ['momo', 'bank'], true) ? PaymentMethods::details($m['key']) : []; ?>
+                            <?php if ($payDetails !== []): ?>
+                                <dl class="sh-paydetails sh-paydetails--checkout">
+                                    <?php foreach ($payDetails as $d): ?>
+                                        <div><dt><?= e($d['label']) ?><?= isset($d['name']) && $d['name'] !== '' ? ' <span>(' . e($d['name']) . ')</span>' : '' ?></dt><dd><?= e($d['number'] ?? $d['value'] ?? '') ?></dd></div>
+                                    <?php endforeach; ?>
+                                </dl>
+                            <?php endif; ?>
+                        </div>
+                    <?php }; ?>
+                    <div class="sh-modes" data-shop-modes>
+                        <?php if ($nowMethods !== []): ?>
+                            <section class="sh-mode<?= $mode === 'now' ? ' is-chosen' : ($mode === 'later' ? ' is-off' : '') ?>" data-shop-mode-box="now">
+                                <label class="sh-mode__head"><?php if ($both): ?><input type="radio" name="pay_mode" value="now" data-shop-mode<?= $mode === 'now' ? ' checked' : '' ?>><?php endif; ?>
+                                    <span class="sh-mode__icon"><?= icon('lock') ?></span>
+                                    <span class="sh-mode__title"><strong>Pay now</strong><small>Pay the full amount now. Your order is confirmed at once.</small></span></label>
+                                <div class="sh-mode__body"><div class="sh-choices sh-choices--pay"><?php foreach ($nowMethods as $m) { $renderPick($m, $selected); } ?></div></div>
+                            </section>
+                        <?php endif; ?>
+                        <?php if ($laterMethods !== []): ?>
+                            <section class="sh-mode<?= $mode === 'later' ? ' is-chosen' : ($mode === 'now' ? ' is-off' : '') ?>" data-shop-mode-box="later">
+                                <label class="sh-mode__head"><?php if ($both): ?><input type="radio" name="pay_mode" value="later" data-shop-mode<?= $mode === 'later' ? ' checked' : '' ?>><?php endif; ?>
+                                    <span class="sh-mode__icon"><?= icon('package') ?></span>
+                                    <span class="sh-mode__title"><strong>Pay on delivery</strong><small><?= $depositOn ? 'Pay a ' . (int) CodDeposit::pct() . '% deposit now with MTN or Airtel mobile money. Pay the rest when your goods arrive.' : 'Pay when your goods are delivered or picked up.' ?></small></span></label>
+                                <div class="sh-mode__body">
+                                    <?php if ($depositOn): ?>
+                                        <div class="sh-deposit" data-shop-deposit role="status">
+                                            <div><span>Deposit now (<?= (int) CodDeposit::pct() ?>%)</span><strong data-shop-deposit-now><?= e($dq0['deposit']) ?></strong></div>
+                                            <div><span>Balance on delivery</span><strong data-shop-deposit-left><?= e($dq0['balance']) ?></strong></div>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="sh-choices sh-choices--pay"><?php foreach ($laterMethods as $m) { $renderPick($m, $selected); } ?></div>
+                                </div>
+                            </section>
+                        <?php endif; ?>
                     </div>
                     <?php if (error('payment') && $methods !== []): ?><div class="field__error" role="alert"><?= e(error('payment')) ?></div><?php endif; ?>
                 </fieldset>
