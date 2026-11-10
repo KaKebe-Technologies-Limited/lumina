@@ -91,6 +91,7 @@ $logoUrl = logo_url(38);
     </div>
 </div>
 <script src="<?= e(asset('js/admin.js')) ?>" defer></script>
+<script src="<?= e(asset('js/admin-gallery-picker.js')) ?>" defer></script>
 <?= $this->section('scripts') ?>
 </body>
 </html>

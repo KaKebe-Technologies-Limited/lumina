@@ -853,6 +853,7 @@
                 h('option', { value: '' }, 'In the text'), h('option', { value: 'img-left' }, 'Left, text wraps around'),
                 h('option', { value: 'img-right' }, 'Right, text wraps around'), h('option', { value: 'img-full' }, 'Full width'));
             const status = h('span', { class: 'editor__panel__status', role: 'status', 'aria-live': 'polite' });
+            const gallery = h('button', { type: 'button', class: 'btn btn--outline btn--sm' }, 'Choose from the gallery');
             const apply = h('button', { type: 'button', class: 'btn btn--primary btn--sm' }, editing ? 'Update picture' : 'Add picture');
             const remove = h('button', { type: 'button', class: 'btn btn--outline btn--sm' }, 'Remove picture');
             const cancel = h('button', { type: 'button', class: 'btn btn--ghost btn--sm' }, 'Cancel');
@@ -866,6 +867,15 @@
                 place.value = cls || '';
             }
             deco.addEventListener('change', () => { alt.disabled = deco.checked; if (deco.checked) alt.value = ''; });
+            gallery.addEventListener('click', async () => {
+                if (!window.LuminaGalleryPicker) return;
+                const picked = await window.LuminaGalleryPicker.open();
+                if (!picked) return;
+                uploaded = { path: picked.path, url: picked.url };
+                pending = null;
+                if (picked.alt && !alt.value.trim()) { alt.value = picked.alt; deco.checked = false; alt.disabled = false; }
+                this.panelStatus(status, 'Picture chosen from the gallery.', false);
+            });
             file.addEventListener('change', () => {
                 const f = file.files && file.files[0];
                 const bad = checkImageFile(f);
@@ -876,7 +886,7 @@
             const el = h('div', { class: 'editor__panel', role: 'group', 'aria-label': editing ? 'Edit picture' : 'Add picture' },
                 h('p', { class: 'editor__panel__title' }, editing ? 'Edit picture' : 'Add picture'),
                 h('div', { class: 'field field--full' }, h('label', { class: 'field__label', for: `${id}-file` }, editing ? 'Replace the picture (optional)' : 'Picture'), file,
-                    h('div', { class: 'field__help' }, 'JPG, PNG, GIF or WebP, up to 5 MB.')),
+                    h('div', { class: 'field__help' }, 'JPG, PNG, GIF or WebP, up to 5 MB.'), gallery),
                 h('div', { class: 'field field--full' }, h('label', { class: 'field__label', for: `${id}-alt` }, 'Description (alt text)'), alt,
                     h('div', { class: 'field__help' }, 'Say what the picture shows. Screen readers read this aloud.')),
                 h('label', { class: 'check field--full', for: `${id}-deco` }, deco, h('span', {}, 'This picture is only decorative (no description needed)')),

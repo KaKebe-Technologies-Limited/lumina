@@ -17,6 +17,42 @@ use App\Core\Uploader;
  */
 final class MediaController extends AdminController
 {
+    /**
+     * GET admin/media/gallery?q=&page= - the pictures of the website gallery, for the "Choose from the gallery" dialog of every picture field.
+     * Response: {"items":[{"path","url","alt","caption","album"}],"more":bool}.
+     */
+    public function gallery(Request $request): Response
+    {
+        if (!can('pages.edit') && !can('content.manage')) {
+            return Response::json(['error' => 'You are not allowed to choose pictures.'], 403);
+        }
+        $q = trim($request->string('q'));
+        $page = max(1, $request->int('page', 1));
+        $per = 36;
+        $where = 'is_active = 1';
+        $params = [];
+        if ($q !== '') {
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
+            $where .= ' AND (alt_text LIKE ? OR caption LIKE ? OR album LIKE ?)';
+            $params = [$like, $like, $like];
+        }
+        try {
+            $rows = \App\Core\Database::all('SELECT image, alt_text, caption, album FROM gallery_images WHERE ' . $where . ' ORDER BY sort_order ASC, id DESC LIMIT ' . ($per + 1) . ' OFFSET ' . (($page - 1) * $per), $params);
+        } catch (\Throwable) {
+            $rows = [];
+        }
+        $more = count($rows) > $per;
+        $items = [];
+        foreach (array_slice($rows, 0, $per) as $r) {
+            $path = trim((string) $r['image']);
+            if ($path === '' || !\App\Services\Newsletter\NewsletterContent::validImagePath($path)) {
+                continue;
+            }
+            $items[] = ['path' => $path, 'url' => img_url($path), 'alt' => (string) $r['alt_text'], 'caption' => (string) ($r['caption'] ?? ''), 'album' => (string) ($r['album'] ?? '')];
+        }
+        return Response::json(['items' => $items, 'more' => $more]);
+    }
+
     public function upload(Request $request): Response
     {
         if (!can('pages.edit') && !can('content.manage')) {

@@ -603,6 +603,17 @@
             }
         }
         file.addEventListener('change', () => { const f = file.files && file.files[0]; file.value = ''; upload(f); });
+        const galBtn = $('[data-image-gallery]', box);
+        if (galBtn) galBtn.addEventListener('click', async () => {
+            if (!window.LuminaGalleryPicker) return;
+            const picked = await window.LuminaGalleryPicker.open();
+            if (!picked) return;
+            setImage(box, { path: picked.path, alt: picked.alt || '', caption: '' }, picked.url);
+            announce('Picture chosen from the gallery. Check its description.');
+            const alt = $('[data-image-alt]', box);
+            if (alt) alt.focus();
+            onChanged(box);
+        });
         $('[data-image-remove]', box).addEventListener('click', () => {
             setImage(box, { path: '', alt: '', caption: '' });
             file.focus();

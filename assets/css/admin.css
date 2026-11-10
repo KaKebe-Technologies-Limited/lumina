@@ -6364,6 +6364,98 @@ html.js [data-upload-fallback] {
   color: #142B4A;
 }
 
+.gp {
+  width: min(56rem, 94vw);
+  max-height: 88vh;
+  padding: 1.25rem;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(11, 27, 51, 0.35);
+  overflow: auto;
+}
+
+.gp::backdrop {
+  background: rgba(11, 27, 51, 0.55);
+}
+
+.gp__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: .8rem;
+}
+
+.gp__title {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.gp__bar {
+  margin-bottom: .6rem;
+}
+
+.gp__msg {
+  margin: 0 0 .6rem;
+  color: #5b6478;
+  min-height: 1.2rem;
+}
+
+.gp__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: .7rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
+}
+
+.gp__pick {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #eef0f4;
+  cursor: pointer;
+}
+
+.gp__pick img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .2s;
+}
+
+.gp__pick:hover, .gp__pick:focus-visible {
+  border-color: #d9a441;
+  outline: none;
+}
+
+.gp__pick:hover img, .gp__pick:focus-visible img {
+  transform: scale(1.05);
+}
+
+.gp__album {
+  position: absolute;
+  left: .4rem;
+  bottom: .4rem;
+  background: rgba(11, 27, 51, 0.8);
+  color: #fff;
+  font-size: .7rem;
+  padding: .1rem .5rem;
+  border-radius: 999px;
+}
+
+.gp__more {
+  display: block;
+  margin: 1rem auto 0;
+}
+
 .admin-inbox .inbox-tabs {
   gap: 0 0.25rem;
 }

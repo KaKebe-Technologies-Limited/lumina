@@ -46,6 +46,7 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
         $router->get('/profile/password', [AuthController::class, 'showPassword'])->name('admin.password');
         $router->post('/profile/password', [AuthController::class, 'updatePassword'])->middleware('throttle:15,600');
         $router->post('/media/upload', [MediaController::class, 'upload'])->middleware('throttle:120,60');
+        $router->get('/media/gallery', [MediaController::class, 'gallery'])->middleware('throttle:240,60')->name('admin.media.gallery');
 
         // my profile
         $router->get('/profile', [ProfileController::class, 'index'])->name('admin.profile');

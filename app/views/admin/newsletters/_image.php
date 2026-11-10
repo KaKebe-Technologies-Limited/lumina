@@ -18,6 +18,7 @@ $altMax = (int) ($altMax ?? 300);
             <div class="nl-image__buttons">
                 <label class="btn btn--outline btn--sm nl-image__pick" for="<?= e($idp) ?>-file"><?= icon('upload', 'icon--sm') ?> <span data-image-pick-label>Choose a picture</span></label>
                 <input class="nl-image__file" type="file" id="<?= e($idp) ?>-file" accept="image/jpeg,image/png,image/gif,image/webp" data-image-file aria-describedby="<?= e($idp) ?>-help">
+                <button type="button" class="btn btn--outline btn--sm" data-image-gallery><?= icon('image', 'icon--sm') ?> From the gallery</button>
                 <button type="button" class="btn btn--ghost btn--sm" data-image-remove hidden><?= icon('trash', 'icon--sm') ?> Remove picture</button>
             </div>
             <div class="nl-progress" data-image-progress hidden>

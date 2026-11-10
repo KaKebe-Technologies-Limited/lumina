@@ -30,6 +30,7 @@ $err = error((string) $name) ?? (isset($alt_name) ? error((string) $alt_name) : 
                 <input class="input" id="<?= e($id) ?>-alt" type="text" name="<?= e($alt_name) ?>" maxlength="250" value="<?= e(array_key_exists('alt_value', get_defined_vars()) ? $alt_value : old((string) $alt_name, '')) ?>" placeholder="Describe the image (alt text, for screen readers)">
             <?php endif; ?>
             <div class="cluster">
+                <button class="btn btn--outline btn--sm" type="button" data-image-gallery><?= icon('image', 'icon--sm') ?> Choose from the gallery</button>
                 <button class="btn btn--ghost btn--sm" type="button" data-image-clear><?= icon('trash', 'icon--sm') ?> Remove image</button>
                 <span class="field__help" data-image-status role="status"></span>
             </div>

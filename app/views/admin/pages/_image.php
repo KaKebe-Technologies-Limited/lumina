@@ -22,6 +22,7 @@ $altName = $altName ?? '';
                 <?= icon('upload', 'icon--sm') ?> <span data-pe-image-label><?= $preview === '' ? 'Choose an image' : 'Replace image' ?></span>
                 <input class="pe-image__file" type="file" id="<?= e($id) ?>" accept="image/jpeg,image/png,image/gif,image/webp" data-pe-image-input>
             </label>
+            <button class="btn btn--outline btn--sm" type="button" data-pe-image-gallery><?= icon('image', 'icon--sm') ?> From the gallery</button>
             <button class="btn btn--ghost btn--sm" type="button" data-pe-image-clear<?= $preview === '' ? ' hidden' : '' ?>><?= icon('trash', 'icon--sm') ?> Remove</button>
         </div>
         <div class="pe-image__status" data-pe-image-status role="status" aria-live="polite"></div>

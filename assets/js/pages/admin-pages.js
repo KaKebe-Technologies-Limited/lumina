@@ -349,6 +349,21 @@
                 URL.revokeObjectURL(local);
             }
         });
+        form.addEventListener('click', async (e) => {
+            const gal = e.target.closest('[data-pe-image-gallery]');
+            if (!gal || !window.LuminaGalleryPicker) return;
+            const box = imgBox(gal);
+            const pathInput = $('[data-pe-image-path]', box);
+            const picked = await window.LuminaGalleryPicker.open();
+            if (!picked || !pathInput) return;
+            pathInput.value = picked.path;
+            setPreview(box, picked.url);
+            pathInput.dispatchEvent(new Event('input', { bubbles: true }));
+            const alt = $('[data-pe-image-alt]', box);
+            if (alt && alt.value.trim() === '' && picked.alt) alt.value = picked.alt;
+            const status = $('[data-pe-image-status]', box);
+            if (status) { status.textContent = 'Picture chosen from the gallery. Save the page to publish it.'; status.classList.remove('is-bad'); }
+        });
         form.addEventListener('click', (e) => {
             const clear = e.target.closest('[data-pe-image-clear]');
             if (!clear) return;
