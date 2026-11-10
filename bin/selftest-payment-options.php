@@ -39,7 +39,7 @@ if (!function_exists('check')) {
 
 echo "-- payment options --\n";
 $keys = ['pay_opt_online', 'pay_opt_link', 'pay_opt_manual', 'daraza_api_shop_on', 'daraza_api_project_on', 'daraza_api_membership_on', 'daraza_api_donation_on', 'daraza_api_usd_rate',
-    'daraza_donate_on', 'daraza_url', 'daraza_label', 'pay_opt_other', 'pay_rank_other', 'pay_rank_mobile', 'pay_rank_online', 'pay_rank_link', 'pay_rank_manual', 'shop_open', 'shop_pay_momo_enabled', 'academy_pay_mobile_money', 'membership_mobile_money'];
+    'daraza_donate_on', 'daraza_url', 'daraza_label', 'donate_url', 'pay_opt_other', 'pay_rank_other', 'pay_rank_mobile', 'pay_rank_online', 'pay_rank_link', 'pay_rank_manual', 'shop_open', 'shop_pay_momo_enabled', 'academy_pay_mobile_money', 'membership_mobile_money'];
 $prev = [];
 foreach ($keys as $k) {
     $prev[$k] = Settings::get($k, '');
@@ -123,6 +123,17 @@ PaymentOptions::saveRanks(['mobile' => 0, 'online' => 12]);
 check('order: a position outside 1-9 is kept inside the range', PaymentOptions::rank('mobile') === 1 && PaymentOptions::rank('online') === 9);
 Settings::setMany(['pay_rank_mobile' => '', 'pay_rank_online' => '', 'pay_rank_link' => '', 'pay_rank_manual' => '']);
 Settings::flush();
+
+// ---- every Donate button
+Settings::setMany(['donate_url' => 'https://www.gofundme.com/f/zz-test', 'daraza_api_donation_on' => '0']);
+Settings::flush();
+PaymentOptions::save(['link' => false]);
+check('donate buttons: with the outside link switched off they lead to the Donate page, not the outside link', !str_contains(donate_online_url(), 'gofundme') && str_ends_with(donate_online_url(), '/donate'), donate_online_url());
+PaymentOptions::save(['link' => true]);
+Settings::setMany(['daraza_api_donation_on' => '1']);
+Settings::flush();
+check('donate buttons: with mobile money on, every Donate button opens the "Give online" section', str_ends_with(donate_online_url(), '/donate#give-online'), donate_online_url());
+Settings::setMany(['daraza_api_donation_on' => '0']);
 
 // ---- gifts to a project, and donations
 Database::execute("INSERT INTO donations (donor_name, donor_email, amount, currency, method, status, source) VALUES ('Zz Po Donor','zz-po-d@example.test',30000,'UGX','mobile_money','pledged','pledge_form')");

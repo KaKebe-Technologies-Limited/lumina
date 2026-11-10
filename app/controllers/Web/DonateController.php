@@ -30,10 +30,11 @@ final class DonateController extends Controller
 
     public function index(Request $request): Response
     {
-        $hasMethod = trim((string) setting('donate_url', '')) !== '' || PesapalPayments::donationsEnabled() || \App\Services\DarazaPay\DarazaPayments::enabled('donation') || \App\Services\Daraza::enabled('donate')
-            || trim((string) setting('donate_bank_details', '')) !== ''
+        $manualOn = \App\Services\Payments\PaymentOptions::manual();
+        $hasMethod = (\App\Services\Payments\PaymentOptions::link() && trim((string) setting('donate_url', '')) !== '') || PesapalPayments::donationsEnabled() || \App\Services\DarazaPay\DarazaPayments::enabled('donation') || \App\Services\Daraza::enabled('donate')
+            || ($manualOn && (trim((string) setting('donate_bank_details', '')) !== ''
             || trim((string) setting('donate_mobile_money', '')) !== ''
-            || trim((string) setting('donate_paypal_email', '')) !== '';
+            || trim((string) setting('donate_paypal_email', '')) !== ''));
         $selectedCurrency = (string) old('currency', 'UGX');
         return $this->renderPage('donate', 'web/donate/index', [
             'faqs'             => HomeSupport::faqs('donate', 'donate', 'faq.items'),

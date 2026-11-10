@@ -19,13 +19,15 @@ if ($cta2['has'] && (section_on('donate', 'pledge') || $cta2['url'] !== '#pledge
 }
 
 $intro = trim((string) setting('donate_intro', ''));
-$bank = trim((string) setting('donate_bank_details', ''));
-$mobile = trim((string) setting('donate_mobile_money', ''));
-$paypal = trim((string) setting('donate_paypal_email', ''));
+$manualOn = \App\Services\Payments\PaymentOptions::manual();             // Admin > Payment options: bank, mobile-money numbers and PayPal details can be switched off
+$bank = $manualOn ? trim((string) setting('donate_bank_details', '')) : '';
+$mobile = $manualOn ? trim((string) setting('donate_mobile_money', '')) : '';
+$paypal = $manualOn ? trim((string) setting('donate_paypal_email', '')) : '';
+$linkUrl = \App\Services\Payments\PaymentOptions::link() ? trim((string) setting('donate_url', '')) : '';
 $copy = (string) content('donate', 'ways.copy_label');
 $copied = (string) content('donate', 'ways.copied_label');
 $emptyBtn = content_btn('donate', 'ways.empty_cta');
-$onlineExternal = $donateUrl !== '' && is_external($donateUrl);
+$onlineExternal = $linkUrl !== '' && is_external($linkUrl);
 
 // pre-fill of the pledge form: ?amount=50&currency=USD (never overrides what the visitor typed before a failed submission)
 $pre = donate_prefill(array_keys($currencies));
@@ -58,11 +60,27 @@ $chipsLabel = trim((string) content('donate', 'pledge.chips_label'));
         <?= partial('partials/section-head', ['eyebrow' => (string) content('donate', 'ways.eyebrow'), 'title' => (string) content('donate', 'ways.title'), 'lead' => $intro, 'align' => 'center', 'id' => 'donate-ways-title']) ?>
         <?php if ($hasMethod): ?>
             <div class="ia-cards donate-ways__grid">
-                <?php if ($donateUrl !== ''): ?>
+                <?php if (!empty($mobileGive)): ?>
+                    <article class="feature-card donate-way donate-way--mobile" data-reveal>
+                        <span class="feature-card__icon"><?= icon('phone') ?></span>
+                        <div class="feature-card__body"><h3 class="feature-card__title">MTN and Airtel mobile money</h3>
+                            <p class="donate-details">Give from your phone in under a minute. Any MTN or Airtel number works: you approve on your phone with your PIN.</p></div>
+                        <p class="donate-way__cta"><a class="btn btn--cta btn--caps" href="#give-online"><?= icon('phone', 'icon--sm') ?> Give with MTN or Airtel</a></p>
+                    </article>
+                <?php endif; ?>
+                <?php if (!empty($giveOnline)): ?>
+                    <article class="feature-card donate-way" data-reveal>
+                        <span class="feature-card__icon"><?= icon('lock') ?></span>
+                        <div class="feature-card__body"><h3 class="feature-card__title">Card and online</h3>
+                            <p class="donate-details">Visa, Mastercard and wallets on a secure page. You get a receipt by e-mail.</p></div>
+                        <p class="donate-way__cta"><a class="btn btn--outline btn--caps" href="#give-online"><?= icon('lock', 'icon--sm') ?> Give by card</a></p>
+                    </article>
+                <?php endif; ?>
+                <?php if ($linkUrl !== ''): ?>
                     <article class="feature-card donate-way" data-reveal>
                         <span class="feature-card__icon"><?= icon('heart') ?></span>
                         <div class="feature-card__body"><h3 class="feature-card__title"><?= e(content('donate', 'ways.online_title')) ?></h3></div>
-                        <p class="donate-way__cta"><a class="btn btn--cta btn--caps" href="<?= e(link_url($donateUrl)) ?>"<?= $onlineExternal ? ' target="_blank" rel="noopener noreferrer"' : '' ?>><?= e($heroLabel !== '' ? $heroLabel : (string) content('donate', 'ways.online_title')) ?> <?= icon($onlineExternal ? 'external-link' : 'arrow-right', 'icon--sm') ?></a></p>
+                        <p class="donate-way__cta"><a class="btn btn--cta btn--caps" href="<?= e(link_url($linkUrl)) ?>"<?= $onlineExternal ? ' target="_blank" rel="noopener noreferrer"' : '' ?>><?= e($heroLabel !== '' ? $heroLabel : (string) content('donate', 'ways.online_title')) ?> <?= icon($onlineExternal ? 'external-link' : 'arrow-right', 'icon--sm') ?></a></p>
                     </article>
                 <?php endif; ?>
                 <?php if ($bank !== ''): ?>

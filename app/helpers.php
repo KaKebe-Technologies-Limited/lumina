@@ -355,8 +355,11 @@ function setting(string $key, mixed $default = null): mixed
 function donate_online_url(): string
 {
     try {
-        if (\App\Services\Pesapal\PesapalPayments::donationsOnSite() || \App\Services\Daraza::enabled('donate')) {
+        if (\App\Services\Pesapal\PesapalPayments::donationsOnSite() || \App\Services\Daraza::enabled('donate') || \App\Services\DarazaPay\DarazaPayments::enabled('donation')) {
             return abs_url('donate') . '#give-online';
+        }
+        if (!\App\Services\Payments\PaymentOptions::link()) {
+            return abs_url('donate');                      // the outside donation link is switched off in Admin > Payment options
         }
     } catch (\Throwable) {
     }
