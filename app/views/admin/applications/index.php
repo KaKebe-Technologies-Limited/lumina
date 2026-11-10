@@ -5,7 +5,7 @@
 $rows = $pagination->items;
 $filtered = $f['q'] !== '' || $f['job'] !== '' || $f['from'] !== '' || $f['to'] !== '' || $f['status'] !== 'all';
 $keep = ['q' => $f['q'], 'job' => $f['job'], 'from' => $f['from'], 'to' => $f['to'], 'sort' => $f['sort'] === 'newest' ? '' : $f['sort']];
-$actions = ['mark_new' => 'Mark as new', 'mark_reviewing' => 'Mark as reviewing', 'mark_shortlisted' => 'Mark as shortlisted', 'mark_rejected' => 'Mark as rejected', 'mark_hired' => 'Mark as hired'];
+$actions = ['mark_new' => 'Mark as new', 'mark_reviewing' => 'Mark as reviewing', 'mark_shortlisted' => 'Mark as shortlisted', 'mark_interview' => 'Invite for interview', 'mark_rejected' => 'Mark as rejected', 'mark_hired' => 'Mark as hired'];
 if ($canDelete) {
     $actions['delete'] = 'Delete permanently (with CV)';
 }
@@ -82,7 +82,7 @@ $this->start('scripts'); ?>
                             <span class="cell-title"><a href="<?= e($href) ?>"><?= e($a['name']) ?></a></span>
                             <span class="cell-sub"><?= e($a['email']) ?></span>
                         </td>
-                        <td data-label="Job"><?= e($a['job_title'] ?: '-') ?></td>
+                        <td data-label="Job"><?= e($a['job_title'] ?: '-') ?><?php if (!empty($a['ref_no'])): ?><span class="cell-sub"><?= e($a['ref_no']) ?><?= $a['score_pct'] !== null ? ' &middot; ' . e(rtrim(rtrim(number_format((float) $a['score_pct'], 1), '0'), '.')) . '%' : '' ?></span><?php endif; ?></td>
                         <td data-label="CV">
                             <?php if ($hasCv): ?>
                                 <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/applications/' . (int) $a['id'] . '/cv')) ?>"><?= icon('download', 'icon--sm') ?> Download<?= !empty($a['cv_size']) ? ' <span class="cell-sub">' . e(human_filesize((int) $a['cv_size'])) . '</span>' : '' ?></a>

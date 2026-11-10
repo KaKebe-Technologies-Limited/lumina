@@ -48,16 +48,16 @@ $this->start('scripts'); ?>
             </section>
         </div>
         <aside class="inbox-aside" aria-label="Follow-up">
+            <?= partial('admin/recruitment/_panel', ['scope' => 'ambassador', 'row' => $r]) ?>
             <section class="card">
                 <div class="card__header"><h2 class="card__title">Decision and notes</h2></div>
                 <form method="post" action="<?= e(url('admin/ambassadors/' . $id)) ?>" data-unsaved-guard>
                     <?= csrf_field() ?>
                     <div class="card__body">
                         <?php if ($r['reviewed_at']): ?><p class="text-muted">Last changed <?= e(format_datetime($r['reviewed_at'], 'j M Y, H:i')) ?><?= $reviewer !== '' ? ' by ' . e($reviewer) : '' ?>.</p><?php endif; ?>
-                        <?= partial('partials/form-field', ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => Amb::LABELS, 'value' => old('status', $r['status']), 'required' => true]) ?>
+                        <?= partial('partials/form-field', ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => \App\Services\Recruitment\Recruitment::statuses('ambassador'), 'value' => old('status', $r['status']), 'required' => true]) ?>
                         <?= partial('partials/form-field', ['name' => 'admin_notes', 'label' => 'Private notes', 'type' => 'textarea', 'rows' => 5, 'value' => old('admin_notes', (string) ($r['admin_notes'] ?? '')), 'maxlength' => 5000, 'help' => 'Who spoke to them and what was agreed. Only the team sees this.']) ?>
-                        <?= partial('partials/form-field', ['name' => 'email_applicant', 'label' => 'E-mail the applicant when I approve, decline or put it on hold', 'type' => 'checkbox']) ?>
-                        <?= partial('partials/form-field', ['name' => 'applicant_note', 'label' => 'Message to the applicant (optional)', 'type' => 'textarea', 'rows' => 3, 'maxlength' => 1000, 'help' => 'Added to the e-mail.']) ?>
+                        <?= partial('partials/form-field', ['name' => 'applicant_note', 'label' => 'Message to the applicant (optional)', 'type' => 'textarea', 'rows' => 3, 'maxlength' => 1000, 'help' => 'The applicant is e-mailed automatically when the status changes. This line is added to that e-mail.']) ?>
                     </div>
                     <div class="card__footer"><button class="btn btn--primary" type="submit"><?= icon('save', 'icon--sm') ?> Save</button></div>
                 </form>

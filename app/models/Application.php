@@ -11,5 +11,5 @@ final class Application extends Model
     protected static string $table = 'applications';
     protected static string $order = 'id DESC';
 
-    public const STATUSES = ['new', 'reviewing', 'shortlisted', 'rejected', 'hired'];
+    public const STATUSES = ['new', 'reviewing', 'shortlisted', 'interview', 'rejected', 'hired'];
 }

@@ -15,6 +15,7 @@ $fieldMeta = [
     'linkedin_url' => ['id' => $idPrefix . '-linkedin', 'label' => (string) content('careers', 'form.linkedin_label')],
     'cover_letter' => ['id' => $idPrefix . '-message', 'label' => (string) content('careers', 'form.message_label')],
     'cv'           => ['id' => $idPrefix . '-cv', 'label' => (string) content('careers', 'form.cv_label')],
+    'portrait'     => ['id' => $idPrefix . '-portrait', 'label' => 'Your portrait'],
     'consent'      => ['id' => $idPrefix . '-consent', 'label' => ''],
 ];
 ?>
@@ -29,7 +30,7 @@ $fieldMeta = [
         <?= partial('partials/form-field', ['name' => 'linkedin_url', 'id' => $fieldMeta['linkedin_url']['id'], 'label' => $fieldMeta['linkedin_url']['label'], 'type' => 'url', 'maxlength' => 255, 'placeholder' => 'https://www.linkedin.com/in/…', 'autocomplete' => 'url']) ?>
         <?= partial('partials/form-field', ['name' => 'cover_letter', 'id' => $fieldMeta['cover_letter']['id'], 'label' => $fieldMeta['cover_letter']['label'], 'type' => 'textarea', 'rows' => 6, 'maxlength' => 5000, 'help' => $messageHelp ?? '', 'class' => 'field--full']) ?>
         <?= partial('partials/form-field', [
-            'name' => 'cv', 'id' => $fieldMeta['cv']['id'], 'label' => $fieldMeta['cv']['label'], 'type' => 'file', 'value' => '', 'class' => 'field--full',
+            'name' => 'cv', 'id' => $fieldMeta['cv']['id'], 'label' => $fieldMeta['cv']['label'] . ' *', 'required' => true, 'type' => 'file', 'value' => '', 'class' => 'field--full',
             'help' => content('careers', 'form.cv_help'),
             'attrs' => [
                 'accept'          => '.' . implode(',.', $cvExts),
@@ -38,6 +39,11 @@ $fieldMeta = [
                 'data-error-type' => content('careers', 'form.cv_error_type'),
                 'data-exts'       => implode(',', $cvExts),
             ],
+        ]) ?>
+        <?= partial('partials/form-field', [
+            'name' => 'portrait', 'id' => $idPrefix . '-portrait', 'label' => 'Your portrait (a clear head-and-shoulders photo) *', 'type' => 'file', 'value' => '', 'class' => 'field--full',
+            'help' => 'Required. A JPG, PNG or WebP photo of your face, at least 300 x 300 pixels. It stays private: only our team sees it.',
+            'attrs' => ['accept' => 'image/jpeg,image/png,image/webp', 'capture' => 'user'],
         ]) ?>
         <div class="field field--full<?= has_error('consent') ? ' field--error' : '' ?>">
             <label class="check" for="<?= e($idPrefix) ?>-consent">

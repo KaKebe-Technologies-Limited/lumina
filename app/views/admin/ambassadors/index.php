@@ -57,6 +57,7 @@ $headerActions[] = ['label' => 'View the public page', 'url' => url('involvement
                 <?php foreach ($rows as $r): $href = url('admin/ambassadors/' . (int) $r['id']); ?>
                     <tr class="<?= $r['status'] === 'new' ? 'is-unread' : '' ?>">
                         <td data-label="Person"><span class="cell-title"><a href="<?= e($href) ?>"><?= e($r['name']) ?></a></span><span class="cell-sub"><?= e($r['email']) ?></span>
+                            <?php if (!empty($r['ref_no'])): ?><span class="cell-sub"><?= e($r['ref_no']) ?><?= $r['score_pct'] !== null ? ' &middot; ' . e(rtrim(rtrim(number_format((float) $r['score_pct'], 1), '0'), '.')) . '%' : '' ?></span><?php endif; ?>
                             <?php if (!empty($r['occupation'])): ?><span class="cell-sub"><?= e($r['occupation']) ?></span><?php endif; ?></td>
                         <td data-label="Where"><?= e($r['country']) ?><span class="cell-sub"><?= e($regions[$r['region']] ?? $r['region']) ?></span></td>
                         <td data-label="Yearly pledge">

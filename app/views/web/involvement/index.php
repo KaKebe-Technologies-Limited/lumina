@@ -82,7 +82,10 @@ $fieldMeta = [
     'involvement_type' => ['id' => 'f-involvement_type', 'label' => (string) content('involvement', 'form.type_label')],
     'organisation'     => ['id' => 'f-organisation', 'label' => (string) content('involvement', 'form.org_label')],
     'message'          => ['id' => 'f-message', 'label' => (string) content('involvement', 'form.message_label')],
+    'cv'               => ['id' => 'f-cv', 'label' => 'Your CV'],
+    'portrait'         => ['id' => 'f-portrait', 'label' => 'Your portrait'],
 ];
+$this->start('scripts'); ?><script src="<?= e(asset('js/recruit-form.js')) ?>" defer></script><?php $this->end();
 $joinSub = trim((string) content('involvement', 'form.subtitle'));
 $joinText = trim((string) content('involvement', 'form.text'));
 $joinEyebrow = trim((string) content('involvement', 'form.eyebrow'));
@@ -95,7 +98,7 @@ section_begin('involvement', 'form', ['id' => 'join', 'class' => 'involvement-jo
             <?php if ($joinText !== ''): ?><div><?= nl2p($joinText) ?></div><?php endif; ?>
         </div>
         <div data-reveal>
-            <form class="form-card ia-form" method="post" action="<?= e(url('involvement')) ?>" novalidate>
+            <form class="form-card ia-form" method="post" action="<?= e(url('involvement')) ?>" enctype="multipart/form-data" novalidate data-inv-form>
                 <?= partial('web/inner-a/_error_summary', ['title' => (string) content('involvement', 'form.error_title'), 'fields' => $fieldMeta, 'sid' => 'inv']) ?>
                 <?= csrf_field() ?>
                 <?= honeypot_field() ?>
@@ -105,6 +108,15 @@ section_begin('involvement', 'form', ['id' => 'join', 'class' => 'involvement-jo
                     <?= partial('partials/form-field', ['name' => 'phone', 'label' => $fieldMeta['phone']['label'], 'type' => 'tel', 'autocomplete' => 'tel', 'maxlength' => 40]) ?>
                     <?= partial('partials/form-field', ['name' => 'involvement_type', 'label' => $fieldMeta['involvement_type']['label'], 'type' => 'select', 'required' => true, 'options' => $types, 'value' => $typeValue]) ?>
                     <?= partial('partials/form-field', ['name' => 'organisation', 'label' => $fieldMeta['organisation']['label'], 'autocomplete' => 'organization', 'maxlength' => 190, 'help' => (string) content('involvement', 'form.org_help'), 'class' => 'field--full']) ?>
+                    <div class="field--full rc-volunteer" data-inv-volunteer hidden>
+                        <?= partial('partials/form-field', ['name' => 'cv', 'id' => 'f-cv', 'label' => 'Your CV (volunteers) *', 'type' => 'file', 'value' => '', 'class' => 'field--full', 'help' => 'Required to volunteer. A PDF or Word file.',
+                            'attrs' => ['accept' => '.' . implode(',.', (array) config('upload.cv_exts'))]]) ?>
+        <?= partial('partials/form-field', [
+            'name' => 'portrait', 'id' => 'f-portrait', 'label' => 'Your portrait (volunteers) *', 'type' => 'file', 'value' => '', 'class' => 'field--full',
+            'help' => 'Required. A JPG, PNG or WebP photo of your face, at least 300 x 300 pixels. It stays private: only our team sees it.',
+            'attrs' => ['accept' => 'image/jpeg,image/png,image/webp', 'capture' => 'user'],
+        ]) ?>
+                    </div>
                     <?= partial('partials/form-field', ['name' => 'message', 'label' => $fieldMeta['message']['label'], 'type' => 'textarea', 'rows' => 5, 'maxlength' => 3000, 'class' => 'field--full']) ?>
                 </div>
                 <div class="form-actions">

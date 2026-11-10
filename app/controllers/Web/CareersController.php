@@ -14,6 +14,7 @@ use App\Core\UploadException;
 use App\Core\Uploader;
 use App\Models\Application;
 use App\Models\Job;
+use App\Services\Recruitment\Recruitment;
 use App\Services\Web\FormMessages;
 
 /**
@@ -100,15 +101,30 @@ final class CareersController extends Controller
             $data[$k] = trim((string) ($data[$k] ?? ''));
         }
 
-        // Optional CV: stored PRIVATELY (outside the web root). Failure -> field error, nothing is saved.
-        $cv = null;
+        // The CV and the portrait are both required: stored PRIVATELY (outside the web root). Failure -> field error, nothing is saved.
+        Recruitment::install();
         $file = $request->file('cv');
-        if ($file !== null) {
-            try {
-                $cv = Uploader::privateFile($file, 'cv', (array) config('upload.cv_exts'));
-            } catch (UploadException $e) {
-                $this->fail(['cv' => $e->getMessage()], $back . '#apply');
-            }
+        $photoFile = $request->file('portrait');
+        $errs = [];
+        if ($file === null) {
+            $errs['cv'] = 'Please attach your CV (PDF or Word).';
+        }
+        $problem = Recruitment::portraitProblem($photoFile);
+        if ($problem !== '') {
+            $errs['portrait'] = $problem;
+        }
+        if ($errs !== []) {
+            $this->fail($errs, $back . '#apply');
+        }
+        try {
+            $cv = Uploader::privateFile($file, 'cv', (array) config('upload.cv_exts'));
+        } catch (UploadException $e) {
+            $this->fail(['cv' => $e->getMessage()], $back . '#apply');
+        }
+        $pic = Recruitment::storePortrait($photoFile);
+        if (!$pic['ok']) {
+            Uploader::deletePrivate($cv['path']);
+            $this->fail(['portrait' => $pic['error']], $back . '#apply');
         }
 
         try {
@@ -123,21 +139,23 @@ final class CareersController extends Controller
                 'cv_mime'          => $cv['mime'] ?? null,
                 'cv_size'          => $cv['size'] ?? null,
                 'linkedin_url'     => $data['linkedin_url'] !== '' ? $data['linkedin_url'] : null,
+                'photo_path'       => $pic['path'],
                 'status'           => 'new',
                 'ip'               => $request->ip(),
                 'user_agent'       => $request->userAgent(),
             ]);
         } catch (\Throwable $e) {
-            if ($cv !== null) {
-                Uploader::deletePrivate($cv['path']);       // never leave an orphaned private file behind
-            }
+            Uploader::deletePrivate($cv['path']);           // never leave an orphaned private file behind
+            Uploader::deletePrivate($pic['path']);
             throw $e;
         }
+        $ref = Recruitment::assignRef('job', (int) $id);
 
         $subject = trim((string) content('careers', $job !== null ? 'form.notify_subject' : 'form.notify_subject_general'));
         $subject = ($subject !== '' ? $subject : 'Application') . ($job !== null ? ': ' . $job['title'] : '');
         $lines = [
             $job !== null ? 'Vacancy: ' . $job['title'] : 'General application (talent network)',
+            'Number: ' . ($ref !== '' ? $ref : '-'),
             'Name: ' . $data['name'],
             'Email: ' . $data['email'],
             'Phone: ' . ($data['phone'] !== '' ? $data['phone'] : '-'),
@@ -150,8 +168,9 @@ final class CareersController extends Controller
             'Open in the admin: ' . abs_url('admin/applications/' . $id),
         ];
         Mailer::notify($subject, implode("\n", $lines), $data['email']);
+        Recruitment::received('job', (int) $id);
 
-        Flash::success((string) content('careers', $job !== null ? 'form.success_job' : 'form.success'));
+        Flash::success((string) content('careers', $job !== null ? 'form.success_job' : 'form.success') . ($ref !== '' ? ' Your application number is ' . $ref . ': we have e-mailed it to you.' : ''));
         return $this->redirect($back);
     }
 

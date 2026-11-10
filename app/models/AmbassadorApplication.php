@@ -11,8 +11,8 @@ final class AmbassadorApplication extends Model
     protected static string $table = 'ambassador_applications';
     protected static string $order = 'id DESC';
 
-    public const STATUSES = ['new', 'reviewing', 'approved', 'on_hold', 'declined'];
-    public const LABELS = ['new' => 'New', 'reviewing' => 'Under review', 'approved' => 'Approved', 'on_hold' => 'On hold', 'declined' => 'Declined'];
+    public const STATUSES = ['new', 'reviewing', 'interview', 'approved', 'on_hold', 'declined'];
+    public const LABELS = ['new' => 'New', 'reviewing' => 'Under review', 'interview' => 'Invited for interview', 'approved' => 'Approved', 'on_hold' => 'On hold', 'declined' => 'Declined'];
 
     /** The ways an ambassador can help: key => label (shown on the form and in the admin). */
     public const ROLES = [

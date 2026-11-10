@@ -87,3 +87,28 @@
 .ad-letter-contacts { max-height: 14rem; overflow: auto; border: 1px solid var(--border, #ddd); border-radius: 10px; padding: .6rem .9rem; margin: 0 0 1rem; }
 .ad-letter-contacts .check { display: block; }
 .ad-letter-rcpt td { font-size: .85rem; color: var(--text-muted, #5b6478); }
+
+// ---- Admin > Recruitment (tracking number, portrait, KPI scoring, criteria) ----
+.rc-panel { margin-bottom: 1.25rem; }
+.rc-ref { font-family: monospace; font-size: .95rem; letter-spacing: .04em; }
+.rc-files { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.rc-files__line { margin: 0 0 .4rem; }
+.rc-portrait { width: 6rem; height: 6rem; border-radius: 14px; object-fit: cover; background: #eef0f4; display: inline-flex; align-items: center; justify-content: center; color: #8a93a6; }
+.rc-kpi { border: 0; margin: 0 0 1rem; padding: 0; }
+.rc-kpi__label { font-weight: 600; padding: 0; margin-bottom: .4rem; }
+.rc-kpi__w { font-weight: 400; font-size: .8rem; color: #5b6478; }
+.rc-kpi__scale { display: flex; gap: .4rem; flex-wrap: wrap; }
+.rc-pt { position: relative; cursor: pointer; }
+.rc-pt input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.rc-pt span { display: inline-flex; align-items: center; justify-content: center; min-width: 2.75rem; height: 2.75rem; border: 1.5px solid #cfd5e1; border-radius: 10px; font-weight: 700; background: #fff; transition: background .15s, border-color .15s, color .15s; }
+.rc-pt:hover span { border-color: #0b1b33; }
+.rc-pt input:checked + span { background: #0b1b33; border-color: #0b1b33; color: #fff; }
+.rc-pt input:focus-visible + span { outline: 3px solid #d9a441; outline-offset: 2px; }
+.rc-live { margin: .5rem 0 0; font-weight: 700; color: #5b6478; &.is-pass { color: #1c7a43; } }
+.rc-history { list-style: none; margin: 0; padding: 0; display: grid; gap: .8rem; li { display: grid; gap: .15rem; } }
+.rc-history__note { font-size: .9rem; }
+.rc-tabs { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.rc-kpi-row { display: flex; gap: .6rem; align-items: end; flex-wrap: wrap; margin-bottom: .4rem; .input { min-width: 0; } > .input:first-of-type { flex: 1 1 16rem; } }
+.rc-kpi-row__w { display: grid; gap: .15rem; font-size: .8rem; color: #5b6478; .input { width: 5.5rem; } }
+.rc-kpi-del { margin: 0 0 1rem; }
+.rc-upload { display: grid; gap: .35rem; }

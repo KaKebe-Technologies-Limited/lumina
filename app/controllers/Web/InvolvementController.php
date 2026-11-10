@@ -9,7 +9,10 @@ use App\Core\Log;
 use App\Core\Mailer;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\UploadException;
+use App\Core\Uploader;
 use App\Models\InvolvementRequest;
+use App\Services\Recruitment\Recruitment;
 
 /**
  * GET /involvement and POST /involvement (volunteer / partner / advocate form)  - OWNER: B1 "web-core".
@@ -59,7 +62,46 @@ final class InvolvementController extends Controller
             'ip'               => $request->ip(),
             'user_agent'       => $request->userAgent(),
         ];
-        InvolvementRequest::create($record);
+        // Volunteers must also send a CV and a portrait (partners and advocates need not)
+        $cv = null;
+        $pic = null;
+        if ($record['involvement_type'] === 'volunteer') {
+            Recruitment::install();
+            $cvFile = $request->file('cv');
+            $photoFile = $request->file('portrait');
+            $errs = [];
+            if ($cvFile === null) {
+                $errs['cv'] = 'Volunteers: please attach your CV (PDF or Word).';
+            }
+            $problem = Recruitment::portraitProblem($photoFile);
+            if ($problem !== '') {
+                $errs['portrait'] = $problem;
+            }
+            if ($errs !== []) {
+                $this->fail($errs, 'involvement#join');
+            }
+            try {
+                $cv = Uploader::privateFile($cvFile, 'cv', (array) config('upload.cv_exts'));
+            } catch (UploadException $e) {
+                $this->fail(['cv' => $e->getMessage()], 'involvement#join');
+            }
+            $pic = Recruitment::storePortrait($photoFile);
+            if (!$pic['ok']) {
+                Uploader::deletePrivate($cv['path']);
+                $this->fail(['portrait' => $pic['error']], 'involvement#join');
+            }
+            $record += ['cv_path' => $cv['path'], 'cv_original_name' => $cv['name'], 'cv_mime' => $cv['mime'], 'cv_size' => $cv['size'], 'photo_path' => $pic['path']];
+        }
+        try {
+            $newId = (int) InvolvementRequest::create($record);
+        } catch (\Throwable $e) {
+            if ($cv !== null) {
+                Uploader::deletePrivate($cv['path']);
+                Uploader::deletePrivate((string) $pic['path']);
+            }
+            throw $e;
+        }
+        $ref = $record['involvement_type'] === 'volunteer' ? Recruitment::assignRef('volunteer', $newId) : '';
 
         $typeLabel = $this->typeLabels()[$record['involvement_type']] ?? $record['involvement_type'];
         $body = "New involvement request ({$typeLabel})\n\n"
@@ -73,7 +115,10 @@ final class InvolvementController extends Controller
             Log::warning('Involvement notification e-mail could not be sent', ['email' => $record['email']]);
         }
 
-        Flash::success((string) content('involvement', 'form.success'));
+        if ($record['involvement_type'] === 'volunteer') {
+            Recruitment::received('volunteer', $newId);
+        }
+        Flash::success((string) content('involvement', 'form.success') . ($ref !== '' ? ' Your application number is ' . $ref . ': we have e-mailed it to you.' : ''));
         return $this->redirect('involvement');
     }
 

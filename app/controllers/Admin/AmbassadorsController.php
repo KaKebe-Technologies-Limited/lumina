@@ -14,6 +14,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Models\AmbassadorApplication as Amb;
 use App\Services\Inbox\Support;
+use App\Services\Recruitment\Recruitment;
 use App\Services\Inbox\Where;
 use App\Services\Web\Countries;
 
@@ -41,6 +42,7 @@ final class AmbassadorsController extends InboxController
             Flash::warning('The database update has not been imported yet. In phpMyAdmin, import lumina-live-import.sql into your database (it is safe to run again), then open this page again.');
             return $this->redirect('admin');
         }
+        Recruitment::install();
         [$where, $f] = $this->filters();
         $page = $this->paged(self::FROM, 'r.*', $where, self::SORTS[$f['sort']]);
         return $this->render('admin/ambassadors/index', [
@@ -54,6 +56,7 @@ final class AmbassadorsController extends InboxController
     {
         $this->authorize('inbox.manage');
         $this->ready();
+        Recruitment::install();
         $r = Amb::findOrFail($id);
         return $this->render('admin/ambassadors/show', ['r' => $r, 'regions' => Countries::REGIONS, 'canDelete' => can('inbox.delete'),
             'reviewer' => !empty($r['reviewed_by']) ? (string) Database::value('SELECT name FROM users WHERE id = ?', [(int) $r['reviewed_by']], '') : ''],
@@ -68,19 +71,11 @@ final class AmbassadorsController extends InboxController
         $data = $this->validate([
             'status' => 'required|in:' . implode(',', Amb::STATUSES), 'admin_notes' => 'nullable|max:5000', 'applicant_note' => 'nullable|max:1000',
         ], [], ['status' => 'Status', 'admin_notes' => 'Notes', 'applicant_note' => 'Message to the applicant'], 'admin/ambassadors/' . $id);
-        $changed = $data['status'] !== $r['status'];
-        $upd = ['status' => $data['status'], 'admin_notes' => ($data['admin_notes'] ?? '') !== '' ? $data['admin_notes'] : null];
-        if ($changed) {
-            $upd['reviewed_by'] = $this->userId();
-            $upd['reviewed_at'] = date('Y-m-d H:i:s');
-        }
-        Amb::update($id, $upd);
+        Amb::update($id, ['admin_notes' => ($data['admin_notes'] ?? '') !== '' ? $data['admin_notes'] : null]);
+        $res = Recruitment::setStatus('ambassador', $id, (string) $data['status'], '', $this->userId(), trim((string) ($data['applicant_note'] ?? '')));
         $this->audit('ambassador.update', 'ambassador', $id, 'Updated the ambassador application of "' . $r['name'] . '" (' . $data['status'] . ')', ['status' => $data['status']]);
-        $mailed = null;
-        if ($changed && $request->bool('email_applicant') && in_array($data['status'], ['approved', 'declined', 'on_hold'], true)) {
-            $mailed = $this->mailApplicant($r, (string) $data['status'], trim((string) ($data['applicant_note'] ?? '')));
-        }
-        Flash::success('Saved.' . ($mailed === true ? ' The applicant was e-mailed.' : ($mailed === false ? ' The e-mail to the applicant could not be sent.' : '')));
+        $mailed = $res['changed'] ? $res['mailed'] : null;
+        Flash::success('Saved.' . ($mailed === true ? ' The applicant was e-mailed about the new stage.' : ($mailed === false ? ' The e-mail to the applicant could not be sent.' : '')));
         return $this->redirect('admin/ambassadors/' . $id);
     }
 
@@ -153,7 +148,7 @@ final class AmbassadorsController extends InboxController
         $sort = $this->request->string('sort', 'newest');
         $sort = isset(self::SORTS[$sort]) ? $sort : 'newest';
         $w = new Where();
-        $w->addLike(['r.name', 'r.email', 'r.country', 'r.city', 'r.occupation', 'r.organisation', 'r.motivation'], Support::like($q));
+        $w->addLike(array_merge(['r.name', 'r.email', 'r.country', 'r.city', 'r.occupation', 'r.organisation', 'r.motivation'], Recruitment::ready() ? ['r.ref_no'] : []), Support::like($q));
         if ($status !== 'all') {
             $w->add('r.status = ?', [$status]);
         }

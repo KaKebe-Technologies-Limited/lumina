@@ -14,6 +14,7 @@ use App\Core\Slug;
 use App\Core\Uploader;
 use App\Models\Application;
 use App\Services\Inbox\Support;
+use App\Services\Recruitment\Recruitment;
 use App\Services\Inbox\Where;
 
 /**
@@ -26,12 +27,13 @@ final class ApplicationController extends InboxController
 {
     private const FROM = 'applications a LEFT JOIN jobs j ON j.id = a.job_id';
     private const SELECT = 'a.*, j.title AS job_title';
-    private const LABELS = ['new' => 'New', 'reviewing' => 'Reviewing', 'shortlisted' => 'Shortlisted', 'rejected' => 'Rejected', 'hired' => 'Hired'];
+    private const LABELS = ['new' => 'Received', 'reviewing' => 'Under review', 'shortlisted' => 'Shortlisted', 'interview' => 'Invited for interview', 'rejected' => 'Declined', 'hired' => 'Hired (onboarding)'];
     private const SORTS = ['newest' => 'a.created_at DESC, a.id DESC', 'oldest' => 'a.created_at ASC, a.id ASC', 'name' => 'a.name ASC'];
 
     public function index(Request $request): Response
     {
         $this->authorize('inbox.manage');
+        Recruitment::install();
         [$where, $f] = $this->filters();
         $page = $this->paged(self::FROM, self::SELECT, $where, self::SORTS[$f['sort']]);
 
@@ -49,6 +51,7 @@ final class ApplicationController extends InboxController
     public function show(Request $request, int $id): Response
     {
         $this->authorize('inbox.manage');
+        Recruitment::install();
         $a = Database::one('SELECT ' . self::SELECT . ' FROM ' . self::FROM . ' WHERE a.id = ? LIMIT 1', [$id]) ?? throw new HttpException(404, 'Not found');
         $others = (int) Database::value('SELECT COUNT(*) FROM applications WHERE email = ? AND id <> ?', [$a['email'], $id], 0);
 
@@ -66,12 +69,14 @@ final class ApplicationController extends InboxController
         $this->authorize('inbox.manage');
         $a = Application::findOrFail($id);
         $data = $this->validate([
-            'status'      => 'required|in:' . implode(',', Application::STATUSES),
-            'admin_notes' => 'nullable|max:5000',
+            'status'         => 'required|in:' . implode(',', Application::STATUSES),
+            'admin_notes'    => 'nullable|max:5000',
+            'applicant_note' => 'nullable|max:1000',
         ], [], ['status' => 'Status', 'admin_notes' => 'Notes']);
-        Application::update($id, ['status' => $data['status'], 'admin_notes' => ($data['admin_notes'] ?? '') !== '' ? $data['admin_notes'] : null]);
+        Application::update($id, ['admin_notes' => ($data['admin_notes'] ?? '') !== '' ? $data['admin_notes'] : null]);
+        $res = Recruitment::setStatus('job', $id, (string) $data['status'], '', $this->userId(), trim((string) ($data['applicant_note'] ?? '')));
         $this->audit('application.update', 'application', $id, 'Updated application from "' . $a['name'] . '" (' . $data['status'] . ')', ['status' => $data['status']]);
-        Flash::success('Application updated.');
+        Flash::success('Application updated.' . ($res['changed'] && $res['mailed'] === true ? ' The applicant was e-mailed about the new stage.' : ($res['changed'] && $res['mailed'] === false ? ' The e-mail to the applicant could not be sent.' : '')));
         return $this->redirect('admin/applications/' . $id);
     }
 
@@ -100,6 +105,9 @@ final class ApplicationController extends InboxController
         if ($rel !== null) {
             Uploader::deletePrivate($rel);
         }
+        if (trim((string) ($a['photo_path'] ?? '')) !== '') {
+            Uploader::deletePrivate((string) $a['photo_path']);
+        }
         $this->audit('application.delete', 'application', $id, 'Deleted application from "' . $a['name'] . '"');
         Flash::success('Application and its CV were deleted.');
         return $this->redirect('admin/applications');
@@ -109,7 +117,7 @@ final class ApplicationController extends InboxController
     public function bulk(Request $request): Response
     {
         $this->authorize('inbox.manage');
-        $in = $this->bulkInput(['mark_new', 'mark_reviewing', 'mark_shortlisted', 'mark_rejected', 'mark_hired', 'delete'], 'admin/applications');
+        $in = $this->bulkInput(['mark_new', 'mark_reviewing', 'mark_shortlisted', 'mark_interview', 'mark_rejected', 'mark_hired', 'delete'], 'admin/applications');
         if ($in instanceof Response) {
             return $in;
         }
@@ -131,7 +139,10 @@ final class ApplicationController extends InboxController
             return $this->back('admin/applications');
         }
         $status = substr($action, 5);
-        $n = Database::execute("UPDATE applications SET status = ? WHERE id IN ({$marks})", array_merge([$status], $ids));
+        $n = 0;
+        foreach ($ids as $one) {
+            $n += Recruitment::setStatus('job', (int) $one, $status, 'Bulk change', $this->userId(), '')['ok'] ? 1 : 0;
+        }
         $this->audit('application.bulk_status', 'application', null, 'Marked ' . $this->items($n, 'application') . ' as ' . $status, ['ids' => $ids, 'status' => $status]);
         Flash::success($this->items($n, 'application') . ' marked as ' . (self::LABELS[$status] ?? $status) . '.');
         return $this->back('admin/applications');
@@ -175,7 +186,7 @@ final class ApplicationController extends InboxController
         $sort = isset(self::SORTS[$sort]) ? $sort : 'newest';
 
         $w = new Where();
-        $w->addLike(['a.name', 'a.email', 'a.phone', 'a.cover_letter', 'j.title'], Support::like($q));
+        $w->addLike(array_merge(['a.name', 'a.email', 'a.phone', 'a.cover_letter', 'j.title'], Recruitment::ready() ? ['a.ref_no'] : []), Support::like($q));
         if ($status !== 'all') {
             $w->add('a.status = ?', [$status]);
         }

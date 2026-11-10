@@ -12,6 +12,7 @@ use App\Core\Response;
 use App\Models\InvolvementRequest;
 use App\Services\Inbox\Support;
 use App\Services\Inbox\Where;
+use App\Services\Recruitment\Recruitment;
 
 /**
  * Admin > Involvement requests (volunteer / partner / mentor ... sign-ups from the public Involvement form). OWNER: B5 "admin-inbox".
@@ -20,12 +21,13 @@ use App\Services\Inbox\Where;
 final class InvolvementController extends InboxController
 {
     private const FROM = 'involvement_requests r';
-    private const LABELS = ['new' => 'New', 'contacted' => 'Contacted', 'in_progress' => 'In progress', 'closed' => 'Closed'];
+    private const LABELS = ['new' => 'New', 'reviewing' => 'Under review', 'interview' => 'Invited for interview', 'accepted' => 'Accepted (onboarding)', 'on_hold' => 'On hold', 'declined' => 'Declined', 'contacted' => 'Contacted', 'in_progress' => 'In progress', 'closed' => 'Closed'];
     private const SORTS = ['newest' => 'r.created_at DESC, r.id DESC', 'oldest' => 'r.created_at ASC, r.id ASC'];
 
     public function index(Request $request): Response
     {
         $this->authorize('inbox.manage');
+        Recruitment::install();
         [$where, $f] = $this->filters();
         $page = $this->paged(self::FROM, 'r.*', $where, self::SORTS[$f['sort']]);
 
@@ -43,6 +45,7 @@ final class InvolvementController extends InboxController
     public function show(Request $request, int $id): Response
     {
         $this->authorize('inbox.manage');
+        Recruitment::install();
         $r = InvolvementRequest::findOrFail($id);
         return $this->render('admin/involvement/show', [
             'r'         => $r,
@@ -59,9 +62,16 @@ final class InvolvementController extends InboxController
             'status'      => 'required|in:' . implode(',', InvolvementRequest::STATUSES),
             'admin_notes' => 'nullable|max:5000',
         ], [], ['status' => 'Status', 'admin_notes' => 'Notes']);
-        InvolvementRequest::update($id, ['status' => $data['status'], 'admin_notes' => ($data['admin_notes'] ?? '') !== '' ? $data['admin_notes'] : null]);
+        $note = ($data['admin_notes'] ?? '') !== '' ? $data['admin_notes'] : null;
+        if ($r['involvement_type'] === 'volunteer') {
+            InvolvementRequest::update($id, ['admin_notes' => $note]);
+            $res = Recruitment::setStatus('volunteer', $id, (string) $data['status'], '', $this->userId(), trim((string) $request->string('applicant_note')));
+        } else {
+            InvolvementRequest::update($id, ['status' => $data['status'], 'admin_notes' => $note]);
+            $res = ['changed' => false, 'mailed' => null];
+        }
         $this->audit('involvement.update', 'involvement', $id, 'Updated request from "' . $r['name'] . '" (' . $data['status'] . ')', ['status' => $data['status']]);
-        Flash::success('Request updated.');
+        Flash::success('Request updated.' . ($res['changed'] && $res['mailed'] === true ? ' The volunteer was e-mailed about the new stage.' : ($res['changed'] && $res['mailed'] === false ? ' The e-mail to the volunteer could not be sent.' : '')));
         return $this->redirect('admin/involvement/' . $id);
     }
 
@@ -140,7 +150,7 @@ final class InvolvementController extends InboxController
         $sort = isset(self::SORTS[$sort]) ? $sort : 'newest';
 
         $w = new Where();
-        $w->addLike(['r.name', 'r.email', 'r.phone', 'r.organisation', 'r.message'], Support::like($q));
+        $w->addLike(array_merge(['r.name', 'r.email', 'r.phone', 'r.organisation', 'r.message'], Recruitment::ready() ? ['r.ref_no'] : []), Support::like($q));
         if ($status !== 'all') {
             $w->add('r.status = ?', [$status]);
         }

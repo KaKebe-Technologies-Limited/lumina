@@ -47,9 +47,11 @@ $this->start('scripts'); ?>
         </div>
 
         <aside class="inbox-aside" aria-label="Request details">
+            <?php if ($r['involvement_type'] === 'volunteer'): ?><?= partial('admin/recruitment/_panel', ['scope' => 'volunteer', 'row' => $r]) ?><?php endif; ?>
             <?= partial('admin/inbox/_status-form', [
                 'action'   => url('admin/involvement/' . (int) $r['id']),
-                'statuses' => $statuses,
+                'statuses' => $r['involvement_type'] === 'volunteer' ? \App\Services\Recruitment\Recruitment::statuses('volunteer') : $statuses,
+                'notify'   => $r['involvement_type'] === 'volunteer',
                 'current'  => $r['status'],
                 'notes'    => (string) ($r['admin_notes'] ?? ''),
                 'title'    => 'Follow-up',

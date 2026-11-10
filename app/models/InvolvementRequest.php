@@ -11,5 +11,5 @@ final class InvolvementRequest extends Model
     protected static string $table = 'involvement_requests';
     protected static string $order = 'id DESC';
 
-    public const STATUSES = ['new', 'contacted', 'in_progress', 'closed'];
+    public const STATUSES = ['new', 'contacted', 'in_progress', 'closed', 'reviewing', 'interview', 'accepted', 'on_hold', 'declined'];
 }

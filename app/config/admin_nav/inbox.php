@@ -18,6 +18,7 @@ return [
          'badge' => null],
         ['key' => 'involvement', 'label' => 'Involvement requests', 'url' => 'admin/involvement', 'icon' => 'heart', 'can' => 'inbox.manage', 'order' => 30,
          'badge' => static fn(): int => Counts::get('involvement')],
+        ['key' => 'recruitment', 'label' => 'Recruitment criteria', 'url' => 'admin/recruitment/criteria', 'icon' => 'check-circle', 'can' => 'inbox.manage', 'order' => 36],
         ['key' => 'ambassadors', 'label' => 'Ambassadors', 'url' => 'admin/ambassadors', 'icon' => 'globe', 'can' => 'inbox.manage', 'order' => 35,
          'badge' => static function (): int {
              try {

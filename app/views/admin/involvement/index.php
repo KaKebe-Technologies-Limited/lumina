@@ -82,7 +82,7 @@ $this->start('scripts'); ?>
                             <span class="cell-sub"><?= e($r['email']) ?></span>
                             <?php if (!empty($r['organisation'])): ?><span class="cell-sub"><?= e($r['organisation']) ?></span><?php endif; ?>
                         </td>
-                        <td data-label="Type"><span class="badge badge--outline"><?= e(label_from((string) $r['involvement_type'])) ?></span></td>
+                        <td data-label="Type"><span class="badge badge--outline"><?= e(label_from((string) $r['involvement_type'])) ?></span><?php if (!empty($r['ref_no'])): ?><span class="cell-sub"><?= e($r['ref_no']) ?><?= $r['score_pct'] !== null ? ' &middot; ' . e(rtrim(rtrim(number_format((float) $r['score_pct'], 1), '0'), '.')) . '%' : '' ?></span><?php endif; ?></td>
                         <td data-label="Message" class="inbox-preview"><span class="cell-sub"><?= e(excerpt((string) $r['message'], 110)) ?></span></td>
                         <td data-label="Status"><?= partial('partials/admin/status-badge', ['status' => $r['status'], 'label' => $labels[$r['status']] ?? null]) ?></td>
                         <td data-label="Received" class="nowrap"><?= e(format_date($r['created_at'], 'j M Y')) ?></td>

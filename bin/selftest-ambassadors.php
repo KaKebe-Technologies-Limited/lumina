@@ -56,7 +56,21 @@ $req = static function (string $method, string $path, array $form = [], ?string 
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_TIMEOUT => 40, CURLOPT_COOKIEJAR => $jar, CURLOPT_COOKIEFILE => $jar, CURLOPT_FOLLOWLOCATION => false]);
     if ($method === 'POST') {
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($form));
+        $hasFile = false;
+        $flat = [];
+        $walk = static function (array $arr, string $prefix) use (&$walk, &$flat, &$hasFile): void {
+            foreach ($arr as $k => $v) {
+                $key = $prefix === '' ? (string) $k : $prefix . '[' . $k . ']';
+                if (is_array($v)) {
+                    $walk($v, $key);
+                } else {
+                    $hasFile = $hasFile || $v instanceof \CURLFile;
+                    $flat[$key] = $v;
+                }
+            }
+        };
+        $walk($form, '');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $hasFile ? $flat : http_build_query($form));
     }
     $raw = (string) curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
@@ -121,6 +135,21 @@ $good = ['name' => 'ZZ Amb Ada Lovelace', 'email' => 'zz-amb-ada@example.test', 
     'occupation' => 'Engineer', 'organisation' => 'Analytical Ltd', 'profile_url' => 'https://example.org/ada', 'roles' => ['fundraise', 'lobby'], 'pledge_types' => ['money', 'inkind', 'other'],
     'annual_amount' => '5,000', 'currency' => 'GBP', 'inkind_items' => ['computers', 'books'], 'inkind_notes' => '20 laptops in London, about GBP 4,000.', 'other_text' => 'Free software licences',
     'network' => 'My professional body', 'motivation' => 'I believe every young person deserves digital skills.', 'availability' => 'weekly', 'consent' => '1', 'public_ok' => '1'];
+$png = sys_get_temp_dir() . '/zz-amb-portrait.png';
+$w = 320;
+$rawPx = '';
+for ($y = 0; $y < $w; $y++) {
+    $rawPx .= "\0";
+    for ($x = 0; $x < $w; $x++) {
+        $rawPx .= chr(($x * 3 + $y) % 256) . chr(($x + $y * 2) % 256) . chr(($x * $y) % 256);
+    }
+}
+$ch2 = static fn(string $t, string $d): string => pack('N', strlen($d)) . $t . $d . pack('N', crc32($t . $d));
+file_put_contents($png, "\x89PNG\r\n\x1a\n" . $ch2('IHDR', pack('NNCCCCC', $w, $w, 8, 2, 0, 0, 0)) . $ch2('IDAT', gzcompress($rawPx)) . $ch2('IEND', ''));
+$cvPdf = sys_get_temp_dir() . '/zz-amb-cv.pdf';
+file_put_contents($cvPdf, \App\Services\Letters\LetterPdf::build(array_merge(\App\Services\Letters\LetterService::blank(), ['subject' => 'CV', 'body' => 'A short CV for the test applicant.', 'from_name' => 'Test']), ['compress' => false]));
+$good['cv'] = new \CURLFile($cvPdf, 'application/pdf', 'cv.pdf');
+$good['portrait'] = new \CURLFile($png, 'image/png', 'me.png');
 $count = static fn(): int => (int) Database::value("SELECT COUNT(*) FROM ambassador_applications WHERE email LIKE 'zz-amb-%@example.test'", [], 0);
 $try = static function (array $over, ?string &$jar = null) use ($post, $good): array {
     Database::execute("DELETE FROM rate_limits");
@@ -160,7 +189,7 @@ check('form: a complete application is stored as new', $ok['code'] === 302 && $r
 check('form: the yearly pledge is stored (amount without separators, currency, pledge kinds, items, notes, other)', $row !== null && (float) $row['annual_amount'] === 5000.0 && $row['currency'] === 'GBP'
     && $row['pledge_types'] === 'money,inkind,other' && Amb::jsonList($row['inkind_items']) === ['computers', 'books'] && str_contains((string) $row['inkind_notes'], 'laptops') && $row['other_text'] === 'Free software licences');
 check('form: the ways to help, availability and consent are stored', $row !== null && Amb::jsonList($row['roles']) === ['fundraise', 'lobby'] && $row['availability'] === 'weekly' && (int) $row['public_ok'] === 1 && $row['consent_at'] !== null);
-check('form: the applicant is e-mailed a confirmation with the pledge, and the success message is shown', str_contains($mailText('zz-amb-ada@example.test'), 'Money: 5,000.00 GBP per year')
+check('form: the applicant is e-mailed a confirmation with the tracking number, and the success message is shown', str_contains($mailText('zz-amb-ada@example.test'), 'Your application number is AMB-')
     && str_contains($req('GET', '/involvement/ambassadors', [], $j)['body'], 'received your application'));
 $try(['name' => 'ZZ Amb Again'], $j);
 check('form: a second application from the same address while one is open is refused', $count() === 1);
@@ -194,7 +223,7 @@ check('access: a teaching-only user and an anonymous visitor cannot open the Amb
 $post('/admin/ambassadors/' . $aid, ['status' => 'approved', 'admin_notes' => 'Spoke on Monday', 'email_applicant' => '1', 'applicant_note' => 'Welcome aboard, Ada.'], $jA, '/admin/ambassadors/' . $aid);
 $app = Database::one('SELECT * FROM ambassador_applications WHERE id = ?', [$aid]);
 check('admin: approving saves the status, the note and who decided when', $app['status'] === 'approved' && $app['admin_notes'] === 'Spoke on Monday' && $app['reviewed_at'] !== null && (int) $app['reviewed_by'] > 0);
-check('admin: the applicant is e-mailed the welcome with the team message', str_contains($mailText('zz-amb-ada@example.test'), 'welcome you as an ambassador') && str_contains($mailText('zz-amb-ada@example.test'), 'Welcome aboard, Ada.'));
+check('admin: the applicant is e-mailed the welcome with the team message', str_contains($mailText('zz-amb-ada@example.test'), 'Welcome to the team') && str_contains($mailText('zz-amb-ada@example.test'), 'Welcome aboard, Ada.'));
 $dir = $req('GET', '/involvement/ambassadors');
 check('directory: an approved ambassador who agreed is listed with the country, and the number of countries is shown', str_contains($dir['body'], 'ZZ Amb Ada Lovelace') && str_contains($dir['body'], 'United Kingdom') && str_contains($dir['body'], 'amb-world__count'));
 $bobId = (int) $bob['id'];

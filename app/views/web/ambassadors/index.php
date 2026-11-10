@@ -159,7 +159,7 @@ $fieldMeta = [
     'region' => ['id' => 'f-region', 'label' => 'Region'], 'country' => ['id' => 'f-country', 'label' => 'Country'], 'roles' => ['id' => 'role-fundraise', 'label' => 'How you could help'],
     'pledge_types' => ['id' => 'pledge-money', 'label' => 'Your yearly pledge'], 'annual_amount' => ['id' => 'f-annual_amount', 'label' => 'Amount per year'], 'currency' => ['id' => 'f-currency', 'label' => 'Currency'],
     'inkind_items' => ['id' => 'inkind-computers', 'label' => 'In-kind items'], 'other_text' => ['id' => 'f-other_text', 'label' => 'Something else'],
-    'motivation' => ['id' => 'f-motivation', 'label' => 'Why you would like to be an ambassador'], 'profile_url' => ['id' => 'f-profile_url', 'label' => 'Profile link'], 'consent' => ['id' => 'f-consent', 'label' => 'Consent'],
+    'motivation' => ['id' => 'f-motivation', 'label' => 'Why you would like to be an ambassador'], 'profile_url' => ['id' => 'f-profile_url', 'label' => 'Profile link'], 'cv' => ['id' => 'f-cv', 'label' => 'Your CV'], 'portrait' => ['id' => 'f-portrait', 'label' => 'Your portrait'], 'consent' => ['id' => 'f-consent', 'label' => 'Consent'],
 ];
 $oldRegion = (string) old('region', '');
 $oldCountry = (string) old('country', '');
@@ -186,7 +186,7 @@ section_begin('ambassadors', 'form', ['id' => 'apply', 'class' => 'amb-apply', '
             </ul>
         </div>
         <div data-reveal>
-            <form class="form-card ia-form amb-form" method="post" action="<?= e(url('involvement/ambassadors')) ?>" novalidate data-amb-form>
+            <form class="form-card ia-form amb-form" method="post" action="<?= e(url('involvement/ambassadors')) ?>" enctype="multipart/form-data" novalidate data-amb-form>
                 <?= partial('web/inner-a/_error_summary', ['title' => $errTitle, 'fields' => $fieldMeta, 'sid' => 'amb']) ?>
                 <?= csrf_field() ?>
                 <?= honeypot_field() ?>
@@ -286,6 +286,19 @@ section_begin('ambassadors', 'form', ['id' => 'apply', 'class' => 'amb-apply', '
                         <?= partial('partials/form-field', ['name' => 'availability', 'label' => 'How much time could you give?', 'type' => 'select', 'options' => Amb::AVAILABILITY, 'empty' => 'Choose one']) ?>
                     </div>
                     <?= partial('partials/form-field', ['name' => 'motivation', 'label' => 'Why would you like to be an ambassador?', 'type' => 'textarea', 'rows' => 5, 'required' => true, 'maxlength' => 3000, 'class' => 'field--full']) ?>
+                </fieldset>
+
+                <fieldset class="amb-form__group">
+                    <legend>6. Your CV and portrait</legend>
+                    <div class="form-grid">
+                        <?= partial('partials/form-field', ['name' => 'cv', 'id' => 'f-cv', 'label' => 'Your CV *', 'type' => 'file', 'value' => '', 'class' => 'field--full', 'help' => 'Required. A PDF or Word file.',
+                            'attrs' => ['accept' => '.' . implode(',.', (array) config('upload.cv_exts'))]]) ?>
+        <?= partial('partials/form-field', [
+            'name' => 'portrait', 'id' => 'f-portrait', 'label' => 'Your portrait (a clear head-and-shoulders photo) *', 'type' => 'file', 'value' => '', 'class' => 'field--full',
+            'help' => 'Required. A JPG, PNG or WebP photo of your face, at least 300 x 300 pixels. It stays private: only our team sees it.',
+            'attrs' => ['accept' => 'image/jpeg,image/png,image/webp', 'capture' => 'user'],
+        ]) ?>
+                    </div>
                 </fieldset>
 
                 <div class="amb-form__consent">

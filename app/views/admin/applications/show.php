@@ -82,11 +82,13 @@ $this->start('scripts'); ?>
         </div>
 
         <aside class="inbox-aside" aria-label="Application details">
+            <?= partial('admin/recruitment/_panel', ['scope' => 'job', 'row' => $a]) ?>
             <?= partial('admin/inbox/_status-form', [
                 'action'   => url('admin/applications/' . (int) $a['id']),
                 'statuses' => $statuses,
                 'current'  => $a['status'],
                 'notes'    => (string) ($a['admin_notes'] ?? ''),
+                'notify'   => true,
                 'title'    => 'Hiring progress',
                 'help'     => 'Interview notes, scores, references. Only the team can see these notes.',
             ]) ?>
