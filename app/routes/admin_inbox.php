@@ -74,6 +74,12 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth']], function ($route
 
     // ---- Pesapal payments (docs/PESAPAL.md)
     $router->get('/pesapal', [\App\Controllers\Admin\PesapalController::class, 'index'])->name('admin.pesapal');
+    // ---- Payments dashboard: every payment on the website + send money (payout)
+    $router->get('/payments', [\App\Controllers\Admin\PaymentsController::class, 'index'])->name('admin.payments');
+    $router->get('/payments/export', [\App\Controllers\Admin\PaymentsController::class, 'export'])->middleware('throttle:20,600')->name('admin.payments.export');
+    $router->post('/payments/balance', [\App\Controllers\Admin\PaymentsController::class, 'balance'])->middleware('throttle:20,600')->name('admin.payments.balance');
+    $router->post('/payments/payout', [\App\Controllers\Admin\PaymentsController::class, 'payout'])->middleware('throttle:20,600')->name('admin.payments.payout');
+    $router->post('/payments/{id}/check', [\App\Controllers\Admin\PaymentsController::class, 'check'])->where('id', '\d+')->middleware('throttle:60,600')->name('admin.payments.check');
     $router->get('/daraza/api', [\App\Controllers\Admin\DarazaApiController::class, 'index'])->name('admin.daraza.api');
     $router->post('/daraza/api', [\App\Controllers\Admin\DarazaApiController::class, 'save'])->middleware('throttle:30,600')->name('admin.daraza.api.save');
     $router->post('/daraza/api/test', [\App\Controllers\Admin\DarazaApiController::class, 'test'])->middleware('throttle:20,600')->name('admin.daraza.api.test');

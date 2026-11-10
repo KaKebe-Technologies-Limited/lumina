@@ -4,7 +4,7 @@ $net = [1 => 'MTN', 2 => 'Airtel'];
 $badge = ['paid' => 'badge--success', 'failed' => 'badge--danger', 'unknown' => 'badge--warning', 'collecting' => 'badge--warning', 'pending' => 'badge--outline'];
 ?>
 <?= partial('partials/admin/page-header', ['title' => 'Payment options', 'subtitle' => 'Take MTN and Airtel mobile-money payments everywhere on the website, switch the earlier ways to pay off or on, and send money out.',
-    'actions' => [['label' => 'Daraza payment links', 'url' => url('admin/daraza'), 'icon' => 'external-link', 'class' => 'btn--ghost']]]) ?>
+    'actions' => [['label' => 'Payments dashboard', 'url' => url('admin/payments'), 'icon' => 'bar-chart', 'class' => 'btn--outline'], ['label' => 'Daraza payment links', 'url' => url('admin/daraza'), 'icon' => 'external-link', 'class' => 'btn--ghost']]]) ?>
 <?php if (!$ready): ?><div class="alert alert--warning" role="status">The payments table could not be created automatically. Ask your developer to check the database permissions.</div><?php endif; ?>
 
 <div class="ad-letter-grid">
