@@ -155,6 +155,10 @@ $isProject = $c['kind'] !== 'quiz';
             <h2 class="ac-block__title">How the winners are chosen</h2>
             <p>Your answers are marked by the system. The highest score wins and the fastest finishing time breaks a tie. The top <?= (int) $c['winners_count'] ?> win.</p>
         <?php endif; ?>
+        <?php $benefits = \App\Services\Academy\ChallengeService::benefits($c); if ($benefits): ?>
+            <h2 class="ac-block__title">Benefits and privileges</h2>
+            <ul class="ac-list ac-benefits"><?php foreach ($benefits as $b): ?><li><?= icon('check-circle', 'icon--sm') ?> <?= e($b) ?></li><?php endforeach; ?></ul>
+        <?php endif; ?>
         <?php if (trim((string) $c['prize']) !== ''): ?>
             <h2 class="ac-block__title">Prize</h2>
             <p><?= icon('award', 'icon--sm') ?> <?= e($c['prize']) ?></p>

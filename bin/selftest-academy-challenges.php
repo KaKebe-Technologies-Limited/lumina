@@ -393,6 +393,10 @@ check('learner: signs in', $learnerLogin('zz-chal-l3@example.test', 'Learner pas
 $apply = $post('/academy/challenges/zz-chal-open/apply', ['consent' => '1'], $jL, '/academy/challenges/zz-chal-open', false, ['photo' => [$photoTmp, 'image/png', 'me.png']]);
 $en = Database::one('SELECT * FROM academy_challenge_entries WHERE challenge_id = ? AND learner_id = ?', [(int) $open['id'], (int) $L3['id']]);
 check('learner: applying over HTTP creates an approved entry with the photo and consent', $apply['code'] === 302 && $en !== null && $en['status'] === 'approved' && !empty($en['photo_path']) && !empty($en['photo_consent_at']));
+check('learner: applying e-mails the applicant a confirmation with what they get', str_contains($mailText((string) $L3['email']), 'You are in') && str_contains($mailText((string) $L3['email']), 'What you get'));
+check('learner: and the Academy team is e-mailed that someone applied', str_contains($mailText('info@luminaafricafoundation.com'), 'applied to the challenge'));
+$bpage = $req('GET', '/academy/challenges/zz-chal-open', [], $jL);
+check('the challenge page has a "Benefits and privileges" section', str_contains($bpage['body'], 'Benefits and privileges'));
 $pg = $req('GET', '/academy/challenges/zz-chal-open', [], $jL);
 check('learner: the page now offers to start the quiz (5 questions, time limit) and has no spoilers', str_contains($pg['body'], 'Start the quiz') && str_contains($pg['body'], '5 questions') && !str_contains($pg['body'], 'Capital of Uganda'));
 check('learner: the quiz page needs a started attempt', $req('GET', '/academy/challenges/zz-chal-open/quiz', [], $jL)['code'] === 302);

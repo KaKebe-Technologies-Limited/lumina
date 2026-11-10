@@ -111,7 +111,14 @@ final class AcademyChallengesController extends AcademyBaseController
         if (isset($res['errors']['photo'])) {
             Flash::warning('Your entry was saved, but the picture could not be used: ' . $res['errors']['photo']);
         }
-        Flash::success($entry['status'] === 'approved' ? 'You are in! Come back when the challenge starts.' : 'Your application was sent. We will e-mail you when it has been reviewed.');
+        \App\Services\Academy\AcademyMail::challengeApplied($c, $l, $entry);
+        \App\Services\Academy\AcademyMail::staffNotice('New challenge entry: ' . mb_substr((string) $c['title'], 0, 70) . ' - ' . $l['name'], [
+            $l['name'] . ' (' . $l['email'] . ') applied to the challenge "' . $c['title'] . '".',
+            'Status: ' . ($entry['status'] === 'approved' ? 'approved automatically' : 'waiting for your decision'),
+            trim((string) ($entry['team_name'] ?? '')) !== '' ? 'Team: ' . $entry['team_name'] : '',
+            trim((string) ($entry['idea_title'] ?? '')) !== '' ? 'Idea: ' . $entry['idea_title'] : '',
+        ], 'admin/academy/challenges/' . (int) $c['id'] . '/entries');
+        Flash::success($entry['status'] === 'approved' ? 'You are in! Come back when the challenge starts. We have e-mailed you the details.' : 'Your application was sent. We have e-mailed you a confirmation and will write again when it has been reviewed.');
         return $this->backTo($c, '#entry');
     }
 
@@ -205,12 +212,15 @@ final class AcademyChallengesController extends AcademyBaseController
         if ($m instanceof Response) {
             return $m;
         }
-        [, $entry] = $m;
+        [$lq, $entry] = $m;
         $answers = $request->input('a', []);
         $done = $entry !== null ? ChallengeService::submitQuiz($c, $entry, is_array($answers) ? $answers : []) : null;
         if ($done === null) {
             Flash::warning('This quiz cannot be submitted.');
             return $this->backTo($c);
+        }
+        if (!empty($lq['email'])) {
+            \App\Services\Academy\AcademyMail::challengeQuizDone($c, $lq, $done);
         }
         Flash::success('Your answers were submitted: ' . (int) $done['quiz_correct'] . ' of ' . (int) $done['quiz_total'] . ' correct. The final ranking is published when the challenge ends.');
         return $this->backTo($c, '#entry');
@@ -225,13 +235,16 @@ final class AcademyChallengesController extends AcademyBaseController
         if ($m instanceof Response) {
             return $m;
         }
-        [, $entry] = $m;
+        [$lp, $entry] = $m;
         if ($entry === null) {
             throw new HttpException(404, 'Not found');
         }
         $res = ChallengeService::submitProject($c, $entry, $request->all(), $request->file('sub_file'));
         if (!$res['ok']) {
             $this->fail($res['errors'], 'academy/challenges/' . $slug . '#entry');
+        }
+        if (!empty($lp['email'])) {
+            \App\Services\Academy\AcademyMail::challengeProjectDone($c, $lp, $entry);
         }
         Flash::success('Your project was submitted. You can update it until the challenge ends.');
         return $this->backTo($c, '#entry');

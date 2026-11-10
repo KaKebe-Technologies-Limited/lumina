@@ -77,6 +77,42 @@ final class AcademyChallengesAdminController extends AcademyAdminController
             ['title' => 'E-mail learners about this challenge', 'nav' => 'academy_challenges', 'breadcrumbs' => $this->crumbs('Challenges', ['E-mail learners', null])]);
     }
 
+    /** GET admin/academy/challenges/announce-all: one e-mail to every active learner about ALL the open challenges. */
+    public function announceAll(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        if ($r = $this->notReady()) {
+            return $r;
+        }
+        $list = ChallengeAnnounce::openList();
+        return $this->render('admin/academy/challenges/announce-all', ['list' => $list, 'pending' => count(ChallengeAnnounce::digestPending($list)), 'active' => count(\App\Services\Academy\LearnerMessages::approvedLearners()), 'perRun' => $this->perRun()],
+            ['title' => 'E-mail learners about the open challenges', 'nav' => 'academy_challenges', 'breadcrumbs' => $this->crumbs('Challenges', ['E-mail learners', null])]);
+    }
+
+    /** POST admin/academy/challenges/announce-all: send a batch (press again for the next one). */
+    public function announceAllSend(Request $request): Response
+    {
+        $this->authorize('academy.manage');
+        $list = ChallengeAnnounce::openList();
+        if ($list === []) {
+            Flash::error('No challenge is open at the moment, so there is nothing to announce.');
+            return $this->redirect('admin/academy/challenges/announce-all');
+        }
+        @set_time_limit(120);
+        $r = ChallengeAnnounce::sendDigest($list, mb_substr($request->string('note'), 0, 600), $request->bool('again'), \App\Core\Auth::id(), $this->perRun());
+        $this->audit('academy.challenge.announce_all', 'academy_challenge', null, 'E-mailed active learners about ' . count($list) . ' open challenge(s)', ['sent' => $r['sent'], 'failed' => $r['failed'], 'remaining' => $r['remaining']]);
+        if ($r['total'] === 0) {
+            Flash::info('Every active learner has already been told about these open challenges. Tick "send again" to e-mail them once more.');
+        } elseif ($r['stopped'] !== null && $r['stopped'] !== 'time') {
+            Flash::error('Sent to ' . $r['sent'] . ', then the mail server stopped accepting messages: ' . $r['stopped'] . ' (a free Gmail account allows about 500 a day). ' . $r['remaining'] . ' still waiting: press the button again later.');
+        } elseif ($r['remaining'] > 0) {
+            Flash::success('Sent to ' . $r['sent'] . ' learner' . ($r['sent'] === 1 ? '' : 's') . '. ' . $r['remaining'] . ' still waiting: press the button again to send the next batch.' . ($r['failed'] > 0 ? ' ' . $r['failed'] . ' could not be e-mailed and will be tried again.' : ''));
+        } else {
+            Flash::success('The open challenges were e-mailed to ' . $r['sent'] . ' learner' . ($r['sent'] === 1 ? '' : 's') . '. Everyone has been told.' . ($r['failed'] > 0 ? ' ' . $r['failed'] . ' could not be e-mailed and will be tried again next time.' : ''));
+        }
+        return $this->redirect('admin/academy/challenges/announce-all');
+    }
+
     private function perRun(): int
     {
         return max(10, min(400, (int) setting('academy_bulk_mail_per_run', '100')));
@@ -154,7 +190,7 @@ final class AcademyChallengesAdminController extends AcademyAdminController
         $valid = $this->validate([
             'title' => 'required|max:190', 'slug' => 'nullable|max:120', 'kind' => 'required|in:' . implode(',', array_keys(ChallengeService::KINDS)),
             'category' => 'required|in:' . implode(',', array_keys(CourseService::CATEGORIES)), 'summary' => 'nullable|max:320', 'description' => 'nullable|max:4000',
-            'rules' => 'nullable|max:3000', 'prize' => 'nullable|max:400', 'apply_opens_at' => 'nullable|datetime', 'apply_closes_at' => 'nullable|datetime',
+            'rules' => 'nullable|max:3000', 'prize' => 'nullable|max:400', 'benefits' => 'nullable|max:1500', 'apply_opens_at' => 'nullable|datetime', 'apply_closes_at' => 'nullable|datetime',
             'starts_at' => 'required|datetime', 'ends_at' => 'required|datetime', 'judging_ends_at' => 'nullable|datetime', 'team_max' => 'required|integer|between:1,10',
             'max_entries' => 'nullable|integer|between:1,5000', 'approval' => 'required|in:auto,manual', 'winners_count' => 'required|integer|between:1,10',
             'pass_score' => 'required|integer|between:0,100', 'quiz_minutes' => 'nullable|integer|between:5,180',
@@ -182,7 +218,7 @@ final class AcademyChallengesAdminController extends AcademyAdminController
         $data = [
             'kind' => $kind, 'scoring' => $scoring, 'title' => trim(strip_tags((string) $valid['title'])), 'category' => (string) $valid['category'],
             'summary' => trim(strip_tags((string) $valid['summary'])) ?: null, 'description' => trim(strip_tags((string) $valid['description'])) ?: null,
-            'rules' => trim(strip_tags((string) $valid['rules'])) ?: null, 'prize' => trim(strip_tags((string) $valid['prize'])) ?: null,
+            'rules' => trim(strip_tags((string) $valid['rules'])) ?: null, 'prize' => trim(strip_tags((string) $valid['prize'])) ?: null, 'benefits' => trim(strip_tags((string) ($valid['benefits'] ?? ''))) ?: null,
             'apply_opens_at' => $opens ? date('Y-m-d H:i:s', $opens) : null, 'apply_closes_at' => $closes ? date('Y-m-d H:i:s', $closes) : null,
             'starts_at' => date('Y-m-d H:i:s', $start), 'ends_at' => date('Y-m-d H:i:s', $end), 'judging_ends_at' => $judging ? date('Y-m-d H:i:s', $judging) : null,
             'team_max' => $kind === 'quiz' ? 1 : (int) $valid['team_max'], 'max_entries' => ($valid['max_entries'] ?? '') !== '' ? (int) $valid['max_entries'] : null,

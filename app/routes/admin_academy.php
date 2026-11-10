@@ -151,6 +151,8 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/certificates/{id}/revoke', [AcademyCertificatesController::class, 'revoke'])->name('admin.academy.certificates.revoke');
     $router->post('/certificates/{id}/reinstate', [AcademyCertificatesController::class, 'reinstate'])->name('admin.academy.certificates.reinstate');
 
+    $router->get('/challenges/announce-all', [AcademyChallengesAdminController::class, 'announceAll'])->name('admin.academy.challenges.announce_all');
+    $router->post('/challenges/announce-all', [AcademyChallengesAdminController::class, 'announceAllSend'])->middleware('throttle:30,60')->name('admin.academy.challenges.announce_all.send');
     $router->get('/challenges/create', [AcademyChallengesAdminController::class, 'create'])->name('admin.academy.challenges.create');
     $router->post('/challenges', [AcademyChallengesAdminController::class, 'store'])->name('admin.academy.challenges.store');
     $router->post('/challenges/starter', [AcademyChallengesAdminController::class, 'loadStarter'])->name('admin.academy.challenges.starter');

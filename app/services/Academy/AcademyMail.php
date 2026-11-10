@@ -267,7 +267,7 @@ final class AcademyMail
         $url = abs_url('academy/challenges/' . $challenge['slug']);
         if ($status === 'approved') {
             return self::send((string) $learner['email'], 'You are in: ' . mb_substr((string) $challenge['title'], 0, 90), [
-                $first, 'Your entry to "' . $challenge['title'] . '" has been approved. Open the challenge page when it starts to take part.',
+                $first, 'Your entry to "' . $challenge['title'] . '" has been approved. Open the challenge page when it starts to take part.', self::benefitsText($challenge),
             ], ['label' => 'Open the challenge', 'url' => $url]);
         }
         $p = [$first, 'Thank you for applying to "' . $challenge['title'] . '". We are not able to accept your entry this time.'];
@@ -302,11 +302,80 @@ final class AcademyMail
         if (trim((string) ($challenge['prize'] ?? '')) !== '') {
             $p[] = 'Prize: ' . trim((string) $challenge['prize']);
         }
+        $p[] = self::benefitsText($challenge);
         if (trim($note) !== '') {
             $p[] = 'From the Academy team: ' . trim($note);
         }
         $p[] = 'Open the challenge page to read the rules and join.';
         return self::send((string) $learner['email'], 'Challenge open: ' . mb_substr((string) $challenge['title'], 0, 90), $p, ['label' => 'Join the challenge', 'url' => abs_url('academy/challenges/' . $challenge['slug'])]);
+    }
+
+    /** "What you get": the benefits and privileges of a challenge as text. */
+    public static function benefitsText(array $challenge): string
+    {
+        return "What you get:\n- " . implode("\n- ", ChallengeService::benefits($challenge));
+    }
+
+    /** Stage 1: the application was received (or, when entries are approved automatically, the learner is in). */
+    public static function challengeApplied(array $challenge, array $learner, array $entry): bool
+    {
+        $in = ($entry['status'] ?? '') === 'approved';
+        $fmt = static fn(?string $v): string => $v ? format_datetime($v, 'j F Y, H:i') . ' (EAT)' : '';
+        $p = ['Hello ' . self::first((string) $learner['name']) . ',',
+            $in ? 'You are in! Your entry to "' . $challenge['title'] . '" is confirmed.' : 'Thank you for applying to "' . $challenge['title'] . '". We have received your application and our team will review it. We will e-mail you as soon as there is a decision.'];
+        if (!empty($challenge['starts_at'])) {
+            $p[] = 'The challenge starts: ' . $fmt($challenge['starts_at']) . "\nIt ends: " . $fmt($challenge['ends_at'] ?? null);
+        }
+        $p[] = self::benefitsText($challenge);
+        return self::send((string) $learner['email'], ($in ? 'You are in: ' : 'Application received: ') . mb_substr((string) $challenge['title'], 0, 80), $p, ['label' => 'Open the challenge', 'url' => abs_url('academy/challenges/' . $challenge['slug'])]);
+    }
+
+    /** The challenge has started (sent once to everybody who is in). */
+    public static function challengeStarted(array $challenge, array $learner): bool
+    {
+        $what = ($challenge['kind'] ?? 'quiz') === 'quiz' ? 'You can take the quiz now. You have ' . (int) ($challenge['quiz_minutes'] ?? 30) . ' minutes once you press start.' : 'You can now work on your project and submit it on the challenge page.';
+        return self::send((string) $learner['email'], 'It has started: ' . mb_substr((string) $challenge['title'], 0, 80), [
+            'Hello ' . self::first((string) $learner['name']) . ',', '"' . $challenge['title'] . '" has started. ' . $what,
+            !empty($challenge['ends_at']) ? 'It closes on ' . format_datetime($challenge['ends_at'], 'j F Y, H:i') . ' (EAT).' : '', self::benefitsText($challenge),
+        ], ['label' => 'Take part now', 'url' => abs_url('academy/challenges/' . $challenge['slug'])]);
+    }
+
+    /** The quiz was submitted. */
+    public static function challengeQuizDone(array $challenge, array $learner, array $entry): bool
+    {
+        return self::send((string) $learner['email'], 'Quiz submitted: ' . mb_substr((string) $challenge['title'], 0, 80), [
+            'Hello ' . self::first((string) $learner['name']) . ',', 'We have your answers for "' . $challenge['title'] . '": ' . (int) ($entry['quiz_correct'] ?? 0) . ' of ' . (int) ($entry['quiz_total'] ?? 0) . ' correct.',
+            'The final ranking is published when the challenge ends, and we will e-mail you the result.',
+        ], ['label' => 'See the challenge', 'url' => abs_url('academy/challenges/' . $challenge['slug'])]);
+    }
+
+    /** The project was submitted (it can be updated until the challenge ends). */
+    public static function challengeProjectDone(array $challenge, array $learner, array $entry): bool
+    {
+        return self::send((string) $learner['email'], 'Project received: ' . mb_substr((string) $challenge['title'], 0, 80), [
+            'Hello ' . self::first((string) $learner['name']) . ',', 'We have received your project for "' . $challenge['title'] . '". You can update it on the challenge page until the challenge ends. The judges then score the projects and we will e-mail you the result.',
+        ], ['label' => 'Open my entry', 'url' => abs_url('academy/challenges/' . $challenge['slug'])]);
+    }
+
+    /** One e-mail about several open challenges. @param list<array<string,mixed>> $list */
+    public static function challengesDigest(array $list, array $learner, string $note = ''): bool
+    {
+        $fmt = static fn(?string $v): string => $v ? format_datetime($v, 'j M Y, H:i') . ' (EAT)' : '';
+        $p = ['Hello ' . self::first((string) $learner['name']) . ',', count($list) === 1 ? 'A LAF Academy challenge is open for you:' : count($list) . ' LAF Academy challenges are open for you:'];
+        foreach ($list as $c) {
+            $close = ChallengeService::applyDeadline($c);
+            $line = '"' . $c['title'] . '" (' . (ChallengeService::KINDS[$c['kind']] ?? 'Challenge') . ')';
+            if (trim((string) ($c['summary'] ?? '')) !== '') {
+                $line .= "\n" . trim((string) $c['summary']);
+            }
+            $line .= "\nStarts: " . $fmt($c['starts_at'] ?? null) . ' | Ends: ' . $fmt($c['ends_at'] ?? null) . ($close !== null ? "\nApply before: " . $fmt(date('Y-m-d H:i:s', $close)) : '');
+            $line .= "\n" . self::benefitsText($c) . "\nJoin: " . abs_url('academy/challenges/' . $c['slug']);
+            $p[] = $line;
+        }
+        if (trim($note) !== '') {
+            $p[] = 'From the Academy team: ' . trim($note);
+        }
+        return self::send((string) $learner['email'], count($list) === 1 ? 'Challenge open: ' . mb_substr((string) $list[0]['title'], 0, 80) : 'Open challenges at the LAF Academy', $p, ['label' => 'See the challenges', 'url' => abs_url('academy/challenges')]);
     }
 
     /** @param array<string,mixed> $cert the certificate row */

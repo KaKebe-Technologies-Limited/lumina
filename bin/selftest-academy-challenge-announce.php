@@ -96,6 +96,51 @@ check('pressing again tells nobody twice', $again['sent'] === 0 && $again['total
 $forced = ChallengeAnnounce::send($c, 'all', '', true, null, 1);
 check('"send again" sends, and the per-run limit holds', $forced['sent'] === 1 && $forced['remaining'] >= 1, json_encode($forced));
 
+// ---- benefits, the digest of ALL open challenges, the stage e-mails
+$std = ChallengeService::benefits($c);
+check('benefits: the standard ones come from the challenge settings (certificate, winners wall, prize)', count($std) >= 3 && str_contains(implode(' ', $std), 'Winners wall') && str_contains(implode(' ', $std), 'Prize: A trophy'), implode(' | ', $std));
+Database::execute('UPDATE academy_challenges SET benefits = ? WHERE id = ?', ["Free mentoring session\nA letter of recommendation", $cid]);
+check('benefits: what the administrator writes replaces the standard ones, one per line', ChallengeService::benefits(ChallengeService::find($cid)) === ['Free mentoring session', 'A letter of recommendation']);
+Database::execute("INSERT INTO academy_challenges (slug, kind, title, category, summary, status, starts_at, ends_at, created_at) VALUES ('zz-ca-second','innovation','ZZ Second Challenge','basics','Build something.','published',?,?,?)", [date('Y-m-d H:i:s', time() + 2 * 86400), date('Y-m-d H:i:s', time() + 9 * 86400), $now]);
+$list = ChallengeAnnounce::openList();
+$slugs = array_column($list, 'slug');
+check('digest: both open challenges are listed (a draft or finished one is not)', in_array('zz-ca-open', $slugs, true) && in_array('zz-ca-second', $slugs, true));
+$mine = array_values(array_filter($list, static fn($x) => str_starts_with((string) $x['slug'], 'zz-ca-')));
+$before = $count();
+$dr = ChallengeAnnounce::sendDigest($mine, 'Join us!', false, null, 1000);
+check('digest: every active learner got one e-mail', $dr['failed'] === 0 && $dr['sent'] >= 2 && $count() === $before + $dr['sent'], json_encode($dr));
+$mt = '';
+$latest = glob($dir . '/*.eml') ?: [];
+usort($latest, static fn($x, $y) => filemtime($y) <=> filemtime($x));
+foreach (array_slice($latest, 0, $dr['sent']) as $f) {
+    $raw = (string) file_get_contents($f);
+    $mt .= $raw;
+    if (preg_match_all('~\r?\n\r?\n([A-Za-z0-9+/=\r\n]{40,})~', $raw, $pp)) {
+        foreach ($pp[1] as $b64) {
+            $mt .= (string) base64_decode($b64);
+        }
+    }
+}
+check('digest: the e-mail lists both challenges with "What you get" and the team note', str_contains($mt, 'ZZ Open Quiz') && str_contains($mt, 'ZZ Second Challenge') && str_contains($mt, 'What you get') && str_contains($mt, 'Free mentoring session') && str_contains($mt, 'Join us!'));
+$dr2 = ChallengeAnnounce::sendDigest($mine, '', false, null, 1000);
+check('digest: pressing again tells nobody twice', $dr2['sent'] === 0 && $dr2['total'] === 0);
+$learner = Database::one('SELECT id, name, email FROM academy_learners WHERE id = ?', [$a]);
+$entry = ['status' => 'pending', 'quiz_correct' => 7, 'quiz_total' => 10];
+$mailsBefore = $count();
+\App\Services\Academy\AcademyMail::challengeApplied($c, $learner, $entry);
+\App\Services\Academy\AcademyMail::challengeQuizDone($c, $learner, $entry);
+\App\Services\Academy\AcademyMail::challengeProjectDone($c, $learner, $entry);
+check('stages: application received, quiz received and project received each e-mail the applicant', $count() === $mailsBefore + 3);
+// the challenge starts: the people who are in are told once, by settle()
+Database::execute('UPDATE academy_challenges SET starts_at = ?, started_notice_at = NULL WHERE id = ?', [date('Y-m-d H:i:s', time() - 60), $cid]);
+Database::execute("UPDATE academy_challenge_entries SET status = 'approved' WHERE challenge_id = ?", [$cid]);
+$before = $count();
+ChallengeService::settle();
+check('stages: when the challenge starts, the approved entrants are e-mailed once', $count() === $before + 1 && Database::value('SELECT started_notice_at FROM academy_challenges WHERE id = ?', [$cid]) !== null, (string) ($count() - $before));
+$before = $count();
+ChallengeService::settle();
+check('stages: and not again', $count() === $before);
+
 // ---- the admin page
 $base = 'http://localhost/' . basename(dirname(__DIR__));
 $req = static function (string $path, ?array $form, string $j) use ($base): array {

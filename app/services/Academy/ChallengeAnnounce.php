@@ -66,6 +66,85 @@ final class ChallengeAnnounce
         return ['todo' => $todo, 'active' => $active, 'told' => max(0, count(self::pending($c, $scope, true)) - $todo)];
     }
 
+    // ------------------------------------------------------------------------------------------------------------- one e-mail about ALL the open challenges
+
+    /** @return list<array<string,mixed>> the published challenges that are still open (applications or running), soonest first */
+    public static function openList(): array
+    {
+        if (!ChallengeService::ready()) {
+            return [];
+        }
+        $out = [];
+        foreach (Database::all("SELECT * FROM academy_challenges WHERE status = 'published' AND finalized_at IS NULL ORDER BY COALESCE(starts_at, created_at) ASC LIMIT 30") as $c) {
+            if (self::isOpen($c)) {
+                $out[] = $c;
+            }
+        }
+        return $out;
+    }
+
+    /** The first words of the portal copy of a digest: the same set of challenges is never sent twice to a learner. */
+    public static function digestMark(array $list): string
+    {
+        $ids = array_map(static fn(array $c): int => (int) $c['id'], $list);
+        sort($ids);
+        return 'Open challenges [' . implode(',', $ids) . ']';
+    }
+
+    public static function digestPortalText(array $list, string $note = ''): string
+    {
+        $names = implode('; ', array_map(static fn(array $c): string => (string) $c['title'], $list));
+        return self::digestMark($list) . ': ' . $names . '. ' . (trim($note) !== '' ? trim($note) . ' ' : '') . 'Read about each one, its benefits and how to join: ' . abs_url('academy/challenges') . ' . We have also e-mailed you the details.';
+    }
+
+    /** @return list<array<string,mixed>> the active learners not yet told about exactly this set of challenges (unless $again) */
+    public static function digestPending(array $list, bool $again = false): array
+    {
+        $all = LearnerMessages::approvedLearners();
+        if ($again || $list === [] || !LearnerMessages::ready()) {
+            return $all;
+        }
+        $like = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], self::digestMark($list)) . '%';
+        $done = [];
+        foreach (Database::all("SELECT DISTINCT learner_id FROM academy_messages WHERE sender = 'admin' AND body LIKE ?", [$like]) as $r) {
+            $done[(int) $r['learner_id']] = true;
+        }
+        return array_values(array_filter($all, static fn(array $l): bool => !isset($done[(int) $l['id']])));
+    }
+
+    /** @return array{sent:int,failed:int,remaining:int,total:int,stopped:?string} */
+    public static function sendDigest(array $list, string $note, bool $again, ?int $adminId, int $maxEmails, int $maxSeconds = 40): array
+    {
+        $todo = $list === [] ? [] : self::digestPending($list, $again);
+        $total = count($todo);
+        $sent = 0;
+        $failed = 0;
+        $streak = 0;
+        $stopped = null;
+        $t0 = microtime(true);
+        foreach ($todo as $l) {
+            if ($sent >= $maxEmails) {
+                break;
+            }
+            if (microtime(true) - $t0 > $maxSeconds) {
+                $stopped = 'time';
+                break;
+            }
+            if (AcademyMail::challengesDigest($list, $l, $note)) {
+                LearnerMessages::send((int) $l['id'], 'admin', self::digestPortalText($list, $note), $adminId);
+                $sent++;
+                $streak = 0;
+                continue;
+            }
+            $failed++;
+            if (++$streak >= 3 || str_contains((string) AcademyMail::lastError(), 'SMTP login')) {
+                $stopped = AcademyMail::lastError() ?: 'The mail server did not accept the messages.';
+                break;
+            }
+        }
+        return ['sent' => $sent, 'failed' => $failed, 'remaining' => max(0, $total - $sent), 'total' => $total, 'stopped' => $stopped];
+    }
+
     /** @return array{sent:int,failed:int,remaining:int,total:int,stopped:?string} */
     public static function send(array $c, string $scope, string $note, bool $again, ?int $adminId, int $maxEmails, int $maxSeconds = 40): array
     {

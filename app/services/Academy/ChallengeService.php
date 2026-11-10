@@ -54,11 +54,61 @@ final class ChallengeService
         if ($ok === null) {
             try {
                 $ok = Database::tableExists('academy_challenges') && Database::tableExists('academy_challenge_entries') && Database::tableExists('academy_challenge_judgments');
+                if ($ok) {
+                    foreach (['benefits' => 'TEXT NULL', 'started_notice_at' => 'DATETIME NULL'] as $col => $def) {
+                        if ((int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_challenges' AND column_name = ?", [$col], 0) === 0) {
+                            Database::execute("ALTER TABLE `academy_challenges` ADD COLUMN `{$col}` {$def}");
+                        }
+                    }
+                }
             } catch (\Throwable) {
                 $ok = false;
             }
         }
         return $ok;
+    }
+
+    /**
+     * The benefits and privileges of taking part, one per line: what the administrator wrote, or (when empty) the standard ones worked out from the challenge's own settings
+     * (certificate of participation, the winners' certificate and place on the Winners wall, the prize), so nothing is promised that the challenge does not give.
+     * @return list<string>
+     */
+    public static function benefits(array $c): array
+    {
+        $custom = trim((string) ($c['benefits'] ?? ''));
+        if ($custom !== '') {
+            return array_values(array_filter(array_map('trim', preg_split('/\R/', $custom) ?: []), static fn(string $l): bool => $l !== ''));
+        }
+        $out = [];
+        if (!empty($c['certify_participants'])) {
+            $out[] = 'A certificate of participation' . ((int) ($c['pass_score'] ?? 0) > 0 ? ' when you score at least ' . (int) $c['pass_score'] . '%' : '');
+        }
+        $n = (int) ($c['winners_count'] ?? 0);
+        if ($n > 0) {
+            $out[] = 'The top ' . $n . ' win a certificate of excellence and a place on the Academy\'s Winners wall (Winner of the Month)';
+        }
+        if (trim((string) ($c['prize'] ?? '')) !== '') {
+            $out[] = 'Prize: ' . trim((string) $c['prize']);
+        }
+        $out[] = ($c['kind'] ?? 'quiz') === 'quiz' ? 'See how your skills rank against learners from across Africa' : 'Build a real project for your portfolio and have it scored by judges';
+        return $out;
+    }
+
+    /** E-mail every approved entrant once when their challenge starts (called from settle(), so it needs no cron job). Never throws. */
+    private static function noticeStarted(): void
+    {
+        try {
+            $rows = Database::all("SELECT * FROM academy_challenges WHERE status = 'published' AND finalized_at IS NULL AND started_notice_at IS NULL AND starts_at IS NOT NULL AND starts_at <= NOW() AND (ends_at IS NULL OR ends_at > NOW()) LIMIT 3");
+            foreach ($rows as $c) {
+                Database::update('academy_challenges', ['started_notice_at' => date('Y-m-d H:i:s')], 'id = ?', [(int) $c['id']]);
+                $entrants = Database::all("SELECT l.id, l.name, l.email FROM academy_challenge_entries e JOIN academy_learners l ON l.id = e.learner_id WHERE e.challenge_id = ? AND e.status = 'approved' AND l.is_active = 1 LIMIT 300", [(int) $c['id']]);
+                foreach ($entrants as $l) {
+                    AcademyMail::challengeStarted($c, $l);
+                }
+            }
+        } catch (\Throwable) {
+            // the notice is a courtesy: never break a page because of it
+        }
     }
 
     public static function find(int $id): ?array
@@ -647,6 +697,7 @@ final class ChallengeService
         if (!self::ready()) {
             return 0;
         }
+        self::noticeStarted();
         try {
             $due = Database::all(
                 "SELECT * FROM academy_challenges WHERE status = 'published' AND finalized_at IS NULL AND ends_at IS NOT NULL AND ends_at <= NOW()

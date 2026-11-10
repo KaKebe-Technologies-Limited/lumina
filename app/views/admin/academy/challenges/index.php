@@ -6,7 +6,7 @@ $this->start('scripts'); ?>
 <script src="<?= e(asset('js/admin-academy.js')) ?>" defer></script>
 <?php $this->end(); ?>
 <?= partial('partials/admin/page-header', ['title' => 'Challenges', 'subtitle' => 'Quiz challenges, innovation challenges and hackathons. You set the dates; learners apply and take part; the system ranks the entries and marks the winners, who get a certificate and are featured as winners of the month.',
-    'actions' => $manager ? [['label' => 'New quiz challenge', 'url' => url('admin/academy/challenges/create', ['kind' => 'quiz']), 'icon' => 'plus'], ['label' => 'New innovation challenge', 'url' => url('admin/academy/challenges/create', ['kind' => 'innovation']), 'icon' => 'plus'], ['label' => 'New hackathon', 'url' => url('admin/academy/challenges/create', ['kind' => 'hackathon']), 'icon' => 'plus']] : []]) ?>
+    'actions' => $manager ? [['label' => 'New quiz challenge', 'url' => url('admin/academy/challenges/create', ['kind' => 'quiz']), 'icon' => 'plus'], ['label' => 'New innovation challenge', 'url' => url('admin/academy/challenges/create', ['kind' => 'innovation']), 'icon' => 'plus'], ['label' => 'New hackathon', 'url' => url('admin/academy/challenges/create', ['kind' => 'hackathon']), 'icon' => 'plus'], ['label' => 'E-mail learners about all open challenges', 'url' => url('admin/academy/challenges/announce-all'), 'icon' => 'send', 'class' => 'btn--outline']] : []]) ?>
 <?php if ($manager && $starterPending > 0): ?>
     <div class="card"><div class="card__body">
         <p><strong><?= (int) $starterPending ?> ready-made challenges</strong> (quizzes, an innovation challenge and a hackathon) can be added as drafts. Then open one, set its dates and publish it.</p>
