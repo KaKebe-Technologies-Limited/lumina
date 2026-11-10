@@ -351,7 +351,7 @@
         &:focus-visible { @include focus-ring; }
     }
     .ma-inv__panel { display: grid; gap: $space-3; &[hidden] { display: none; } }
-    .ma-inv__text { min-height: 6rem; font-family: $font-mono; font-size: 0.88rem; }
+    .ma-inv__text { min-height: 4.2rem; font-size: 0.95rem; }
     .ma-inv__addrow { display: flex; flex-wrap: wrap; align-items: center; gap: $space-3; &[hidden] { display: none; } }
     .ma-inv__msg { font-size: $fs-sm; color: $navy; font-weight: 600; &:empty { display: none; } }
     .ma-inv__bad {

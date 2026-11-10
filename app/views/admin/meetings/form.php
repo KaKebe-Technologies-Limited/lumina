@@ -228,7 +228,7 @@ $subtitle = $isEdit
             <div class="card__body">
                 <?= partial('admin/meetings/_invitees', [
                     'idp' => 'inv', 'people' => $people, 'groups' => $groups, 'existing' => $existing, 'canBulk' => $canBulk,
-                    'lead' => $isEdit ? 'Add more people (optional)' : 'Type or paste e-mail addresses',
+                    'lead' => $isEdit ? 'Add more people (optional)' : 'E-mail addresses',
                 ]) ?>
                 <?php if ($isEdit): ?><p class="field__help">To remove somebody who is already invited, open <a href="<?= e(url('admin/meetings/' . $id . '#people')) ?>">the meeting page</a>.</p><?php endif; ?>
             </div>
