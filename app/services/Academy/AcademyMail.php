@@ -277,6 +277,38 @@ final class AcademyMail
         return self::send((string) $learner['email'], 'About your entry to ' . mb_substr((string) $challenge['title'], 0, 90), $p, ['label' => 'See other challenges', 'url' => abs_url('academy/challenges')]);
     }
 
+    /** "A challenge is open": to every active learner. $note = an optional line from the team. */
+    public static function challengeOpen(array $challenge, array $learner, string $note = ''): bool
+    {
+        $fmt = static fn(?string $v): string => $v ? format_datetime($v, 'j F Y, H:i') . ' (EAT)' : '';
+        $p = ['Hello ' . self::first((string) $learner['name']) . ',', 'A new LAF Academy challenge is open for you: "' . $challenge['title'] . '" (' . (ChallengeService::KINDS[$challenge['kind']] ?? 'Challenge') . ').'];
+        if (trim((string) ($challenge['summary'] ?? '')) !== '') {
+            $p[] = trim((string) $challenge['summary']);
+        }
+        $when = [];
+        $close = ChallengeService::applyDeadline($challenge);
+        if ($close !== null) {
+            $when[] = 'Apply before: ' . $fmt(date('Y-m-d H:i:s', $close));
+        }
+        if (!empty($challenge['starts_at'])) {
+            $when[] = 'Starts: ' . $fmt($challenge['starts_at']);
+        }
+        if (!empty($challenge['ends_at'])) {
+            $when[] = 'Ends: ' . $fmt($challenge['ends_at']);
+        }
+        if ($when !== []) {
+            $p[] = implode("\n", $when);
+        }
+        if (trim((string) ($challenge['prize'] ?? '')) !== '') {
+            $p[] = 'Prize: ' . trim((string) $challenge['prize']);
+        }
+        if (trim($note) !== '') {
+            $p[] = 'From the Academy team: ' . trim($note);
+        }
+        $p[] = 'Open the challenge page to read the rules and join.';
+        return self::send((string) $learner['email'], 'Challenge open: ' . mb_substr((string) $challenge['title'], 0, 90), $p, ['label' => 'Join the challenge', 'url' => abs_url('academy/challenges/' . $challenge['slug'])]);
+    }
+
     /** @param array<string,mixed> $cert the certificate row */
     public static function challengeResult(array $challenge, array $entry, array $learner, ?array $cert): bool
     {

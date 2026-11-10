@@ -12,6 +12,7 @@ use App\Core\Slug;
 use App\Core\Uploader;
 use App\Services\Academy\AcademyAccess;
 use App\Services\Academy\AcademyMail;
+use App\Services\Academy\ChallengeAnnounce;
 use App\Services\Academy\ChallengeInstaller;
 use App\Services\Academy\ChallengeService;
 use App\Services\Academy\CourseService;
@@ -63,6 +64,46 @@ final class AcademyChallengesAdminController extends AcademyAdminController
         $manager = AcademyAccess::manager();
         return $this->render('admin/academy/challenges/index', ['rows' => $rows, 'manager' => $manager, 'starterPending' => $manager ? ChallengeInstaller::pending() : 0],
             ['title' => 'Challenges', 'nav' => 'academy_challenges', 'breadcrumbs' => $this->crumbs('Challenges')]);
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- tell the learners
+
+    /** GET admin/academy/challenges/{id}/announce: what the e-mail says, how many learners get it, and the button. */
+    public function announce(Request $request, int $id): Response
+    {
+        $c = $this->load($id);
+        $scope = $request->string('scope') === 'new' ? 'new' : 'all';
+        return $this->render('admin/academy/challenges/announce', ['c' => $c, 'open' => ChallengeAnnounce::isOpen($c), 'scope' => $scope, 'counts' => ChallengeAnnounce::counts($c, $scope), 'perRun' => $this->perRun()],
+            ['title' => 'E-mail learners about this challenge', 'nav' => 'academy_challenges', 'breadcrumbs' => $this->crumbs('Challenges', ['E-mail learners', null])]);
+    }
+
+    private function perRun(): int
+    {
+        return max(10, min(400, (int) setting('academy_bulk_mail_per_run', '100')));
+    }
+
+    /** POST admin/academy/challenges/{id}/announce: send a batch (press again for the next one). */
+    public function announceSend(Request $request, int $id): Response
+    {
+        $c = $this->load($id);
+        if (!ChallengeAnnounce::isOpen($c)) {
+            Flash::error('This challenge is not open (it must be published and not finished), so learners are not e-mailed about it.');
+            return $this->redirect('admin/academy/challenges/' . $id . '/announce');
+        }
+        $scope = $request->string('scope') === 'new' ? 'new' : 'all';
+        @set_time_limit(120);
+        $r = ChallengeAnnounce::send($c, $scope, mb_substr($request->string('note'), 0, 600), $request->bool('again'), \App\Core\Auth::id(), $this->perRun());
+        $this->audit('academy.challenge.announce', 'academy_challenge', $id, 'E-mailed active learners about the challenge "' . $c['title'] . '"', ['sent' => $r['sent'], 'failed' => $r['failed'], 'remaining' => $r['remaining']]);
+        if ($r['total'] === 0) {
+            Flash::info('Every learner in this group has already been told about this challenge. Tick "send again" to e-mail them once more.');
+        } elseif ($r['stopped'] !== null && $r['stopped'] !== 'time') {
+            Flash::error('Sent to ' . $r['sent'] . ', then the mail server stopped accepting messages: ' . $r['stopped'] . ' (a free Gmail account allows about 500 a day). ' . $r['remaining'] . ' still waiting: press the button again later.');
+        } elseif ($r['remaining'] > 0) {
+            Flash::success('Sent to ' . $r['sent'] . ' learner' . ($r['sent'] === 1 ? '' : 's') . '. ' . $r['remaining'] . ' still waiting: press the button again to send the next batch.' . ($r['failed'] > 0 ? ' ' . $r['failed'] . ' could not be e-mailed and will be tried again.' : ''));
+        } else {
+            Flash::success('The challenge was e-mailed to ' . $r['sent'] . ' learner' . ($r['sent'] === 1 ? '' : 's') . '. Everyone in this group has been told.' . ($r['failed'] > 0 ? ' ' . $r['failed'] . ' could not be e-mailed and will be tried again next time.' : ''));
+        }
+        return $this->redirect('admin/academy/challenges/' . $id . '/announce' . ($scope === 'new' ? '?scope=new' : ''));
     }
 
     // ------------------------------------------------------------------------------------------------------------- create and edit

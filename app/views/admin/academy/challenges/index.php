@@ -31,6 +31,7 @@ $this->start('scripts'); ?>
                     <?php if ($manager): ?>
                         <a class="btn btn--ghost btn--icon" href="<?= e(url('admin/academy/challenges/' . $id . '/edit')) ?>" title="Edit" aria-label="Edit: <?= e($c['title']) ?>"><?= icon('edit', 'icon--sm') ?></a>
                         <a class="btn btn--outline btn--sm" href="<?= e(url('admin/academy/challenges/' . $id . '/entries')) ?>">Entries</a>
+                        <?php if (\App\Services\Academy\ChallengeAnnounce::isOpen($c)): ?><a class="btn btn--outline btn--sm" href="<?= e(url('admin/academy/challenges/' . $id . '/announce')) ?>"><?= icon('mail', 'icon--sm') ?> E-mail learners</a><?php endif; ?>
                     <?php endif; ?>
                     <?php if ($c['scoring'] === 'judged' && $c['status'] === 'published'): ?><a class="btn btn--outline btn--sm" href="<?= e(url('admin/academy/challenges/' . $id . '/judge')) ?>">Score</a><?php endif; ?>
                     <?php if ($c['status'] === 'published'): ?><a class="btn btn--ghost btn--icon" href="<?= e(url('academy/challenges/' . $c['slug'])) ?>" target="_blank" rel="noopener" title="View on the site" aria-label="View on the site: <?= e($c['title']) ?>"><?= icon('external-link', 'icon--sm') ?></a><?php endif; ?>

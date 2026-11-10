@@ -158,6 +158,8 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/challenges/{id}', [AcademyChallengesAdminController::class, 'update'])->name('admin.academy.challenges.update');
     $router->post('/challenges/{id}/status', [AcademyChallengesAdminController::class, 'status'])->name('admin.academy.challenges.status');
     $router->post('/challenges/{id}/delete', [AcademyChallengesAdminController::class, 'delete'])->name('admin.academy.challenges.delete');
+    $router->get('/challenges/{id}/announce', [AcademyChallengesAdminController::class, 'announce'])->name('admin.academy.challenges.announce');
+    $router->post('/challenges/{id}/announce', [AcademyChallengesAdminController::class, 'announceSend'])->middleware('throttle:30,60')->name('admin.academy.challenges.announce.send');
     $router->get('/challenges/{id}/entries', [AcademyChallengesAdminController::class, 'entries'])->name('admin.academy.challenges.entries');
     $router->post('/challenges/{id}/finalize', [AcademyChallengesAdminController::class, 'finalize'])->name('admin.academy.challenges.finalize');
     $router->post('/challenges/{id}/reopen', [AcademyChallengesAdminController::class, 'reopen'])->name('admin.academy.challenges.reopen');
