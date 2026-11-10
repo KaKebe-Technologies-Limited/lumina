@@ -5,6 +5,7 @@
  */
 use App\Services\Recruitment\Recruitment;
 
+$parts = $parts ?? ['files', 'judge', 'history'];
 $cfg = Recruitment::SCOPES[$scope];
 $id = (int) $row['id'];
 $kpis = Recruitment::kpis($scope);
@@ -16,6 +17,7 @@ $hasPortrait = trim((string) ($row['photo_path'] ?? '')) !== '';
 $hasCv = trim((string) ($row['cv_path'] ?? '')) !== '';
 $this->start('scripts'); ?><script src="<?= e(asset('js/admin-recruitment.js')) ?>" defer></script><?php $this->end();
 ?>
+<?php if (in_array('files', $parts, true)): ?>
 <section class="card rc-panel">
     <div class="card__header"><h2 class="card__title">Application number</h2><span class="badge badge--outline rc-ref"><?= e((string) ($row['ref_no'] ?? '-')) ?></span></div>
     <div class="card__body">
@@ -30,7 +32,9 @@ $this->start('scripts'); ?><script src="<?= e(asset('js/admin-recruitment.js')) 
         </div>
     </div>
 </section>
+<?php endif; ?>
 
+<?php if (in_array('judge', $parts, true)): ?>
 <section class="card rc-panel" id="judge">
     <div class="card__header">
         <h2 class="card__title">Judge this application</h2>
@@ -60,8 +64,9 @@ $this->start('scripts'); ?><script src="<?= e(asset('js/admin-recruitment.js')) 
         </form>
     <?php endif; ?>
 </section>
+<?php endif; ?>
 
-<?php if ($history): ?>
+<?php if ($history && in_array('history', $parts, true)): ?>
 <section class="card rc-panel">
     <div class="card__header"><h2 class="card__title">Stages and e-mails</h2></div>
     <div class="card__body">

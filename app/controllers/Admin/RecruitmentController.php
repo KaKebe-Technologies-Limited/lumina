@@ -44,6 +44,27 @@ final class RecruitmentController extends AdminController
         return $this->redirect(Recruitment::SCOPES[$scope]['admin'] . $id);
     }
 
+    /** POST admin/recruitment/{scope}/{id}/status: the one-click stage buttons (the applicant is e-mailed; the optional note is added to the e-mail). */
+    public function status(Request $request, int|string $scope, int|string $id): Response
+    {
+        $this->authorize('inbox.manage');
+        $scope = $this->scope((string) $scope);
+        $id = (int) $id;
+        $row = Recruitment::row($scope, $id) ?? throw new HttpException(404, 'Not found');
+        Recruitment::install();
+        $to = $request->string('status');
+        $res = Recruitment::setStatus($scope, $id, $to, '', $this->userId(), mb_substr(trim($request->string('applicant_note')), 0, 1000));
+        if (!$res['ok']) {
+            Flash::error('That stage is not available.');
+        } elseif (!$res['changed']) {
+            Flash::info('The application is already at that stage.');
+        } else {
+            $this->audit('recruitment.status', 'recruitment', $id, 'Moved the ' . Recruitment::SCOPES[$scope]['noun'] . ' of "' . $row['name'] . '" to ' . $to, ['status' => $to]);
+            Flash::success('Moved to "' . (Recruitment::statuses($scope)[$to] ?? $to) . '".' . ($res['mailed'] === true ? ' The applicant was e-mailed.' : ($res['mailed'] === false ? ' The e-mail to the applicant could not be sent.' : '')));
+        }
+        return $this->redirect(Recruitment::SCOPES[$scope]['admin'] . $id);
+    }
+
     public function file(Request $request, int|string $scope, int|string $id, string $part): Response
     {
         $this->authorize('inbox.manage');

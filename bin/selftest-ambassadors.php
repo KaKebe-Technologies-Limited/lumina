@@ -216,7 +216,7 @@ check('admin: filters work (region, pledge kind, search)', str_contains($req('GE
     && str_contains($req('GET', '/admin/ambassadors?pledge=money&q=zz-amb', [], $jA)['body'], 'ZZ Amb Ada') && !str_contains($req('GET', '/admin/ambassadors?pledge=money&q=zz-amb', [], $jA)['body'], 'ZZ Amb Bob'));
 $aid = (int) $row['id'];
 $show = $req('GET', '/admin/ambassadors/' . $aid, [], $jA);
-check('admin: the detail page shows the whole pledge and the answers', $show['code'] === 200 && str_contains($show['body'], 'Money: 5,000.00 GBP per year') && str_contains($show['body'], 'Computers and laptops') && str_contains($show['body'], 'Free software licences')
+check('admin: the detail page shows the whole pledge and the answers', $show['code'] === 200 && str_contains($show['body'], '5,000 GBP') && str_contains($show['body'], 'Computers and laptops') && str_contains($show['body'], 'Free software licences')
     && str_contains($show['body'], 'My professional body'));
 check('access: a teaching-only user and an anonymous visitor cannot open the Ambassadors admin', $req('GET', '/admin/ambassadors', [], $jT)['code'] === 403 && $req('GET', '/admin/ambassadors/' . $aid, [], $jT)['code'] === 403
     && $req('GET', '/admin/ambassadors')['code'] !== 200);

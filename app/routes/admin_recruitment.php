@@ -14,5 +14,6 @@ $router->group(['prefix' => 'admin/recruitment', 'middleware' => ['auth']], func
     $router->post('/criteria/threshold', [RecruitmentController::class, 'saveThreshold'])->name('admin.recruitment.threshold');
     $router->post('/criteria/{id}/delete', [RecruitmentController::class, 'deleteCriterion'])->where('id', '\d+')->name('admin.recruitment.criteria.delete');
     $router->post('/{scope}/{id}/judge', [RecruitmentController::class, 'judge'])->where('id', '\d+')->middleware('throttle:120,600')->name('admin.recruitment.judge');
+    $router->post('/{scope}/{id}/status', [RecruitmentController::class, 'status'])->where('id', '\d+')->middleware('throttle:120,600')->name('admin.recruitment.status');
     $router->get('/{scope}/{id}/{part}', [RecruitmentController::class, 'file'])->where('id', '\d+')->where('part', 'portrait|cv')->middleware('throttle:120,300')->name('admin.recruitment.file');
 });
