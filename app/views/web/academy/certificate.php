@@ -11,10 +11,15 @@
                 <p>We could not find a certificate numbered <b><?= e($code) ?></b>. Please check the number for typing mistakes.</p>
             </div></div>
         <?php else: $revoked = $cert['revoked_at'] !== null; ?>
+            <?php if (!empty($staffView) && !empty($notReleased)): ?>
+                <p class="opp-notice opp-notice--closed" role="status"><?= icon('lock', 'icon--sm') ?> <strong>Administrator view.</strong> This certificate has not been released to the learner yet (<?= \App\Services\Academy\AcademyFees::certDue($cert) ? 'the fee is unpaid' : 'it is waiting for approval' ?>). Only administrators can see it; the learner and visitors cannot.</p>
+            <?php elseif (!empty($staffView)): ?>
+                <p class="text-muted ac-center"><?= icon('lock', 'icon--sm') ?> You are seeing this as an administrator.</p>
+            <?php endif; ?>
             <p class="opp-notice <?= $revoked ? 'opp-notice--closed' : 'ac-ok' ?>" role="status"><?= icon($revoked ? 'alert-triangle' : 'check-circle', 'icon--sm') ?>
                 <?= $revoked ? 'This certificate was withdrawn on ' . e(format_date($cert['revoked_at'])) . '.' : 'This is a genuine certificate issued by the LAF Academy.' ?></p>
             <div class="ac-cert-svg" aria-label="Certificate"><?= \App\Services\Academy\CertificateService::svg($cert) ?></div>
-            <?php if (!$revoked): ?>
+            <?php if (!$revoked || !empty($staffView)): ?>
                 <p class="ac-center">
                     <a class="btn btn--cta btn--caps" href="<?= e(url('academy/certificate/' . $cert['code'] . '/pdf')) ?>" target="_blank" rel="noopener"><?= icon('download', 'icon--sm') ?> Download the PDF</a>
                     <button class="btn btn--outline btn--caps" type="button" data-ac-print><?= icon('printer', 'icon--sm') ?> Print</button>

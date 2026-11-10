@@ -97,6 +97,13 @@ final class ShopCheckoutController extends Controller
             }
             Log::warning('Shop: the Pesapal payment page could not be opened', ['order' => $order['order_number'], 'error' => (string) ($r['error'] ?? '')]);
         }
+        if ($method === 'mobile') {
+            $r = \App\Services\DarazaPay\DarazaPayments::beginShop($order);
+            if ($r['ok']) {
+                return $this->redirect((string) $r['url']);                        // our own page: the phone number, the approval on the phone
+            }
+            Log::warning('Shop: the mobile-money page could not be opened', ['order' => $order['order_number'], 'error' => (string) ($r['error'] ?? '')]);
+        }
         if ($method === 'flutterwave') {
             $r = OnlinePayment::begin($order);
             if ($r['ok']) {

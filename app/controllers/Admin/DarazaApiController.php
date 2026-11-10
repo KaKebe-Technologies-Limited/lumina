@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Settings;
 use App\Services\DarazaPay\DarazaApi;
 use App\Services\DarazaPay\DarazaPayments;
+use App\Services\Payments\PaymentOptions;
 
 /**
  * Admin > Mobile money (Daraza API): the connection (the key is in the server .env, never here), where "Pay with MTN or Airtel mobile money" is offered, the rate for USD fees, the
@@ -27,22 +28,41 @@ final class DarazaApiController extends AdminController
         }
         return $this->render('admin/daraza/api', [
             'ready' => $ok, 'hasKey' => DarazaApi::hasKey(), 'mode' => DarazaApi::mode(), 'places' => $places, 'rate' => DarazaPayments::rate(),
+            'options' => array_map(static fn(string $k): array => ['label' => PaymentOptions::OPTIONS[$k][0], 'help' => PaymentOptions::OPTIONS[$k][1], 'on' => PaymentOptions::on($k)], array_combine(array_keys(PaymentOptions::OPTIONS), array_keys(PaymentOptions::OPTIONS))),
             'rows' => $ok ? DarazaPayments::recent(40) : [], 'balance' => null,
-        ], ['title' => 'Mobile money (Daraza API)', 'nav' => 'daraza_api', 'breadcrumbs' => [['Mobile money (Daraza API)', null]]]);
+        ], ['title' => 'Payment options', 'nav' => 'daraza_api', 'breadcrumbs' => [['Payment options', null]]]);
     }
 
     public function save(Request $request): Response
     {
         $this->authorize('settings.manage');
+        $preset = $request->string('preset');
         $save = [];
-        foreach (array_keys(DarazaPayments::PURPOSES) as $k) {
-            $save['daraza_api_' . $k . '_on'] = $request->bool('on_' . $k) ? '1' : '0';
+        $opts = [];
+        if ($preset === 'mobile_only') {
+            foreach (array_keys(DarazaPayments::PURPOSES) as $k) {
+                $save['daraza_api_' . $k . '_on'] = '1';
+            }
+            $opts = ['online' => false, 'link' => false, 'manual' => false];
+        } elseif ($preset === 'restore') {
+            $opts = ['online' => true, 'link' => true, 'manual' => true];
+        } else {
+            foreach (array_keys(DarazaPayments::PURPOSES) as $k) {
+                $save['daraza_api_' . $k . '_on'] = $request->bool('on_' . $k) ? '1' : '0';
+            }
+            foreach (array_keys(PaymentOptions::OPTIONS) as $k) {
+                $opts[$k] = $request->bool('opt_' . $k);
+            }
         }
-        $save['daraza_api_usd_rate'] = (string) max(0, min(100000, $request->int('usd_rate')));
+        if (!in_array($preset, ['mobile_only', 'restore'], true)) {
+            $save['daraza_api_usd_rate'] = (string) max(0, min(100000, $request->int('usd_rate')));
+        }
         Settings::setMany($save);
+        PaymentOptions::save($opts);
         Settings::flush();
-        $this->audit('daraza.api.settings', 'settings', null, 'Mobile-money (Daraza API) settings saved');
-        Flash::success('Saved.' . (!DarazaApi::hasKey() ? ' The buttons appear only once DARAZA_API_KEY is in the server .env file.' : ''));
+        $this->audit('daraza.api.settings', 'settings', null, 'Payment options saved' . ($preset !== '' ? ' (' . $preset . ')' : ''));
+        Flash::success($preset === 'mobile_only' ? 'Done: mobile money is on everywhere and the earlier ways to pay are switched off. You can switch them back on here at any time.' : ($preset === 'restore' ? 'The earlier ways to pay are switched back on.' : 'Saved.')
+            . (!DarazaApi::hasKey() ? ' The mobile-money buttons appear only once DARAZA_API_KEY is in the server .env file.' : ''));
         return $this->redirect('admin/daraza/api');
     }
 

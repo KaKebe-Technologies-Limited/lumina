@@ -65,6 +65,6 @@ final class Daraza
     /** Offered to visitors: switched on AND a usable link. */
     public static function enabled(string $place): bool
     {
-        return self::on($place) && self::url($place) !== '';
+        return \App\Services\Payments\PaymentOptions::link() && self::on($place) && self::url($place) !== '';
     }
 }

@@ -21,8 +21,8 @@ namespace App\Services\Shop;
  */
 final class PaymentMethods
 {
-    public const KEYS = ['book', 'cod', 'momo', 'bank', 'flutterwave', 'pesapal', 'daraza'];
-    public const KINDS = ['book' => 'deferred', 'cod' => 'deferred', 'momo' => 'manual', 'bank' => 'manual', 'flutterwave' => 'online', 'pesapal' => 'online', 'daraza' => 'manual'];
+    public const KEYS = ['mobile', 'book', 'cod', 'momo', 'bank', 'flutterwave', 'pesapal', 'daraza'];
+    public const KINDS = ['mobile' => 'online', 'book' => 'deferred', 'cod' => 'deferred', 'momo' => 'manual', 'bank' => 'manual', 'flutterwave' => 'online', 'pesapal' => 'online', 'daraza' => 'manual'];
 
     public static function isKey(string $key): bool
     {
@@ -39,6 +39,9 @@ final class PaymentMethods
         if ($own !== '') {
             return $own;
         }
+        if ($key === 'mobile') {
+            return 'MTN or Airtel mobile money';
+        }
         $reg = ShopSettings::registryText('payment.' . $key . '_label');
         return $reg !== '' ? $reg : ucfirst($key);
     }
@@ -50,6 +53,9 @@ final class PaymentMethods
             return '';
         }
         $own = ShopSettings::str('shop_pay_' . $key . '_instructions');
+        if ($key === 'mobile' && $own === '') {
+            return "Pay with any MTN or Airtel Mobile Money number. After you place the order we send a payment request to your phone: approve it with your PIN (this can take up to 5 minutes). Your order is confirmed as soon as the payment is received.";
+        }
         return $own !== '' ? $own : ShopSettings::registryText('payment.' . $key . '_instructions');
     }
 
@@ -95,6 +101,11 @@ final class PaymentMethods
     {
         $p = [];
         switch ($key) {
+            case 'mobile':
+                if (!\App\Services\DarazaPay\DarazaApi::hasKey()) {
+                    $p[] = 'Add DARAZA_API_KEY to the server .env file (Admin > Payment options explains how).';
+                }
+                break;
             case 'momo':
                 if (self::details('momo') === []) {
                     $p[] = 'Add at least one mobile-money number (MTN or Airtel).';
@@ -144,7 +155,17 @@ final class PaymentMethods
 
     public static function enabled(string $key): bool
     {
-        return self::isKey($key) && ShopSettings::bool('shop_pay_' . $key . '_enabled');
+        if (!self::isKey($key)) {
+            return false;
+        }
+        if ($key === 'mobile') {
+            return \App\Services\DarazaPay\DarazaPayments::on('shop');         // its switch is in Admin > Payment options
+        }
+        $group = ['pesapal' => 'online', 'flutterwave' => 'online', 'daraza' => 'link', 'momo' => 'manual', 'bank' => 'manual'][$key] ?? null;
+        if ($group !== null && !\App\Services\Payments\PaymentOptions::on($group)) {
+            return false;                                                         // switched off for the whole site in Admin > Payment options
+        }
+        return ShopSettings::bool('shop_pay_' . $key . '_enabled');
     }
 
     /**
@@ -164,7 +185,7 @@ final class PaymentMethods
                 'enabled'      => self::enabled($key),
                 'ready'        => self::ready($key),
                 'problems'     => $problems,
-                'sort'         => ShopSettings::int('shop_pay_' . $key . '_sort'),
+                'sort'         => $key === 'mobile' ? -10 : ShopSettings::int('shop_pay_' . $key . '_sort'),
                 'details'      => self::details($key),
             ];
         }

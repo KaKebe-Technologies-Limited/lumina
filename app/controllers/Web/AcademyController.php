@@ -224,8 +224,10 @@ final class AcademyController extends AcademyBaseController
     {
         $this->gate();
         $cert = CertificateService::find(strtoupper($code));
-        if ($cert !== null && !CertificateService::isApproved($cert)) {
-            $cert = null;                            // waiting for approval: not available, not even to look up
+        $staff = $this->staffMaySee();
+        $notReleased = $cert !== null && !CertificateService::isApproved($cert);
+        if ($notReleased && !$staff) {
+            $cert = null;                            // waiting for approval: not available to learners or visitors, not even to look up
         }
         if ($cert === null) {
             return $this->renderAcademy('web/academy/certificate', ['cert' => null, 'code' => mb_substr($code, 0, 30), 'wording' => CertificateService::wording()], [
@@ -234,18 +236,25 @@ final class AcademyController extends AcademyBaseController
                 'meta' => ['title' => 'Certificate check', 'robots' => 'noindex,nofollow'],
             ], true);
         }
-        return $this->renderAcademy('web/academy/certificate', ['cert' => $cert, 'code' => $cert['code'], 'wording' => CertificateService::wording()], [
+        return $this->renderAcademy('web/academy/certificate', ['cert' => $cert, 'code' => $cert['code'], 'wording' => CertificateService::wording(), 'staffView' => $staff, 'notReleased' => $notReleased], [
             'bodyClass' => 'is-academy is-academy-certificate',
             'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['Certificate check', null]],
             'meta' => ['title' => 'Certificate ' . $cert['code'], 'description' => 'Verification of a LAF Academy certificate.', 'robots' => 'noindex,nofollow'],
         ], true);
     }
 
+    /** Academy administrators (academy.manage, signed in to the admin) may look at every certificate, also one that is not released to the learner yet. Learners and visitors may not. */
+    private function staffMaySee(): bool
+    {
+        return \App\Core\Auth::check() && can('academy.manage');
+    }
+
     public function certificatePdf(Request $request, string $code): Response
     {
         $this->gate();
         $cert = CertificateService::find(strtoupper($code));
-        if ($cert === null || $cert['revoked_at'] !== null || !CertificateService::isApproved($cert)) {
+        $staff = $cert !== null && $this->staffMaySee();
+        if ($cert === null || (!$staff && ($cert['revoked_at'] !== null || !CertificateService::isApproved($cert)))) {
             throw new HttpException(404, 'Not found');
         }
         $pdf = CertificateService::pdf($cert);

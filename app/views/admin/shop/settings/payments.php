@@ -50,7 +50,7 @@ $this->start('scripts'); ?>
         <section class="card" aria-labelledby="pm-title">
             <div class="card__header"><h2 class="card__title" id="pm-title">Ways to pay</h2><span class="required-note">Customers see the ones that are on and ready, in this order</span></div>
             <div class="card__body">
-                <?php foreach ($methods as $m): $k = $m['key']; $label = (string) old("shop_pay_{$k}_label", ShopSettings::str("shop_pay_{$k}_label")); $enabled = $on("shop_pay_{$k}_enabled", false); ?>
+                <?php foreach ($methods as $m): $k = $m['key']; if ($k === 'mobile') { continue; /* its switch is in Admin > Payment options */ } $label = (string) old("shop_pay_{$k}_label", ShopSettings::str("shop_pay_{$k}_label")); $enabled = $on("shop_pay_{$k}_enabled", false); ?>
                     <article class="ash-method<?= $enabled ? ' is-on' : '' ?>" data-method="<?= e($k) ?>">
                         <header class="ash-method__head">
                             <span class="ash-method__icon"><?= icon($icons[$k] ?? 'banknote') ?></span>

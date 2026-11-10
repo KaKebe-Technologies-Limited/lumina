@@ -39,6 +39,36 @@ final class MembershipDashboardController extends Controller
      * a mobile carrier; a few bad links from one of them must never lock the others out of their own page, same rule as the meeting links). Only lookups that FAIL are
      * counted per address, and a visitor who failed 15 times in 10 minutes gets 429 instead of another 404.
      */
+    /** The amount of the balance that can be paid with mobile money now, for the button; null when it cannot (switched off, nothing to pay, currency). @return array{ugx:int,display:string}|null */
+    private function mobileOffer(array $m, array $summary): ?array
+    {
+        if (!\App\Services\DarazaPay\DarazaPayments::enabled('membership') || (float) ($summary['balance'] ?? 0) <= 0 || !in_array((string) $m['status'], ['pending', 'approved', 'expired', 'new', 'under_review'], true)) {
+            return null;
+        }
+        $minor = \App\Services\Shop\Money::parse(number_format((float) $summary['balance'], 2, '.', ''));
+        $ugx = $minor === null ? null : \App\Services\DarazaPay\DarazaPayments::ugx($minor, (string) $summary['currency']);
+        return $ugx === null ? null : ['ugx' => $ugx, 'display' => 'UGX ' . number_format($ugx)];
+    }
+
+    /** POST membership/me/{token}/pay-mobile: pay the balance of the membership with MTN / Airtel mobile money. */
+    public function payMobile(Request $request, string $token): Response
+    {
+        $m = $this->member($token);
+        $summary = MembershipService::paymentSummary($m);
+        $offer = $this->mobileOffer($m, $summary);
+        $minor = (float) ($summary['balance'] ?? 0) > 0 ? \App\Services\Shop\Money::parse(number_format((float) $summary['balance'], 2, '.', '')) : null;
+        if ($offer === null || $minor === null) {
+            \App\Core\Flash::error('Mobile-money payment is not available for this membership right now.');
+            return $this->redirect($this->path($token));
+        }
+        $b = \App\Services\DarazaPay\DarazaPayments::begin('membership', (int) $m['id'], $minor, (string) $summary['currency'], ['name' => (string) $m['full_name'], 'email' => (string) ($m['email'] ?? ''), 'phone' => (string) ($m['phone'] ?? '')]);
+        if (!$b['ok']) {
+            \App\Core\Flash::error('We could not open the mobile-money page just now. Please try again in a minute.');
+            return $this->redirect($this->path($token));
+        }
+        return $this->redirect((string) $b['url']);
+    }
+
     private function member(string $token): array
     {
         $m = MembershipService::memberByDashboardToken($token);
@@ -110,6 +140,7 @@ final class MembershipDashboardController extends Controller
             'joining'      => MembershipService::joiningFeeLabel($m),
             'instructions' => MembershipService::paymentInstructions(false),
             'payDaraza'    => MembershipService::darazaOption(),
+            'mobilePay'    => $this->mobileOffer($m, $summary),
             'contact'      => MembershipService::contactEmail(),
             'timeline'     => CardService::timeline($m),
             'state'        => CardService::dashboardState($m),

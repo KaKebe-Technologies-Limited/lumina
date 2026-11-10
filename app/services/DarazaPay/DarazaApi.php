@@ -39,7 +39,7 @@ final class DarazaApi
         return trim((string) Env::get('DARAZA_API_KEY', '')) !== '';
     }
 
-    /** MTN prefixes 077 076 078 039, Airtel 070 074 075 020. @return int|null 1 = MTN, 2 = Airtel */
+    /** MTN prefixes 077 076 078 039 031, Airtel 070 074 075 020. Any other Ugandan number is accepted too: the payer then chooses the network. @return int|null 1 = MTN, 2 = Airtel */
     public static function networkOf(string $phone): ?int
     {
         $local = self::local($phone);
@@ -47,7 +47,7 @@ final class DarazaApi
             return null;
         }
         $p = substr($local, 0, 3);
-        if (in_array($p, ['077', '078', '076', '039'], true)) {
+        if (in_array($p, ['077', '078', '076', '039', '031'], true)) {
             return 1;
         }
         return in_array($p, ['070', '075', '074', '020'], true) ? 2 : null;

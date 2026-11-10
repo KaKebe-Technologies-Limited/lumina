@@ -123,6 +123,9 @@ final class MembershipService
      */
     public static function paymentParts(): array
     {
+        if (!\App\Services\Payments\PaymentOptions::manual()) {
+            return ['notes' => '', 'mobile' => '', 'bank' => '', 'fallback' => false];          // the manual details are switched off in Admin > Payment options
+        }
         $notes = trim((string) setting('membership_payment_instructions', ''));
         $mobile = trim((string) setting('membership_mobile_money', ''));
         $bank = trim((string) setting('membership_bank_details', ''));
@@ -1203,6 +1206,7 @@ final class MembershipService
     private static function validatePayment(array $input, array $member, ?array $stored = null): array
     {
         $methods = array_keys(self::options('payment_methods'));
+        $methods[] = 'mobile_money';                    // paid through the website with MTN / Airtel (Daraza API)
         // a method the owner removed from the list later stays valid for the payment that already uses it (and for the member's own choice)
         $methods[] = (string) ($stored['method'] ?? $member['payment_method'] ?? '');
         $v = Validator::make($input, [

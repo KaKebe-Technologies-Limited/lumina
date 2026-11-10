@@ -17,7 +17,7 @@
   function networkOf(v) {
     var d = String(v || '').replace(/[^0-9+]/g, '').replace(/^\+?256/, '0');
     var p = d.slice(0, 3);
-    if (['077', '078', '076', '039'].indexOf(p) >= 0) return '1';
+    if (['077', '078', '076', '039', '031'].indexOf(p) >= 0) return '1';
     if (['070', '075', '074', '020'].indexOf(p) >= 0) return '2';
     return '';
   }

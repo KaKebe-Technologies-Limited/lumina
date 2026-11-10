@@ -139,6 +139,7 @@ $cards = content_list('donate', 'support.items'); $supportUrl = H::href('donate'
         <div class="section__head" style="text-align:center">
             <span class="eyebrow">Give online</span>
             <h2 id="give-online-title"><?= !empty($giveOnline) ? 'Give now with <span class="text-accent">card or mobile money</span>' : 'Give <span class="text-accent">online</span>' ?></h2>
+            <?php if (!empty($mobileGive)): ?><?= partial('partials/pay-banner', []) ?><?php endif; ?>
             <p class="lead"><?= !empty($giveOnline) ? 'Pay securely through Pesapal with Visa, Mastercard, MTN Mobile Money or Airtel Money. You will get a receipt by e-mail.' . (!empty($darazaDonate) ? ' Prefer Daraza? Use the button below the form.' : '') : 'Press the button to give securely on the Daraza page.' ?></p>
         </div>
         <?php if (!empty($giveOnline) || !empty($mobileGive)): ?>
@@ -157,14 +158,14 @@ $cards = content_list('donate', 'support.items'); $supportUrl = H::href('donate'
                 <?= partial('partials/form-field', ['name' => 'give_currency', 'label' => 'Currency', 'type' => 'select', 'required' => true, 'options' => $currencies, 'value' => $selectedCurrency]) ?>
                 <?= partial('partials/form-field', ['name' => 'give_anonymous', 'label' => 'Please keep my gift anonymous (do not show my name publicly)', 'type' => 'checkbox', 'class' => 'field--full']) ?>
             </div>
-            <div class="form-actions">
-                <?php if (!empty($giveOnline)): ?>
-                    <button class="btn btn--cta btn--caps btn--lg" type="submit" data-loading-text="Opening the secure page..."><?= icon('lock', 'icon--sm') ?> Give securely</button>
-                    <span class="form-note">You will be taken to Pesapal's secure page to finish. We never see your card details.</span>
-                <?php endif; ?>
+            <div class="form-actions pay-actions">
                 <?php if (!empty($mobileGive)): ?>
-                    <button class="btn <?= !empty($giveOnline) ? 'btn--outline' : 'btn--cta' ?> btn--caps btn--lg" type="submit" formaction="<?= e(url('donate/mobile-money')) ?>" data-loading-text="Opening..."><?= icon('phone', 'icon--sm') ?> Give with MTN or Airtel mobile money</button>
-                    <span class="form-note">Choose UGX. You approve the payment on your phone (up to 5 minutes).</span>
+                    <button class="btn btn--cta btn--caps btn--lg pay-actions__main" type="submit" formaction="<?= e(url('donate/mobile-money')) ?>" data-loading-text="Opening..."><?= icon('phone', 'icon--sm') ?> Give with MTN or Airtel</button>
+                    <span class="form-note">Choose UGX as the currency. You approve the payment on your phone (up to 5 minutes).</span>
+                <?php endif; ?>
+                <?php if (!empty($giveOnline)): ?>
+                    <button class="btn <?= !empty($mobileGive) ? 'btn--outline' : 'btn--cta' ?> btn--caps btn--lg" type="submit" data-loading-text="Opening the secure page..."><?= icon('lock', 'icon--sm') ?> <?= !empty($mobileGive) ? 'Or give by card' : 'Give securely' ?></button>
+                    <span class="form-note">You will be taken to Pesapal's secure page to finish. We never see your card details.</span>
                 <?php endif; ?>
             </div>
         </form>

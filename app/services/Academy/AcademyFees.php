@@ -63,12 +63,15 @@ final class AcademyFees
     /** The fee that is actually charged now, or null. @return array{minor:int,currency:string,display:string}|null */
     public static function active(string $kind): ?array
     {
-        return self::ready() && (PesapalPayments::ready() || \App\Services\Daraza::enabled($kind === 'cert' ? 'cert' : 'signup') || self::manual() !== null) ? self::configured($kind) : null;
+        return self::ready() && (PesapalPayments::ready() || self::mobileAvailable($kind) || \App\Services\Daraza::enabled($kind === 'cert' ? 'cert' : 'signup') || self::manual() !== null) ? self::configured($kind) : null;
     }
 
     /** The mobile-money and bank details learners may pay to (Settings > LAF Academy), or null when the administrator gave none. @return array{mobile:string,bank:string}|null */
     public static function manual(): ?array
     {
+        if (!\App\Services\Payments\PaymentOptions::manual()) {
+            return null;
+        }
         $m = trim((string) \App\Core\Settings::get('academy_pay_mobile_money', ''));
         $b = trim((string) \App\Core\Settings::get('academy_pay_bank_details', ''));
         return $m !== '' || $b !== '' ? ['mobile' => $m, 'bank' => $b] : null;

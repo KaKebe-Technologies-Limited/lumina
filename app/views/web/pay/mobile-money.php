@@ -3,11 +3,12 @@
 $paid = $row['status'] === 'paid';
 $this->start('scripts'); ?><script src="<?= e(asset('js/mobile-money.js')) ?>" defer></script><?php $this->end();
 ?>
-<?= partial('partials/page-hero', ['title' => 'Pay with mobile money', 'eyebrow' => $what, 'lead' => 'MTN Mobile Money or Airtel Money. You approve the payment on your phone.']) ?>
+<?= partial('partials/page-hero', ['title' => 'Pay with mobile money', 'eyebrow' => $what, 'lead' => 'Pay with any MTN or Airtel number. You approve the payment on your phone.']) ?>
 <section class="section mm">
     <div class="container container--narrow">
         <div class="card" data-mm data-run="<?= e(url('pay/mobile-money/' . $row['reference'] . '/run')) ?>" data-status="<?= e(url('pay/mobile-money/' . $row['reference'] . '/status')) ?>" data-next="<?= e($next) ?>" data-paid="<?= $paid ? '1' : '0' ?>">
             <div class="card__body">
+                <?= partial('partials/pay-banner', ['compact' => true]) ?>
                 <p class="mm__amount"><span>Amount</span> <strong>UGX <?= e(number_format((int) $row['amount_ugx'])) ?></strong><?php if ($orig !== ''): ?> <small class="text-muted">(<?= e($orig) ?>)</small><?php endif; ?></p>
                 <p class="text-muted mm__ref">Reference <?= e($row['reference']) ?></p>
 
@@ -24,9 +25,9 @@ $this->start('scripts'); ?><script src="<?= e(asset('js/mobile-money.js')) ?>" d
                         <div class="field"><label class="field__label" for="mm-phone">Mobile-money number</label>
                             <input class="input" id="mm-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" value="<?= e($phone) ?>" placeholder="0772 123 456" required data-mm-phone>
                             <div class="field__help">A Ugandan MTN or Airtel number. We send a payment request to this phone.</div></div>
-                        <fieldset class="mm__nets"><legend class="field__label">Network</legend>
-                            <label class="check"><input type="radio" name="method" value="1" data-mm-net> MTN Mobile Money</label>
-                            <label class="check"><input type="radio" name="method" value="2" data-mm-net> Airtel Money</label>
+                        <fieldset class="mm__nets"><legend class="field__label">Network (chosen for you from the number)</legend>
+                            <label class="mm__net mm__net--mtn"><input type="radio" name="method" value="1" data-mm-net><span><b>MTN</b> Mobile Money</span></label>
+                            <label class="mm__net mm__net--airtel"><input type="radio" name="method" value="2" data-mm-net><span><b>Airtel</b> Money</span></label>
                         </fieldset>
                         <p class="field__error" role="alert" data-mm-error hidden></p>
                         <button class="btn btn--cta btn--caps btn--lg" type="submit" data-mm-pay><?= icon('lock', 'icon--sm') ?> Pay UGX <?= e(number_format((int) $row['amount_ugx'])) ?></button>

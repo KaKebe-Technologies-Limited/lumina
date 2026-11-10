@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers\Web;
 
 use App\Core\Controller;
+use App\Core\Flash;
 use App\Core\HttpException;
 use App\Core\Log;
 use App\Core\Mailer;
@@ -23,7 +24,26 @@ use App\Services\Fund\FundProjects;
  */
 final class FundController extends Controller
 {
-    private const METHODS = ['bank' => 'Bank transfer', 'mobile_money' => 'Mobile money', 'paypal' => 'PayPal', 'other' => 'Another way'];
+    private const MANUAL_METHODS = ['bank' => 'Bank transfer', 'mobile_money' => 'Mobile money (we send you the details)', 'paypal' => 'PayPal', 'other' => 'Another way'];
+
+    /**
+     * The ways a donor can choose: pay NOW with MTN or Airtel mobile money (when switched on), and the earlier "tell us, we contact you" ways unless they were switched off
+     * (Admin > Payment options). When everything is off the donor can still say "another way" and the team makes contact.
+     * @return array<string,string>
+     */
+    private static function methods(): array
+    {
+        $out = [];
+        if (\App\Services\DarazaPay\DarazaPayments::enabled('project')) {
+            $out['mobile_now'] = 'Pay now with MTN or Airtel mobile money';
+        }
+        if (\App\Services\Payments\PaymentOptions::manual() || $out === []) {
+            $out += self::MANUAL_METHODS;
+        } else {
+            $out['other'] = 'Another way (we contact you)';
+        }
+        return $out;
+    }
     private const CURRENCIES = ['UGX', 'USD', 'EUR', 'GBP'];
 
     public function index(Request $request): Response
@@ -38,7 +58,7 @@ final class FundController extends Controller
     public function show(Request $request, string $slug): Response
     {
         $p = FundProjects::find($slug) ?? throw new HttpException(404, 'Not found');
-        return $this->render('web/fund/show', ['p' => $p, 'others' => array_values(array_filter(FundProjects::all(), static fn(array $o): bool => $o['slug'] !== $slug)), 'methods' => self::METHODS, 'currencies' => self::CURRENCIES, 'gets' => FundProjects::partnerGets()], [
+        return $this->render('web/fund/show', ['p' => $p, 'others' => array_values(array_filter(FundProjects::all(), static fn(array $o): bool => $o['slug'] !== $slug)), 'methods' => self::methods(), 'currencies' => self::CURRENCIES, 'gets' => FundProjects::partnerGets()], [
             'bodyClass' => 'is-fund is-fund-project',
             'meta' => ['title' => $p['short'] . ': fund this project', 'description' => (string) $p['summary'], 'og_image' => asset('img/projects/' . $p['cover'] . '.jpg')],
             'breadcrumbs' => [['Fund a project', url('fund-a-project')], [(string) $p['short'], null]],
@@ -87,7 +107,7 @@ final class FundController extends Controller
             'donor_name' => 'required|max:150',
             'donor_email' => 'required|email|max:190',
             'donor_phone' => 'nullable|phone|max:40',
-            'method' => 'required|in:' . implode(',', array_keys(self::METHODS)),
+            'method' => 'required|in:' . implode(',', array_keys(self::methods())),
             'message' => 'nullable|max:1500',
         ];
         $v = Validator::make($in, $rules, []);
@@ -115,7 +135,23 @@ final class FundController extends Controller
             'is_anonymous' => $request->bool('is_anonymous') ? 1 : 0,
             'ip' => $request->ip(),
         ];
-        Donation::create($record);
+        $pay = $record['method'] === 'mobile_now';
+        if ($pay) {
+            $minor = \App\Services\Shop\Money::parse(number_format((float) $record['amount'], 2, '.', ''));
+            if ($minor === null || \App\Services\DarazaPay\DarazaPayments::ugx($minor, $currency) === null) {
+                $this->fail(['method' => 'Mobile money takes gifts in Uganda shillings (UGX 500 to 5,000,000), or in US dollars when the website has a rate. Please choose UGX, or another way to give.'], $back);
+            }
+            $record['method'] = 'mobile_money';
+        }
+        $donationId = Donation::create($record);
+        if ($pay) {
+            $b = \App\Services\DarazaPay\DarazaPayments::begin('project', (int) $donationId, (int) $minor, $currency, ['name' => $record['donor_name'], 'email' => $record['donor_email'], 'phone' => (string) ($record['donor_phone'] ?? '')]);
+            if ($b['ok']) {
+                \App\Core\Mailer::notify('Project gift started: ' . $p['short'], "A donor started a mobile-money gift to a project (it is recorded as received only when the payment is confirmed).\n\nProject: {$p['title']}\nContribution: {$label}\nAmount: " . number_format((float) $record['amount'], 2) . " {$currency}\nName: {$record['donor_name']}\nEmail: {$record['donor_email']}\n\nManage it: " . abs_url('admin/donations') . "\n", $record['donor_email']);
+                return $this->redirect((string) $b['url']);
+            }
+            Flash::error('We could not open the mobile-money page just now. Your pledge was saved and we will contact you. You can also try again in a minute.');
+        }
 
         $body = "New PROJECT pledge (a record of intent - no payment was taken)\n\nProject: {$p['title']}\nContribution: {$label}" . ($detail !== '' ? "\n{$detail}" : '') . "\n"
             . 'Amount: ' . number_format((float) $record['amount'], 2) . " {$record['currency']}\n\n"
@@ -137,7 +173,7 @@ final class FundController extends Controller
         if (($t['slug'] ?? '') !== $slug) {
             return $this->redirect('fund-a-project/' . $slug);
         }
-        return $this->render('web/fund/thanks', ['p' => $p, 't' => $t, 'methods' => self::METHODS], [
+        return $this->render('web/fund/thanks', ['p' => $p, 't' => $t, 'methods' => self::methods() + self::MANUAL_METHODS], [
             'bodyClass' => 'is-fund',
             'meta' => ['title' => 'Thank you for your pledge', 'robots' => 'noindex,nofollow'],
             'breadcrumbs' => [['Fund a project', url('fund-a-project')], [(string) $p['short'], url('fund-a-project/' . $slug)], ['Thank you', null]],

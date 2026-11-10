@@ -259,7 +259,7 @@ final class PesapalPayments
     /** Is the gateway usable right now? (keys present) */
     public static function ready(): bool
     {
-        return PesapalClient::hasKeys();
+        return PesapalClient::hasKeys() && \App\Services\Payments\PaymentOptions::online();           // Admin > Payment options can switch it off for the whole site
     }
 
     /** The owner's choice (Settings > Donations > "How online donations are taken", or the tick box on Admin > Pesapal payments): both | pesapal | link. */

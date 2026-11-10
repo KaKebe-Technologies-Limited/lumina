@@ -953,7 +953,7 @@ SecretStore::put('flw_secret_key', 'FLWSECK_TEST-x');
 check('flutterwave is offered once the key is set (the webhook hash is advised, not required)', PaymentMethods::ready('flutterwave') && PaymentMethods::isAvailable('flutterwave', false));
 check('booking is only offered for carts where every item allows it', !PaymentMethods::isAvailable('book', false) && PaymentMethods::isAvailable('book', true));
 $zzSet('shop_pay_momo_sort', '1');
-check('method order follows the sort setting', PaymentMethods::all()[0]['key'] === 'momo');
+check('method order follows the sort setting', array_values(array_filter(PaymentMethods::all(), static fn($m) => $m['enabled']))[0]['key'] === 'momo');
 $zzSet('shop_momo_mtn_number', '');
 check('momo without a number is not offered', !PaymentMethods::isAvailable('momo', false) && PaymentMethods::problems('momo') !== []);
 $zzSet('shop_momo_mtn_number', '0777000111');

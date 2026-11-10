@@ -23,6 +23,7 @@ use App\Controllers\Web\MembershipVerifyController as Verify;
 
 $token = '[A-Za-z0-9]{8,128}';
 $router->get('/membership/me/{token}', [Me::class, 'show'])->name('membership.me')->where('token', $token)->middleware(['throttle:60,600']);
+$router->post('/membership/me/{token}/pay-mobile', [Me::class, 'payMobile'])->name('membership.me.pay_mobile')->where('token', $token)->middleware(['throttle:10,600']);
 $router->post('/membership/me/{token}/photo', [Me::class, 'uploadPhoto'])->name('membership.me.photo.upload')->where('token', $token)->middleware(['throttle:12,600']);
 $router->post('/membership/me/{token}/proof', [Me::class, 'uploadProof'])->name('membership.me.proof.upload')->where('token', $token)->middleware(['throttle:12,600']);
 $router->get('/membership/me/{token}/photo', [Me::class, 'photo'])->name('membership.me.photo')->where('token', $token)->middleware('throttle:120,600');

@@ -110,12 +110,13 @@ foreach ($methods as $m) {
 
                 <fieldset class="sh-step" id="pay-group" tabindex="-1">
                     <legend class="sh-step__title"><span class="sh-step__num" aria-hidden="true">3</span><?= e(content('shop', 'checkout.payment_title')) ?></legend>
+                    <?php foreach ($methods as $mm0) { if ($mm0['key'] === 'mobile') { echo partial('partials/pay-banner', ['text' => 'You can pay with MTN or Airtel Mobile Money']); break; } } ?>
                     <div class="sh-choices sh-choices--pay">
                         <?php foreach ($methods as $m): $mid = 'pay-' . $m['key']; ?>
                             <div class="sh-pay<?= $selected === $m['key'] ? ' is-on' : '' ?>">
                                 <label class="sh-pick" for="<?= e($mid) ?>">
                                     <input type="radio" id="<?= e($mid) ?>" name="payment" value="<?= e($m['key']) ?>"<?= $selected === $m['key'] ? ' checked' : '' ?> data-shop-pay="<?= e($m['key']) ?>">
-                                    <span class="sh-pick__icon"><?= icon(in_array($m['key'], ['flutterwave', 'pesapal'], true) ? 'shield' : ($m['key'] === 'daraza' ? 'external-link' : ($m['key'] === 'bank' ? 'banknote' : ($m['key'] === 'momo' ? 'smartphone' : ($m['key'] === 'book' ? 'calendar' : 'hand-heart'))))) ?></span>
+                                    <span class="sh-pick__icon"><?= icon($m['key'] === 'mobile' ? 'phone' : (in_array($m['key'], ['flutterwave', 'pesapal'], true) ? 'shield' : ($m['key'] === 'daraza' ? 'external-link' : ($m['key'] === 'bank' ? 'banknote' : ($m['key'] === 'momo' ? 'smartphone' : ($m['key'] === 'book' ? 'calendar' : 'hand-heart'))))) )?></span>
                                     <span class="sh-pick__text"><strong><?= e($m['label']) ?></strong><?php if ($m['instructions'] !== ''): ?><span class="sh-pick__sub"><?= e($m['instructions']) ?></span><?php endif; ?></span>
                                 </label>
                                 <?php $payDetails = in_array($m['key'], ['momo', 'bank'], true) ? PaymentMethods::details($m['key']) : []; ?>

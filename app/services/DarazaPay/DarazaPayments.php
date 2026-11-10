@@ -21,7 +21,7 @@ use App\Services\Shop\Money;
  */
 final class DarazaPayments
 {
-    public const PURPOSES = ['academy_signup' => 'Academy sign-up fee', 'academy_cert' => 'Academy certificate fee', 'donation' => 'Donation'];
+    public const PURPOSES = ['donation' => 'Donations', 'project' => 'Gifts to a project', 'shop' => 'Shop orders', 'academy_signup' => 'Academy sign-up fee', 'academy_cert' => 'Academy certificate fee', 'membership' => 'Membership payments'];
     private const BUSY_SECONDS = 400;
 
     private static ?bool $ready = null;
@@ -103,6 +103,30 @@ final class DarazaPayments
             'phone' => (string) ($payer['phone'] ?? '') !== '' ? mb_substr((string) $payer['phone'], 0, 20) : null,
         ]);
         return ['ok' => true, 'reference' => $reference, 'url' => abs_url('pay/mobile-money/' . $reference)];
+    }
+
+    /**
+     * Start (or restart) the mobile-money payment of a SHOP ORDER. The amount is the order total, read from the order, never from the browser.
+     * @param array<string,mixed> $order a shop_orders row
+     * @return array{ok:bool,url?:string,error?:string}  errors: unavailable | not_payable | already_paid
+     */
+    public static function beginShop(array $order): array
+    {
+        $fresh = \App\Services\Shop\OrderService::find((int) $order['id']);
+        if ($fresh === null || !self::enabled('shop')) {
+            return ['ok' => false, 'error' => 'unavailable'];
+        }
+        if ($fresh['payment_status'] === 'paid') {
+            return ['ok' => false, 'error' => 'already_paid'];
+        }
+        if ($fresh['payment_method'] !== 'mobile' || $fresh['status'] !== 'pending' || !in_array($fresh['payment_status'], ['unpaid', 'pending', 'failed'], true)) {
+            return ['ok' => false, 'error' => 'not_payable'];
+        }
+        $r = self::begin('shop', (int) $fresh['id'], Money::fromDb($fresh['total']), (string) $fresh['currency'], ['name' => (string) $fresh['customer_name'], 'email' => (string) $fresh['customer_email'], 'phone' => (string) ($fresh['customer_phone'] ?? '')]);
+        if ($r['ok']) {
+            Database::execute("UPDATE shop_orders SET payment_status = 'pending', hold_until = ? WHERE id = ? AND payment_status IN ('unpaid','failed')", [\App\Services\Shop\OrderService::holdUntil('mobile'), (int) $fresh['id']]);
+        }
+        return $r;
     }
 
     /** @return ?array<string,mixed> */
@@ -224,7 +248,17 @@ final class DarazaPayments
                 \App\Services\Academy\AcademyFees::autoApproveAfterPayment((int) $row['ref_id']);
             } elseif ($row['purpose'] === 'academy_cert') {
                 \App\Services\Academy\AcademyFees::markCertPaid((int) $row['ref_id'], $ref);
-            } elseif ($row['purpose'] === 'donation') {
+            } elseif ($row['purpose'] === 'shop') {
+                \App\Services\Shop\PaymentService::markPaid((int) $row['ref_id'], [
+                    'method' => 'mobile', 'reference' => $ref, 'amount' => (int) $row['amount_minor'], 'currency' => (string) $row['currency'], 'source' => 'gateway',
+                    'gateway_id' => (string) ($row['request_id'] ?? ''), 'meta' => 'Daraza mobile money ' . ((int) ($row['method'] ?? 0) === 2 ? 'Airtel' : 'MTN'),
+                ]);
+            } elseif ($row['purpose'] === 'membership') {
+                \App\Services\Membership\MembershipService::recordPayment((int) $row['ref_id'], [
+                    'amount' => number_format((int) $row['amount_minor'] / Money::SCALE, 2, '.', ''), 'currency' => (string) $row['currency'], 'status' => 'received', 'method' => 'mobile_money',
+                    'reference' => $ref, 'purpose' => 'membership', 'paid_at' => date('Y-m-d H:i'), 'notes' => 'Paid by mobile money through Daraza',
+                ]);
+            } elseif ($row['purpose'] === 'donation' || $row['purpose'] === 'project') {
                 for ($try = 0; $try < 5; $try++) {
                     try {
                         Database::execute("UPDATE donations SET status = 'received', method = 'mobile_money', reference = ?, received_at = ?, receipt_no = COALESCE(receipt_no, ?) WHERE id = ? AND status <> 'received'",

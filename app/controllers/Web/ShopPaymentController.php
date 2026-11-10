@@ -34,6 +34,14 @@ final class ShopPaymentController extends Controller
         if ($order === null) {
             $this->abort(404);
         }
+        if (($order['payment_method'] ?? '') === 'mobile') {
+            $m = \App\Services\DarazaPay\DarazaPayments::beginShop($order);
+            if ($m['ok']) {
+                return $this->redirect((string) $m['url']);
+            }
+            Flash::error($m['error'] === 'already_paid' ? (string) content('shop', 'order.return_success') : (string) content('shop', 'order.pay_unavailable_note'));
+            return $this->redirect('shop/order/' . $order['token']);
+        }
         $r = ($order['payment_method'] ?? '') === 'pesapal' ? \App\Services\Pesapal\PesapalShop::begin($order) : OnlinePayment::begin($order);
         if ($r['ok']) {
             return $this->sendToGateway((string) $r['link']);        // an interstitial, not a 302: the CSP form-action would block a redirect after a POST

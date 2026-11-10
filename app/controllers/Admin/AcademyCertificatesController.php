@@ -70,10 +70,7 @@ final class AcademyCertificatesController extends AcademyAdminController
     {
         $this->authorize('academy.manage');
         $c = Database::one('SELECT * FROM academy_certificates WHERE id = ?', [$id]) ?? throw new HttpException(404, 'Not found');
-        if ($c['revoked_at'] !== null || !CertificateService::isApproved($c)) {
-            Flash::error($c['revoked_at'] !== null ? 'That certificate was withdrawn, so it cannot be viewed.' : 'That certificate has not been issued yet. Approve it first, then you can view it.');
-            return $this->redirect('admin/academy/certificates');
-        }
+        // an administrator may view every certificate: released, waiting for the fee or for approval, or withdrawn (the learner and visitors cannot see the unreleased ones)
         return Response::text(CertificateService::pdf($c), 200, 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="LAF-Academy-certificate-' . $c['code'] . '.pdf"')
             ->header('Cache-Control', 'private, no-store')

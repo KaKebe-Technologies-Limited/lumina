@@ -125,7 +125,7 @@ check('donate buttons: with Daraza off they go back to the old behaviour (link, 
 Settings::set('donate_method', (string) ($before['donate_method'] ?? 'both'));
 
 // ---- Academy fees (Pesapal keys absent: only Daraza) ----------------------------------------------------------------------------------
-Settings::setMany(['academy_signup_fee' => '20000', 'academy_signup_fee_currency' => 'UGX', 'academy_cert_fee' => '15000', 'academy_cert_fee_currency' => 'UGX', 'daraza_signup_on' => '0', 'daraza_cert_on' => '0', 'academy_signup_mode' => 'approval', 'academy_cert_approval' => '1']);
+Settings::setMany(['academy_signup_fee' => '20000', 'academy_signup_fee_currency' => 'UGX', 'academy_cert_fee' => '15000', 'academy_cert_fee_currency' => 'UGX', 'daraza_signup_on' => '0', 'daraza_cert_on' => '0', 'daraza_api_academy_signup_on' => '0', 'daraza_api_academy_cert_on' => '0', 'academy_signup_mode' => 'approval', 'academy_cert_approval' => '1']);
 check('academy: no Pesapal keys and Daraza off: the fees are not charged (nobody is blocked)', AcademyFees::signup() === null && AcademyFees::cert() === null);
 Settings::setMany(['daraza_signup_on' => '1', 'daraza_cert_on' => '1']);
 check('academy: Daraza alone is enough to charge the fees', AcademyFees::signup()['display'] === 'UGX 20,000' && AcademyFees::cert()['display'] === 'UGX 15,000' && AcademyFees::daraza('signup')['url'] === $good && AcademyFees::daraza('cert')['label'] === 'Pay with Daraza');

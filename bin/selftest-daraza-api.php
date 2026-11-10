@@ -34,7 +34,7 @@ if (!function_exists('check')) {
 
 echo "-- daraza api --\n";
 $prev = [];
-foreach (['daraza_api_academy_signup_on', 'daraza_api_academy_cert_on', 'daraza_api_donation_on', 'daraza_api_usd_rate'] as $k) {
+foreach (['pay_opt_online', 'pay_opt_link', 'pay_opt_manual', 'daraza_api_shop_on', 'daraza_api_project_on', 'daraza_api_membership_on', 'daraza_api_academy_signup_on', 'daraza_api_academy_cert_on', 'daraza_api_donation_on', 'daraza_api_usd_rate'] as $k) {
     $prev[$k] = Settings::get($k, '');
 }
 $clean = static function () use ($prev): void {

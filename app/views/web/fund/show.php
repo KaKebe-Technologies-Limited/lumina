@@ -187,11 +187,12 @@ $proposalMail = 'mailto:' . (string) setting('email_info', setting('email_primar
                     <?= partial('partials/form-field', ['name' => 'donor_name', 'label' => 'Your name', 'required' => true, 'maxlength' => 150, 'autocomplete' => 'name']) ?>
                     <?= partial('partials/form-field', ['name' => 'donor_email', 'label' => 'E-mail address', 'type' => 'email', 'required' => true, 'maxlength' => 190, 'autocomplete' => 'email']) ?>
                     <?= partial('partials/form-field', ['name' => 'donor_phone', 'label' => 'Phone or WhatsApp (optional)', 'type' => 'tel', 'maxlength' => 40, 'autocomplete' => 'tel']) ?>
-                    <?= partial('partials/form-field', ['name' => 'method', 'label' => 'How would you like to give?', 'type' => 'select', 'required' => true, 'options' => $methods, 'value' => old('method') ?: 'bank']) ?>
+                    <?php if (isset($methods['mobile_now'])): ?><?= partial('partials/pay-banner', ['compact' => true, 'text' => 'You can pay now with MTN or Airtel']) ?><?php endif; ?>
+                    <?= partial('partials/form-field', ['name' => 'method', 'label' => 'How would you like to give?', 'type' => 'select', 'required' => true, 'options' => $methods, 'value' => old('method') ?: (isset($methods['mobile_now']) ? 'mobile_now' : array_key_first($methods))]) ?>
                     <?= partial('partials/form-field', ['name' => 'message', 'label' => 'Message (optional)', 'type' => 'textarea', 'rows' => 3, 'maxlength' => 1500, 'placeholder' => 'Tell us anything you would like us to know, or how you would like to be recognised.']) ?>
                     <?= partial('partials/form-field', ['name' => 'is_anonymous', 'label' => 'I would like my gift to stay anonymous', 'type' => 'checkbox']) ?>
                     <button class="btn btn--cta btn--caps btn--block" type="submit"><?= icon('heart', 'icon--sm') ?> Send my pledge</button>
-                    <p class="fund-details__note">This records your intention to give. No money is taken here: we contact you with the details to complete your gift.</p>
+                    <p class="fund-details__note"><?= isset($methods['mobile_now']) ? 'Choose "Pay now" to pay by MTN or Airtel mobile money straight away. With any other choice this only records your intention to give: no money is taken here and we contact you with the details.' : 'This records your intention to give. No money is taken here: we contact you with the details to complete your gift.' ?></p>
                 </div>
             </aside>
         </form>

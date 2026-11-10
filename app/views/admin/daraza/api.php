@@ -1,9 +1,9 @@
 <?php
-/** Admin > Mobile money (Daraza API). Vars: $ready, $hasKey, $mode, $places (purpose => name, on), $rate, $rows (recent ledger rows). */
+/** Admin > Payment options. Vars: $ready, $hasKey, $mode, $places (purpose => name, on), $options (earlier option => label, help, on), $rate, $rows (recent ledger rows). */
 $net = [1 => 'MTN', 2 => 'Airtel'];
 $badge = ['paid' => 'badge--success', 'failed' => 'badge--danger', 'unknown' => 'badge--warning', 'collecting' => 'badge--warning', 'pending' => 'badge--outline'];
 ?>
-<?= partial('partials/admin/page-header', ['title' => 'Mobile money (Daraza API)', 'subtitle' => 'Take MTN and Airtel mobile-money payments on the website and send money out, through the Daraza API.',
+<?= partial('partials/admin/page-header', ['title' => 'Payment options', 'subtitle' => 'Take MTN and Airtel mobile-money payments everywhere on the website, switch the earlier ways to pay off or on, and send money out.',
     'actions' => [['label' => 'Daraza payment links', 'url' => url('admin/daraza'), 'icon' => 'external-link', 'class' => 'btn--ghost']]]) ?>
 <?php if (!$ready): ?><div class="alert alert--warning" role="status">The payments table could not be created automatically. Ask your developer to check the database permissions.</div><?php endif; ?>
 
@@ -24,15 +24,23 @@ DARAZA_ENV=sandbox</pre>
     </div></section>
 
     <section class="card"><div class="card__body">
-        <h2 class="card__title">Where "Pay with mobile money" appears</h2>
+        <h2 class="card__title">Where visitors can pay with mobile money</h2>
         <form method="post" action="<?= e(url('admin/daraza/api')) ?>"><?= csrf_field() ?>
             <?php foreach ($places as $k => $p): ?><label class="check"><input type="checkbox" name="on_<?= e($k) ?>" value="1" <?= $p['on'] ? 'checked' : '' ?>> <?= e($p['name']) ?></label><?php endforeach; ?>
             <div class="field"><label class="field__label" for="usd-rate">Uganda shillings for 1 US dollar</label>
                 <input class="input" id="usd-rate" name="usd_rate" type="number" min="0" max="100000" value="<?= (int) $rate ?>" placeholder="3700">
-                <div class="field__help">Mobile money is charged in UGX. A fee set in USD (for example the USD 3 certificate fee) is converted with this rate and rounded up to the next 100 UGX. Leave 0 to offer mobile money only for fees set in UGX.</div></div>
+                <div class="field__help">Mobile money is charged in UGX. A price or fee set in USD is converted with this rate and rounded up to the next 100 UGX. Leave 0 to offer mobile money only for amounts set in UGX.</div></div>
+
+            <h3 class="ad-letter-sub">The earlier ways to pay</h3>
+            <p class="text-muted">Switch an earlier way off and it disappears from the whole website (donations, shop, projects, membership, Academy). Nothing is deleted: its settings, links and keys stay, and you can switch it back on whenever you like.</p>
+            <?php foreach ($options as $k => $o): ?><label class="check"><input type="checkbox" name="opt_<?= e($k) ?>" value="1" <?= $o['on'] ? 'checked' : '' ?>> <span><strong><?= e($o['label']) ?></strong><br><small class="text-muted"><?= e($o['help']) ?></small></span></label><?php endforeach; ?>
             <button class="btn btn--primary btn--sm" type="submit">Save</button>
         </form>
-        <p class="text-muted">The payer approves the payment on their phone; this can take up to 5 minutes. The payment is confirmed automatically and the fee, certificate or donation is updated at once.</p>
+        <form method="post" action="<?= e(url('admin/daraza/api')) ?>" class="rc-kpi-row" style="margin-top:1rem"><?= csrf_field() ?>
+            <button class="btn btn--outline btn--sm" type="submit" name="preset" value="mobile_only" data-confirm="Switch mobile money on everywhere and switch the earlier ways to pay off?"><?= icon('phone', 'icon--sm') ?> Mobile money only</button>
+            <button class="btn btn--ghost btn--sm" type="submit" name="preset" value="restore">Switch the earlier ways back on</button>
+        </form>
+        <p class="text-muted">The payer approves the payment on their phone; this can take up to 5 minutes. Every MTN and Airtel number works. The payment is confirmed automatically.</p>
     </div></section>
 </div>
 
