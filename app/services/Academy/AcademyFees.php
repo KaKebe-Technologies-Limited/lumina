@@ -185,6 +185,43 @@ final class AcademyFees
         return PesapalPayments::begin('academy_cert', $certId, $fee['minor'], $fee['currency'], 'LAF Academy certificate fee', ['name' => (string) $l['name'], 'email' => (string) $l['email'], 'phone' => (string) ($l['phone'] ?? '')]);
     }
 
+    /** Is "Pay with mobile money" offered for this fee ('signup' | 'cert')? The switch is on, the key is in .env and the fee can be charged in UGX. */
+    public static function mobileAvailable(string $kind): bool
+    {
+        $fee = self::configured($kind);
+        $p = $kind === 'cert' ? 'academy_cert' : 'academy_signup';
+        return $fee !== null && \App\Services\DarazaPay\DarazaPayments::enabled($p) && \App\Services\DarazaPay\DarazaPayments::ugx($fee['minor'], $fee['currency']) !== null;
+    }
+
+    /** @return array{ok:bool,url?:string,error?:string} */
+    public static function beginSignupMobile(int $learnerId): array
+    {
+        $l = Database::one('SELECT id, name, email, phone, fee_status FROM academy_learners WHERE id = ?', [$learnerId]);
+        $fee = self::configured('signup');
+        if ($l === null || $fee === null || !self::mobileAvailable('signup')) {
+            return ['ok' => false, 'error' => 'unavailable'];
+        }
+        if ($l['fee_status'] !== 'due') {
+            return ['ok' => false, 'error' => 'not_due'];
+        }
+        return \App\Services\DarazaPay\DarazaPayments::begin('academy_signup', $learnerId, $fee['minor'], $fee['currency'], ['name' => (string) $l['name'], 'email' => (string) $l['email'], 'phone' => (string) ($l['phone'] ?? '')]);
+    }
+
+    /** @return array{ok:bool,url?:string,error?:string} */
+    public static function beginCertMobile(int $certId, int $learnerId): array
+    {
+        $c = Database::one('SELECT id, learner_id, fee_status, revoked_at FROM academy_certificates WHERE id = ?', [$certId]);
+        $l = Database::one('SELECT id, name, email, phone FROM academy_learners WHERE id = ?', [$learnerId]);
+        $fee = self::configured('cert');
+        if ($c === null || $l === null || (int) $c['learner_id'] !== $learnerId || $fee === null || !self::mobileAvailable('cert')) {
+            return ['ok' => false, 'error' => 'unavailable'];
+        }
+        if ($c['fee_status'] !== 'due' || $c['revoked_at'] !== null) {
+            return ['ok' => false, 'error' => 'not_due'];
+        }
+        return \App\Services\DarazaPay\DarazaPayments::begin('academy_cert', $certId, $fee['minor'], $fee['currency'], ['name' => (string) $l['name'], 'email' => (string) $l['email'], 'phone' => (string) ($l['phone'] ?? '')]);
+    }
+
     public const PROOF_DIR = 'academy/proofs';
     public const PROOF_MAX_BYTES = 5 * 1024 * 1024;
 

@@ -2226,6 +2226,75 @@ html {
   margin-bottom: .6rem;
 }
 
+.mm__amount {
+  display: flex;
+  gap: .8rem;
+  align-items: baseline;
+  margin: 0 0 .2rem;
+}
+
+.mm__amount span {
+  color: #5b6478;
+}
+
+.mm__amount strong {
+  font-size: 1.8rem;
+  color: #0b1b33;
+}
+
+.mm__ref {
+  font-size: .82rem;
+  margin: 0 0 1.2rem;
+}
+
+.mm__nets {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.mm__nets .field__label {
+  width: 100%;
+}
+
+.mm__wait {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.mm__spinner {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 1rem;
+  border: 5px solid #e0e4ee;
+  border-top-color: #d9a441;
+  border-radius: 50%;
+  animation: mm-spin 1s linear infinite;
+}
+
+@keyframes mm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mm__note {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.ad-code {
+  background: #0b1b33;
+  color: #f4f1ea;
+  padding: .8rem 1rem;
+  border-radius: 10px;
+  overflow: auto;
+  font-size: .9rem;
+}
+
 .filter-bar {
   display: flex;
   flex-wrap: wrap;

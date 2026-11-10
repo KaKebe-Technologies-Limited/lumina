@@ -52,8 +52,13 @@ $router->post('/donate/pledge', [DonateController::class, 'pledge'])->name('dona
     ->middleware(['page.published:donate', 'honeypot', 'throttle:5,600']);
 
 // Pesapal (docs/PESAPAL.md): give online, the customer's return page and Pesapal's server-to-server notification (IPN, exempt from CSRF: Pesapal calls it, and it believes nothing it is told: the payment is asked of Pesapal)
+$router->post('/donate/mobile-money', [DonateController::class, 'mobileMoney'])->name('donate.mobile_money')
+    ->middleware(['page.published:donate', 'honeypot', 'throttle:8,600']);
 $router->post('/donate/online', [DonateController::class, 'online'])->name('donate.online')
     ->middleware(['page.published:donate', 'honeypot', 'throttle:8,600']);
+$router->get('/pay/mobile-money/{reference}', [\App\Controllers\Web\DarazaPayController::class, 'show'])->name('daraza.pay')->middleware('throttle:120,600');
+$router->post('/pay/mobile-money/{reference}/run', [\App\Controllers\Web\DarazaPayController::class, 'run'])->name('daraza.pay.run')->middleware('throttle:20,600');
+$router->get('/pay/mobile-money/{reference}/status', [\App\Controllers\Web\DarazaPayController::class, 'status'])->name('daraza.pay.status')->middleware('throttle:240,600');
 $router->get('/pay/pesapal/return', [\App\Controllers\Web\PesapalController::class, 'returned'])->name('pesapal.return')->middleware('throttle:60,600');
 $router->get('/pay/pesapal/ipn', [\App\Controllers\Web\PesapalController::class, 'ipn'])->name('pesapal.ipn')->middleware(['csrf.exempt', 'throttle:240,60']);
 $router->post('/pay/pesapal/ipn', [\App\Controllers\Web\PesapalController::class, 'ipn'])->name('pesapal.ipn.post')->middleware(['csrf.exempt', 'throttle:240,60']);

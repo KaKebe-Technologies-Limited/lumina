@@ -143,6 +143,21 @@ final class AcademyPortalController extends AcademyBaseController
         return $this->redirect('academy/portal/certificates');
     }
 
+    /** POST academy/portal/certificates/{id}/pay-mobile: pay the certificate fee with MTN / Airtel mobile money (Daraza API). */
+    public function payCertificateMobile(Request $request, int|string $id): Response
+    {
+        [$l, $redirect] = $this->who();
+        if ($redirect !== null) {
+            return $redirect;
+        }
+        $pay = AcademyFees::beginCertMobile((int) $id, (int) $l['id']);
+        if ($pay['ok']) {
+            return $this->redirect((string) $pay['url']);
+        }
+        Flash::error($pay['error'] === 'not_due' ? 'This certificate does not need a payment (it is paid or free).' : 'Mobile-money payment is not available right now. Please choose another way to pay.');
+        return $this->redirect('academy/portal/certificates');
+    }
+
     public function messages(Request $request): Response
     {
         [$l, $redirect] = $this->who();

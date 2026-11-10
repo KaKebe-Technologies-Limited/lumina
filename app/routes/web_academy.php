@@ -43,6 +43,7 @@ $router->get('/academy/track', [AcademyAccountController::class, 'track'])->name
 $router->post('/academy/track', [AcademyAccountController::class, 'track'])->middleware(['honeypot', 'throttle:40,600'])->name('academy.track.post');
 $router->get('/academy/pending', [AcademyAccountController::class, 'pending'])->name('academy.pending');
 $router->post('/academy/fee/report', [AcademyAccountController::class, 'reportFee'])->middleware(['honeypot', 'throttle:10,600'])->name('academy.fee.report');
+$router->post('/academy/fee/pay-mobile', [AcademyAccountController::class, 'payFeeMobile'])->middleware('throttle:10,600')->name('academy.fee.pay_mobile');
 $router->post('/academy/fee/pay', [AcademyAccountController::class, 'payFee'])->middleware('throttle:10,600')->name('academy.fee.pay');
 $router->get('/academy/google', [AcademyAccountController::class, 'googleStart'])->middleware('throttle:30,600')->name('academy.google');
 $router->get('/academy/google/callback', [AcademyAccountController::class, 'googleCallback'])->middleware('throttle:30,600')->name('academy.google.callback');
@@ -67,6 +68,7 @@ $router->get('/academy/dashboard', [AcademyPortalController::class, 'overview'])
 $router->get('/academy/portal/courses', [AcademyPortalController::class, 'courses'])->name('academy.portal.courses');
 $router->get('/academy/portal/certificates', [AcademyPortalController::class, 'certificates'])->name('academy.portal.certificates');
 $router->get('/academy/portal/certificates/{id}/preview', [AcademyPortalController::class, 'certificatePreview'])->where('id', '[0-9]+')->name('academy.portal.certificates.preview');
+$router->post('/academy/portal/certificates/{id}/pay-mobile', [AcademyPortalController::class, 'payCertificateMobile'])->where('id', '[0-9]+')->middleware('throttle:10,600')->name('academy.portal.certificates.pay_mobile');
 $router->post('/academy/portal/certificates/{id}/pay', [AcademyPortalController::class, 'payCertificate'])->where('id', '[0-9]+')->middleware('throttle:10,600')->name('academy.portal.certificates.pay');
 $router->get('/academy/portal/messages', [AcademyPortalController::class, 'messages'])->name('academy.portal.messages');
 $router->post('/academy/portal/messages', [AcademyPortalController::class, 'sendMessage'])->middleware('throttle:30,600')->name('academy.portal.messages.send');

@@ -297,6 +297,23 @@ final class AcademyAccountController extends AcademyBaseController
         return $this->redirect('academy/pending');
     }
 
+    /** POST academy/fee/pay-mobile: pay the sign-up fee with MTN / Airtel mobile money (Daraza API). */
+    public function payFeeMobile(Request $request): Response
+    {
+        $this->gate();
+        $pid = (int) \App\Core\Session::get('academy_pending_id', 0);
+        if ($pid <= 0) {
+            Flash::info('Please sign in with your e-mail address and password to pay the sign-up fee.');
+            return $this->redirect('academy/login');
+        }
+        $pay = AcademyFees::beginSignupMobile($pid);
+        if ($pay['ok']) {
+            return $this->redirect((string) $pay['url']);
+        }
+        Flash::error($pay['error'] === 'not_due' ? 'Your sign-up fee is already settled.' : 'Mobile-money payment is not available right now. Please choose another way to pay.');
+        return $this->redirect('academy/pending');
+    }
+
     /** POST academy/fee/report: "I have paid" (mobile money, bank or Daraza): the transaction ID and optionally the receipt. An administrator confirms; nothing is approved here. */
     public function reportFee(Request $request): Response
     {

@@ -200,7 +200,7 @@ final class PesapalPayments
     }
 
     /** "RCT-2026-0007": the next free number of the current year (same series as the admin's manual receipts). */
-    private static function nextReceiptNo(): string
+    public static function nextReceiptNo(): string
     {
         $prefix = 'RCT-' . date('Y') . '-';
         $max = (int) Database::value('SELECT MAX(CAST(SUBSTRING(receipt_no, ?) AS UNSIGNED)) FROM donations WHERE receipt_no LIKE ?', [strlen($prefix) + 1, $prefix . '%'], 0);

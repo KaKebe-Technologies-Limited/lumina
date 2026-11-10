@@ -30,7 +30,7 @@ final class DonateController extends Controller
 
     public function index(Request $request): Response
     {
-        $hasMethod = trim((string) setting('donate_url', '')) !== '' || PesapalPayments::donationsEnabled() || \App\Services\Daraza::enabled('donate')
+        $hasMethod = trim((string) setting('donate_url', '')) !== '' || PesapalPayments::donationsEnabled() || \App\Services\DarazaPay\DarazaPayments::enabled('donation') || \App\Services\Daraza::enabled('donate')
             || trim((string) setting('donate_bank_details', '')) !== ''
             || trim((string) setting('donate_mobile_money', '')) !== ''
             || trim((string) setting('donate_paypal_email', '')) !== '';
@@ -42,6 +42,7 @@ final class DonateController extends Controller
             'selectedCurrency' => in_array($selectedCurrency, self::CURRENCIES, true) ? $selectedCurrency : 'UGX',
             'methods'          => $this->methodLabels(),
             'giveOnline'       => PesapalPayments::donationsEnabled(),
+            'mobileGive'       => \App\Services\DarazaPay\DarazaPayments::enabled('donation'),
             'darazaDonate'     => \App\Services\Daraza::enabled('donate') ? ['url' => \App\Services\Daraza::url('donate'), 'label' => \App\Services\Daraza::label()] : null,
             'giveLink'         => \App\Services\Daraza::enabled('donate') && in_array(PesapalPayments::donateMethod(), ['both', 'link'], true) ? trim((string) setting('donate_url', '')) : '',
         ], [
@@ -122,6 +123,33 @@ final class DonateController extends Controller
             Flash::error('Online giving is not switched on yet. Please use one of the other ways to give.');
             return $this->redirect('donate');
         }
+        [$name, $email, $phone, $currency, $parsed, $minor] = $this->gift($request);
+        $donationId = Donation::create([
+            'donor_name'   => $name,
+            'donor_email'  => $email,
+            'donor_phone'  => $phone === '' ? null : $phone,
+            'amount'       => round((float) $parsed, 2),
+            'currency'     => $currency,
+            'method'       => 'pesapal',
+            'status'       => 'pledged',
+            'source'       => 'online',
+            'is_anonymous' => $request->bool('give_anonymous') ? 1 : 0,
+            'ip'           => $request->ip(),
+        ]);
+        $r = PesapalPayments::begin('donation', $donationId, (int) $minor, $currency, 'Donation to Lumina Africa Foundation', ['name' => $name, 'email' => $email, 'phone' => $phone]);
+        if (!$r['ok']) {
+            Flash::error('We could not open the secure payment page just now. Nothing was charged. Please try again in a minute, or use one of the other ways to give.');
+            return $this->redirect('donate');
+        }
+        return $this->sendToGateway((string) $r['link']);
+    }
+
+    /**
+     * The gift typed in the online giving form (name, e-mail, phone, currency, amount), checked. Throws the form's validation error on a mistake.
+     * @return array{0:string,1:string,2:string,3:string,4:string,5:int}
+     */
+    private function gift(Request $request): array
+    {
         $input = $request->all();
         $rawAmount = is_scalar($input['give_amount'] ?? null) ? (string) $input['give_amount'] : '';
         $parsed = self::parseAmount($rawAmount);
@@ -153,24 +181,42 @@ final class DonateController extends Controller
         if ($errors !== []) {
             throw new ValidationException($errors, self::scrubOld($request->all()), 'give-online');
         }
+        return [$name, $email, $phone, $currency, (string) $parsed, (int) $minor];
+    }
+
+    /**
+     * POST /donate/mobile-money: a donor who pays NOW with MTN or Airtel mobile money through the Daraza API. The donation is recorded first (pledged, source "online"); it becomes
+     * "received" only when Daraza confirms the money (see DarazaPayments). The donor goes on to the payment page /pay/mobile-money/{reference}.
+     */
+    public function mobileMoney(Request $request): Response
+    {
+        if (!\App\Services\DarazaPay\DarazaPayments::enabled('donation')) {
+            Flash::error('Mobile-money giving is not switched on yet. Please use one of the other ways to give.');
+            return $this->redirect('donate');
+        }
+        [$name, $email, $phone, $currency, $parsed, $minor] = $this->gift($request);
+        if (\App\Services\DarazaPay\DarazaPayments::ugx($minor, $currency) === null) {
+            Flash::error('Mobile money takes gifts in Uganda shillings (UGX 500 to 5,000,000). Please give in UGX, or use another way to give.');
+            return $this->redirect('donate');
+        }
         $donationId = Donation::create([
             'donor_name'   => $name,
             'donor_email'  => $email,
             'donor_phone'  => $phone === '' ? null : $phone,
             'amount'       => round((float) $parsed, 2),
             'currency'     => $currency,
-            'method'       => 'pesapal',
+            'method'       => 'mobile_money',
             'status'       => 'pledged',
             'source'       => 'online',
             'is_anonymous' => $request->bool('give_anonymous') ? 1 : 0,
             'ip'           => $request->ip(),
         ]);
-        $r = PesapalPayments::begin('donation', $donationId, (int) $minor, $currency, 'Donation to Lumina Africa Foundation', ['name' => $name, 'email' => $email, 'phone' => $phone]);
+        $r = \App\Services\DarazaPay\DarazaPayments::begin('donation', $donationId, $minor, $currency, ['name' => $name, 'email' => $email, 'phone' => $phone]);
         if (!$r['ok']) {
-            Flash::error('We could not open the secure payment page just now. Nothing was charged. Please try again in a minute, or use one of the other ways to give.');
+            Flash::error('We could not open the mobile-money page just now. Nothing was charged. Please try again in a minute.');
             return $this->redirect('donate');
         }
-        return $this->sendToGateway((string) $r['link']);
+        return $this->redirect((string) $r['url']);
     }
 
     /**
