@@ -11,8 +11,11 @@
                 <div class="ac-pending-msgs" role="region" aria-label="Sign-up fee">
                     <h2 class="ac-block__title"><?= icon('credit-card', 'icon--sm') ?> Sign-up fee: <?= e($fee['display']) ?></h2>
                     <p><strong>Your account is approved only after the sign-up fee is paid and confirmed.</strong> You pay securely online. Your registration number stays reserved.</p>
+                    <?php $payParts = []; ob_start(); ?>
                     <?php if (\App\Services\Academy\AcademyFees::mobileAvailable('signup')): ?><?= partial('partials/pay-banner', []) ?><form method="post" action="<?= e(url('academy/fee/pay-mobile')) ?>" style="margin-bottom:.75rem"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('phone', 'icon--sm') ?> Pay the sign-up fee with MTN or Airtel mobile money</button></form><?php endif; ?>
+<?php $payParts['mobile'] = ob_get_clean(); ob_start(); ?>
                     <?php if (!empty($feePesapal)): ?><form method="post" action="<?= e(url('academy/fee/pay')) ?>" style="margin-bottom:.75rem"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('lock', 'icon--sm') ?> Pay the sign-up fee with Pesapal</button></form><?php endif; ?>
+<?php $payParts['online'] = ob_get_clean(); ob_start(); ?>
                     <?php if (!empty($feeManual)): ?>
                         <div class="ac-paydetails">
                             <?php if ($feeManual['mobile'] !== ''): ?><h3 class="ac-block__title"><?= icon('smartphone', 'icon--sm') ?> Pay by mobile money</h3><?= nl2p($feeManual['mobile']) ?><?php endif; ?>
@@ -20,10 +23,12 @@
                             <p class="text-muted">Pay exactly <strong><?= e($fee['display']) ?></strong>, then tell us below that you paid.</p>
                         </div>
                     <?php endif; ?>
+<?php $payParts['manual'] = ob_get_clean(); ob_start(); ?>
                     <?php if (!empty($feeDaraza)): ?>
                         <p><a class="btn <?= !empty($feePesapal) ? 'btn--outline' : 'btn--cta' ?> btn--caps" href="<?= e($feeDaraza['url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('external-link', 'icon--sm') ?> <?= e($feeDaraza['label']) ?></a></p>
                         <p class="text-muted">After you pay on Daraza, the Academy team checks the payment and approves your account. This can take a little time. If you like, <a href="<?= e(url('academy/contact')) ?>">send us your Daraza transaction ID</a> to speed it up.</p>
                     <?php endif; ?>
+<?php $payParts['link'] = ob_get_clean(); foreach (\App\Services\Payments\PaymentOptions::ranked() as $payWay) { echo $payParts[$payWay] ?? ''; } ?>
                     <?php if ((!empty($feeManual) || !empty($feeDaraza)) && !empty($feeReportReady)): ?>
                         <?php if (!empty($feeReported)): ?>
                             <p class="opp-notice" role="status"><?= icon('check-circle', 'icon--sm') ?><span>You reported a payment with the transaction ID <strong><?= e($feeReported['fee_reference']) ?></strong> on <?= e(format_datetime($feeReported['fee_reported_at'], 'j M, H:i')) ?>. The Academy team is checking it. Your account is approved only after the payment is confirmed.</span></p>

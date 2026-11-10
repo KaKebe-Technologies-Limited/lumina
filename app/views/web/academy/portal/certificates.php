@@ -23,12 +23,17 @@ use App\Services\Academy\CertificateService;
                     <h3 class="ac-panel__title"><?= icon('clock', 'icon--sm') ?> <?= e($w['course_title']) ?></h3>
                     <?php if (\App\Services\Academy\AcademyFees::certDue($w) && ($certFee = \App\Services\Academy\AcademyFees::configured('cert'))): ?>
                         <p class="opp-notice ac-cert-wait"><?= icon('credit-card', 'icon--sm') ?> Your certificate is ready once the certificate fee of <strong><?= e($certFee['display']) ?></strong> is paid. You pay securely online.</p>
+                        <?php $certDz = \App\Services\Academy\AcademyFees::daraza('cert'); $payParts = []; ob_start(); ?>
                         <?php if (\App\Services\Academy\AcademyFees::mobileAvailable('cert')): ?><?= partial('partials/pay-banner', []) ?><form method="post" action="<?= e(url('academy/portal/certificates/' . (int) $w['id'] . '/pay-mobile')) ?>" style="margin-bottom:.75rem"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('phone', 'icon--sm') ?> Pay the certificate fee with MTN or Airtel mobile money</button></form><?php endif; ?>
-                        <?php $certDz = \App\Services\Academy\AcademyFees::daraza('cert'); if (\App\Services\Pesapal\PesapalPayments::ready()): ?><form method="post" action="<?= e(url('academy/portal/certificates/' . (int) $w['id'] . '/pay')) ?>" style="margin-bottom:.75rem"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('lock', 'icon--sm') ?> Pay the certificate fee with Pesapal</button></form><?php endif; ?>
+<?php $payParts['mobile'] = ob_get_clean(); ob_start(); ?>
+                        <?php if (\App\Services\Pesapal\PesapalPayments::ready()): ?><form method="post" action="<?= e(url('academy/portal/certificates/' . (int) $w['id'] . '/pay')) ?>" style="margin-bottom:.75rem"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('lock', 'icon--sm') ?> Pay the certificate fee with Pesapal</button></form><?php endif; ?>
+<?php $payParts['online'] = ob_get_clean(); ob_start(); ?>
                         <?php if (($certMan = \App\Services\Academy\AcademyFees::manual()) !== null): ?>
                             <div class="ac-paydetails"><?php if ($certMan['mobile'] !== ''): ?><h4>Mobile money</h4><?= nl2p($certMan['mobile']) ?><?php endif; ?><?php if ($certMan['bank'] !== ''): ?><h4>Bank transfer</h4><?= nl2p($certMan['bank']) ?><?php endif; ?><p class="text-muted">After paying, <a href="<?= e(url('academy/portal/messages')) ?>">send us the transaction ID</a>: the Academy team confirms it and releases your certificate.</p></div>
                         <?php endif; ?>
+<?php $payParts['manual'] = ob_get_clean(); ob_start(); ?>
                         <?php if ($certDz !== null): ?><p><a class="btn <?= \App\Services\Pesapal\PesapalPayments::ready() ? 'btn--outline' : 'btn--cta' ?> btn--caps" href="<?= e($certDz['url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('external-link', 'icon--sm') ?> <?= e($certDz['label']) ?></a></p><p class="text-muted">After you pay on Daraza, the Academy team checks the payment and releases your certificate. <a href="<?= e(url('academy/portal/messages')) ?>">Send us your Daraza transaction ID</a> to speed it up.</p><?php endif; ?>
+<?php $payParts['link'] = ob_get_clean(); foreach (\App\Services\Payments\PaymentOptions::ranked() as $payWay) { echo $payParts[$payWay] ?? ''; } ?>
                     <?php else: ?>
                     <p class="opp-notice ac-cert-wait"><?= e(CertificateService::waitingNotice()) ?></p>
                     <?php endif; ?>

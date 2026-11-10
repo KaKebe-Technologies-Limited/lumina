@@ -21,6 +21,43 @@ final class PaymentOptions
         'manual' => ['Bank and manual mobile-money details', 'Account numbers shown for the payer to pay by hand, then send the transaction ID.'],
     ];
 
+    /** The ways to pay as visitors meet them, with the default order (Admin > Payment options changes the order). */
+    public const WAYS = [
+        'mobile' => ['MTN and Airtel mobile money', 'Pay now with a phone: the payer approves on the phone (Daraza API). Switched on per place below.'],
+        'online' => ['Card and online (Pesapal, Flutterwave)', 'Visa, Mastercard and wallets on a secure hosted page.'],
+        'link'   => ['Daraza payment link', 'The "Pay with Daraza" button.'],
+        'manual' => ['Bank and manual mobile-money details', 'Account numbers shown for the payer to pay by hand.'],
+    ];
+
+    /** Position of a way in the list shown to visitors (1 = first). */
+    public static function rank(string $way): int
+    {
+        $d = array_search($way, array_keys(self::WAYS), true);
+        $v = (int) Settings::get('pay_rank_' . $way, '');
+        return $v >= 1 && $v <= 9 ? $v : (int) $d + 1;
+    }
+
+    /** The ways in the order visitors see them. @return list<string> */
+    public static function ranked(): array
+    {
+        $ways = array_keys(self::WAYS);
+        usort($ways, static fn(string $a, string $b): int => [self::rank($a), array_search($a, array_keys(self::WAYS), true)] <=> [self::rank($b), array_search($b, array_keys(self::WAYS), true)]);
+        return $ways;
+    }
+
+    /** @param array<string,int> $ranks way => position (1-9) */
+    public static function saveRanks(array $ranks): void
+    {
+        $save = [];
+        foreach (self::WAYS as $k => $_) {
+            if (isset($ranks[$k])) {
+                $save['pay_rank_' . $k] = (string) max(1, min(9, (int) $ranks[$k]));
+            }
+        }
+        Settings::setMany($save);
+        Settings::flush();
+    }
+
     public static function on(string $option): bool
     {
         return isset(self::OPTIONS[$option]) && (string) Settings::get('pay_opt_' . $option, '1') !== '0';

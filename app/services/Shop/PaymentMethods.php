@@ -153,6 +153,13 @@ final class PaymentMethods
         return self::problems($key) === [];
     }
 
+    /** Where this method sits among the ways to pay (Admin > Payment options > order); cash on delivery and booking come after all of them. */
+    private static function wayRank(string $key): int
+    {
+        $way = ['mobile' => 'mobile', 'pesapal' => 'online', 'flutterwave' => 'online', 'daraza' => 'link', 'momo' => 'manual', 'bank' => 'manual'][$key] ?? null;
+        return $way === null ? 10 : \App\Services\Payments\PaymentOptions::rank($way);
+    }
+
     public static function enabled(string $key): bool
     {
         if (!self::isKey($key)) {
@@ -185,7 +192,7 @@ final class PaymentMethods
                 'enabled'      => self::enabled($key),
                 'ready'        => self::ready($key),
                 'problems'     => $problems,
-                'sort'         => $key === 'mobile' ? -10 : ShopSettings::int('shop_pay_' . $key . '_sort'),
+                'sort'         => self::wayRank($key) * 1000 + ($key === 'mobile' ? 0 : ShopSettings::int('shop_pay_' . $key . '_sort')),
                 'details'      => self::details($key),
             ];
         }

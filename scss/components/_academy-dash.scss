@@ -225,3 +225,5 @@
 .pd-chan { display: inline-flex; align-items: center; gap: .35rem; font-size: .85rem; &--mobile { color: #8a6a00; } &--online { color: #1d5fb8; } &--manual { color: #4d5a73; } }
 .pd-amt { font-weight: 700; color: #14753a; &--out { color: #b4530a; } }
 @media (max-width: 560px) { .pd-range { border-radius: 18px; } .pd-bars { height: 8rem; } }
+.pd-way { display: flex; gap: .8rem; align-items: flex-start; padding: .6rem .7rem; margin-bottom: .5rem; border: 1px solid #e3e7f0; border-radius: 14px; background: #fafbfe; .pd-way__rank .select { width: 4.2rem; } .pd-way__body { flex: 1 1 auto; } }
+.pay-tab { display: grid; gap: 1rem; .pay-tab__way { display: grid; gap: .35rem; justify-items: start; padding: .9rem 1rem; border: 1px solid #e3e7f0; border-radius: 16px; background: #fff; width: 100%; } }

@@ -39,7 +39,7 @@ if (!function_exists('check')) {
 
 echo "-- payment options --\n";
 $keys = ['pay_opt_online', 'pay_opt_link', 'pay_opt_manual', 'daraza_api_shop_on', 'daraza_api_project_on', 'daraza_api_membership_on', 'daraza_api_donation_on', 'daraza_api_usd_rate',
-    'daraza_donate_on', 'daraza_url', 'daraza_label', 'shop_open', 'shop_pay_momo_enabled', 'academy_pay_mobile_money', 'membership_mobile_money'];
+    'daraza_donate_on', 'daraza_url', 'daraza_label', 'pay_rank_mobile', 'pay_rank_online', 'pay_rank_link', 'pay_rank_manual', 'shop_open', 'shop_pay_momo_enabled', 'academy_pay_mobile_money', 'membership_mobile_money'];
 $prev = [];
 foreach ($keys as $k) {
     $prev[$k] = Settings::get($k, '');
@@ -110,6 +110,19 @@ $c = DarazaPayments::collect($ref, '0772123456', 0);
 $o2 = Database::one('SELECT status, payment_status, payment_method FROM shop_orders WHERE id = ?', [(int) $order['id']]);
 check('shop: when Daraza confirms, the order is PAID and recorded in the shop ledger', $c['state'] === 'paid' && $o2['payment_status'] === 'paid' && (int) Database::value("SELECT COUNT(*) FROM shop_payments WHERE order_id = ? AND status = 'success'", [(int) $order['id']], 0) === 1, json_encode($o2));
 check('shop: a paid order cannot be paid again', !DarazaPayments::beginShop($order)['ok']);
+
+// ---- the order the ways are shown in
+check('order: by default mobile money, card, Daraza link, then manual details', PaymentOptions::ranked() === ['mobile', 'online', 'link', 'manual']);
+PaymentOptions::saveRanks(['mobile' => 3, 'online' => 1, 'link' => 4, 'manual' => 2]);
+check('order: the admin can change it (card first, then manual, then mobile money, then the link)', PaymentOptions::ranked() === ['online', 'manual', 'mobile', 'link'], json_encode(PaymentOptions::ranked()));
+Settings::setMany(['shop_pay_momo_enabled' => '1', 'shop_momo_mtn_number' => '0777000111']);
+Settings::flush();
+$keysInOrder = array_column(PaymentMethods::all(), 'key');
+check('order: the shop checkout follows it (card gateways before manual momo, momo before mobile money, Daraza link after)', array_search('pesapal', $keysInOrder, true) < array_search('momo', $keysInOrder, true) && array_search('momo', $keysInOrder, true) < array_search('mobile', $keysInOrder, true) && array_search('mobile', $keysInOrder, true) < array_search('daraza', $keysInOrder, true), implode(',', $keysInOrder));
+PaymentOptions::saveRanks(['mobile' => 0, 'online' => 12]);
+check('order: a position outside 1-9 is kept inside the range', PaymentOptions::rank('mobile') === 1 && PaymentOptions::rank('online') === 9);
+Settings::setMany(['pay_rank_mobile' => '', 'pay_rank_online' => '', 'pay_rank_link' => '', 'pay_rank_manual' => '']);
+Settings::flush();
 
 // ---- gifts to a project, and donations
 Database::execute("INSERT INTO donations (donor_name, donor_email, amount, currency, method, status, source) VALUES ('Zz Po Donor','zz-po-d@example.test',30000,'UGX','mobile_money','pledged','pledge_form')");

@@ -32545,3 +32545,38 @@ input:checked + .fund-card__body, .fund-card.is-picked .fund-card__body {
     height: 8rem;
   }
 }
+
+.pd-way {
+  display: flex;
+  gap: .8rem;
+  align-items: flex-start;
+  padding: .6rem .7rem;
+  margin-bottom: .5rem;
+  border: 1px solid #e3e7f0;
+  border-radius: 14px;
+  background: #fafbfe;
+}
+
+.pd-way .pd-way__rank .select {
+  width: 4.2rem;
+}
+
+.pd-way .pd-way__body {
+  flex: 1 1 auto;
+}
+
+.pay-tab {
+  display: grid;
+  gap: 1rem;
+}
+
+.pay-tab .pay-tab__way {
+  display: grid;
+  gap: .35rem;
+  justify-items: start;
+  padding: .9rem 1rem;
+  border: 1px solid #e3e7f0;
+  border-radius: 16px;
+  background: #fff;
+  width: 100%;
+}

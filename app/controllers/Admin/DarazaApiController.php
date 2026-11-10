@@ -29,6 +29,7 @@ final class DarazaApiController extends AdminController
         return $this->render('admin/daraza/api', [
             'ready' => $ok, 'hasKey' => DarazaApi::hasKey(), 'mode' => DarazaApi::mode(), 'places' => $places, 'rate' => DarazaPayments::rate(),
             'options' => array_map(static fn(string $k): array => ['label' => PaymentOptions::OPTIONS[$k][0], 'help' => PaymentOptions::OPTIONS[$k][1], 'on' => PaymentOptions::on($k)], array_combine(array_keys(PaymentOptions::OPTIONS), array_keys(PaymentOptions::OPTIONS))),
+            'ways' => array_map(static fn(string $k): array => ['key' => $k, 'label' => PaymentOptions::WAYS[$k][0], 'help' => PaymentOptions::WAYS[$k][1], 'rank' => PaymentOptions::rank($k)], PaymentOptions::ranked()),
             'rows' => $ok ? DarazaPayments::recent(40) : [], 'balance' => null,
         ], ['title' => 'Payment options', 'nav' => 'daraza_api', 'breadcrumbs' => [['Payment options', null]]]);
     }
@@ -53,6 +54,7 @@ final class DarazaApiController extends AdminController
             foreach (array_keys(PaymentOptions::OPTIONS) as $k) {
                 $opts[$k] = $request->bool('opt_' . $k);
             }
+            PaymentOptions::saveRanks(array_combine(array_keys(PaymentOptions::WAYS), array_map(static fn(string $k): int => $request->int('rank_' . $k), array_keys(PaymentOptions::WAYS))));
         }
         if (!in_array($preset, ['mobile_only', 'restore'], true)) {
             $save['daraza_api_usd_rate'] = (string) max(0, min(100000, $request->int('usd_rate')));

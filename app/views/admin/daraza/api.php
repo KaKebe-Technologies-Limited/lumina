@@ -31,9 +31,19 @@ DARAZA_ENV=sandbox</pre>
                 <input class="input" id="usd-rate" name="usd_rate" type="number" min="0" max="100000" value="<?= (int) $rate ?>" placeholder="3700">
                 <div class="field__help">Mobile money is charged in UGX. A price or fee set in USD is converted with this rate and rounded up to the next 100 UGX. Leave 0 to offer mobile money only for amounts set in UGX.</div></div>
 
-            <h3 class="ad-letter-sub">The earlier ways to pay</h3>
-            <p class="text-muted">Switch an earlier way off and it disappears from the whole website (donations, shop, projects, membership, Academy). Nothing is deleted: its settings, links and keys stay, and you can switch it back on whenever you like.</p>
-            <?php foreach ($options as $k => $o): ?><label class="check"><input type="checkbox" name="opt_<?= e($k) ?>" value="1" <?= $o['on'] ? 'checked' : '' ?>> <span><strong><?= e($o['label']) ?></strong><br><small class="text-muted"><?= e($o['help']) ?></small></span></label><?php endforeach; ?>
+            <h3 class="ad-letter-sub">Ways to pay, in the order visitors see them</h3>
+            <p class="text-muted">Every way that is switched on appears together on the donate page, the shop checkout, project gifts and the Academy fee pages. Give each a position (1 = shown first and as the main button). A way you switch off disappears from the whole website; nothing is deleted, so its settings, links and keys stay and you can switch it back on whenever you like.</p>
+            <?php foreach ($ways as $w): $k = $w['key']; ?>
+                <div class="pd-way">
+                    <label class="pd-way__rank"><span class="visually-hidden">Position of <?= e($w['label']) ?></span>
+                        <select class="select" name="rank_<?= e($k) ?>"><?php for ($i = 1; $i <= count($ways); $i++): ?><option value="<?= $i ?>"<?= (int) $w['rank'] === $i ? ' selected' : '' ?>><?= $i ?></option><?php endfor; ?></select></label>
+                    <?php if (isset($options[$k])): ?>
+                        <label class="check pd-way__body"><input type="checkbox" name="opt_<?= e($k) ?>" value="1" <?= $options[$k]['on'] ? 'checked' : '' ?>> <span><strong><?= e($w['label']) ?></strong><br><small class="text-muted"><?= e($w['help']) ?></small></span></label>
+                    <?php else: ?>
+                        <div class="pd-way__body"><strong><?= e($w['label']) ?></strong><br><small class="text-muted"><?= e($w['help']) ?></small></div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
             <button class="btn btn--primary btn--sm" type="submit">Save</button>
         </form>
         <form method="post" action="<?= e(url('admin/daraza/api')) ?>" class="rc-kpi-row" style="margin-top:1rem"><?= csrf_field() ?>
