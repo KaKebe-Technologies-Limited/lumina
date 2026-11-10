@@ -1,20 +1,26 @@
 <?php
 /**
- * Recruitment panel on the admin page of one application (ambassador, job or volunteer). Vars: $scope, $row (the application row).
- * Shows the tracking number, the portrait and CV, the KPI scoring (a click on 0-5 for each criterion) and the history of the stages.
+ * Recruitment panel on the admin page of one application (ambassador, job or volunteer). Vars: $scope, $row (the application row), $parts (files | judge | history; default all).
+ * Judging: the system scores what it can from the form (marked "from the form"), the judge clicks the rest, can switch a criterion off for this applicant, add a criterion,
+ * write a comment per criterion and an overall feedback (optionally e-mailed to the applicant).
  */
+use App\Services\Recruitment\AutoScore;
 use App\Services\Recruitment\Recruitment;
 
 $parts = $parts ?? ['files', 'judge', 'history'];
 $cfg = Recruitment::SCOPES[$scope];
 $id = (int) $row['id'];
+Recruitment::ensureAuto($scope, $row);
 $kpis = Recruitment::kpis($scope);
-$points = Recruitment::scores($scope, $id);
-$pct = $row['score_pct'] ?? null;
+$rows = Recruitment::scoreRows($scope, $id);
+$eval = Recruitment::evaluate($scope, $id);
+$pct = $eval['pct'];
 $level = Recruitment::threshold();
 $history = Recruitment::history($scope, $id);
+$feedback = Recruitment::feedback($scope, $id);
 $hasPortrait = trim((string) ($row['photo_path'] ?? '')) !== '';
 $hasCv = trim((string) ($row['cv_path'] ?? '')) !== '';
+$back = $cfg['admin'] . $id;
 $this->start('scripts'); ?><script src="<?= e(asset('js/admin-recruitment.js')) ?>" defer></script><?php $this->end();
 ?>
 <?php if (in_array('files', $parts, true)): ?>
@@ -44,25 +50,45 @@ $this->start('scripts'); ?><script src="<?= e(asset('js/admin-recruitment.js')) 
         <div class="card__body"><p class="text-muted">No criteria are set for this role yet. <a href="<?= e(url('admin/recruitment/criteria', ['scope' => $scope])) ?>">Set the criteria</a>.</p></div>
     <?php else: ?>
         <form method="post" action="<?= e(url('admin/recruitment/' . $scope . '/' . $id . '/judge')) ?>" data-rc-judge data-rc-level="<?= (int) $level ?>">
-            <?= csrf_field() ?>
+            <?= csrf_field() ?><input type="hidden" name="use_posted" value="1">
             <div class="card__body">
-                <p class="text-muted">Click a score from 0 (none) to <?= (int) Recruitment::MAX_POINTS ?> (excellent) for each criterion. At <strong><?= (int) $level ?>%</strong> or more, with every criterion scored, the applicant is invited for an interview automatically. You can always move an applicant forward yourself, whatever the score.</p>
-                <?php foreach ($kpis as $k): $kid = (int) $k['id']; ?>
-                    <fieldset class="rc-kpi">
-                        <legend class="rc-kpi__label"><?= e($k['label']) ?> <span class="rc-kpi__w">x<?= (int) $k['weight'] ?></span></legend>
+                <p class="text-muted">The system has already scored what it can from the form (<span class="rc-tag">from the form</span>). Check those points, click the others, and untick a criterion to leave it out for this applicant. At <strong><?= (int) $level ?>%</strong> or more, with every criterion in use scored, the applicant is invited for an interview automatically; you can always move them forward yourself.</p>
+                <?php foreach ($kpis as $k): $kid = (int) $k['id']; $sr = $rows[$kid] ?? null; $on = empty($sr['skipped']); $auto = !empty($k['auto_key']);
+                    $reason = $auto ? (AutoScore::points((string) $k['auto_key'], $row)[1] ?? '') : ''; ?>
+                    <fieldset class="rc-kpi<?= $on ? '' : ' is-off' ?>" data-rc-kpi>
+                        <legend class="rc-kpi__label">
+                            <label class="rc-use"><input type="checkbox" name="use[<?= $kid ?>]" value="1" <?= $on ? 'checked' : '' ?> data-rc-use> <span><?= e($k['label']) ?></span></label>
+                            <span class="rc-kpi__w">x<?= (int) $k['weight'] ?></span>
+                            <?php if ($auto && !empty($sr['auto'])): ?><span class="rc-tag">from the form</span><?php elseif ($auto): ?><span class="rc-tag rc-tag--edited">changed by you</span><?php endif; ?>
+                        </legend>
+                        <?php if ($reason !== ''): ?><p class="rc-kpi__why"><?= e($reason) ?></p><?php endif; ?>
                         <div class="rc-kpi__scale" role="radiogroup" aria-label="<?= e($k['label']) ?>">
                             <?php for ($i = 0; $i <= Recruitment::MAX_POINTS; $i++): ?>
-                                <label class="rc-pt"><input type="radio" name="points[<?= $kid ?>]" value="<?= $i ?>" data-w="<?= (int) $k['weight'] ?>" <?= isset($points[$kid]) && $points[$kid] === $i ? 'checked' : '' ?>><span><?= $i ?></span></label>
+                                <label class="rc-pt"><input type="radio" name="points[<?= $kid ?>]" value="<?= $i ?>" data-w="<?= (int) $k['weight'] ?>" <?= $sr !== null && (int) $sr['points'] === $i ? 'checked' : '' ?>><span><?= $i ?></span></label>
                             <?php endfor; ?>
                         </div>
+                        <input class="input rc-kpi__comment" type="text" name="comments[<?= $kid ?>]" value="<?= e((string) ($sr['comment'] ?? '')) ?>" maxlength="300" placeholder="Comment on this criterion (optional, private)" aria-label="Comment on <?= e($k['label']) ?>">
                     </fieldset>
                 <?php endforeach; ?>
                 <p class="rc-live" data-rc-live aria-live="polite"></p>
+
+                <div class="field"><label class="field__label" for="rc-feedback">Feedback on this application</label>
+                    <textarea class="textarea" id="rc-feedback" name="feedback" rows="4" maxlength="4000" placeholder="Strengths, gaps, what to ask at the interview..."><?= e($feedback) ?></textarea></div>
+                <label class="check"><input type="checkbox" name="send_feedback" value="1"> E-mail this feedback to the applicant</label>
             </div>
-            <div class="card__footer"><button class="btn btn--primary" type="submit"><?= icon('check', 'icon--sm') ?> Save the scores</button>
-                <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/recruitment/criteria', ['scope' => $scope])) ?>">Edit the criteria</a></div>
+            <div class="card__footer"><button class="btn btn--primary" type="submit"><?= icon('check', 'icon--sm') ?> Save the scores and feedback</button>
+                <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/recruitment/criteria', ['scope' => $scope])) ?>">All criteria</a></div>
         </form>
     <?php endif; ?>
+    <details class="rc-add">
+        <summary>Add a criterion for every <?= e(strtolower($cfg['title'] === 'Job applications' ? 'job applicant' : rtrim($cfg['title'], 's'))) ?></summary>
+        <form method="post" action="<?= e(url('admin/recruitment/criteria')) ?>" class="rc-kpi-row"><?= csrf_field() ?>
+            <input type="hidden" name="scope" value="<?= e($scope) ?>"><input type="hidden" name="id" value="0"><input type="hidden" name="return" value="<?= e($back) ?>"><input type="hidden" name="sort_order" value="900">
+            <input class="input" name="label" maxlength="190" placeholder="For example: Knowledge of our programmes" aria-label="New criterion" required>
+            <label class="rc-kpi-row__w">Weight <input class="input" type="number" name="weight" min="1" max="10" value="2"></label>
+            <button class="btn btn--primary btn--sm" type="submit">Add</button>
+        </form>
+    </details>
 </section>
 <?php endif; ?>
 

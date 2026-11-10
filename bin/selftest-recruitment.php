@@ -191,6 +191,43 @@ foreach ($vk as $k) {
 $r = Recruitment::judge('volunteer', $volId, $p, null);
 check('volunteer: a top score invites them for an interview', $r['invited'] && Database::value('SELECT status FROM involvement_requests WHERE id = ?', [$volId]) === 'interview');
 
+// ---- automatic criteria, switching criteria off, feedback
+$vol2 = Database::insert('involvement_requests', ['name' => 'Zz Rc Auto', 'email' => 'zz-rc-auto@example.test', 'involvement_type' => 'volunteer', 'message' => str_repeat('I want to serve the community every weekend. ', 12), 'phone' => '+256700111222', 'cv_path' => 'cv/x.pdf', 'photo_path' => 'recruit/portraits/x.jpg', 'status' => 'new']);
+Recruitment::assignRef('volunteer', (int) $vol2);
+Recruitment::autoScore('volunteer', (int) $vol2);
+$rows2 = Recruitment::scoreRows('volunteer', (int) $vol2);
+$autoKpis = array_filter(Recruitment::kpis('volunteer'), static fn($k) => !empty($k['auto_key']));
+check('auto: volunteer criteria with an automatic key exist and were scored from the form', count($autoKpis) >= 2 && count(array_filter($rows2, static fn($r) => (int) $r['auto'] === 1)) === count($autoKpis), json_encode(array_keys($rows2)));
+$msgKpi = current(array_filter($autoKpis, static fn($k) => $k['auto_key'] === 'v_motivation'));
+check('auto: a long message earns 5/5 for motivation, and nobody is invited by the automatic scoring', (int) $rows2[(int) $msgKpi['id']]['points'] === 5 && Database::value('SELECT status FROM involvement_requests WHERE id = ?', [$vol2]) === 'new');
+$ev = Recruitment::evaluate('volunteer', (int) $vol2);
+check('auto: the percentage is provisional until every criterion in use is scored', $ev['pct'] !== null && !$ev['complete']);
+$manual = array_values(array_filter(Recruitment::kpis('volunteer'), static fn($k) => empty($k['auto_key'])));
+check('auto: there are also manual criteria for the judge', count($manual) >= 1);
+// the judge switches every manual criterion off for this applicant: only the automatic ones count, so the score is complete and (5/5 and ready) reaches the level
+$use = [];
+foreach ($autoKpis as $k) {
+    $use[(int) $k['id']] = 1;
+}
+$r = Recruitment::judge('volunteer', (int) $vol2, [], null, ['use' => $use, 'feedback' => 'Strong motivation; ask about weekends.', 'send_feedback' => true]);
+check('judge: criteria switched off are left out, the score is complete and reaches the interview level', $r['complete'] && $r['pct'] >= 70 && $r['invited'], json_encode($r));
+check('judge: the feedback was saved and e-mailed', Recruitment::feedback('volunteer', (int) $vol2) === 'Strong motivation; ask about weekends.' && $r['feedback_mailed'] === true);
+$rowsAfter = Recruitment::scoreRows('volunteer', (int) $vol2);
+$off = (int) $manual[0]['id'];
+check('judge: the switched-off criterion is stored as skipped', !empty($rowsAfter[$off]['skipped']) || !isset($rowsAfter[$off]));
+$kid = (int) $msgKpi['id'];
+Recruitment::judge('volunteer', (int) $vol2, [$kid => 2], null, ['use' => $use, 'comments' => [$kid => 'Too short on detail']]);
+$rowsAfter = Recruitment::scoreRows('volunteer', (int) $vol2);
+check('judge: changing a suggested point makes it the judge\'s own (and the comment is kept)', (int) $rowsAfter[$kid]['points'] === 2 && (int) $rowsAfter[$kid]['auto'] === 0 && $rowsAfter[$kid]['comment'] === 'Too short on detail');
+Recruitment::autoScore('volunteer', (int) $vol2);
+check('auto: re-running the automatic scoring never overwrites the judge\'s point', (int) Recruitment::scoreRows('volunteer', (int) $vol2)[$kid]['points'] === 2);
+Recruitment::saveKpi('volunteer', 0, 'ZZ extra criterion', 2, 900, true);
+check('an administrator can add a criterion', (int) Database::value("SELECT COUNT(*) FROM recruit_kpis WHERE label = 'ZZ extra criterion'", [], 0) === 1);
+Database::execute("DELETE FROM recruit_scores WHERE scope = 'volunteer' AND application_id = ?", [$vol2]);
+Database::execute("DELETE FROM recruit_feedback WHERE scope = 'volunteer' AND application_id = ?", [$vol2]);
+Database::execute("DELETE FROM recruit_kpis WHERE label = 'ZZ extra criterion'");
+Database::execute("DELETE FROM involvement_requests WHERE id = ?", [$vol2]);
+
 // ---- tracking page
 $t = Recruitment::track((string) $amb['ref_no'], 'zz-rc-amb@example.test');
 check('track: the number and e-mail show the stage', $t['found'] && $t['label'] !== '' && $t['tone'] === 'good', json_encode($t));

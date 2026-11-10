@@ -1,18 +1,28 @@
-/* Admin > recruitment panel: shows the percentage while the judge clicks the scores (the server works it out again when saving). */
+/* Admin > recruitment panel: shows the percentage while the judge clicks the scores, and leaves out the criteria that are switched off for this applicant
+   (the server works everything out again when saving). */
 (function () {
   'use strict';
   var form = document.querySelector('[data-rc-judge]');
   if (!form) return;
   var live = form.querySelector('[data-rc-live]');
   var level = parseInt(form.getAttribute('data-rc-level') || '70', 10);
-  var groups = {};
-  form.querySelectorAll('input[type=radio]').forEach(function (r) { groups[r.name] = parseInt(r.getAttribute('data-w') || '1', 10); });
+
   function update() {
     var sum = 0, max = 0, done = 0, total = 0;
-    Object.keys(groups).forEach(function (name) {
+    form.querySelectorAll('[data-rc-kpi]').forEach(function (box) {
+      var use = box.querySelector('[data-rc-use]');
+      var on = !use || use.checked;
+      box.classList.toggle('is-off', !on);
+      box.querySelectorAll('input[type=radio]').forEach(function (r) { r.disabled = !on; });
+      if (!on) return;
       total++;
-      var c = form.querySelector('input[name="' + name.replace(/"/g, '') + '"]:checked');
-      if (c) { sum += parseInt(c.value, 10) * groups[name]; max += 5 * groups[name]; done++; }
+      var c = box.querySelector('input[type=radio]:checked');
+      if (c) {
+        var w = parseInt(c.getAttribute('data-w') || '1', 10);
+        sum += parseInt(c.value, 10) * w;
+        max += 5 * w;
+        done++;
+      }
     });
     if (!live) return;
     if (!max) { live.textContent = ''; return; }

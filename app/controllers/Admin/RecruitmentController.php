@@ -30,7 +30,16 @@ final class RecruitmentController extends AdminController
         $row = Recruitment::row($scope, $id) ?? throw new HttpException(404, 'Not found');
         Recruitment::install();
         $points = (array) $request->post('points', []);
-        $r = Recruitment::judge($scope, $id, $points, $this->userId());
+        $opts = ['comments' => (array) $request->post('comments', []), 'feedback' => (string) $request->post('feedback', ''), 'send_feedback' => $request->bool('send_feedback')];
+        if ($request->string('use_posted') === '1') {
+            $opts['use'] = (array) $request->post('use', []);            // the criteria left ticked; the others are switched off for this applicant
+        }
+        $r = Recruitment::judge($scope, $id, $points, $this->userId(), $opts);
+        if ($r['feedback_mailed'] === true) {
+            Flash::success('Your feedback was e-mailed to the applicant.');
+        } elseif ($r['feedback_mailed'] === false) {
+            Flash::error('The feedback could not be e-mailed.');
+        }
         $this->audit('recruitment.judge', 'recruitment', $id, 'Scored the ' . Recruitment::SCOPES[$scope]['noun'] . ' of "' . $row['name'] . '"', ['pct' => $r['pct']]);
         if ($r['pct'] === null) {
             Flash::info('Click a score for at least one criterion.');
@@ -96,7 +105,8 @@ final class RecruitmentController extends AdminController
         $scope = $this->scope($request->string('scope'));
         Recruitment::saveKpi($scope, $request->int('id'), $request->string('label'), $request->int('weight', 1), $request->int('sort_order', 100), $request->bool('is_active') || $request->int('id') === 0);
         Flash::success('The criterion was saved.');
-        return $this->redirect('admin/recruitment/criteria?scope=' . $scope);
+        $back = $request->string('return');
+        return $this->redirect(preg_match('~^admin/[a-z]+/\d+$~', $back) === 1 ? $back . '#judge' : 'admin/recruitment/criteria?scope=' . $scope);
     }
 
     public function deleteCriterion(Request $request, int|string $id): Response

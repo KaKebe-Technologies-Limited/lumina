@@ -31943,3 +31943,59 @@ input:checked + .fund-card__body, .fund-card.is-picked .fund-card__body {
 .ap-note {
   text-align: center;
 }
+
+.rc-use {
+  display: inline-flex;
+  gap: .5rem;
+  align-items: flex-start;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.rc-use input {
+  margin-top: .3rem;
+}
+
+.rc-tag {
+  display: inline-block;
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  background: #e8f0fe;
+  color: #1a4fa0;
+  border-radius: 999px;
+  padding: .1rem .55rem;
+  margin-left: .35rem;
+}
+
+.rc-tag--edited {
+  background: #fff2d6;
+  color: #8a5a00;
+}
+
+.rc-kpi__why {
+  margin: 0 0 .45rem;
+  font-size: .85rem;
+  color: #5b6478;
+}
+
+.rc-kpi.is-off {
+  opacity: .5;
+}
+
+.rc-kpi__comment {
+  margin-top: .5rem;
+  font-size: .9rem;
+}
+
+.rc-add {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.rc-add summary {
+  cursor: pointer;
+  color: #a5521a;
+  font-weight: 600;
+  margin-bottom: .6rem;
+}

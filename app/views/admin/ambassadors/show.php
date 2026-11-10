@@ -22,7 +22,10 @@ $hasPortrait = trim((string) ($r['photo_path'] ?? '')) !== '';
 $roles = array_map(static fn(string $k): string => Amb::ROLES[$k] ?? $k, Amb::jsonList($r['roles']));
 $pledgeTypes = Amb::pledgeList($r);
 $items = array_map(static fn(string $k): string => Amb::INKIND[$k] ?? $k, Amb::jsonList($r['inkind_items'] ?? ''));
-$pct = $r['score_pct'] ?? null;
+Recruitment::ensureAuto('ambassador', $r);
+$eval = Recruitment::evaluate('ambassador', $id);
+$pct = $eval['pct'];
+$scoreDone = $eval['complete'];
 $level = Recruitment::threshold();
 $labels = Recruitment::statuses('ambassador');
 $steps = ['new' => 'Received', 'reviewing' => 'Under review', 'interview' => 'Interview', 'approved' => 'Approved'];
@@ -43,8 +46,8 @@ $this->start('scripts'); ?>
                 <p class="ra-hero__meta"><?= icon('globe', 'icon--sm') ?> <?= e($location) ?><?php if (!empty($r['occupation'])): ?> &middot; <?= e($r['occupation']) ?><?= !empty($r['organisation']) ? ', ' . e($r['organisation']) : '' ?><?php endif; ?></p>
                 <p class="ra-hero__meta text-muted">Applied <?= e(format_datetime($r['created_at'], 'j F Y, H:i')) ?><?= $r['reviewed_at'] ? ' &middot; last changed ' . e(format_datetime($r['reviewed_at'], 'j M Y')) . ($reviewer !== '' ? ' by ' . e($reviewer) : '') : '' ?></p>
             </div>
-            <div class="ra-score <?= $pct !== null && (float) $pct >= $level ? 'is-pass' : '' ?>" title="Weighted score of the judging criteria">
-                <?php if ($pct !== null): ?><strong><?= e(rtrim(rtrim(number_format((float) $pct, 1), '0'), '.')) ?>%</strong><span>score</span>
+            <div class="ra-score <?= $scoreDone && $pct !== null && (float) $pct >= $level ? 'is-pass' : '' ?>" title="Weighted score of the judging criteria<?= $scoreDone ? '' : ' (provisional: not every criterion is scored yet)' ?>">
+                <?php if ($pct !== null): ?><strong><?= e(rtrim(rtrim(number_format((float) $pct, 1), '0'), '.')) ?>%</strong><span><?= $scoreDone ? 'score' : 'so far' ?></span>
                 <?php else: ?><strong>-</strong><span>not scored</span><?php endif; ?>
             </div>
         </div>

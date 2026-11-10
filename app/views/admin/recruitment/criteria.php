@@ -1,7 +1,7 @@
 <?php
 /** Admin > Recruitment criteria. Vars: $ready, $scope, $scopes, $kpis (all, incl. switched off), $threshold. */
 ?>
-<?= partial('partials/admin/page-header', ['title' => 'Recruitment criteria', 'subtitle' => 'The KPIs used to judge ambassadors, job applicants and volunteers. Each is scored 0 to 5 with one click; the weights turn the scores into a percentage.', 'actions' => [['label' => 'Back', 'url' => url($scopes[$scope]['list']), 'icon' => 'arrow-left', 'class' => 'btn--ghost']]]) ?>
+<?= partial('partials/admin/page-header', ['title' => 'Recruitment criteria', 'subtitle' => 'The KPIs used to judge ambassadors, job applicants and volunteers. Criteria marked "from the form" are scored by the system from what the applicant wrote; the others are scored by the judge. Each is scored 0 to 5; the weights turn the scores into a percentage. A judge can switch any criterion off for one applicant.', 'actions' => [['label' => 'Back', 'url' => url($scopes[$scope]['list']), 'icon' => 'arrow-left', 'class' => 'btn--ghost']]]) ?>
 <?php if (!$ready): ?>
     <div class="alert alert--warning" role="status">The recruitment tables could not be created automatically. Import <code>database/updates/2026-11-recruitment.sql</code> in phpMyAdmin, then reload this page.</div>
 <?php else: ?>
@@ -14,7 +14,7 @@
         <?php foreach ($kpis as $k): ?>
             <form method="post" action="<?= e(url('admin/recruitment/criteria')) ?>" class="rc-kpi-row"><?= csrf_field() ?>
                 <input type="hidden" name="scope" value="<?= e($scope) ?>"><input type="hidden" name="id" value="<?= (int) $k['id'] ?>">
-                <input class="input" name="label" value="<?= e($k['label']) ?>" maxlength="190" aria-label="Criterion">
+                <input class="input" name="label" value="<?= e($k['label']) ?>" maxlength="190" aria-label="Criterion"><?php if (!empty($k['auto_key'])): ?><span class="rc-tag" title="The system scores this from the application form; the judge can change the points or switch it off for an applicant">from the form</span><?php endif; ?>
                 <label class="rc-kpi-row__w">Weight <input class="input" type="number" name="weight" min="1" max="10" value="<?= (int) $k['weight'] ?>"></label>
                 <label class="rc-kpi-row__w">Order <input class="input" type="number" name="sort_order" value="<?= (int) $k['sort_order'] ?>"></label>
                 <label class="check"><input type="checkbox" name="is_active" value="1" <?= $k['is_active'] ? 'checked' : '' ?>> Used</label>

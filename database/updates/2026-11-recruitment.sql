@@ -25,3 +25,14 @@ ALTER TABLE `involvement_requests` MODIFY `status` ENUM('new','contacted','in_pr
 UPDATE `ambassador_applications` SET ref_no = CONCAT('AMB', '-', YEAR(created_at), '-', LPAD(id, 4, '0')) WHERE ref_no IS NULL;
 UPDATE `applications` SET ref_no = CONCAT('JOB', '-', YEAR(created_at), '-', LPAD(id, 4, '0')) WHERE ref_no IS NULL;
 UPDATE `involvement_requests` SET ref_no = CONCAT('VOL', '-', YEAR(created_at), '-', LPAD(id, 4, '0')) WHERE ref_no IS NULL;
+
+-- Automatic criteria, switching criteria off per applicant, comments and feedback (added later; run each ALTER once, ignore "Duplicate column" errors)
+CREATE TABLE IF NOT EXISTS `recruit_feedback` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT, `scope` VARCHAR(12) NOT NULL, `application_id` INT UNSIGNED NOT NULL, `feedback` TEXT NULL, `updated_by` INT UNSIGNED NULL,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (`id`), UNIQUE KEY `uq_recruit_feedback` (`scope`, `application_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+ALTER TABLE `recruit_kpis` ADD COLUMN `auto_key` VARCHAR(30) NULL;
+ALTER TABLE `recruit_scores` ADD COLUMN `auto` TINYINT(1) NOT NULL DEFAULT 0, ADD COLUMN `skipped` TINYINT(1) NOT NULL DEFAULT 0, ADD COLUMN `comment` VARCHAR(300) NULL;
+-- (the automatic criteria themselves are added by the page on first use)
+ALTER TABLE `ambassador_applications` ADD COLUMN `profile_token` VARCHAR(64) NULL, ADD UNIQUE KEY `uq_ambassador_profile_token` (`profile_token`);
+UPDATE `ambassador_applications` SET profile_token = SHA2(CONCAT(id, UUID(), RAND()), 256) WHERE profile_token IS NULL;

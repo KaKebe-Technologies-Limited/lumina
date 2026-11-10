@@ -38,10 +38,11 @@ final class Recruitment
                          'contacted' => 'Contacted', 'in_progress' => 'In progress', 'closed' => 'Closed'],
     ];
 
+    /** Criteria that need a person (reading the CV, the interview). The ones the system scores from the form are in AutoScore::KEYS. */
     private const DEFAULT_KPIS = [
-        'ambassador' => [['Motivation and understanding of our mission', 3], ['Reach: the people and organisations they can influence', 3], ['Fundraising or in-kind pledge', 3], ['Communication and presence (profile, CV)', 2], ['Time they can give', 1]],
-        'job'        => [['Relevant experience (CV)', 3], ['Qualifications and skills for the role', 3], ['Quality of the cover letter', 2], ['Fit with our mission and values', 2], ['Availability and professionalism', 1]],
-        'volunteer'  => [['Motivation to serve', 3], ['Skills they can offer', 2], ['Availability and reliability', 2], ['Experience (CV)', 2], ['Fit with our mission and values', 2]],
+        'ambassador' => [['Interview: commitment and credibility', 3]],
+        'job'        => [['Relevant experience (read the CV)', 3], ['Qualifications and skills for the role (read the CV)', 3], ['Interview: communication and professionalism', 2]],
+        'volunteer'  => [['Skills they can offer (read the CV)', 2], ['Experience and availability (read the CV)', 2], ['Interview: reliability and fit with our values', 2]],
     ];
 
     private static ?bool $ready = null;
@@ -52,10 +53,11 @@ final class Recruitment
     {
         if (self::$ready === null) {
             try {
-                $t = (int) Database::value("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('recruit_kpis','recruit_scores','recruit_log')", [], 0);
+                $t = (int) Database::value("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('recruit_kpis','recruit_scores','recruit_log','recruit_feedback')", [], 0);
+                $a = (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'recruit_kpis' AND column_name = 'auto_key'", [], 0);
                 $c = (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND column_name = 'ref_no' AND table_name IN ('ambassador_applications','applications','involvement_requests')", [], 0);
                 $p = (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'ambassador_applications' AND column_name = 'profile_token'", [], 0);
-                self::$ready = $t === 3 && $c === 3 && $p === 1;
+                self::$ready = $t === 4 && $c === 3 && $p === 1 && $a === 1;
             } catch (\Throwable) {
                 self::$ready = false;
             }
@@ -82,6 +84,15 @@ final class Recruitment
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT, `scope` VARCHAR(12) NOT NULL, `application_id` INT UNSIGNED NOT NULL, `status` VARCHAR(20) NOT NULL, `note` VARCHAR(600) NULL,
   `mailed` TINYINT(1) NOT NULL DEFAULT 0, `by_user` INT UNSIGNED NULL, `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`), KEY `ix_recruit_log` (`scope`, `application_id`, `id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            Database::execute("CREATE TABLE IF NOT EXISTS `recruit_feedback` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT, `scope` VARCHAR(12) NOT NULL, `application_id` INT UNSIGNED NOT NULL, `feedback` TEXT NULL, `updated_by` INT UNSIGNED NULL,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (`id`), UNIQUE KEY `uq_recruit_feedback` (`scope`, `application_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            foreach ([['recruit_kpis', 'auto_key', 'VARCHAR(30) NULL'], ['recruit_scores', 'auto', 'TINYINT(1) NOT NULL DEFAULT 0'], ['recruit_scores', 'skipped', 'TINYINT(1) NOT NULL DEFAULT 0'], ['recruit_scores', 'comment', 'VARCHAR(300) NULL']] as [$tb, $col, $def]) {
+                if ((int) Database::value('SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?', [$tb, $col], 0) === 0) {
+                    Database::execute("ALTER TABLE `{$tb}` ADD COLUMN `{$col}` {$def}");
+                }
+            }
             foreach (self::SCOPES as $scope => $cfg) {
                 $t = $cfg['table'];
                 if (!Database::tableExists($t)) {
@@ -116,9 +127,10 @@ final class Recruitment
                 Database::execute("UPDATE `{$t}` SET ref_no = CONCAT(?, '-', YEAR(created_at), '-', LPAD(id, 4, '0')) WHERE ref_no IS NULL", [$cfg['prefix']]);
                 if ((int) Database::value('SELECT COUNT(*) FROM recruit_kpis WHERE scope = ?', [$scope], 0) === 0) {
                     foreach (self::DEFAULT_KPIS[$scope] as $i => [$label, $w]) {
-                        Database::insert('recruit_kpis', ['scope' => $scope, 'label' => $label, 'weight' => $w, 'sort_order' => ($i + 1) * 10]);
+                        Database::insert('recruit_kpis', ['scope' => $scope, 'label' => $label, 'weight' => $w, 'sort_order' => 100 + ($i + 1) * 10]);
                     }
                 }
+                self::ensureAutoKpis($scope);
             }
         } catch (\Throwable $e) {
             Log::warning('Recruitment::install failed - ' . $e->getMessage());
@@ -277,12 +289,129 @@ final class Recruitment
         Database::execute('DELETE FROM recruit_kpis WHERE id = ?', [$id]);
     }
 
-    /** @return array<int,int> kpi_id => points */
+    /** The criteria the system scores from the form: the old default labels become them, and any that is missing is added (an administrator may then switch them off or delete them). */
+    public static function ensureAutoKpis(string $scope): void
+    {
+        foreach (AutoScore::OLD_LABELS as $label => $key) {
+            if (AutoScore::KEYS[$key][2] === $scope) {
+                Database::execute('UPDATE recruit_kpis SET auto_key = ?, label = ? WHERE scope = ? AND label = ? AND auto_key IS NULL', [$key, AutoScore::KEYS[$key][0], $scope, $label]);
+            }
+        }
+        foreach (AutoScore::keysFor($scope) as $i => $key) {
+            if ((int) Database::value('SELECT COUNT(*) FROM recruit_kpis WHERE scope = ? AND auto_key = ?', [$scope, $key], 0) === 0) {
+                Database::insert('recruit_kpis', ['scope' => $scope, 'label' => AutoScore::KEYS[$key][0], 'weight' => AutoScore::KEYS[$key][1], 'sort_order' => 10 + $i * 10, 'auto_key' => $key]);
+            }
+        }
+    }
+
+    /** @return array<int,array<string,mixed>> kpi_id => the score row (points, auto, skipped, comment) */
+    public static function scoreRows(string $scope, int $id): array
+    {
+        $out = [];
+        if (self::ready()) {
+            foreach (Database::all('SELECT * FROM recruit_scores WHERE scope = ? AND application_id = ?', [$scope, $id]) as $r) {
+                $out[(int) $r['kpi_id']] = $r;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * The state of the judging: the criteria in use for this applicant (not switched off), their points, the percentage and whether every one is scored.
+     * @return array{kpis:list<array<string,mixed>>,points:array<int,int>,pct:?float,complete:bool}
+     */
+    public static function evaluate(string $scope, int $id): array
+    {
+        $rows = self::scoreRows($scope, $id);
+        $used = array_values(array_filter(self::kpis($scope), static fn(array $k): bool => empty($rows[(int) $k['id']]['skipped'])));
+        $points = [];
+        foreach ($used as $k) {
+            if (isset($rows[(int) $k['id']])) {
+                $points[(int) $k['id']] = (int) $rows[(int) $k['id']]['points'];
+            }
+        }
+        return ['kpis' => $used, 'points' => $points, 'pct' => self::percent($used, $points), 'complete' => $used !== [] && count($points) === count($used)];
+    }
+
+    /** Score the criteria the system can judge from the form (a point the judge has changed by hand is never overwritten). The percentage is only saved: nobody is invited by this. */
+    public static function autoScore(string $scope, int $id): void
+    {
+        if (!self::ready()) {
+            return;
+        }
+        $row = self::row($scope, $id);
+        if ($row === null) {
+            return;
+        }
+        $have = self::scoreRows($scope, $id);
+        foreach (self::kpis($scope) as $k) {
+            $key = (string) ($k['auto_key'] ?? '');
+            $kid = (int) $k['id'];
+            if ($key === '' || (isset($have[$kid]) && !(int) $have[$kid]['auto'])) {
+                continue;
+            }
+            $res = AutoScore::points($key, $row);
+            if ($res === null) {
+                continue;
+            }
+            Database::execute('INSERT INTO recruit_scores (scope, application_id, kpi_id, points, auto, scored_by) VALUES (?,?,?,?,1,NULL) ON DUPLICATE KEY UPDATE points = VALUES(points), auto = 1',
+                [$scope, $id, $kid, $res[0]]);
+        }
+        $e = self::evaluate($scope, $id);
+        Database::update(self::SCOPES[$scope]['table'], ['score_pct' => $e['pct'], 'scored_at' => date('Y-m-d H:i:s')], 'id = ?', [$id]);
+    }
+
+    /** Score an older application that has no automatic points yet (called when the judging panel is shown). */
+    public static function ensureAuto(string $scope, array $row): void
+    {
+        if (!self::ready()) {
+            return;
+        }
+        $have = self::scoreRows($scope, (int) $row['id']);
+        foreach (self::kpis($scope) as $k) {
+            if (($k['auto_key'] ?? '') !== '' && !isset($have[(int) $k['id']])) {
+                self::autoScore($scope, (int) $row['id']);
+                return;
+            }
+        }
+    }
+
+    public static function feedback(string $scope, int $id): string
+    {
+        return self::ready() ? (string) Database::value('SELECT feedback FROM recruit_feedback WHERE scope = ? AND application_id = ?', [$scope, $id], '') : '';
+    }
+
+    public static function saveFeedback(string $scope, int $id, string $text, ?int $userId): void
+    {
+        Database::execute('INSERT INTO recruit_feedback (scope, application_id, feedback, updated_by) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE feedback = VALUES(feedback), updated_by = VALUES(updated_by)',
+            [$scope, $id, mb_substr(trim($text), 0, 4000), $userId]);
+    }
+
+    /** E-mail the feedback to the applicant. @return bool|null */
+    public static function sendFeedback(string $scope, array $row, string $text): ?bool
+    {
+        $text = trim($text);
+        if ($text === '' || !Mailer::validEmail((string) ($row['email'] ?? ''))) {
+            return null;
+        }
+        $site = trim((string) setting('site_name', 'Lumina Africa Foundation')) ?: 'Lumina Africa Foundation';
+        $first = explode(' ', trim((string) $row['name']))[0] ?: 'there';
+        $ref = (string) ($row['ref_no'] ?? '');
+        $link = $scope === 'ambassador' && self::profileUrl($row) !== '' ? self::profileUrl($row) : abs_url('track-application');
+        try {
+            return Mailer::send((string) $row['email'], 'Feedback on your application' . ($ref !== '' ? ' (' . $ref . ')' : ''),
+                "Hello {$first},\n\nThank you for your application" . ($ref !== '' ? ' ' . $ref : '') . ". Our team would like to share this feedback with you:\n\n{$text}\n\nFollow your application: {$link}\n\nWith thanks,\n{$site}\n");
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /** @return array<int,int> kpi_id => points (criteria switched off for this applicant are left out) */
     public static function scores(string $scope, int $id): array
     {
         $out = [];
         if (self::ready()) {
-            foreach (Database::all('SELECT kpi_id, points FROM recruit_scores WHERE scope = ? AND application_id = ?', [$scope, $id]) as $r) {
+            foreach (Database::all('SELECT kpi_id, points FROM recruit_scores WHERE scope = ? AND application_id = ? AND skipped = 0', [$scope, $id]) as $r) {
                 $out[(int) $r['kpi_id']] = (int) $r['points'];
             }
         }
@@ -304,37 +433,58 @@ final class Recruitment
     }
 
     /**
-     * Save the clicks of the judge (kpi_id => points 0-5), work out the percentage and, when EVERY criterion is scored and the percentage reaches the interview level, invite the
-     * applicant to an interview (once: only from the first stages) and e-mail them.
+     * Save the judge's clicks (kpi_id => points 0-5), the criteria switched off for this applicant, the comments and the feedback, work out the percentage and, when EVERY criterion in
+     * use is scored and the percentage reaches the interview level, invite the applicant to an interview (once: only from the first stages) and e-mail them.
+     * $opts: use (kpi_id => 1 for the criteria that stay on; when the key is present the others are switched off), comments (kpi_id => text), feedback (text), send_feedback (bool).
      * @param array<int,mixed> $points
-     * @return array{pct:?float,complete:bool,invited:bool,mailed:?bool}
+     * @param array<string,mixed> $opts
+     * @return array{pct:?float,complete:bool,invited:bool,mailed:?bool,feedback_mailed:?bool}
      */
-    public static function judge(string $scope, int $id, array $points, ?int $userId): array
+    public static function judge(string $scope, int $id, array $points, ?int $userId, array $opts = []): array
     {
         $kpis = self::kpis($scope);
-        $valid = array_column($kpis, null, 'id');
-        foreach ($points as $kid => $p) {
-            $kid = (int) $kid;
-            if (!isset($valid[$kid]) || $p === '' || $p === null) {
-                continue;
+        $rows = self::scoreRows($scope, $id);
+        $useGiven = array_key_exists('use', $opts);
+        foreach ($kpis as $k) {
+            $kid = (int) $k['id'];
+            $cur = $rows[$kid] ?? null;
+            $skipped = $useGiven ? (empty($opts['use'][$kid]) ? 1 : 0) : (int) ($cur['skipped'] ?? 0);
+            $has = array_key_exists($kid, $points) && $points[$kid] !== '' && $points[$kid] !== null;
+            $p = $has ? max(0, min(self::MAX_POINTS, (int) $points[$kid])) : (int) ($cur['points'] ?? 0);
+            $auto = $cur !== null ? (int) $cur['auto'] : 0;
+            if ($has && $cur !== null && (int) $cur['points'] !== $p) {
+                $auto = 0;                                                    // the judge changed a suggested point: it is theirs now
             }
-            $p = max(0, min(self::MAX_POINTS, (int) $p));
-            Database::execute('INSERT INTO recruit_scores (scope, application_id, kpi_id, points, scored_by) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE points = VALUES(points), scored_by = VALUES(scored_by), scored_at = NOW()',
-                [$scope, $id, $kid, $p, $userId]);
+            $comment = array_key_exists('comments', $opts) ? mb_substr(trim((string) ($opts['comments'][$kid] ?? '')), 0, 300) : ($cur['comment'] ?? null);
+            if (!$has && $cur === null && !$skipped && $comment === null) {
+                continue;                                                     // nothing to store for a criterion nobody touched
+            }
+            if ($cur === null && !$has) {
+                $p = 0;
+            }
+            Database::execute('INSERT INTO recruit_scores (scope, application_id, kpi_id, points, auto, skipped, comment, scored_by) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE points = VALUES(points), auto = VALUES(auto), skipped = VALUES(skipped), comment = VALUES(comment), scored_by = VALUES(scored_by), scored_at = NOW()',
+                [$scope, $id, $kid, $p, $auto, $skipped, $comment !== '' ? $comment : null, $userId]);
         }
-        $all = self::scores($scope, $id);
-        $pct = self::percent($kpis, $all);
-        $complete = $kpis !== [] && count(array_intersect_key($all, $valid)) === count($kpis);
+        $e = self::evaluate($scope, $id);
+        $pct = $e['pct'];
+        $complete = $e['complete'];
         Database::update(self::SCOPES[$scope]['table'], ['score_pct' => $pct, 'scored_at' => date('Y-m-d H:i:s')], 'id = ?', [$id]);
+        $row = self::row($scope, $id);
+        $fbMailed = null;
+        if (array_key_exists('feedback', $opts)) {
+            self::saveFeedback($scope, $id, (string) $opts['feedback'], $userId);
+            if (!empty($opts['send_feedback']) && $row !== null) {
+                $fbMailed = self::sendFeedback($scope, $row, (string) $opts['feedback']);
+            }
+        }
         $invited = false;
         $mailed = null;
-        $row = self::row($scope, $id);
         if ($complete && $pct !== null && $pct >= self::threshold() && $row !== null && in_array((string) $row['status'], ['new', 'reviewing', 'shortlisted', 'contacted', 'in_progress'], true)) {
             $r = self::setStatus($scope, $id, 'interview', 'Scored ' . rtrim(rtrim(number_format($pct, 1), '0'), '.') . '% (interview level: ' . self::threshold() . '%)', $userId, '');
             $invited = $r['ok'];
             $mailed = $r['mailed'];
         }
-        return ['pct' => $pct, 'complete' => $complete, 'invited' => $invited, 'mailed' => $mailed];
+        return ['pct' => $pct, 'complete' => $complete, 'invited' => $invited, 'mailed' => $mailed, 'feedback_mailed' => $fbMailed];
     }
 
     // ------------------------------------------------------------------------------------------------------------- status and e-mails
@@ -458,6 +608,7 @@ final class Recruitment
     /** The confirmation with the tracking number, sent when the application is submitted. */
     public static function received(string $scope, int $id): ?bool
     {
+        self::autoScore($scope, $id);
         $row = self::row($scope, $id);
         if ($row === null) {
             return null;
