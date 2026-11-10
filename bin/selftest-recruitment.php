@@ -198,6 +198,18 @@ check('track: a wrong e-mail address shows nothing', !Recruitment::track((string
 $tp = $req('/track-application', null, $jp);
 check('the public tracking page opens', $tp['code'] === 200 && str_contains($tp['body'], 'Application number'), (string) $tp['code']);
 
+// ---- ambassador profile
+$amb = Database::one('SELECT * FROM ambassador_applications WHERE id = ?', [$ambId]);
+check('ambassador: a private profile token was created with the application', preg_match('/^[a-f0-9]{40,64}$/', (string) $amb['profile_token']) === 1);
+$prof = $req('/ambassador/profile/' . $amb['profile_token'], null, $jp);
+check('profile: the private link shows the number, the stage and the application', $prof['code'] === 200 && str_contains($prof['body'], (string) $amb['ref_no']) && str_contains($prof['body'], 'Your ambassador profile') && str_contains($prof['body'], 'What has happened so far'), (string) $prof['code']);
+check('profile: a wrong link shows nothing', $req('/ambassador/profile/' . str_repeat('a', 48), null, $jp)['code'] === 404);
+$m0 = $mails();
+$rq = $req('/ambassador/profile', null, $jp);
+sleep(4);
+$sent = $req('/ambassador/profile', http_build_query(['_token' => $tok($rq['body']), 'ref' => $amb['ref_no'], 'email' => 'zz-rc-amb@example.test'] + $hp($rq['body'])), $jp);
+check('profile: "send me my link" e-mails the link when the number and e-mail match', $sent['code'] === 200 && $mails() > $m0 && str_contains($sent['body'], 'Check your inbox'), (string) $sent['code']);
+
 // ---- admin pages
 $pw = 'Recruit admin pass 71';
 \App\Models\User::create(['name' => 'ZZ Rc Admin', 'email' => 'zz-rc-admin@example.test', 'password_hash' => \App\Core\Auth::hashPassword($pw), 'role' => 'admin', 'is_active' => 1, 'must_change_password' => 0]);

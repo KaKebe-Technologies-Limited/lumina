@@ -54,7 +54,7 @@ $this->start('scripts'); ?>
             <?php if ($wa !== ''): ?><a class="btn btn--outline btn--sm" href="<?= e($wa) ?>" target="_blank" rel="noopener noreferrer"><?= icon('message-circle', 'icon--sm') ?> WhatsApp</a><?php endif; ?>
             <?php if ($hasCv): ?><a class="btn btn--outline btn--sm" href="<?= e(url('admin/recruitment/ambassador/' . $id . '/cv')) ?>"><?= icon('download', 'icon--sm') ?> CV</a><?php endif; ?>
             <?php if ($profile !== ''): ?><a class="btn btn--outline btn--sm" href="<?= e($profile) ?>" target="_blank" rel="noopener noreferrer nofollow"><?= icon('external-link', 'icon--sm') ?> Profile</a><?php endif; ?>
-            <a class="btn btn--ghost btn--sm" href="<?= e(url('track-application')) ?>" target="_blank" rel="noopener"><?= icon('search', 'icon--sm') ?> What the applicant sees</a>
+            <?php $profileUrl = Recruitment::profileUrl($r); ?><?php if ($profileUrl !== ''): ?><a class="btn btn--ghost btn--sm" href="<?= e($profileUrl) ?>" target="_blank" rel="noopener"><?= icon('user', 'icon--sm') ?> Their profile page</a><?php endif; ?>
             <span class="ra-quick__sep" aria-hidden="true"></span>
             <a class="btn btn--ghost btn--sm" href="#motivation">Why</a>
             <a class="btn btn--ghost btn--sm" href="#pledge">Pledge</a>

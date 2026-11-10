@@ -184,7 +184,7 @@ final class AmbassadorsController extends Controller
         $record['ref_no'] = $ref;
 
         $this->mail($record, (int) $id);
-        Flash::success((string) content('ambassadors', 'form.success') . ($ref !== '' ? ' Your application number is ' . $ref . ': we have e-mailed it to you.' : ''));
+        Flash::success((string) content('ambassadors', 'form.success') . ($ref !== '' ? ' Your application number is ' . $ref . '. We have e-mailed you a private link to your ambassador profile, where you can follow your application.' : ''));
         return $this->redirect('involvement/ambassadors#apply');
     }
 

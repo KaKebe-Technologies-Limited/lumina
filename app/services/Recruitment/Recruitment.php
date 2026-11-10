@@ -54,7 +54,8 @@ final class Recruitment
             try {
                 $t = (int) Database::value("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('recruit_kpis','recruit_scores','recruit_log')", [], 0);
                 $c = (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND column_name = 'ref_no' AND table_name IN ('ambassador_applications','applications','involvement_requests')", [], 0);
-                self::$ready = $t === 3 && $c === 3;
+                $p = (int) Database::value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'ambassador_applications' AND column_name = 'profile_token'", [], 0);
+                self::$ready = $t === 3 && $c === 3 && $p === 1;
             } catch (\Throwable) {
                 self::$ready = false;
             }
@@ -87,6 +88,9 @@ final class Recruitment
                     continue;
                 }
                 $cols = ['ref_no' => 'VARCHAR(30) NULL', 'score_pct' => 'DECIMAL(5,2) NULL', 'scored_at' => 'DATETIME NULL', 'photo_path' => 'VARCHAR(255) NULL'];
+                if ($scope === 'ambassador') {
+                    $cols['profile_token'] = 'VARCHAR(64) NULL';
+                }
                 if ($scope !== 'job') {
                     $cols += ['cv_path' => 'VARCHAR(255) NULL', 'cv_original_name' => 'VARCHAR(190) NULL', 'cv_mime' => 'VARCHAR(100) NULL', 'cv_size' => 'INT UNSIGNED NULL'];
                 }
@@ -102,6 +106,12 @@ final class Recruitment
                 }
                 if ((int) Database::value("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'ix_{$t}_ref'", [$t], 0) === 0) {
                     Database::execute("ALTER TABLE `{$t}` ADD KEY `ix_{$t}_ref` (`ref_no`)");
+                }
+                if ($scope === 'ambassador') {
+                    Database::execute("UPDATE `{$t}` SET profile_token = SHA2(CONCAT(id, UUID(), RAND()), 256) WHERE profile_token IS NULL");
+                    if ((int) Database::value("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'uq_ambassador_profile_token'", [$t], 0) === 0) {
+                        Database::execute("ALTER TABLE `{$t}` ADD UNIQUE KEY `uq_ambassador_profile_token` (`profile_token`)");
+                    }
                 }
                 Database::execute("UPDATE `{$t}` SET ref_no = CONCAT(?, '-', YEAR(created_at), '-', LPAD(id, 4, '0')) WHERE ref_no IS NULL", [$cfg['prefix']]);
                 if ((int) Database::value('SELECT COUNT(*) FROM recruit_kpis WHERE scope = ?', [$scope], 0) === 0) {
@@ -137,8 +147,28 @@ final class Recruitment
             return '';
         }
         $ref = sprintf('%s-%s-%04d', self::SCOPES[$scope]['prefix'], date('Y'), $id);
-        Database::update(self::SCOPES[$scope]['table'], ['ref_no' => $ref], 'id = ?', [$id]);
+        $upd = ['ref_no' => $ref];
+        if ($scope === 'ambassador') {
+            $upd['profile_token'] = bin2hex(random_bytes(24));
+        }
+        Database::update(self::SCOPES[$scope]['table'], $upd, 'id = ?', [$id]);
         return $ref;
+    }
+
+    /** The private address of an ambassador's profile (the secret is in the link, which is only e-mailed to the applicant). */
+    public static function profileUrl(array $row): string
+    {
+        $t = trim((string) ($row['profile_token'] ?? ''));
+        return $t !== '' ? abs_url('ambassador/profile/' . $t) : '';
+    }
+
+    /** @return array<string,mixed>|null the ambassador application that owns this profile link */
+    public static function rowByToken(string $token): ?array
+    {
+        if (!self::ready() || preg_match('/^[a-f0-9]{40,64}$/', $token) !== 1) {
+            return null;
+        }
+        return Database::one('SELECT * FROM ambassador_applications WHERE profile_token = ?', [$token]);
     }
 
     /** @return array<string,mixed>|null */
@@ -405,8 +435,9 @@ final class Recruitment
         if (trim($note) !== '') {
             $lines[] = "A message from our team:\n" . trim($note);
         }
-        $track = abs_url('track-application');
-        $text = 'Hello ' . $first . ",\n\n" . implode("\n\n", $lines) . "\n\nTrack your application: " . $track . "\n\nWith thanks,\n" . $site . "\n";
+        $track = $scope === 'ambassador' && self::profileUrl($row) !== '' ? self::profileUrl($row) : abs_url('track-application');
+        $trackLabel = $scope === 'ambassador' && self::profileUrl($row) !== '' ? 'Open my ambassador profile' : 'Track my application';
+        $text = 'Hello ' . $first . ",\n\n" . implode("\n\n", $lines) . "\n\n" . $trackLabel . ': ' . $track . "\n\nWith thanks,\n" . $site . "\n";
         $html = '<!doctype html><html><body style="margin:0;padding:24px;background:#f4f1ea;font-family:Arial,Helvetica,sans-serif;color:#242A32"><div style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;padding:28px">'
             . '<p style="margin:0 0 6px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#A5521A;font-weight:700">' . htmlspecialchars($site, ENT_QUOTES) . '</p>'
             . ((string) ($row['ref_no'] ?? '') !== '' ? '<p style="margin:0 0 18px;font-size:13px;color:#5B6472">Application ' . htmlspecialchars((string) $row['ref_no'], ENT_QUOTES) . ' &middot; <strong>' . htmlspecialchars($m['label'], ENT_QUOTES) . '</strong></p>' : '')
@@ -414,7 +445,7 @@ final class Recruitment
         foreach ($lines as $l) {
             $html .= '<p style="margin:0 0 16px;line-height:1.6;font-size:16px">' . nl2br(htmlspecialchars($l, ENT_QUOTES), false) . '</p>';
         }
-        $html .= '<p style="margin:22px 0"><a href="' . htmlspecialchars($track, ENT_QUOTES) . '" style="background:#D9A441;color:#0B1B33;text-decoration:none;font-weight:700;padding:13px 24px;border-radius:999px;display:inline-block">Track my application</a></p>'
+        $html .= '<p style="margin:22px 0"><a href="' . htmlspecialchars($track, ENT_QUOTES) . '" style="background:#D9A441;color:#0B1B33;text-decoration:none;font-weight:700;padding:13px 24px;border-radius:999px;display:inline-block">' . htmlspecialchars($trackLabel, ENT_QUOTES) . '</a></p>'
             . '<p style="margin:18px 0 0;font-size:13px;color:#5B6472">With thanks, ' . htmlspecialchars($site, ENT_QUOTES) . '</p></div></body></html>';
         try {
             return Mailer::send((string) $row['email'], $m['subject'], $text, ['html' => $html]);
