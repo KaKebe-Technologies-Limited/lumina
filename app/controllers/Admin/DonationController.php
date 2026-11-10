@@ -69,6 +69,7 @@ final class DonationController extends InboxController
         $this->saveWithReceipt($fields, function (array $data) use (&$id): void {
             $id = Donation::create($data + ['source' => 'manual']);
         });
+        \App\Services\Payments\PaymentThanks::donationReceived((int) $id);
         $this->audit('donation.create', 'donation', $id, 'Recorded a donation' . $this->describe($fields), ['status' => $fields['status'], 'method' => $fields['method']]);
         Flash::success('Donation recorded.' . (!empty($fields['receipt_no']) ? ' Receipt number ' . $fields['receipt_no'] . '.' : ''));
         return $this->redirect('admin/donations');
@@ -97,6 +98,7 @@ final class DonationController extends InboxController
             $details['amount_was'] = trim((string) $d['amount'] . ' ' . $d['currency']);
             $details['amount_now'] = trim((string) ($fields['amount'] ?? '') . ' ' . $fields['currency']);
         }
+        \App\Services\Payments\PaymentThanks::donationReceived($id);
         $this->audit('donation.update', 'donation', $id, 'Updated donation' . $this->describe($fields)
             . ($moneyChanged ? ' (amount changed after receipt ' . $d['receipt_no'] . ' was issued)' : ''), $details);
         Flash::success('Donation updated.');
@@ -132,6 +134,7 @@ final class DonationController extends InboxController
         $this->saveWithReceipt($fields, static function (array $data) use ($id): void {
             Donation::update($id, $data);
         });
+        \App\Services\Payments\PaymentThanks::donationReceived($id);
         $this->audit('donation.status', 'donation', $id, 'Marked donation #' . $id . ' as ' . $status, ['status' => $status, 'was' => $d['status']]);
         Flash::success('Donation marked as ' . strtolower($this->statusLabels()[$status] ?? $status) . '.' . (!empty($fields['receipt_no']) ? ' Receipt number ' . $fields['receipt_no'] . '.' : ''));
         return $this->back('admin/donations');

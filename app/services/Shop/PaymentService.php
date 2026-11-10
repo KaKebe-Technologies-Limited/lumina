@@ -76,6 +76,7 @@ final class PaymentService
      */
     public static function startAttempt(int $orderId): array
     {
+        \App\Services\Payments\PaymentEvents::install();
         try {
             $r = Database::transaction(function () use ($orderId): array {
                 $o = Database::one('SELECT * FROM shop_orders WHERE id = ? FOR UPDATE', [$orderId]);
@@ -105,6 +106,7 @@ final class PaymentService
             return ['ok' => false, 'error' => $e->errorCode];
         }
         self::recordEvent('payment_started', $r['tx_ref'], $orderId, 'started');
+        \App\Services\Payments\PaymentEvents::log('started', 'online', 'shop', (string) $r['tx_ref'], (int) $r['amount_minor'], (string) $r['currency'], '', 'Online payment page opened (attempt ' . (int) $r['attempt'] . ')');
         OrderService::flushCounts();
         return ['ok' => true] + $r + ['order' => OrderService::find($orderId)];
     }
@@ -287,6 +289,7 @@ final class PaymentService
      */
     public static function markPaid(int $orderId, array $p): array
     {
+        \App\Services\Payments\PaymentEvents::install();          // creates the audit table outside the transaction below
         $source = in_array($p['source'] ?? '', ['staff', 'gateway', 'webhook'], true) ? (string) $p['source'] : 'staff';
         $online = $source !== 'staff';
         $reference = isset($p['reference']) && $p['reference'] !== null && trim((string) $p['reference']) !== '' ? mb_substr(trim((string) $p['reference']), 0, 120) : null;
@@ -349,6 +352,9 @@ final class PaymentService
                     return ['ok' => true, 'duplicate' => true];
                 }
                 self::ledgerWrite($orderId, $o, $method, (int) $amount, $currency, $reference, 'success', $source, $p, (string) ($p['meta'] ?? ''), $userId);
+                if (!in_array($method, ['mobile', 'pesapal'], true)) {          // the mobile-money and Pesapal ledgers write their own audit line
+                    \App\Services\Payments\PaymentEvents::log('success', $online ? 'online' : 'manual', 'shop', (string) ($reference ?? $o['order_number']), (int) $amount, $currency, (string) $o['customer_name'], ($online ? 'Confirmed by the gateway' : 'Recorded by staff') . ' (' . $method . ') for order ' . $o['order_number'], $userId);
+                }
                 $paid = self::paidMinor($orderId);
                 $full = $paid >= $total;
                 if ($full) {
@@ -398,6 +404,7 @@ final class PaymentService
     /** The gateway (or staff) says the payment failed. Never touches a paid / refunded order. Idempotent per reference. @return array{ok:bool,duplicate?:bool,order?:array<string,mixed>} */
     public static function markFailed(int $orderId, ?string $reference, string $reason = '', string $source = 'staff', ?int $userId = null): array
     {
+        \App\Services\Payments\PaymentEvents::install();
         $source = in_array($source, ['staff', 'gateway', 'webhook'], true) ? $source : 'staff';
         $reference = $reference !== null && trim($reference) !== '' ? mb_substr(trim($reference), 0, 120) : null;
         $out = Database::transaction(function () use ($orderId, $reference, $reason, $source, $userId): array {
@@ -419,6 +426,9 @@ final class PaymentService
                     'status' => 'failed', 'source' => $source, 'user_id' => $userId, 'meta' => mb_substr($reason, 0, 255)]);
             }
             Database::execute("UPDATE shop_orders SET payment_status = 'failed' WHERE id = ?", [$orderId]);
+            if ($reference === null || !str_starts_with($reference, 'LAF')) {      // Pesapal and mobile money write their own audit line
+                \App\Services\Payments\PaymentEvents::log('failed', $source === 'staff' ? 'manual' : 'online', 'shop', (string) ($reference ?? $o['order_number']), Money::fromDb($o['total']), (string) $o['currency'], (string) $o['customer_name'], mb_substr($reason !== '' ? $reason : 'Payment failed', 0, 200), $userId);
+            }
             OrderService::addLog($orderId, 'payment', 'Payment failed' . ($reason !== '' ? ': ' . mb_substr($reason, 0, 150) : '') . '.', $userId);
             return ['ok' => true];
         });

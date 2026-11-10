@@ -10,7 +10,7 @@ $m = static fn(int $minor): string => number_format((int) round($minor / 100));
 $net = [1 => 'MTN', 2 => 'Airtel'];
 $tone = ['paid' => 'success', 'pending' => 'warning', 'failed' => 'danger'];
 $chanIcon = ['mobile' => 'phone', 'online' => 'globe', 'manual' => 'edit'];
-$base = ['range' => $f['range'], 'channel' => $f['channel'], 'dir' => $f['dir'], 'status' => $f['status'], 'q' => $f['q']];
+$base = ['range' => $f['range'], 'channel' => $f['channel'], 'category' => $f['category'] ?? '', 'dir' => $f['dir'], 'status' => $f['status'], 'q' => $f['q']];
 $qs = static fn(array $over): string => http_build_query(array_filter(array_merge($base, $over), static fn($v) => $v !== '' && $v !== null));
 $maxDay = max(1, ...array_map(static fn(array $d): int => $d['amt'], $sum['days']));
 $maxWhat = max(1, ...array_map(static fn(array $d): int => $d['amt'], $sum['by_what'] ?: [['amt' => 1]]));
@@ -18,7 +18,7 @@ $totalIn = max(1, array_sum($sum['by_channel']));
 $rangeLabel = strtolower(PD::RANGES[$f['range']]);
 ?>
 <?= partial('partials/admin/page-header', ['title' => 'Payments', 'subtitle' => 'Every payment on the website in one place: mobile money, card, bank and cash. Send money to any MTN or Airtel number.',
-    'actions' => [['label' => 'Download (CSV)', 'url' => url('admin/payments/export?' . $qs([])), 'icon' => 'download', 'class' => 'btn--outline'], ['label' => 'Payment options', 'url' => url('admin/daraza/api'), 'icon' => 'phone', 'class' => 'btn--ghost']]]) ?>
+    'actions' => [['label' => 'Download (CSV)', 'url' => url('admin/payments/export?' . $qs([])), 'icon' => 'download', 'class' => 'btn--outline'], ['label' => 'Audit trail', 'url' => url('admin/payments/audit'), 'icon' => 'list', 'class' => 'btn--outline'], ['label' => 'Payment options', 'url' => url('admin/daraza/api'), 'icon' => 'phone', 'class' => 'btn--ghost']]]) ?>
 <?php if (!$ready): ?><div class="alert alert--warning" role="status">The payments table could not be created automatically. Ask your developer to check the database permissions.</div><?php endif; ?>
 
 <nav class="pd-range" aria-label="Period">
@@ -90,10 +90,11 @@ $rangeLabel = strtolower(PD::RANGES[$f['range']]);
         <input type="hidden" name="range" value="<?= e($f['range']) ?>">
         <label class="pd-filters__q"><span class="visually-hidden">Search</span><input class="input" type="search" name="q" value="<?= e($f['q']) ?>" placeholder="Search name, phone, reference..."></label>
         <label><span class="visually-hidden">Direction</span><select class="select" name="dir"><option value="">In and out</option><option value="in"<?= $f['dir'] === 'in' ? ' selected' : '' ?>>Money in</option><option value="out"<?= $f['dir'] === 'out' ? ' selected' : '' ?>>Money out</option></select></label>
+        <label><span class="visually-hidden">Category</span><select class="select" name="category"><option value="">All categories</option><?php foreach (\App\Services\Payments\PaymentEvents::CATEGORIES as $k => $l): ?><option value="<?= e($k) ?>"<?= ($f['category'] ?? '') === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></label>
         <label><span class="visually-hidden">Channel</span><select class="select" name="channel"><option value="">All channels</option><?php foreach (PD::CHANNELS as $k => $l): ?><option value="<?= e($k) ?>"<?= $f['channel'] === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></label>
         <label><span class="visually-hidden">Status</span><select class="select" name="status"><option value="">Any status</option><?php foreach (PD::STATUSES as $k => $l): ?><option value="<?= e($k) ?>"<?= $f['status'] === $k ? ' selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></label>
         <button class="btn btn--primary btn--sm" type="submit"><?= icon('search', 'icon--sm') ?> Filter</button>
-        <?php if ($f['q'] !== '' || $f['dir'] !== '' || $f['channel'] !== '' || $f['status'] !== ''): ?><a class="btn btn--ghost btn--sm" href="<?= e(url('admin/payments?range=' . $f['range'])) ?>">Clear</a><?php endif; ?>
+        <?php if ($f['q'] !== '' || $f['dir'] !== '' || $f['channel'] !== '' || $f['status'] !== '' || ($f['category'] ?? '') !== ''): ?><a class="btn btn--ghost btn--sm" href="<?= e(url('admin/payments?range=' . $f['range'])) ?>">Clear</a><?php endif; ?>
     </form>
     <?php if (!$rows): ?><p class="text-muted">No payments match. Try a longer period or clear the filters.</p><?php else: ?>
     <div class="table-wrap"><table class="table table--compact">

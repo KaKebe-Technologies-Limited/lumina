@@ -1117,6 +1117,9 @@ final class MembershipService
         AuditLog::record('member.payment', 'member', $memberId, 'Recorded a ' . $row['status'] . ' payment on ' . $m['application_ref'],
             ['ref' => $m['application_ref'], 'payment_id' => $id, 'status' => $row['status'], 'receipt' => $payment['receipt_number'] ?? null,
              'amount' => $row['amount'], 'currency' => $row['currency'], 'purpose' => $row['purpose']]);
+        if ($row['status'] === 'received') {
+            \App\Services\Payments\PaymentThanks::memberPaymentReceived((int) $id);
+        }
         CardService::event($memberId, 'payment', ['user_id' => $input['user_id'] ?? null]);    // the balance may now be cleared: the card is issued / re-issued (setting membership_card_trigger)
         return ['ok' => true, 'errors' => [], 'payment' => $payment, 'message' => $row['status'] === 'received' ? 'Payment recorded. Receipt ' . ($payment['receipt_number'] ?? '') . '.' : 'Payment saved.'];
     }

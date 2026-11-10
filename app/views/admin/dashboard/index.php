@@ -1,8 +1,9 @@
 <?php
 /**
  * Dashboard. OWNER: B3. Vars: $user, $tiles, $recent{messages,applications,donations}, $chart (nullable), $activity, $allActivity,
- * $actions, $checklist, $launch, $canInbox.
+ * $actions, $checklist, $launch, $canInbox, $pay (money collected: range, sum, ev, feed; null unless the user manages payments).
  */
+$this->start('scripts'); ?><script src="<?= e(asset('js/dash-rings.js')) ?>" defer></script><?php $this->end();
 $first = trim((string) strtok((string) ($user['name'] ?? ''), ' '));
 $hour = (int) date('G');
 $greet = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
@@ -27,19 +28,118 @@ $greet = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good ev
     </section>
 <?php endif; ?>
 
+<?php if (!empty($pay)):
+    $sum = $pay['sum'];
+    $ev = $pay['ev'];
+    $cats = ['membership' => ['Membership', '#2c7be5'], 'shop' => ['Shop', '#e4572e'], 'donations' => ['Donations', '#d9a441'], 'projects' => ['Projects', '#1f9d8a'], 'academy' => ['Academy fees', '#7b5ea7']];
+    $totalCat = max(0, array_sum(array_map(static fn(array $c): int => (int) $c['amt'], $sum['by_cat'])));
+    $mk = static fn(int $minor): string => number_format((int) round($minor / 100));
+    $rangeLabels = \App\Services\Payments\PaymentsDashboard::RANGES;
+    $cum = 0.0;
+    $finished = max(1, $ev['success'] + $ev['failed']);
+    $evIcon = ['started' => 'clock', 'requested' => 'send', 'unknown' => 'clock', 'success' => 'check-circle', 'failed' => 'alert-circle', 'reversed' => 'alert-circle', 'review' => 'alert-triangle', 'thanks' => 'mail'];
+    $evGroup = \App\Services\Payments\PaymentEvents::EVENTS;
+?>
+    <section class="dash-pay" aria-labelledby="dash-pay-title" data-dash-pay>
+        <div class="dash-pay__head">
+            <h2 class="dash-pay__title" id="dash-pay-title"><?= icon('trending-up', 'icon--sm') ?> Money collected</h2>
+            <nav class="pd-range pd-range--small" aria-label="Period">
+                <?php foreach ($rangeLabels as $k => $label): ?><a class="pd-range__item<?= $pay['range'] === (string) $k ? ' is-active' : '' ?>" href="<?= e(url('admin?range=' . $k)) ?>"<?= $pay['range'] === (string) $k ? ' aria-current="true"' : '' ?>><?= e($label) ?></a><?php endforeach; ?>
+            </nav>
+        </div>
+        <div class="dash-pay__grid">
+            <div class="dash-ring" data-ring>
+                <svg class="dash-ring__svg" viewBox="0 0 36 36" role="img" aria-label="Money collected by category">
+                    <circle class="dash-ring__track" cx="18" cy="18" r="15.9155"></circle>
+                    <g transform="rotate(-90 18 18)">
+                        <?php foreach ($cats as $k => [$label, $color]):
+                            $amt = (int) ($sum['by_cat'][$k]['amt'] ?? 0);
+                            $p = $totalCat > 0 ? $amt / $totalCat * 100 : 0;
+                            if ($p <= 0) { continue; } ?>
+                            <circle class="dash-ring__seg" data-ring-seg="<?= e($k) ?>" cx="18" cy="18" r="15.9155" stroke="<?= e($color) ?>" stroke-dasharray="<?= e(number_format(max(0, $p - 0.6), 3, '.', '')) ?> <?= e(number_format(100 - max(0, $p - 0.6), 3, '.', '')) ?>" stroke-dashoffset="<?= e(number_format(-$cum, 3, '.', '')) ?>" tabindex="0" role="button" aria-label="<?= e($label . ': UGX ' . $mk($amt)) ?>"></circle>
+                            <?php $cum += $p; endforeach; ?>
+                    </g>
+                </svg>
+                <div class="dash-ring__center" aria-live="polite">
+                    <span class="dash-ring__small" data-ring-label>Collected</span>
+                    <strong class="dash-ring__big" data-ring-value data-default="UGX <?= e($mk((int) $sum['in'])) ?>">UGX <?= e($mk((int) $sum['in'])) ?></strong>
+                    <span class="dash-ring__small" data-ring-sub data-default="<?= e(strtolower($rangeLabels[$pay['range']])) ?>"><?= e(strtolower($rangeLabels[$pay['range']])) ?></span>
+                </div>
+            </div>
+            <ul class="dash-legend">
+                <?php foreach ($cats as $k => [$label, $color]):
+                    $amt = (int) ($sum['by_cat'][$k]['amt'] ?? 0); $n = (int) ($sum['by_cat'][$k]['n'] ?? 0); $pc = $totalCat > 0 ? (int) round($amt / $totalCat * 100) : 0; ?>
+                    <li><a class="dash-legend__item" href="<?= e(url('admin/payments?range=' . $pay['range'] . '&category=' . $k)) ?>" data-ring-item="<?= e($k) ?>" data-label="<?= e($label) ?>" data-value="UGX <?= e($mk($amt)) ?>" data-sub="<?= $pc ?>% &middot; <?= $n ?> payment<?= $n === 1 ? '' : 's' ?>">
+                        <span class="dash-legend__dot" style="background:<?= e($color) ?>"></span>
+                        <span class="dash-legend__text"><strong><?= e($label) ?></strong><small><?= $n ?> payment<?= $n === 1 ? '' : 's' ?></small></span>
+                        <span class="dash-legend__amt">UGX <?= e($mk($amt)) ?></span>
+                    </a></li>
+                <?php endforeach; ?>
+            </ul>
+            <div class="dash-health">
+                <div class="dash-ring dash-ring--small">
+                    <svg class="dash-ring__svg" viewBox="0 0 36 36" role="img" aria-label="Payment success rate">
+                        <circle class="dash-ring__track" cx="18" cy="18" r="15.9155"></circle>
+                        <g transform="rotate(-90 18 18)">
+                            <circle class="dash-ring__seg" cx="18" cy="18" r="15.9155" stroke="#1f9d4a" stroke-dasharray="<?= e(number_format($ev['success'] / $finished * 100, 3, '.', '')) ?> 100" stroke-dashoffset="0"></circle>
+                            <circle class="dash-ring__seg" cx="18" cy="18" r="15.9155" stroke="#d64545" stroke-dasharray="<?= e(number_format($ev['failed'] / $finished * 100, 3, '.', '')) ?> 100" stroke-dashoffset="<?= e(number_format(-$ev['success'] / $finished * 100, 3, '.', '')) ?>"></circle>
+                        </g>
+                    </svg>
+                    <div class="dash-ring__center"><strong class="dash-ring__big"><?= (int) $ev['rate'] ?>%</strong><span class="dash-ring__small">success</span></div>
+                </div>
+                <ul class="dash-health__list">
+                    <li><a href="<?= e(url('admin/payments/audit?range=' . $pay['range'] . '&group=attempt')) ?>"><span class="dash-health__dot dash-health__dot--wait"></span> <strong><?= (int) $ev['started'] ?></strong> attempts</a></li>
+                    <li><a href="<?= e(url('admin/payments/audit?range=' . $pay['range'] . '&group=success')) ?>"><span class="dash-health__dot dash-health__dot--ok"></span> <strong><?= (int) $ev['success'] ?></strong> successful</a></li>
+                    <li><a href="<?= e(url('admin/payments/audit?range=' . $pay['range'] . '&group=failure')) ?>"><span class="dash-health__dot dash-health__dot--bad"></span> <strong><?= (int) $ev['failed'] ?></strong> unsuccessful</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="dash-pay__actions">
+            <a class="btn btn--outline btn--sm" href="<?= e(url('admin/payments')) ?>"><?= icon('bar-chart', 'icon--sm') ?> All payments</a>
+            <a class="btn btn--outline btn--sm" href="<?= e(url('admin/payments/audit')) ?>"><?= icon('list', 'icon--sm') ?> Audit trail</a>
+            <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/payments#send')) ?>"><?= icon('send', 'icon--sm') ?> Send money</a>
+            <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/daraza/api')) ?>"><?= icon('phone', 'icon--sm') ?> Payment options</a>
+        </div>
+
+        <div class="dash-feed">
+            <div class="dash-feed__head">
+                <h3 class="dash-feed__title">Latest payment activity</h3>
+                <div class="dash-chips" role="group" aria-label="Show">
+                    <button class="dash-chip is-on" type="button" data-feed-filter="all">All</button>
+                    <button class="dash-chip" type="button" data-feed-filter="attempt">Attempts</button>
+                    <button class="dash-chip" type="button" data-feed-filter="success">Successful</button>
+                    <button class="dash-chip" type="button" data-feed-filter="failure">Unsuccessful</button>
+                </div>
+            </div>
+            <?php if (!$pay['feed']): ?><p class="dash-empty">No payment steps yet. Every attempt, success and failure will appear here.</p><?php else: ?>
+            <ul class="dash-feed__list">
+                <?php foreach ($pay['feed'] as $r): $g = $evGroup[$r['event']] ?? 'notice'; ?>
+                    <li class="dash-feed__item dash-feed__item--<?= e($g) ?>" data-feed-group="<?= e($g) ?>">
+                        <span class="dash-feed__icon"><?= icon($evIcon[$r['event']] ?? 'info', 'icon--sm') ?></span>
+                        <span class="dash-feed__text"><strong><?= e(\App\Services\Payments\PaymentEvents::EVENT_LABELS[$r['event']] ?? $r['event']) ?></strong> &middot; <?= e(\App\Services\Payments\PaymentEvents::CATEGORIES[$r['category']] ?? $r['category']) ?><?= $r['who'] !== '' ? ' &middot; ' . e($r['who']) : '' ?>
+                            <small><?= e($r['detail']) ?> <code><?= e($r['reference']) ?></code></small></span>
+                        <span class="dash-feed__meta"><?php if ($r['amount_minor'] !== null): ?><b><?= e($r['currency']) ?> <?= e($mk((int) $r['amount_minor'])) ?></b><?php endif; ?><time datetime="<?= e($r['created_at']) ?>"><?= e(format_datetime($r['created_at'], 'j M, H:i')) ?></time></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
+        </div>
+    </section>
+<?php endif; ?>
+
 <?php if ($tiles !== []): ?>
-    <div class="stat-grid dash-tiles">
-        <?php foreach ($tiles as $t): ?>
-            <a class="stat-tile<?= !empty($t['alert']) ? ' stat-tile--alert' : '' ?>" href="<?= e(url($t['url'])) ?>">
-                <span class="stat-tile__icon"><?= icon($t['icon']) ?></span>
-                <span class="stat-tile__text">
-                    <span class="stat-tile__value<?= !empty($t['small']) ? ' stat-tile__value--small' : '' ?>"><?= e($t['value']) ?></span>
-                    <span class="stat-tile__label"><?= e($t['label']) ?></span>
-                    <?php if (!empty($t['sub'])): ?><span class="stat-tile__sub"><?= e($t['sub']) ?></span><?php endif; ?>
-                </span>
-            </a>
-        <?php endforeach; ?>
-    </div>
+    <section class="dash-orbs-wrap" aria-labelledby="dash-orbs-title">
+        <h2 class="dash-orbs__title" id="dash-orbs-title">Needs your attention</h2>
+        <div class="dash-orbs">
+            <?php foreach ($tiles as $t): ?>
+                <a class="orb<?= !empty($t['alert']) ? ' orb--alert' : '' ?>" href="<?= e(url($t['url'])) ?>">
+                    <span class="orb__ring"><span class="orb__icon"><?= icon($t['icon'], 'icon--sm') ?></span><strong class="orb__value<?= !empty($t['small']) || mb_strlen((string) $t['value']) > 5 ? ' orb__value--small' : '' ?>"><?= e($t['value']) ?></strong></span>
+                    <span class="orb__label"><?= e($t['label']) ?></span>
+                    <?php if (!empty($t['sub'])): ?><span class="orb__sub"><?= e($t['sub']) ?></span><?php endif; ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </section>
 <?php endif; ?>
 
 <?php if (!empty($academy) && (int) $academy['overview']['learners'] > 0): ?>

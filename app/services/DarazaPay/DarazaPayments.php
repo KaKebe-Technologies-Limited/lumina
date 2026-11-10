@@ -111,6 +111,7 @@ final class DarazaPayments
             'status' => 'pending', 'mode' => DarazaApi::mode(), 'payer_name' => mb_substr(trim((string) ($payer['name'] ?? '')), 0, 150), 'payer_email' => mb_substr(trim((string) ($payer['email'] ?? '')), 0, 190),
             'phone' => (string) ($payer['phone'] ?? '') !== '' ? mb_substr((string) $payer['phone'], 0, 20) : null,
         ]);
+        \App\Services\Payments\PaymentEvents::log('started', 'mobile', \App\Services\Payments\PaymentEvents::category($purpose), $reference, $amountMinor, $currency, (string) (($payer['name'] ?? '') !== '' ? $payer['name'] : ($payer['email'] ?? '')), 'Mobile-money payment page opened');
         return ['ok' => true, 'reference' => $reference, 'url' => abs_url('pay/mobile-money/' . $reference)];
     }
 
@@ -184,15 +185,18 @@ final class DarazaPayments
             return ['state' => 'busy', 'message' => 'A payment request is already waiting for your approval on the phone.', 'row' => self::fresh((int) $row['id'])];
         }
         ignore_user_abort(true);                          // the payer may close the page: the answer is still written down
+        \App\Services\Payments\PaymentEvents::log('requested', 'mobile', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), 'Request sent to ' . \App\Services\Payments\PaymentEvents::maskPhone(DarazaApi::e164($phone)) . ' (' . ($method === 2 ? 'Airtel' : 'MTN') . ')');
         $r = DarazaApi::requestToPay($method, (int) $row['amount_ugx'], (string) DarazaApi::e164($phone), self::note($row));
         if ($r['ok']) {
             return self::pay((int) $row['id'], $r['request_id'], $r['message']);
         }
         if ($r['state'] === 'unknown') {
+            \App\Services\Payments\PaymentEvents::log('unknown', 'mobile', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), 'No answer yet: ' . $r['message']);
             Database::update('daraza_payments', ['status' => 'unknown', 'message' => mb_substr($r['message'], 0, 250)], 'id = ?', [(int) $row['id']]);
             return ['state' => 'unknown', 'message' => $r['message'], 'row' => self::fresh((int) $row['id'])];
         }
         Database::update('daraza_payments', ['status' => 'failed', 'request_id' => $r['request_id'] !== '' ? $r['request_id'] : null, 'message' => mb_substr($r['message'], 0, 250)], 'id = ?', [(int) $row['id']]);
+        \App\Services\Payments\PaymentEvents::log('failed', 'mobile', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), $r['state'] === 'auth' ? 'The Daraza key was refused' : $r['message']);
         if ($r['state'] === 'auth') {
             Log::warning('Daraza: the key was refused');
         }
@@ -217,6 +221,7 @@ final class DarazaPayments
         });
         $row = self::fresh($id);
         if ($claimed && $row !== null) {
+            \App\Services\Payments\PaymentEvents::log('success', 'mobile', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), 'Confirmed by Daraza' . ($row['request_id'] ? ' (' . $row['request_id'] . ')' : ''));
             self::apply($row);
         }
         return ['state' => 'paid', 'message' => 'Payment received. Thank you!', 'row' => $row];
@@ -247,6 +252,7 @@ final class DarazaPayments
             return self::pay($id, (string) $row['request_id'], 'Confirmed by Daraza');
         }
         Database::update('daraza_payments', ['status' => 'failed', 'message' => 'Daraza says it was not successful'], 'id = ? AND status <> ?', [$id, 'paid']);
+        \App\Services\Payments\PaymentEvents::log('failed', 'mobile', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), 'Daraza says it was not successful (checked again)');
         return ['state' => 'failed', 'message' => 'Daraza says it was not successful.', 'row' => self::fresh($id)];
     }
 
@@ -288,6 +294,10 @@ final class DarazaPayments
                     . number_format((int) $row['amount_ugx']) . "\nReference: " . $ref . "\n\nManage it: " . abs_url('admin/donations') . "\n", (string) ($d['donor_email'] ?? ''));
             }
             AuditLog::record('daraza.payment', 'daraza_payment', (string) $row['id'], 'Mobile-money payment received (' . (self::PURPOSES[$row['purpose']] ?? $row['purpose']) . ', UGX ' . number_format((int) $row['amount_ugx']) . ')');
+            if ($row['purpose'] !== 'shop') {
+                $receipt = in_array($row['purpose'], ['donation', 'project'], true) ? (string) Database::value('SELECT receipt_no FROM donations WHERE id = ?', [(int) $row['ref_id']], '') : '';
+                \App\Services\Payments\PaymentThanks::send(\App\Services\Payments\PaymentEvents::category((string) $row['purpose']), 'mobile', (string) $row['payer_email'], (string) $row['payer_name'], (int) $row['amount_minor'], (string) $row['currency'], $ref, '', $receipt);
+            }
         } catch (\Throwable $e) {
             Log::error('Daraza: a paid payment could not be applied', ['ref' => $row['reference'], 'error' => $e::class]);
         }
@@ -315,6 +325,7 @@ final class DarazaPayments
         $r = DarazaApi::remit($method, $amountUgx, (string) DarazaApi::e164($phone), $note !== '' ? $note : 'LAF payout ' . $reference);
         $status = $r['ok'] ? 'paid' : ($r['state'] === 'unknown' ? 'unknown' : 'failed');
         Database::update('daraza_payments', ['status' => $status, 'request_id' => $r['request_id'] !== '' ? $r['request_id'] : null, 'message' => mb_substr($r['message'], 0, 250), 'paid_at' => $r['ok'] ? date('Y-m-d H:i:s') : null], 'id = ?', [$id]);
+        \App\Services\Payments\PaymentEvents::log($status === 'paid' ? 'success' : ($status === 'unknown' ? 'unknown' : 'failed'), 'mobile', 'payout', $reference, $amountUgx * 100, 'UGX', \App\Services\Payments\PaymentEvents::maskPhone(DarazaApi::e164($phone)), 'Payout: ' . ($status === 'paid' ? 'sent' : mb_substr($r['message'], 0, 150)), $adminId);
         AuditLog::record('daraza.payout', 'daraza_payment', (string) $id, 'Sent UGX ' . number_format($amountUgx) . ' to ' . substr((string) DarazaApi::e164($phone), 0, 8) . '*** (' . $status . ')');
         return ['ok' => $r['ok'], 'message' => $r['ok'] ? 'The money was sent.' : $r['message'], 'row' => self::fresh($id)];
     }

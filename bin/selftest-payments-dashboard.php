@@ -9,7 +9,10 @@ declare(strict_types=1);
 use App\Core\Database;
 use App\Services\DarazaPay\DarazaApi;
 use App\Services\DarazaPay\DarazaPayments;
+use App\Services\Payments\PaymentEvents;
+use App\Services\Payments\PaymentThanks;
 use App\Services\Payments\PaymentsDashboard;
+use App\Core\Settings;
 
 if (!function_exists('check')) {
     if (PHP_SAPI !== 'cli') {
@@ -33,10 +36,12 @@ if (!function_exists('check')) {
 
 echo "-- payments dashboard --\n";
 $clean = static function (): void {
-    Database::execute("DELETE FROM daraza_payments WHERE reference LIKE 'ZZPD-%' OR note = 'Zz prize'");
+    Database::execute("DELETE FROM daraza_payments WHERE reference LIKE 'ZZPD-%' OR note = 'Zz prize' OR payer_email LIKE 'zz-pd-%@example.test'");
     Database::execute("DELETE FROM pesapal_payments WHERE merchant_reference LIKE 'ZZPD-%'");
     Database::execute("DELETE FROM donations WHERE donor_email LIKE 'zz-pd-%@example.test'");
     Database::execute("DELETE FROM users WHERE email = 'zz-pd-admin@example.test'");
+    Database::execute("DELETE FROM payment_events WHERE who LIKE '%zz-pd-%' OR reference LIKE 'ZZPD-%' OR detail LIKE '%ZZPD%' OR who LIKE 'Zz Pd%'");
+    Database::execute("DELETE FROM donations WHERE donor_email LIKE 'zz-pd-%@example.test'");
     DarazaApi::$transport = null;
     putenv('DARAZA_API_KEY');
     putenv('DARAZA_ENV');
@@ -85,6 +90,75 @@ check('send money: an Airtel number is detected, UGX 12,000 goes out and shows i
 DarazaApi::$transport = null;
 putenv('DARAZA_API_KEY');
 
+// ---- the audit trail and the thank-you e-mails
+PaymentEvents::install();
+$prevSwitch = Settings::get('daraza_api_donation_on', '');
+Settings::setMany(['daraza_api_donation_on' => '1']);
+Settings::flush();
+putenv('DARAZA_API_KEY=zz-test-key');
+putenv('DARAZA_ENV=sandbox');
+$mailDir = STORAGE_PATH . '/mail';
+$mailBefore = glob($mailDir . '/*.eml') ?: [];
+$mailText = static function (array $before) use ($mailDir): string {
+    $new = array_diff(glob($mailDir . '/*.eml') ?: [], $before);
+    $t = '';
+    foreach ($new as $f) {
+        $raw = (string) file_get_contents($f);
+        $t .= $raw . "\n";
+        if (preg_match_all('/Content-Transfer-Encoding: base64\r?\n\r?\n([A-Za-z0-9+\/=\r\n]+)/', $raw, $mm)) {
+            foreach ($mm[1] as $b64) {
+                $t .= (string) base64_decode(preg_replace('/\s+/', '', $b64) ?? '') . "\n";
+            }
+        }
+    }
+    return $t;
+};
+$answer = ['http' => 201, 'raw' => json_encode(['code' => 'Success', 'message' => 'Payment Successful', 'request_id' => 'REQ-PD-T1'])];
+DarazaApi::$transport = static function (string $method, string $url, array $headers, ?string $body) use (&$answer): array {
+    return $answer;
+};
+Database::execute("INSERT INTO donations (donor_name, donor_email, amount, currency, method, status, source) VALUES ('Zz Pd Giver','zz-pd-t1@example.test',20000,'UGX','mobile_money','pledged','online')");
+$did = (int) Database::value('SELECT LAST_INSERT_ID()');
+$b = DarazaPayments::begin('donation', $did, 2000000, 'UGX', ['name' => 'Zz Pd Giver', 'email' => 'zz-pd-t1@example.test']);
+$ref = (string) $b['reference'];
+$ev = static fn(string $e): int => (int) Database::value('SELECT COUNT(*) FROM payment_events WHERE reference = ? AND event = ?', [$ref, $e], 0);
+check('audit: opening a payment page is written down as "started"', $ev('started') === 1);
+DarazaPayments::collect($ref, '0772123456', 0);
+check('audit: the request to the phone and the success are written down (the phone number is hidden)', $ev('requested') === 1 && $ev('success') === 1 && !str_contains((string) Database::value("SELECT detail FROM payment_events WHERE reference = ? AND event = 'requested'", [$ref], ''), '772123456'));
+check('audit: the thank-you is recorded as sent exactly once', $ev('thanks') === 1);
+$mailTxt = $mailText($mailBefore);
+check('thank-you: the payer gets an e-mail that thanks them, with the amount and the reference', str_contains($mailTxt, 'zz-pd-t1@example.test') && str_contains($mailTxt, 'Thank you') && str_contains($mailTxt, 'UGX 20,000') && str_contains($mailTxt, $ref));
+$count = count(glob($mailDir . '/*.eml') ?: []);
+PaymentThanks::send('donations', 'mobile', 'zz-pd-t1@example.test', 'Zz Pd Giver', 2000000, 'UGX', $ref);
+check('thank-you: a second call for the same payment sends nothing (no duplicate e-mail)', count(glob($mailDir . '/*.eml') ?: []) === $count);
+
+// an unsuccessful attempt
+Database::execute("INSERT INTO donations (donor_name, donor_email, amount, currency, method, status, source) VALUES ('Zz Pd Fail','zz-pd-t2@example.test',10000,'UGX','mobile_money','pledged','online')");
+$did2 = (int) Database::value('SELECT LAST_INSERT_ID()');
+$b2 = DarazaPayments::begin('donation', $did2, 1000000, 'UGX', ['name' => 'Zz Pd Fail', 'email' => 'zz-pd-t2@example.test']);
+$ref2 = (string) $b2['reference'];
+$answer = ['http' => 200, 'raw' => json_encode(['code' => 'Error', 'message' => 'Insufficient funds', 'details' => 'Insufficient funds'])];
+$mailBefore2 = glob($mailDir . '/*.eml') ?: [];
+DarazaPayments::collect($ref2, '0702000999', 0);
+check('audit: a refused payment is written down as "failed" with the reason, and no thank-you is sent', (int) Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = ? AND event = 'failed'", [$ref2], 0) === 1
+    && (int) Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = ? AND event = 'thanks'", [$ref2], 0) === 0 && !str_contains($mailText($mailBefore2), 'zz-pd-t2@example.test'));
+DarazaApi::$transport = null;
+
+// staff record a bank donation and a project gift
+Database::execute("INSERT INTO donations (donor_name, donor_email, amount, currency, method, status, source, reference, received_at, receipt_no) VALUES ('Zz Pd Bank','zz-pd-t3@example.test',45000,'UGX','bank','received','manual','PROJECT:digital-inclusion|package:year1',NOW(),'RCT-ZZPD-1')");
+$mailBefore3 = glob($mailDir . '/*.eml') ?: [];
+PaymentThanks::donationReceived((int) Database::value('SELECT LAST_INSERT_ID()'));
+check('audit: a gift recorded by staff is written down under "Projects" and the donor is thanked, with the receipt number', (int) Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = 'RCT-ZZPD-1' AND event = 'success' AND category = 'projects' AND channel = 'manual'", [], 0) === 1 && str_contains($mailText($mailBefore3), 'RCT-ZZPD-1'));
+$cnt = PaymentEvents::counts('30');
+check('audit: the counts show attempts, successes and failures', $cnt['started'] >= 2 && $cnt['success'] >= 2 && $cnt['failed'] >= 1 && $cnt['rate'] > 0 && $cnt['rate'] < 100, json_encode($cnt));
+check('audit: filter by group and category', PaymentEvents::rows(['range' => 'all', 'group' => 'failure', 'q' => 'Zz Pd'], 20, 0)['total'] >= 1 && PaymentEvents::rows(['range' => 'all', 'group' => 'success', 'category' => 'projects', 'q' => 'RCT-ZZPD'], 20, 0)['total'] === 1);
+$cat = PaymentsDashboard::summary('30');
+check('categories: donations, projects and shop are totalled apart (the project gift of 45,000 is in "projects")', ($cat['by_cat']['projects']['amt'] ?? 0) >= 4500000 && ($cat['by_cat']['donations']['amt'] ?? 0) >= 2000000);
+check('categories: the payments list can be filtered by category', PaymentsDashboard::rows(['range' => '30', 'category' => 'projects', 'q' => 'RCT-ZZPD'], 10, 0)['total'] === 1);
+Settings::setMany(['daraza_api_donation_on' => (string) $prevSwitch]);
+Settings::flush();
+putenv('DARAZA_API_KEY');
+
 // ---- the pages
 $base = 'http://localhost/' . basename(dirname(__DIR__));
 $req = static function (string $path, ?array $form, string $j) use ($base): array {
@@ -109,7 +183,7 @@ check('the page needs a sign-in', $req('/admin/payments', null, tempnam(sys_get_
 $lp = $req('/admin/login', null, $ja);
 $req('/admin/login', ['_token' => $tok($lp['body']), 'email' => 'zz-pd-admin@example.test', 'password' => $pw], $ja);
 $pg = $req('/admin/payments?range=30', null, $ja);
-check('admin: the dashboard shows the totals, how people paid, Send money and the list', $pg['code'] === 200 && str_contains($pg['body'], 'Money in') && str_contains($pg['body'], 'UGX 95,000') && str_contains($pg['body'], 'Send money to mobile money')
+check('admin: the dashboard shows the totals, how people paid, Send money and the list', $pg['code'] === 200 && str_contains($pg['body'], 'Money in') && str_contains($pg['body'], 'UGX 160,000') && str_contains($pg['body'], 'Send money to mobile money')
     && str_contains($pg['body'], 'How people paid') && str_contains($pg['body'], 'Zz Payer') && str_contains($pg['body'], 'Shop orders'), (string) $pg['code']);
 $out = $req('/admin/payments?range=30&dir=out&q=ZZPD', null, $ja);
 check('admin: filters work in the address (money out only)', str_contains($out['body'], 'ZZPD-OUT1') && !str_contains($out['body'], 'ZZPD-IN1'));
@@ -120,6 +194,11 @@ $pg2 = $req('/admin/payments', null, $ja);
 $po = $req('/admin/payments/payout', ['_token' => $tok($pg2['body']), 'phone' => '0772000999', 'method' => '0', 'amount' => '5000'], $ja);
 check('admin: sending money without ticking the box does nothing (back to the dashboard)', $po['code'] === 302 && (int) Database::value("SELECT COUNT(*) FROM daraza_payments WHERE direction = 'out' AND phone = '+256772000999'", [], 0) === 0);
 check('the Payment options page still works', $req('/admin/daraza/api', null, $ja)['code'] === 200);
+$au = $req('/admin/payments/audit?range=30&q=Zz+Pd', null, $ja);
+check('admin: the audit trail page lists the steps (started, successful, unsuccessful) with a filter', $au['code'] === 200 && str_contains($au['body'], 'Payment started') && str_contains($au['body'], 'Successful') && str_contains($au['body'], 'Unsuccessful') && str_contains($au['body'], 'Zz Pd Giver'), (string) $au['code']);
+$dh = $req('/admin?range=30', null, $ja);
+check('admin: the dashboard shows the money rings, the activity feed and the round attention tiles', $dh['code'] === 200 && str_contains($dh['body'], 'Money collected') && str_contains($dh['body'], 'dash-ring') && str_contains($dh['body'], 'Latest payment activity') && str_contains($dh['body'], 'Needs your attention') && str_contains($dh['body'], 'class="orb'), (string) $dh['code']);
+check('admin: the payments page can be filtered by category in the address', $req('/admin/payments?range=30&category=projects&q=RCT-ZZPD', null, $ja)['code'] === 200);
 
 @unlink($ja);
 $clean();

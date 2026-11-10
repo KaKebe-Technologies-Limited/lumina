@@ -125,7 +125,24 @@ final class DashboardController extends AdminController
             }
         }
 
+        // money collected, success rate and the latest payment steps: only for people who manage payments, and never an error if the tables are not there yet
+        $pay = null;
+        if (can('settings.manage')) {
+            try {
+                $range = $request->string('range');
+                $range = isset(\App\Services\Payments\PaymentsDashboard::RANGES[$range]) ? $range : '30';
+                \App\Services\DarazaPay\DarazaPayments::install();
+                $pay = [
+                    'range' => $range, 'sum' => \App\Services\Payments\PaymentsDashboard::summary($range), 'ev' => \App\Services\Payments\PaymentEvents::counts($range),
+                    'feed' => \App\Services\Payments\PaymentEvents::rows([], 12)['rows'],
+                ];
+            } catch (\Throwable) {
+                $pay = null;
+            }
+        }
+
         return $this->render('admin/dashboard/index', [
+            'pay'       => $pay,
             'user'      => $this->user(),
             'tiles'     => $tiles,
             'recent'    => $recent,

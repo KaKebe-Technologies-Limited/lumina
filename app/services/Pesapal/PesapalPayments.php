@@ -63,7 +63,9 @@ final class PesapalPayments
             'first_name'   => (string) ($parts[0] ?? ''),
             'last_name'    => (string) ($parts[1] ?? ''),
         ]);
+        \App\Services\Payments\PaymentEvents::log('started', 'online', \App\Services\Payments\PaymentEvents::category($purpose), $reference, $amountMinor, $currency, $name !== '' ? $name : (string) ($payer['email'] ?? ''), 'Pesapal payment page requested');
         if (!$r['ok']) {
+            \App\Services\Payments\PaymentEvents::log('failed', 'online', \App\Services\Payments\PaymentEvents::category($purpose), $reference, $amountMinor, $currency, $name, 'The payment page could not be opened: ' . mb_substr((string) $r['error'], 0, 150));
             Database::update('pesapal_payments', ['status' => 'failed', 'last_error' => (string) $r['error']], 'id = ?', [$id]);
             Log::warning('Pesapal: the payment page could not be opened', ['purpose' => $purpose, 'ref' => $refId, 'error' => (string) $r['error']]);
             return ['ok' => false, 'error' => (string) $r['error']];
@@ -118,11 +120,13 @@ final class PesapalPayments
             return self::pay((int) $row['id'], $v, $amount);
         }
         if ($v['code'] === 2) {
+            \App\Services\Payments\PaymentEvents::log('failed', 'online', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['merchant_reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), 'Pesapal reports that the payment failed');
             self::mark((int) $row['id'], 'failed', $v, '');
             self::applyFailure(self::fresh((int) $row['id']) ?? $row);
             return ['state' => 'failed', 'row' => self::fresh((int) $row['id'])];
         }
         if ($v['code'] === 3) {
+            \App\Services\Payments\PaymentEvents::log('reversed', 'online', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['merchant_reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), 'Pesapal reports the payment as reversed');
             self::mark((int) $row['id'], 'reversed', $v, 'Pesapal reports the payment as reversed');
             Mailer::notify('Pesapal payment reversed', 'Pesapal reports a reversal for ' . $row['merchant_reference'] . ' (' . $row['purpose'] . ' #' . $row['ref_id'] . "). Please check it in your Pesapal dashboard.\n", null);
             return ['state' => 'reversed', 'row' => self::fresh((int) $row['id'])];
@@ -149,6 +153,7 @@ final class PesapalPayments
         });
         $row = self::fresh($id);
         if ($claimed && $row !== null) {
+            \App\Services\Payments\PaymentEvents::log('success', 'online', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['merchant_reference'], $amount, (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), 'Confirmed by Pesapal' . ((string) $v['method'] !== '' ? ' (' . $v['method'] . ')' : ''));
             self::applySuccess($row, $v, $amount);
         }
         return ['state' => 'paid', 'row' => $row];
@@ -178,11 +183,16 @@ final class PesapalPayments
                     Mailer::notify('Online donation received', "An online donation was paid through Pesapal.\n\nDonor: " . ((int) $d['is_anonymous'] === 1 ? '(anonymous) ' : '') . $d['donor_name'] . ' <' . $d['donor_email'] . ">\nAmount: "
                         . Money::format($amount, (string) $row['currency']) . "\nReference: " . $row['merchant_reference'] . "\n\nManage it in the admin area: " . abs_url('admin/donations') . "\n", (string) $d['donor_email']);
                 }
+                if ($d !== null) {
+                    \App\Services\Payments\PaymentThanks::send('donations', 'online', (string) $d['donor_email'], (string) $d['donor_name'], $amount, (string) $row['currency'], (string) $row['merchant_reference'], '', (string) Database::value('SELECT receipt_no FROM donations WHERE id = ?', [(int) $row['ref_id']], ''));
+                }
             } elseif ($row['purpose'] === 'academy_signup') {
                 \App\Services\Academy\AcademyFees::markSignupPaid((int) $row['ref_id'], (string) $row['merchant_reference']);
                 \App\Services\Academy\AcademyFees::autoApproveAfterPayment((int) $row['ref_id']);
+                \App\Services\Payments\PaymentThanks::send('academy', 'online', (string) $row['payer_email'], (string) $row['payer_name'], $amount, (string) $row['currency'], (string) $row['merchant_reference'], 'Sign-up fee');
             } elseif ($row['purpose'] === 'academy_cert') {
                 \App\Services\Academy\AcademyFees::markCertPaid((int) $row['ref_id'], (string) $row['merchant_reference']);
+                \App\Services\Payments\PaymentThanks::send('academy', 'online', (string) $row['payer_email'], (string) $row['payer_name'], $amount, (string) $row['currency'], (string) $row['merchant_reference'], 'Certificate fee');
             } elseif ($row['purpose'] === 'shop') {
                 PaymentService::markPaid((int) $row['ref_id'], [
                     'method'     => 'pesapal',
@@ -224,6 +234,7 @@ final class PesapalPayments
     /** Pesapal says something we cannot accept as payment: keep the row for a person to look at, and flag the shop order so staff see it. @param array<string,mixed> $row @param array<string,mixed> $v */
     private static function flagReview(array $row, array $v, string $note): void
     {
+        \App\Services\Payments\PaymentEvents::log('review', 'online', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['merchant_reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), mb_substr($note, 0, 200));
         self::mark((int) $row['id'], 'review', $v, $note);
         if ($row['purpose'] === 'shop') {
             try {

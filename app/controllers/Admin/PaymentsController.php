@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Services\DarazaPay\DarazaApi;
 use App\Services\DarazaPay\DarazaPayments;
+use App\Services\Payments\PaymentEvents;
 use App\Services\Payments\PaymentsDashboard;
 
 /**
@@ -24,6 +25,7 @@ final class PaymentsController extends AdminController
         return [
             'range' => isset(PaymentsDashboard::RANGES[$range]) ? $range : '30',
             'channel' => $request->string('channel'),
+            'category' => $request->string('category'),
             'dir' => $request->string('dir'),
             'status' => $request->string('status'),
             'q' => trim($request->string('q')),
@@ -44,6 +46,20 @@ final class PaymentsController extends AdminController
             'f' => $f, 'sum' => $sum, 'rows' => $rows, 'pagination' => $pagination, 'ready' => $ready, 'hasKey' => DarazaApi::hasKey(), 'mode' => DarazaApi::mode(),
             'recipients' => PaymentsDashboard::recentRecipients(), 'prefill' => ['phone' => $to !== null ? '0' . substr($to, 4) : '', 'method' => $request->int('network')],
         ], ['title' => 'Payments', 'nav' => 'payments', 'breadcrumbs' => [['Payments', null]]]);
+    }
+
+    /** The AUDIT TRAIL of every payment step: attempts, successful and unsuccessful. */
+    public function trail(Request $request): Response
+    {
+        $this->authorize('settings.manage');
+        PaymentEvents::install();
+        $range = $request->string('range');
+        $f = ['range' => isset(PaymentsDashboard::RANGES[$range]) ? $range : '30', 'group' => $request->string('group'), 'category' => $request->string('category'), 'channel' => $request->string('channel'), 'q' => trim($request->string('q'))];
+        $total = PaymentEvents::rows($f, 1, 0)['total'];
+        $pagination = Pagination::make($total, $request->page(), $this->perPage());
+        return $this->render('admin/payments/audit', [
+            'f' => $f, 'rows' => PaymentEvents::rows($f, $pagination->perPage, $pagination->offset)['rows'], 'pagination' => $pagination, 'counts' => PaymentEvents::counts($f['range']),
+        ], ['title' => 'Payment audit trail', 'nav' => 'payments', 'breadcrumbs' => [['Payments', url('admin/payments')], ['Audit trail', null]]]);
     }
 
     public function export(Request $request): Response

@@ -21,7 +21,7 @@ final class PaymentsDashboard
     public const STATUSES = ['paid' => 'Paid', 'pending' => 'Waiting', 'failed' => 'Failed'];
     public const MAIN_CURRENCY = 'UGX';
 
-    /** Every payment as one row set. Columns: src, id, at, channel, dir (in|out), what, who, detail, amt (minor), cur, status (paid|pending|failed), ref */
+    /** Every payment as one row set. Columns: src, id, at, channel, dir (in|out), what, who, detail, amt (minor), cur, status (paid|pending|failed), ref, cat (membership|shop|donations|projects|academy|payout|other) */
     private static function union(): string
     {
         $labels = [];
@@ -35,30 +35,31 @@ final class PaymentsDashboard
             }
             return $case . ' ELSE ' . $col . ' END';
         };
+        $cat = static fn(string $col): string => 'CASE ' . $col . " WHEN 'donation' THEN 'donations' WHEN 'project' THEN 'projects' WHEN 'shop' THEN 'shop' WHEN 'membership' THEN 'membership' WHEN 'academy_signup' THEN 'academy' WHEN 'academy_cert' THEN 'academy' WHEN 'payout' THEN 'payout' ELSE 'other' END";
         $parts = [
             "SELECT 'daraza' AS src, d.id, COALESCE(d.paid_at, d.created_at) AS at, 'mobile' AS channel, d.direction AS dir,
                     CASE WHEN d.direction = 'out' THEN 'Payout (money sent)' ELSE " . $what('d.purpose') . " END AS what,
                     CASE WHEN d.direction = 'out' THEN COALESCE(d.phone, '') WHEN d.payer_name <> '' THEN d.payer_name ELSE COALESCE(d.payer_email, '') END AS who,
                     CONCAT(CASE d.method WHEN 1 THEN 'MTN ' WHEN 2 THEN 'Airtel ' ELSE '' END, CASE WHEN d.direction = 'in' THEN COALESCE(d.phone, '') ELSE COALESCE(d.note, '') END) AS detail,
                     d.amount_ugx * 100 AS amt, 'UGX' AS cur,
-                    CASE d.status WHEN 'paid' THEN 'paid' WHEN 'failed' THEN 'failed' ELSE 'pending' END AS status, d.reference AS ref
+                    CASE d.status WHEN 'paid' THEN 'paid' WHEN 'failed' THEN 'failed' ELSE 'pending' END AS status, d.reference AS ref, " . $cat('d.purpose') . " AS cat
              FROM daraza_payments d",
             "SELECT 'pesapal', p.id, COALESCE(p.paid_at, p.created_at), 'online', 'in', " . $what('p.purpose') . ",
                     CASE WHEN p.payer_name <> '' THEN p.payer_name ELSE COALESCE(p.payer_email, '') END, COALESCE(p.pay_method, 'Pesapal'),
-                    p.amount_minor, p.currency, CASE p.status WHEN 'paid' THEN 'paid' WHEN 'failed' THEN 'failed' WHEN 'invalid' THEN 'failed' WHEN 'reversed' THEN 'failed' ELSE 'pending' END, p.merchant_reference
+                    p.amount_minor, p.currency, CASE p.status WHEN 'paid' THEN 'paid' WHEN 'failed' THEN 'failed' WHEN 'invalid' THEN 'failed' WHEN 'reversed' THEN 'failed' ELSE 'pending' END, p.merchant_reference, " . $cat('p.purpose') . "
              FROM pesapal_payments p",
             "SELECT 'shop', s.id, s.created_at, CASE WHEN s.method = 'flutterwave' THEN 'online' ELSE 'manual' END, 'in', 'Shop orders',
                     COALESCE(o.customer_name, ''), CONCAT('Order ', COALESCE(o.order_number, ''), ' ', s.method),
-                    s.amount, s.currency, 'paid', COALESCE(s.reference, CONCAT('SHOP-', s.id))
+                    s.amount, s.currency, 'paid', COALESCE(s.reference, CONCAT('SHOP-', s.id)), 'shop'
              FROM shop_payments s LEFT JOIN shop_orders o ON o.id = s.order_id
              WHERE s.status = 'success' AND s.method NOT IN ('mobile', 'pesapal')",
             "SELECT 'donation', n.id, COALESCE(n.received_at, n.created_at), 'manual', 'in', 'Donations',
                     CASE WHEN n.is_anonymous = 1 THEN 'Anonymous' ELSE n.donor_name END, COALESCE(n.method, ''),
-                    ROUND(n.amount * 100), n.currency, 'paid', COALESCE(n.receipt_no, CONCAT('DON-', n.id))
+                    ROUND(n.amount * 100), n.currency, 'paid', COALESCE(n.receipt_no, CONCAT('DON-', n.id)), CASE WHEN n.reference LIKE 'PROJECT:%' THEN 'projects' ELSE 'donations' END
              FROM donations n WHERE n.status = 'received' AND n.method NOT IN ('mobile_money', 'pesapal')",
             "SELECT 'member', m.id, COALESCE(m.paid_at, m.created_at), 'manual', 'in', 'Membership payments',
                     COALESCE(b.full_name, ''), COALESCE(m.method, ''),
-                    ROUND(m.amount * 100), m.currency, 'paid', COALESCE(m.receipt_number, CONCAT('MEM-', m.id))
+                    ROUND(m.amount * 100), m.currency, 'paid', COALESCE(m.receipt_number, CONCAT('MEM-', m.id)), 'membership'
              FROM member_payments m LEFT JOIN members b ON b.id = m.member_id
              WHERE m.status = 'received' AND m.method NOT IN ('mobile_money', 'pesapal')",
         ];
@@ -91,6 +92,10 @@ final class PaymentsDashboard
             $w[] = 'u.channel = ?';
             $v[] = $f['channel'];
         }
+        if (isset(PaymentEvents::CATEGORIES[(string) ($f['category'] ?? '')])) {
+            $w[] = 'u.cat = ?';
+            $v[] = $f['category'];
+        }
         if (in_array($f['dir'] ?? '', ['in', 'out'], true)) {
             $w[] = 'u.dir = ?';
             $v[] = $f['dir'];
@@ -121,7 +126,7 @@ final class PaymentsDashboard
 
     /**
      * The numbers at the top of the dashboard for a range (the filters other than the range do not change them).
-     * @return array{in:int,out:int,net:int,count_in:int,count_out:int,waiting:int,failed:int,by_channel:array<string,int>,by_what:list<array{what:string,amt:int,n:int}>,days:list<array{day:string,amt:int}>,other:array<string,int>}
+     * @return array{in:int,out:int,net:int,count_in:int,count_out:int,waiting:int,failed:int,by_channel:array<string,int>,by_cat:array<string,array{amt:int,n:int}>,by_what:list<array{what:string,amt:int,n:int}>,days:list<array{day:string,amt:int}>,other:array<string,int>}
      */
     public static function summary(string $range): array
     {
@@ -137,6 +142,10 @@ final class PaymentsDashboard
         $byChannel = array_fill_keys(array_keys(self::CHANNELS), 0);
         foreach (Database::all("SELECT u.channel, COALESCE(SUM(u.amt),0) s FROM {$u} u WHERE u.dir = 'in' AND u.status = 'paid' AND u.cur = ?" . $w . ' GROUP BY u.channel', array_merge([$cur], $v)) as $r) {
             $byChannel[(string) $r['channel']] = (int) $r['s'];
+        }
+        $byCat = array_fill_keys(['membership', 'shop', 'donations', 'projects', 'academy'], ['amt' => 0, 'n' => 0]);
+        foreach (Database::all("SELECT u.cat, COALESCE(SUM(u.amt),0) s, COUNT(*) n FROM {$u} u WHERE u.dir = 'in' AND u.status = 'paid' AND u.cur = ?" . $w . ' GROUP BY u.cat', array_merge([$cur], $v)) as $r) {
+            $byCat[(string) $r['cat']] = ['amt' => (int) $r['s'], 'n' => (int) $r['n']];
         }
         $byWhat = [];
         foreach (Database::all("SELECT u.what, COALESCE(SUM(u.amt),0) s, COUNT(*) n FROM {$u} u WHERE u.dir = 'in' AND u.status = 'paid' AND u.cur = ?" . $w . ' GROUP BY u.what ORDER BY s DESC LIMIT 8', array_merge([$cur], $v)) as $r) {
@@ -163,7 +172,7 @@ final class PaymentsDashboard
             'count_out' => $one("SELECT COUNT(*) FROM {$u} u WHERE u.dir = 'out' AND u.status = 'paid'" . $w, $v),
             'waiting' => $one("SELECT COUNT(*) FROM {$u} u WHERE u.status = 'pending' AND u.at >= ?", [date('Y-m-d H:i:s', strtotime('-3 days'))]),
             'failed' => $one("SELECT COUNT(*) FROM {$u} u WHERE u.status = 'failed'" . $w, $v),
-            'by_channel' => $byChannel, 'by_what' => $byWhat, 'days' => $days, 'other' => $other,
+            'by_channel' => $byChannel, 'by_cat' => $byCat, 'by_what' => $byWhat, 'days' => $days, 'other' => $other,
         ];
     }
 
