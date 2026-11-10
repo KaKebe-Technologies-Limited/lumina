@@ -72,11 +72,22 @@ final class AcademyController extends AcademyBaseController
         $filtered = $filters['q'] !== '' || $filters['category'] !== '' || $filters['level'] !== '';
         return $this->renderAcademy('web/academy/index', [
             'courses' => $courses, 'counts' => $counts, 'filters' => $filters, 'filtered' => $filtered, 'stats' => $stats, 'glance' => $glance, 'upcoming' => $upcoming, 'partners' => $partners, 'partnerTotal' => $partnerTotal, 'challenges' => $challenges, 'winners' => $winners,
-            'categories' => CourseService::categoryLabels(), 'levels' => CourseService::LEVELS,
+            'categories' => CourseService::categoryLabels(), 'levels' => CourseService::LEVELS, 'faqs' => \App\Services\Academy\AcademyFaqs::all(6),
         ], [
             'bodyClass' => 'is-academy is-academy-home',
             'breadcrumbs' => [[$this->academyLabel(), null]],
             'meta' => $filtered ? ['robots' => 'noindex,follow', 'canonical' => '/academy'] : [],
+        ]);
+    }
+
+    /** The FAQs of the Academy (questions: Admin > FAQs, group "academy"). */
+    public function faq(Request $request): Response
+    {
+        $this->gate();
+        return $this->renderAcademy('web/academy/faq', ['faqs' => \App\Services\Academy\AcademyFaqs::all(), 'about' => \App\Services\Academy\AcademyFaqs::ABOUT], [
+            'bodyClass' => 'is-academy is-academy-faq',
+            'breadcrumbs' => [[$this->academyLabel(), url('academy')], ['FAQs', null]],
+            'meta' => ['title' => 'LAF Academy FAQs: courses, certificates and support', 'description' => 'Answers about enrolling, the USD 3 certificate fee, accreditation and recognition, courses, teachers and support at the LAF Academy.'],
         ]);
     }
 

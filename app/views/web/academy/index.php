@@ -220,6 +220,15 @@ $cta = content_btn('academy', 'cta.button');
     <p class="ac-center"><a class="btn btn--outline btn--caps" href="<?= e(url('academy/classes')) ?>"><?= e(content('academy', 'classes.button')) ?></a></p>
 <?php section_end(); endif; ?>
 
+<?php if (!empty($faqs)): ?>
+<section class="section" aria-labelledby="ac-faq-title">
+    <div class="container container--narrow">
+        <?= partial('partials/faq-split', ['faqs' => $faqs, 'prefix' => 'acfaqh', 'first_open' => false, 'eyebrow' => 'Good to know', 'title' => 'Frequently asked questions', 'id' => 'ac-faq-title']) ?>
+        <p class="ac-center"><a class="btn btn--outline btn--caps" href="<?= e(url('academy/faq')) ?>">See all the questions</a></p>
+    </div>
+</section>
+<?php endif; ?>
+
 <?php section_begin('academy', 'cta', ['class' => 'section--tint', 'labelledby' => 'ac-cta-title']); ?>
     <div class="cta" data-reveal>
         <h2 class="cta__title" id="ac-cta-title"><?= highlight((string) content('academy', 'cta.title')) ?></h2>

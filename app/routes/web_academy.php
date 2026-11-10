@@ -17,6 +17,7 @@ use App\Controllers\Web\AcademyPortalController;
 $router->get('/academy', [AcademyController::class, 'index'])->name('academy.index');
 $router->get('/academy/courses/{slug}', [AcademyController::class, 'course'])->name('academy.course');
 $router->get('/academy/impact', [AcademyController::class, 'impact'])->name('academy.impact');
+$router->get('/academy/faq', [AcademyController::class, 'faq'])->name('academy.faq');
 $router->get('/academy/partner-courses', [AcademyController::class, 'partners'])->name('academy.partners');
 $router->get('/academy/classes', [AcademyController::class, 'classes'])->name('academy.classes');
 $router->get('/academy/classes/{id}/calendar.ics', [AcademyController::class, 'calendar'])->middleware('throttle:60,60')->name('academy.class.ics');
