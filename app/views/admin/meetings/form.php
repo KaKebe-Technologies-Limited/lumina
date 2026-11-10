@@ -15,6 +15,7 @@ use App\Services\Meetings\MeetingTime;
 $this->start('scripts'); ?>
 <script src="<?= e(asset('js/admin-editor.js')) ?>" defer></script>
 <script src="<?= e(asset('js/admin-meetings.js')) ?>" defer></script>
+<script src="<?= e(asset('js/admin-meetings-quick.js')) ?>" defer></script>
 <?php $this->end();
 
 $isEdit = $mode === 'edit';
@@ -55,6 +56,8 @@ $subtitle = $isEdit
 <div class="meetings-admin ma-page ma-page--form">
     <?= partial('partials/admin/page-header', ['title' => $title, 'subtitle' => $subtitle, 'actions' => [
         ['label' => $isEdit ? 'Back to the meeting' : 'All meetings', 'url' => url($isEdit ? 'admin/meetings/' . $id : 'admin/meetings'), 'class' => 'btn--outline', 'icon' => 'arrow-left'],
+        ['label' => 'Meeting requests', 'url' => url('admin/meeting-requests'), 'class' => 'btn--ghost', 'icon' => 'inbox'],
+        ['label' => 'Calendar', 'url' => url('admin/calendar'), 'class' => 'btn--ghost', 'icon' => 'calendar'],
     ]]) ?>
 
     <?php if ($requestCtx): ?>
@@ -84,7 +87,7 @@ $subtitle = $isEdit
 
     <form id="meeting-form" class="ma-form" method="post" action="<?= e($action) ?>" data-meeting-form data-unsaved-guard
           data-mode="<?= $isEdit ? ($meeting['status'] === 'scheduled' ? 'edit-scheduled' : 'edit-draft') : 'create' ?>" data-meeting-id="<?= $id ?>"
-          data-api="<?= e(url('admin/api/meetings')) ?>" data-mail-api="<?= e($mailApi) ?>" data-user-email="<?= e((string) ($user['email'] ?? '')) ?>"
+          data-today="<?= e($today) ?>" data-user-name="<?= e((string) ($user['name'] ?? '')) ?>" data-api="<?= e(url('admin/api/meetings')) ?>" data-mail-api="<?= e($mailApi) ?>" data-user-email="<?= e((string) ($user['email'] ?? '')) ?>"
           data-platforms="<?= e((string) json_encode($platformData, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>">
         <?= csrf_field() ?>
         <input type="hidden" name="request_id" value="<?= $requestCtx ? (int) $requestCtx['id'] : 0 ?>">
@@ -102,8 +105,10 @@ $subtitle = $isEdit
             </div>
         <?php endif; ?>
 
-        <section class="card" aria-labelledby="ma-s-when">
-            <div class="card__header"><h2 class="card__title" id="ma-s-when">1. What and when</h2><span class="ma-tz" title="East Africa Time, UTC+3, the time in Kampala"><?= icon('clock', 'icon--sm') ?> All times are East Africa Time (EAT)</span></div>
+        <div class="mf-layout">
+        <div class="mf-main">
+        <section class="card mf-sec" id="sec-when" aria-labelledby="ma-s-when">
+            <div class="card__header"><h2 class="card__title" id="ma-s-when"><span class="mf-num">1</span> What and when</h2><span class="ma-tz" title="East Africa Time, UTC+3, the time in Kampala"><?= icon('clock', 'icon--sm') ?> All times are East Africa Time (EAT)</span></div>
             <div class="card__body">
                 <?= partial('partials/form-field', ['name' => 'title', 'label' => 'Meeting title', 'required' => true, 'maxlength' => 190, 'value' => $val('title'),
                     'placeholder' => 'For example: Board meeting, or Partnership talk with Gulu District', 'help' => 'People see this in the invitation and in their calendar.', 'attrs' => $isEdit ? [] : ['autofocus' => true]]) ?>
@@ -112,6 +117,17 @@ $subtitle = $isEdit
                         'attrs' => ['data-ma-date' => true]]) ?>
                     <?= partial('partials/form-field', ['name' => 'start_time', 'label' => 'Starts at (EAT)', 'type' => 'time', 'required' => true, 'value' => $startTime, 'attrs' => ['data-ma-start' => true],
                         'help' => 'East Africa Time, the time in Kampala.']) ?>
+                </div>
+                <div class="mf-quick" aria-label="Quick choices for the date and the start time">
+                    <span class="mf-quick__k">Date</span>
+                    <button type="button" class="mf-chip" data-mf-day="0">Today</button>
+                    <button type="button" class="mf-chip" data-mf-day="1">Tomorrow</button>
+                    <button type="button" class="mf-chip" data-mf-day="next-mon">Next Monday</button>
+                    <button type="button" class="mf-chip" data-mf-day="7">In a week</button>
+                    <span class="mf-quick__k">Start</span>
+                    <?php foreach (['08:00' => '8 am', '09:00' => '9 am', '10:00' => '10 am', '14:00' => '2 pm', '16:00' => '4 pm'] as $t24 => $t12): ?>
+                        <button type="button" class="mf-chip" data-mf-time="<?= e($t24) ?>"><?= e($t12) ?></button>
+                    <?php endforeach; ?>
                 </div>
                 <fieldset class="ma-duration" data-ma-duration>
                     <legend class="field__label">How long?</legend>
@@ -133,8 +149,8 @@ $subtitle = $isEdit
             </div>
         </section>
 
-        <section class="card" aria-labelledby="ma-s-how">
-            <div class="card__header"><h2 class="card__title" id="ma-s-how">2. How will people meet?</h2></div>
+        <section class="card mf-sec" id="sec-how" aria-labelledby="ma-s-how">
+            <div class="card__header"><h2 class="card__title" id="ma-s-how"><span class="mf-num">2</span> How will people meet?</h2></div>
             <div class="card__body">
                 <fieldset class="ma-platforms">
                     <legend class="field__label">Type of meeting</legend>
@@ -187,16 +203,17 @@ $subtitle = $isEdit
             </div>
         </section>
 
-        <section class="card" aria-labelledby="ma-s-agenda">
-            <div class="card__header"><h2 class="card__title" id="ma-s-agenda">3. Agenda (optional)</h2></div>
+        <section class="card mf-sec" id="sec-agenda" aria-labelledby="ma-s-agenda">
+            <div class="card__header"><h2 class="card__title" id="ma-s-agenda"><span class="mf-num">3</span> Agenda <span class="field__opt">(optional)</span></h2></div>
             <div class="card__body">
                 <?= partial('partials/admin/richtext-field', ['name' => 'description', 'label' => 'What is this meeting about?', 'rows' => 8, 'value' => $val('description'),
                     'help' => 'Shown in the invitation and on the invitee page. A few lines or a short list is plenty.']) ?>
             </div>
         </section>
 
-        <section class="card" aria-labelledby="ma-s-org">
-            <div class="card__header"><h2 class="card__title" id="ma-s-org">4. Who is organising it?</h2></div>
+        <section class="card mf-sec" id="sec-org" aria-labelledby="ma-s-org">
+            <div class="card__header"><h2 class="card__title" id="ma-s-org"><span class="mf-num">4</span> Who is organising it?</h2>
+                <button type="button" class="btn btn--outline btn--sm" data-mf-me><?= icon('user', 'icon--sm') ?> Use my details</button></div>
             <div class="card__body">
                 <div class="form-grid">
                     <?= partial('partials/form-field', ['name' => 'organiser_name', 'label' => 'Organiser name', 'required' => true, 'maxlength' => 100, 'value' => $val('organiser_name'), 'autocomplete' => 'name']) ?>
@@ -206,8 +223,8 @@ $subtitle = $isEdit
             </div>
         </section>
 
-        <section class="card" aria-labelledby="ma-s-who">
-            <div class="card__header"><h2 class="card__title" id="ma-s-who">5. Who is invited?</h2></div>
+        <section class="card mf-sec" id="sec-who" aria-labelledby="ma-s-who">
+            <div class="card__header"><h2 class="card__title" id="ma-s-who"><span class="mf-num">5</span> Who is invited?</h2></div>
             <div class="card__body">
                 <?= partial('admin/meetings/_invitees', [
                     'idp' => 'inv', 'people' => $people, 'groups' => $groups, 'existing' => $existing, 'canBulk' => $canBulk,
@@ -217,8 +234,8 @@ $subtitle = $isEdit
             </div>
         </section>
 
-        <section class="card" aria-labelledby="ma-s-vis">
-            <div class="card__header"><h2 class="card__title" id="ma-s-vis">6. Who can see it, and reminders</h2></div>
+        <section class="card mf-sec" id="sec-vis" aria-labelledby="ma-s-vis">
+            <div class="card__header"><h2 class="card__title" id="ma-s-vis"><span class="mf-num">6</span> Who can see it, and reminders</h2></div>
             <div class="card__body">
                 <fieldset class="ma-choices">
                     <legend class="field__label">Who can see this meeting?</legend>
@@ -245,6 +262,38 @@ $subtitle = $isEdit
                 </div>
             </div>
         </section>
+
+        </div>
+        <aside class="mf-aside" aria-label="Quick links and summary">
+            <nav class="card mf-nav" aria-label="Jump to a part of the form">
+                <p class="mf-aside__h">Jump to</p>
+                <ol>
+                    <li><a href="#sec-when" data-mf-nav><span class="mf-num">1</span> What and when</a></li>
+                    <li><a href="#sec-how" data-mf-nav><span class="mf-num">2</span> How people meet</a></li>
+                    <li><a href="#sec-agenda" data-mf-nav><span class="mf-num">3</span> Agenda</a></li>
+                    <li><a href="#sec-org" data-mf-nav><span class="mf-num">4</span> Organiser</a></li>
+                    <li><a href="#sec-who" data-mf-nav><span class="mf-num">5</span> Who is invited</a></li>
+                    <li><a href="#sec-vis" data-mf-nav><span class="mf-num">6</span> Visibility and reminders</a></li>
+                </ol>
+            </nav>
+            <section class="card mf-sum" aria-label="Summary of the meeting" data-mf-summary>
+                <p class="mf-aside__h">Your meeting</p>
+                <p class="mf-sum__title" data-mf-s-title>Untitled meeting</p>
+                <p class="mf-sum__line"><?= icon('calendar', 'icon--sm') ?> <span data-mf-s-when>Choose the date and time</span></p>
+                <p class="mf-sum__line"><?= icon('video', 'icon--sm') ?> <span data-mf-s-where>How people meet</span></p>
+                <p class="mf-sum__line"><?= icon('user', 'icon--sm') ?> <span data-mf-s-org>Organiser</span></p>
+                <p class="mf-aside__h mf-aside__h--sp">Ready to send?</p>
+                <ul class="mf-check" data-mf-checklist>
+                    <li data-mf-c="title">A title</li>
+                    <li data-mf-c="date">A date</li>
+                    <li data-mf-c="start">A start time</li>
+                    <li data-mf-c="where">A link or a place</li>
+                    <li data-mf-c="org">The organiser's name and e-mail</li>
+                </ul>
+            </section>
+            <p class="mf-tip"><?= icon('info', 'icon--sm') ?> Only the title, date, start time and organiser are needed to save a draft. Nothing is e-mailed until you press the send button and confirm.</p>
+        </aside>
+        </div>
 
         <div class="form-actions ma-actions">
             <?php if ($isEdit && $meeting['status'] === 'scheduled'): ?>
