@@ -76,7 +76,54 @@ final class NewsletterPdf
         }
         self::releaseFile((string) ($row['pdf_path'] ?? ''), $id);
         AuditLog::record('newsletter.pdf_attach', 'newsletter', $id, 'Uploaded the PDF of a newsletter issue', ['bytes' => $stored['size'], 'replaced' => self::has($row)]);
+        self::ensureCover($id, true);
         return ['ok' => true, 'newsletter' => Newsletter::find($id) ?? []];
+    }
+
+    /**
+     * Make the cover picture of a PDF issue from the PDF itself (see PdfCover). A cover the team chose by hand is never replaced; a cover made here
+     * (file name nlcover-*.jpg) is replaced when $replaceAuto is true (a new PDF was uploaded). Never throws. @return bool a cover was made
+     */
+    public static function ensureCover(int $id, bool $replaceAuto = false): bool
+    {
+        try {
+            $row = Newsletter::find($id);
+            if ($row === null || !self::exists($row)) {
+                return false;
+            }
+            $old = trim((string) ($row['cover_image'] ?? ''));
+            $oldAuto = $old !== '' && preg_match('~/nlcover-[A-Za-z0-9]+\.jpg$~', $old) === 1;
+            if ($old !== '' && !($oldAuto && $replaceAuto)) {
+                return false;
+            }
+            $marker = STORAGE_PATH . '/cache/nlcover-' . $id . '-' . md5((string) $row['pdf_path']) . '.none';
+            if (!$replaceAuto && is_file($marker)) {
+                return false;                                   // already tried for this very PDF: nothing usable inside
+            }
+            $jpeg = PdfCover::fromFile(STORAGE_PATH . '/private/' . $row['pdf_path']);
+            if ($jpeg === null) {
+                @file_put_contents($marker, (string) time());
+                return false;
+            }
+            $rel = date('Y') . '/' . date('m');
+            $dir = UPLOAD_PATH . '/' . $rel;
+            if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                return false;
+            }
+            $name = 'nlcover-' . bin2hex(random_bytes(8)) . '.jpg';
+            if (@file_put_contents($dir . '/' . $name, $jpeg) === false) {
+                return false;
+            }
+            $alt = trim((string) ($row['cover_alt'] ?? '')) !== '' && !$oldAuto ? (string) $row['cover_alt'] : 'Cover of ' . (string) $row['title'];
+            Database::update('newsletters', ['cover_image' => $rel . '/' . $name, 'cover_alt' => mb_substr($alt, 0, 190)], 'id = ?', [$id]);
+            if ($oldAuto && is_file(UPLOAD_PATH . '/' . $old)) {
+                @unlink(UPLOAD_PATH . '/' . $old);
+            }
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('NewsletterPdf::ensureCover failed - ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**

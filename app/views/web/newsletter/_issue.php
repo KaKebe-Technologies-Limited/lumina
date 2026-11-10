@@ -41,6 +41,12 @@ $openLabel = (string) content('newsletter', 'pdf.open_label');
 $absDownload = $pdfReady ? NewsletterPdf::urls($issue, true)['download'] : '';
 
 // ---- masthead ---------------------------------------------------------------------------------------------------------------------------------
+if (!$preview && $isPdfIssue && $pdfReady && trim((string) ($issue['cover_image'] ?? '')) === '' && !empty($issue['id'])
+    && NewsletterPdf::ensureCover((int) $issue['id'])) {                                // a PDF issue without a cover: make it from the PDF (once)
+    $fresh = \App\Models\Newsletter::find((int) $issue['id']);
+    $issue['cover_image'] = (string) ($fresh['cover_image'] ?? '');
+    $issue['cover_alt'] = (string) ($fresh['cover_alt'] ?? '');
+}
 $coverPath = (string) ($issue['cover_image'] ?? '');
 $coverPath = NewsletterContent::validImagePath($coverPath) ? $coverPath : '';          // only an upload or a bundled photo, whatever the row says
 $hasCover = $coverPath !== '' && !$isPdfIssue;                                         // a PDF issue shows its cover inside the PDF panel
@@ -87,9 +93,13 @@ $crumbs = array_values(array_filter((array) ($breadcrumbs ?? []), 'is_array'));
                     <div class="nl-pdf__bar">
                         <div class="nl-pdf__doc">
                             <span class="nl-pdf__cover"><?= partial('web/newsletter/_cover', ['issue' => $issue, 'loading' => 'eager', 'caption' => false]) ?></span>
-                            <span class="nl-pdf__facts">
-                                <?php if ($sizeLabel !== ''): ?><span class="nl-pdf__size"><?= icon('file-text', 'icon--sm') ?> <?= e($sizeLabel) ?></span><?php endif; ?>
-                                <?php if ($countLabel !== ''): ?><span class="nl-pdf__count"><?= e($countLabel) ?></span><?php endif; ?>
+                            <span class="nl-pdf__info">
+                                <?php if ($label !== ''): ?><span class="nl-pdf__issue"><?= e($label) ?></span><?php endif; ?>
+                                <strong class="nl-pdf__title"><?= e($issue['title'] !== '' ? $issue['title'] : '…') ?></strong>
+                                <span class="nl-pdf__facts">
+                                    <?php if ($sizeLabel !== ''): ?><span class="nl-pdf__size"><?= icon('file-text', 'icon--sm') ?> <?= e($sizeLabel) ?></span><?php endif; ?>
+                                    <?php if ($countLabel !== ''): ?><span class="nl-pdf__count"><?= e($countLabel) ?></span><?php endif; ?>
+                                </span>
                             </span>
                         </div>
                         <div class="nl-pdf__actions">
