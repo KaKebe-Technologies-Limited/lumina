@@ -12,6 +12,8 @@ use App\Core\Response;
 use App\Core\UploadException;
 use App\Core\Uploader;
 use App\Models\Opportunity;
+use App\Services\Opportunities\OpportunityMeta;
+use App\Services\Opportunities\ScholarshipDirectory;
 
 /**
  * Admin CRUD for `opportunities` (/admin/opportunities): the ones the team types or uploads (source "manual") and the ones read from other websites
@@ -56,11 +58,13 @@ final class OpportunitiesController extends CrudController
 
     protected function formData(?array $row): array
     {
+        OpportunityMeta::install();
         return ['categories' => Opportunity::categoryLabels(), 'pdfMaxMb' => (int) round(Uploader::pdfMaxBytes() / 1048576)];
     }
 
     protected function listData(): array
     {
+        OpportunityMeta::install();
         return ['categories' => Opportunity::categoryLabels()];
     }
 
@@ -110,6 +114,7 @@ final class OpportunitiesController extends CrudController
                 'how_to_apply' => 'nullable|max:5000',
                 'deadline'     => 'nullable|date',
                 'apply_url'    => 'nullable|url|max:500',
+                'provider_type' => 'nullable|in:' . implode(',', array_keys(OpportunityMeta::PROVIDERS)),
             ] + $this->commonRules(),
             'labels' => ['title' => 'Title', 'apply_url' => 'Application link', 'how_to_apply' => 'How to apply', 'seo_title' => 'SEO title', 'seo_description' => 'SEO description'],
             'messages' => ['category.in' => 'Please choose a type from the list.'],
@@ -132,6 +137,8 @@ final class OpportunitiesController extends CrudController
             'how_to_apply'    => $this->plain($valid['how_to_apply']),
             'deadline'        => $this->dateOrNull($valid['deadline']),
             'apply_url'       => $this->text($valid['apply_url']),
+            'provider_type'   => (string) ($valid['provider_type'] ?? '') !== '' ? (string) $valid['provider_type'] : null,
+            'study_levels'    => ($lv = array_values(array_intersect(array_keys(OpportunityMeta::LEVELS), array_map('strval', (array) $request->post('levels', []))))) !== [] ? implode(',', $lv) : null,
             'is_active'       => $request->bool('is_active') ? 1 : 0,
             'is_featured'     => $request->bool('is_featured') ? 1 : 0,
             'seo_title'       => $this->text($valid['seo_title']),
@@ -203,6 +210,19 @@ final class OpportunitiesController extends CrudController
         }
         Flash::success('"' . $row['title'] . '" is now shown on the website.');
         return Response::redirect($this->returnUrl($request, 'admin/opportunities'));
+    }
+
+    /** POST admin/opportunities/directory: add the scholarship and fellowship directory (programmes already there are not added twice). */
+    public function addDirectory(Request $request): Response
+    {
+        $this->authorize('content.manage');
+        $r = ScholarshipDirectory::install();
+        $f = ScholarshipDirectory::addSources();
+        \App\Core\Settings::set('opp_directory_seeded', '1');
+        \App\Core\Settings::flush();
+        $this->audit('opportunity.directory', 'opportunity', null, 'Added the scholarship and fellowship directory (' . $r['added'] . ' new)');
+        Flash::success($r['added'] === 0 ? 'Every programme of the directory is already on the website.' : $r['added'] . ' scholarships and fellowships were added' . ($f > 0 ? ', and ' . $f . ' more website(s) to read in Sources' : '') . '. You can edit or hide any of them.');
+        return Response::redirect(url('admin/opportunities'));
     }
 
     /** POST approve-all: every item waiting for approval is shown. */

@@ -24585,6 +24585,43 @@ html.cal-lock {
   margin: 0;
 }
 
+.opp-pills--quick {
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.opp-pills__k {
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5B6472;
+  margin-right: 0.5rem;
+}
+
+.opp-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.opp-tag {
+  display: inline-block;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  background: #F3EFE5;
+  color: #142B4A;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.opp-tag--prov {
+  background: #D9A441;
+  color: #0B1B33;
+}
+
 .ac-tone-basics {
   background: rgba(20, 43, 74, 0.12);
   color: #142B4A;

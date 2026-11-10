@@ -48,3 +48,9 @@
   margin: $space-5 0; padding: $space-5; border: 1px dashed $border-strong; border-radius: $radius-card; background: $surface; text-align: center;
   p { margin: 0 0 $space-3; &:last-child { margin: 0; } }
 }
+
+// ---- the "Offered by" and "Level of study" quick filters and the chips on the cards ----
+.opp-pills--quick { margin-bottom: $space-4; align-items: center; }
+.opp-pills__k { font-family: $font-heading-caps; font-size: $fs-xs; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: $ink-soft; margin-right: $space-2; }
+.opp-card__meta { display: flex; flex-wrap: wrap; gap: $space-2; margin: 0 0 $space-3; }
+.opp-tag { display: inline-block; padding: 0.1rem 0.6rem; border-radius: $radius-pill; background: $tint-cool; color: $navy; font-size: $fs-xs; font-weight: 600; &--prov { background: $gold; color: $navy-dark; } }

@@ -29,6 +29,10 @@ $by = trim((string) ($o['organisation'] ?? '')) ?: trim((string) ($o['source_nam
         </div>
         <h3 class="card__title"><a href="<?= e($href) ?>"><?= e($o['title']) ?></a></h3>
         <?php if (trim((string) ($o['summary'] ?? '')) !== ''): ?><p class="card__text"><?= e(excerpt((string) $o['summary'], 190)) ?></p><?php endif; ?>
+        <?php $ocLv = \App\Services\Opportunities\OpportunityMeta::levelsOf($o['study_levels'] ?? null); $ocPr = \App\Services\Opportunities\OpportunityMeta::providerLabel($o['provider_type'] ?? null); ?>
+        <?php if ($ocLv || $ocPr !== ''): ?>
+            <p class="opp-card__meta"><?php if ($ocPr !== ''): ?><span class="opp-tag opp-tag--prov"><?= e(['organisation' => 'Organisation', 'government' => 'Government', 'international' => 'International organisation'][$o['provider_type']] ?? '') ?></span><?php endif; ?><?php foreach ($ocLv as $lv): ?><span class="opp-tag"><?= e(\App\Services\Opportunities\OpportunityMeta::LEVELS[$lv]) ?></span><?php endforeach; ?></p>
+        <?php endif; ?>
         <ul class="opp-card__facts">
             <?php if ($by !== ''): ?><li><?= icon('globe', 'icon--sm') ?> <?= e($by) ?></li><?php endif; ?>
             <?php if (!empty($o['location'])): ?><li><?= icon('map-pin', 'icon--sm') ?> <?= e($o['location']) ?></li><?php endif; ?>

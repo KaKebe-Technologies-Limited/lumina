@@ -51,6 +51,7 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth', 'can:content.manag
     $router->get('/posts/{id}/preview', [PostController::class, 'preview'])->name('admin.posts.preview');
 
     // opportunities: approve what was read from other websites; the sources (feeds) the website reads
+    $router->post('/opportunities/directory', [OpportunitiesController::class, 'addDirectory'])->name('admin.opportunities.directory');
     $router->post('/opportunities/approve-all', [OpportunitiesController::class, 'approveAll'])->name('admin.opportunities.approve_all');
     $router->post('/opportunities/{id}/approve', [OpportunitiesController::class, 'approve'])->name('admin.opportunities.approve');
     $router->get('/opportunity-sources', [OpportunityFeedsController::class, 'index'])->name('admin.opportunity_sources.index');

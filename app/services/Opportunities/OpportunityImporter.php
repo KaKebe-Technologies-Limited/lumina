@@ -173,6 +173,13 @@ final class OpportunityImporter
             'is_active'    => 1,
             'needs_review' => $review,
         ];
+        if ($data['category'] === 'scholarship' || $data['category'] === 'fellowship') {
+            if (OpportunityMeta::install()) {
+                $g = OpportunityMeta::guess($title . ' ' . $plain);
+                $data['provider_type'] = $g['provider'];
+                $data['study_levels'] = $g['levels'] !== [] ? implode(',', $g['levels']) : null;
+            }
+        }
         try {
             Database::insert('opportunities', $data);
         } catch (\PDOException $e) {

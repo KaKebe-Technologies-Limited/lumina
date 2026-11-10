@@ -37,6 +37,12 @@ $this->start('scripts'); ?>
                             'help' => 'For example: Mastercard Foundation Scholars Program 2027']) ?>
                         <?= partial('admin/_content/slug-field', ['value' => (string) $v('slug'), 'source' => '#f-title', 'prefix' => 'opportunities/', 'isNew' => $isNew]) ?>
                         <?= partial('partials/form-field', ['name' => 'category', 'label' => 'Type', 'type' => 'select', 'value' => $v('category', 'scholarship'), 'options' => $categories, 'required' => true]) ?>
+                        <?= partial('partials/form-field', ['name' => 'provider_type', 'label' => 'Offered by (type)', 'type' => 'select', 'value' => $v('provider_type'), 'options' => \App\Services\Opportunities\OpportunityMeta::PROVIDERS, 'empty' => 'Not set', 'help' => 'Used by the "Offered by" filter on the website: organisations (foundations, universities, companies), governments, or international organisations (UN, World Bank, African Union, EU).']) ?>
+                        <fieldset class="field field--full"><legend class="field__label">Level of study (scholarships and fellowships)</legend>
+                            <?php $stored = \App\Services\Opportunities\OpportunityMeta::levelsOf((string) old('study_levels_posted', '') !== '' ? implode(',', (array) old('levels', [])) : (string) ($row['study_levels'] ?? '')); ?>
+                            <input type="hidden" name="study_levels_posted" value="1">
+                            <?php foreach (\App\Services\Opportunities\OpportunityMeta::LEVELS as $lk => $ll): ?><label class="check"><input type="checkbox" name="levels[]" value="<?= e($lk) ?>"<?= in_array($lk, $stored, true) ? ' checked' : '' ?>><span><?= e($ll) ?></span></label><?php endforeach; ?>
+                            <div class="field__help">Tick every level it is open to. Used by the "Level" filter on the website.</div></fieldset>
                         <?= partial('partials/form-field', ['name' => 'organisation', 'label' => 'Offered by', 'maxlength' => 190, 'value' => $v('organisation'), 'help' => 'The organisation, university or funder.']) ?>
                         <?= partial('partials/form-field', ['name' => 'location', 'label' => 'Where', 'maxlength' => 190, 'value' => $v('location'), 'help' => 'A country or city, or "Online" or "Open to all African countries".']) ?>
                         <?= partial('partials/form-field', ['name' => 'summary', 'label' => 'Short summary', 'type' => 'textarea', 'rows' => 3, 'maxlength' => 1000, 'value' => $v('summary'), 'class' => 'field--full',

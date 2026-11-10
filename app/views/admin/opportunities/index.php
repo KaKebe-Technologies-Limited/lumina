@@ -19,6 +19,7 @@ $today = date('Y-m-d');
     'subtitle' => 'Scholarships, fellowships, internships, grants and more for young people. Add your own, or let the website read them from other opportunity websites.',
     'actions' => [
         ['label' => 'Add an opportunity', 'url' => url('admin/opportunities/create'), 'icon' => 'plus'],
+        ['label' => 'Add scholarship directory', 'url' => url('admin/opportunities/directory'), 'icon' => 'award', 'class' => 'btn--outline', 'method' => 'post'],
         ['label' => 'Sources (other websites)', 'url' => url('admin/opportunity-sources'), 'icon' => 'globe', 'class' => 'btn--outline'],
     ],
 ]) ?>

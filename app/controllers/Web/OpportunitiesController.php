@@ -14,6 +14,8 @@ use App\Core\SitePages;
 use App\Core\Uploader;
 use App\Models\Opportunity;
 use App\Services\Opportunities\OpportunityImporter;
+use App\Services\Opportunities\OpportunityMeta;
+use App\Services\Opportunities\ScholarshipDirectory;
 use App\Services\Web\ShareLinks;
 
 /**
@@ -33,6 +35,10 @@ final class OpportunitiesController extends Controller
         $type = $request->string('type');
         $type = isset(Opportunity::CATEGORIES[$type]) ? $type : '';
         $closed = $request->bool('closed');
+        ScholarshipDirectory::installOnce();                 // first visit ever: add the scholarship and fellowship directory (once)
+        $metaOk = OpportunityMeta::install();
+        $provider = $metaOk && isset(OpportunityMeta::PROVIDERS[$request->string('provider')]) ? $request->string('provider') : '';
+        $level = $metaOk && isset(OpportunityMeta::LEVELS[$request->string('level')]) ? $request->string('level') : '';
 
         $where = [Opportunity::SHOWN];
         $params = [];
@@ -42,6 +48,14 @@ final class OpportunitiesController extends Controller
         if ($type !== '') {
             $where[] = 't.category = ?';
             $params[] = $type;
+        }
+        if ($provider !== '') {
+            $where[] = 't.provider_type = ?';
+            $params[] = $provider;
+        }
+        if ($level !== '') {
+            $where[] = 'FIND_IN_SET(?, t.study_levels) > 0';
+            $params[] = $level;
         }
         if ($q !== '') {
             $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
@@ -53,6 +67,8 @@ final class OpportunitiesController extends Controller
         $total = 0;
         $rows = [];
         $counts = [];
+        $providerCounts = [];
+        $levelCounts = [];
         $pagination = Pagination::make(0, 1, self::PER_PAGE);
         try {
             $total = (int) Database::value('SELECT COUNT(*) FROM opportunities t' . $whereSql, $params, 0);
@@ -67,6 +83,16 @@ final class OpportunitiesController extends Controller
             ) as $c) {
                 $counts[(string) $c['category']] = (int) $c['n'];
             }
+            if ($metaOk) {
+                $base = ' FROM opportunities t WHERE ' . Opportunity::SHOWN . ($closed ? '' : ' AND ' . Opportunity::OPEN) . ($type !== '' ? ' AND t.category = ?' : '');
+                $bp = $type !== '' ? [$type] : [];
+                foreach (Database::all('SELECT t.provider_type AS k, COUNT(*) AS n' . $base . ' AND t.provider_type IS NOT NULL GROUP BY t.provider_type', $bp) as $c) {
+                    $providerCounts[(string) $c['k']] = (int) $c['n'];
+                }
+                foreach (array_keys(OpportunityMeta::LEVELS) as $lv) {
+                    $levelCounts[$lv] = (int) Database::value('SELECT COUNT(*)' . $base . ' AND FIND_IN_SET(?, t.study_levels) > 0', array_merge($bp, [$lv]), 0);
+                }
+            }
         } catch (\Throwable) {
             // the upgrade (new tables) has not been imported yet: show the empty page instead of an error
         }
@@ -74,11 +100,12 @@ final class OpportunitiesController extends Controller
         $this->refreshLater();
         return $this->renderPage('opportunities', 'web/opportunities/index', [
             'rows' => $rows, 'pagination' => $pagination, 'total' => $total, 'q' => $q, 'type' => $type, 'closed' => $closed, 'counts' => $counts,
+            'provider' => $provider, 'level' => $level, 'providerCounts' => $providerCounts, 'levelCounts' => $levelCounts,
             'categories' => Opportunity::categoryLabels(),
         ], [
             'bodyClass'   => 'is-opportunities-index',
             'breadcrumbs' => [[$this->navLabel(), null]],
-            'meta'        => $q !== '' || $type !== '' || $closed ? ['robots' => 'noindex,follow', 'canonical' => '/opportunities'] : [],
+            'meta'        => $q !== '' || $type !== '' || $closed || $provider !== '' || $level !== '' ? ['robots' => 'noindex,follow', 'canonical' => '/opportunities'] : [],
         ]);
     }
 
