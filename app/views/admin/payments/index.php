@@ -108,9 +108,16 @@ $rangeLabel = strtolower(PD::RANGES[$f['range']]);
                 <td data-label="Who"><?= e($r['who'] !== '' ? $r['who'] : '—') ?><span class="cell-sub"><?= e(trim((string) $r['detail'])) ?></span></td>
                 <td data-label="Channel"><span class="pd-chan pd-chan--<?= e($r['channel']) ?>"><?= icon($chanIcon[$r['channel']] ?? 'phone', 'icon--sm') ?> <?= e(['mobile' => 'Mobile money', 'online' => 'Card / online', 'manual' => 'Bank / cash'][$r['channel']] ?? $r['channel']) ?></span></td>
                 <td class="num nowrap pd-amt<?= $out ? ' pd-amt--out' : '' ?>" data-label="Amount"><?= $out ? '−' : '+' ?> <?= e($r['cur']) ?> <?= e($m((int) $r['amt'])) ?></td>
-                <td data-label="Status"><span class="badge badge--<?= e($tone[$r['status']] ?? 'neutral') ?>"><?= e(PD::STATUSES[$r['status']] ?? $r['status']) ?></span></td>
-                <td><?php if ($r['src'] === 'daraza' && in_array($r['status'], ['pending', 'failed'], true)): ?>
-                    <form method="post" action="<?= e(url('admin/payments/' . (int) $r['id'] . '/check')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit">Check again</button></form><?php endif; ?></td>
+                <td data-label="Status"><?php $stale = $r['status'] === 'pending' && strtotime((string) $r['at']) < time() - 600; ?><span class="badge badge--<?= e($tone[$r['status']] ?? 'neutral') ?>"><?= e($stale ? 'Not confirmed' : (PD::STATUSES[$r['status']] ?? $r['status'])) ?></span><?php if ($stale && $r['src'] === 'daraza'): ?><span class="cell-sub">Check the Daraza wallet, then press Resolve</span><?php endif; ?></td>
+                <td><?php if ($r['src'] === 'daraza' && $r['dir'] === 'in' && in_array($r['status'], ['pending', 'failed'], true)): ?>
+                    <details class="pd-fix"><summary class="btn btn--outline btn--sm">Resolve</summary>
+                        <div class="pd-fix__box">
+                            <p class="text-muted">If the payer approved but it still shows waiting, Daraza's answer was lost on the way. First press <strong>Check again</strong>. If that cannot tell, look in your Daraza wallet or statement.</p>
+                            <form method="post" action="<?= e(url('admin/payments/' . (int) $r['id'] . '/check')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit">Check again</button></form>
+                            <form method="post" action="<?= e(url('admin/payments/' . (int) $r['id'] . '/confirm')) ?>" class="inline-form" data-confirm="Confirm only if you can see this money in the Daraza wallet or statement. The order or receipt will be completed. Continue?"><?= csrf_field() ?><input class="input" name="note" maxlength="120" placeholder="Note (optional)"><button class="btn btn--primary btn--sm" type="submit">Money received: confirm</button></form>
+                            <form method="post" action="<?= e(url('admin/payments/' . (int) $r['id'] . '/close')) ?>" class="inline-form" data-confirm="Close this payment as not received?"><?= csrf_field() ?><button class="btn btn--ghost btn--sm" type="submit">Not received: close</button></form>
+                        </div></details>
+                <?php endif; ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>

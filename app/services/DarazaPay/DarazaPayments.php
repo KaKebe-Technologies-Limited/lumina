@@ -209,7 +209,7 @@ final class DarazaPayments
     }
 
     /** Mark paid ONCE and apply it. @return array{state:string,message:string,row:?array<string,mixed>} */
-    private static function pay(int $id, string $requestId, string $message): array
+    private static function pay(int $id, string $requestId, string $message, string $by = ''): array
     {
         $claimed = Database::transaction(static function () use ($id, $requestId, $message): bool {
             $r = Database::one('SELECT status FROM daraza_payments WHERE id = ? FOR UPDATE', [$id]);
@@ -221,7 +221,7 @@ final class DarazaPayments
         });
         $row = self::fresh($id);
         if ($claimed && $row !== null) {
-            \App\Services\Payments\PaymentEvents::log('success', 'mobile', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), 'Confirmed by Daraza' . ($row['request_id'] ? ' (' . $row['request_id'] . ')' : ''));
+            \App\Services\Payments\PaymentEvents::log('success', 'mobile', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), ($by !== '' ? $by : 'Confirmed by Daraza') . ($row['request_id'] ? ' (' . $row['request_id'] . ')' : ''));
             self::apply($row);
         }
         return ['state' => 'paid', 'message' => 'Payment received. Thank you!', 'row' => $row];
@@ -254,6 +254,39 @@ final class DarazaPayments
         Database::update('daraza_payments', ['status' => 'failed', 'message' => 'Daraza says it was not successful'], 'id = ? AND status <> ?', [$id, 'paid']);
         \App\Services\Payments\PaymentEvents::log('failed', 'mobile', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), 'Daraza says it was not successful (checked again)');
         return ['state' => 'failed', 'message' => 'Daraza says it was not successful.', 'row' => self::fresh($id)];
+    }
+
+    /**
+     * A person at the foundation confirms a payment that stayed "waiting" because Daraza's answer never came back (the payer approved on the phone, but our request to Daraza was cut off):
+     * they have seen the money in the Daraza wallet or statement. The payment is marked paid and applied (the order, the receipt, the thank-you e-mail) exactly once.
+     * @return array{ok:bool,message:string}
+     */
+    public static function confirmManually(int $id, ?int $adminId, string $note = ''): array
+    {
+        $row = self::fresh($id);
+        if ($row === null || $row['direction'] !== 'in') {
+            return ['ok' => false, 'message' => 'Payment not found.'];
+        }
+        if ($row['status'] === 'paid') {
+            return ['ok' => true, 'message' => 'It is already confirmed.'];
+        }
+        $who = 'Confirmed by staff after checking the Daraza wallet' . (trim($note) !== '' ? ': ' . mb_substr(trim($note), 0, 120) : '');
+        $r = self::pay($id, (string) ($row['request_id'] ?? ''), $who, $who);
+        AuditLog::record('daraza.confirm', 'daraza_payment', (string) $id, 'Confirmed a mobile-money payment by hand (' . $row['reference'] . ', UGX ' . number_format((int) $row['amount_ugx']) . ')');
+        return ['ok' => $r['state'] === 'paid', 'message' => $r['state'] === 'paid' ? 'Marked as received and applied.' : 'It could not be confirmed.'];
+    }
+
+    /** A person closes a payment that never arrived (no money in the wallet): it stops showing as waiting. @return array{ok:bool,message:string} */
+    public static function closeAsNotReceived(int $id, ?int $adminId): array
+    {
+        $row = self::fresh($id);
+        if ($row === null || $row['direction'] !== 'in' || $row['status'] === 'paid') {
+            return ['ok' => false, 'message' => 'This payment cannot be closed.'];
+        }
+        Database::update('daraza_payments', ['status' => 'failed', 'message' => 'Closed by staff: no money was received'], 'id = ? AND status <> ?', [$id, 'paid']);
+        \App\Services\Payments\PaymentEvents::log('failed', 'mobile', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), 'Closed by staff: no money was received', $adminId);
+        AuditLog::record('daraza.close', 'daraza_payment', (string) $id, 'Closed a mobile-money payment as not received (' . $row['reference'] . ')');
+        return ['ok' => true, 'message' => 'Closed: it will no longer show as waiting.'];
     }
 
     /** @param array<string,mixed> $row */

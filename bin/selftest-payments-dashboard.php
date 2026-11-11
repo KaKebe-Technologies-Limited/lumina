@@ -164,6 +164,32 @@ check('audit: filter by group and category', PaymentEvents::rows(['range' => 'al
 $cat = PaymentsDashboard::summary('30');
 check('categories: donations, projects and shop are totalled apart (the project gift of 45,000 is in "projects")', ($cat['by_cat']['projects']['amt'] ?? 0) >= 4500000 && ($cat['by_cat']['donations']['amt'] ?? 0) >= 2000000);
 check('categories: the payments list can be filtered by category', PaymentsDashboard::rows(['range' => '30', 'category' => 'projects', 'q' => 'RCT-ZZPD'], 10, 0)['total'] === 1);
+// ---- a payment that stayed "waiting" although the payer paid: staff confirm it, or close it
+Settings::setMany(['daraza_api_donation_on' => '1']);
+Settings::flush();
+putenv('DARAZA_API_KEY=zz-test-key');
+Database::execute("INSERT INTO donations (donor_name, donor_email, amount, currency, method, status, source) VALUES ('Zz Pd Lost','zz-pd-lost@example.test',5000,'UGX','mobile_money','pledged','online')");
+$lostDon = (int) Database::value('SELECT LAST_INSERT_ID()');
+$lost = DarazaPayments::begin('donation', $lostDon, 500000, 'UGX', ['name' => 'Zz Pd Lost', 'email' => 'zz-pd-lost@example.test']);
+$lostRow = DarazaPayments::byReference((string) $lost['reference']);
+Database::execute("UPDATE daraza_payments SET status = 'unknown', message = 'Daraza did not answer in time' WHERE id = ?", [(int) $lostRow['id']]);
+$lostCheck = DarazaPayments::check((int) $lostRow['id']);
+check('lost answer: "check again" says plainly that Daraza gave no request number, so it cannot look it up', $lostCheck['state'] === 'unknown' && str_contains($lostCheck['message'], 'request number'));
+$mailBeforeL = glob($mailDir . '/*.eml') ?: [];
+$cf = DarazaPayments::confirmManually((int) $lostRow['id'], null, 'seen in the wallet');
+$after = DarazaPayments::byReference((string) $lost['reference']);
+check('lost answer: staff can confirm it: it becomes paid, the donation is received, and the payer is thanked', $cf['ok'] && $after['status'] === 'paid' && Database::value('SELECT status FROM donations WHERE id = ?', [$lostDon]) === 'received' && str_contains($mailText($mailBeforeL), 'zz-pd-lost@example.test'));
+check('lost answer: the audit trail says it was confirmed by staff', str_contains((string) Database::value("SELECT detail FROM payment_events WHERE reference = ? AND event = 'success'", [(string) $lost['reference']], ''), 'Confirmed by staff'));
+check('lost answer: confirming twice changes nothing', DarazaPayments::confirmManually((int) $lostRow['id'], null)['ok'] && (int) Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = ? AND event = 'success'", [(string) $lost['reference']], 0) === 1);
+Database::execute("INSERT INTO donations (donor_name, donor_email, amount, currency, method, status, source) VALUES ('Zz Pd Never','zz-pd-never@example.test',7000,'UGX','mobile_money','pledged','online')");
+$nev = DarazaPayments::begin('donation', (int) Database::value('SELECT LAST_INSERT_ID()'), 700000, 'UGX', ['name' => 'Zz Pd Never', 'email' => 'zz-pd-never@example.test']);
+$nevRow = DarazaPayments::byReference((string) $nev['reference']);
+$cl = DarazaPayments::closeAsNotReceived((int) $nevRow['id'], null);
+check('lost answer: staff can close a payment that never arrived (it stops showing as waiting, no thank-you)', $cl['ok'] && DarazaPayments::byReference((string) $nev['reference'])['status'] === 'failed' && (int) Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = ? AND event = 'thanks'", [(string) $nev['reference']], 0) === 0);
+Settings::setMany(['daraza_api_donation_on' => (string) $prevSwitch]);
+Settings::flush();
+putenv('DARAZA_API_KEY');
+
 Settings::setMany(['daraza_api_donation_on' => (string) $prevSwitch]);
 Settings::flush();
 putenv('DARAZA_API_KEY');
@@ -192,7 +218,7 @@ check('the page needs a sign-in', $req('/admin/payments', null, tempnam(sys_get_
 $lp = $req('/admin/login', null, $ja);
 $req('/admin/login', ['_token' => $tok($lp['body']), 'email' => 'zz-pd-admin@example.test', 'password' => $pw], $ja);
 $pg = $req('/admin/payments?range=30', null, $ja);
-check('admin: the dashboard shows the totals, how people paid, Send money and the list', $pg['code'] === 200 && str_contains($pg['body'], 'Money in') && str_contains($pg['body'], 'UGX 160,000') && str_contains($pg['body'], 'Send money to mobile money')
+check('admin: the dashboard shows the totals, how people paid, Send money and the list', $pg['code'] === 200 && str_contains($pg['body'], 'Money in') && str_contains($pg['body'], 'UGX 165,000') && str_contains($pg['body'], 'Send money to mobile money')
     && str_contains($pg['body'], 'How people paid') && str_contains($pg['body'], 'Zz Payer') && str_contains($pg['body'], 'Shop orders'), (string) $pg['code']);
 $out = $req('/admin/payments?range=30&dir=out&q=ZZPD', null, $ja);
 check('admin: filters work in the address (money out only)', str_contains($out['body'], 'ZZPD-OUT1') && !str_contains($out['body'], 'ZZPD-IN1'));

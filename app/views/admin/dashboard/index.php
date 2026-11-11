@@ -154,7 +154,7 @@ $greet = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good ev
                     <td data-label="Country"><?= e($r['country'] !== '' ? $r['country'] : '—') ?></td>
                     <td class="nowrap" data-label="Time"><time datetime="<?= e($r['at']) ?>"><?= e(format_datetime($r['at'], 'j M Y, H:i')) ?></time></td>
                     <td class="num nowrap" data-label="Amount"><?= e(number_format((int) $r['amount_ugx'])) ?></td>
-                    <td data-label="Status"><span class="badge badge--<?= $grp === 'paid' ? 'success' : ($grp === 'failed' ? 'danger' : 'warning') ?>"><?= e(['paid' => 'Paid', 'failed' => 'Failed', 'waiting' => 'Waiting'][$grp]) ?></span></td>
+                    <td data-label="Status"><?php $stale = $grp === 'waiting' && strtotime((string) $r['at']) < time() - 600; ?><span class="badge badge--<?= $grp === 'paid' ? 'success' : ($grp === 'failed' ? 'danger' : 'warning') ?>"><?= e($stale ? 'Not confirmed' : ['paid' => 'Paid', 'failed' => 'Failed', 'waiting' => 'Waiting'][$grp]) ?></span><?php if ($stale): ?><a class="cell-sub" href="<?= e(url('admin/payments?range=all&status=pending&channel=mobile')) ?>">Resolve</a><?php endif; ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

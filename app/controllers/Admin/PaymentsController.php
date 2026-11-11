@@ -92,6 +92,22 @@ final class PaymentsController extends AdminController
         return $this->redirect('admin/payments');
     }
 
+    public function confirm(Request $request, int|string $id): Response
+    {
+        $this->authorize('settings.manage');
+        $r = DarazaPayments::confirmManually((int) $id, $this->userId(), $request->string('note'));
+        $r['ok'] ? Flash::success($r['message']) : Flash::error($r['message']);
+        return $this->redirect('admin/payments');
+    }
+
+    public function close(Request $request, int|string $id): Response
+    {
+        $this->authorize('settings.manage');
+        $r = DarazaPayments::closeAsNotReceived((int) $id, $this->userId());
+        $r['ok'] ? Flash::success($r['message']) : Flash::error($r['message']);
+        return $this->redirect('admin/payments');
+    }
+
     public function payout(Request $request): Response
     {
         $this->authorize('settings.manage');

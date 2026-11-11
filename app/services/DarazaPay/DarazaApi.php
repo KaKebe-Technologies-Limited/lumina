@@ -26,6 +26,9 @@ final class DarazaApi
     /** The call can be held open for up to five minutes by Daraza; a little more here. */
     public const TIMEOUT = 330;
 
+    /** Why the last call got no answer (for the audit trail). */
+    private static string $lastCut = '';
+
     /** TEST HOOK: callable(string $method, string $url, array $headers, ?string $body): array{http:int,raw:string}. Used only by the self-tests. */
     public static $transport = null;
 
@@ -143,10 +146,13 @@ final class DarazaApi
         if ($payload !== null) {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
         }
+        $t0 = microtime(true);
         $raw = curl_exec($ch);
         $http = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        self::$lastCut = '';
         if ($raw === false) {
-            Log::warning('Daraza: no answer (' . curl_errno($ch) . ') for ' . $path);
+            self::$lastCut = 'curl error ' . curl_errno($ch) . ' after ' . (int) round(microtime(true) - $t0) . 's';       // tells staff WHERE the wait was cut (a web-host limit shows as a round number of seconds)
+            Log::warning('Daraza: no answer (' . curl_errno($ch) . ') for ' . $path . ' ' . self::$lastCut);
         }
         curl_close($ch);
         return ['http' => $raw === false ? 0 : $http, 'json' => $raw === false ? null : self::decode((string) $raw), 'raw' => $raw === false ? '' : (string) $raw];
@@ -165,7 +171,7 @@ final class DarazaApi
         $j = $r['json'] ?? [];
         $rid = (string) ($j['request_id'] ?? ($j['response_details']['request_id'] ?? ''));
         if ($r['http'] === 0) {
-            return ['ok' => false, 'state' => 'unknown', 'message' => 'Daraza did not answer in time. The payer may still approve: check the payment again in a minute.', 'request_id' => '', 'http' => 0];
+            return ['ok' => false, 'state' => 'unknown', 'message' => 'Daraza did not answer in time. The payer may still approve: check the payment again in a minute.' . (self::$lastCut !== '' ? ' [' . self::$lastCut . ']' : ''), 'request_id' => '', 'http' => 0];
         }
         if (in_array($r['http'], [200, 201], true) && ($j['code'] ?? '') === 'Success') {
             return ['ok' => true, 'state' => 'success', 'message' => (string) ($j['message'] ?? 'Success'), 'request_id' => $rid, 'http' => $r['http']];
