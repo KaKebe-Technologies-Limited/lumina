@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Services\DarazaPay\DarazaApi;
 use App\Services\DarazaPay\DarazaPayments;
 use App\Services\Payments\PaymentEvents;
+use App\Services\Payments\PaymentReminders;
 use App\Services\Payments\PaymentsDashboard;
 
 /**
@@ -90,6 +91,50 @@ final class PaymentsController extends AdminController
         $r = DarazaPayments::check((int) $id);
         $r['state'] === 'paid' ? Flash::success($r['message']) : ($r['state'] === 'failed' ? Flash::error($r['message']) : Flash::info($r['message']));
         return $this->redirect('admin/payments');
+    }
+
+    public function remind(Request $request, string $src, int|string $id): Response
+    {
+        $this->authorize('settings.manage');
+        $r = PaymentReminders::remind($src, (int) $id, $this->userId());
+        $r['ok'] ? Flash::success($r['message']) : Flash::error($r['message']);
+        return $this->redirect('admin/payments?' . $this->keepQuery($request));
+    }
+
+    public function deleteRecord(Request $request, string $src, int|string $id): Response
+    {
+        $this->authorize('settings.manage');
+        $r = PaymentReminders::delete($src, (int) $id, $this->userId());
+        $r['ok'] ? Flash::success($r['message']) : Flash::error($r['message']);
+        return $this->redirect('admin/payments?' . $this->keepQuery($request));
+    }
+
+    /** "Remind everyone listed": the unfinished payments of the CURRENT filter (at most 50), one e-mail each. */
+    public function remindAll(Request $request): Response
+    {
+        $this->authorize('settings.manage');
+        $f = $this->filters($request);
+        $sent = 0;
+        $skipped = 0;
+        foreach (['pending', 'failed'] as $st) {
+            foreach (PaymentsDashboard::rows(['status' => $st, 'dir' => 'in'] + $f, 50, 0)['rows'] as $r) {
+                if ($sent + $skipped >= 50) {
+                    break 2;
+                }
+                if (!PaymentReminders::actionable((string) $r['src'], (string) $r['status'])) {
+                    continue;
+                }
+                PaymentReminders::remind((string) $r['src'], (int) $r['id'], $this->userId())['ok'] ? $sent++ : $skipped++;
+            }
+        }
+        $sent > 0 ? Flash::success($sent . ' reminder' . ($sent === 1 ? '' : 's') . ' sent.' . ($skipped > 0 ? ' ' . $skipped . ' skipped (no e-mail address, or reminded in the last 24 hours).' : '')) : Flash::info('No reminder was sent' . ($skipped > 0 ? ': ' . $skipped . ' were skipped (no e-mail address, or reminded in the last 24 hours).' : ': there are no unfinished payments in this list.'));
+        return $this->redirect('admin/payments?' . $this->keepQuery($request));
+    }
+
+    /** The filters of the page the button was pressed on, so the admin lands on the same list. */
+    private function keepQuery(Request $request): string
+    {
+        return http_build_query(array_filter(['range' => $request->string('range'), 'channel' => $request->string('channel'), 'category' => $request->string('category'), 'status' => $request->string('status'), 'dir' => $request->string('dir'), 'q' => $request->string('q')], static fn($v) => $v !== ''));
     }
 
     public function confirm(Request $request, int|string $id): Response

@@ -80,6 +80,9 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth']], function ($route
     $router->get('/payments/export', [\App\Controllers\Admin\PaymentsController::class, 'export'])->middleware('throttle:20,600')->name('admin.payments.export');
     $router->post('/payments/balance', [\App\Controllers\Admin\PaymentsController::class, 'balance'])->middleware('throttle:20,600')->name('admin.payments.balance');
     $router->post('/payments/payout', [\App\Controllers\Admin\PaymentsController::class, 'payout'])->middleware('throttle:20,600')->name('admin.payments.payout');
+    $router->post('/payments/remind-all', [\App\Controllers\Admin\PaymentsController::class, 'remindAll'])->middleware('throttle:10,600')->name('admin.payments.remind_all');
+    $router->post('/payments/{src}/{id}/remind', [\App\Controllers\Admin\PaymentsController::class, 'remind'])->where('src', 'daraza|pesapal')->where('id', '\d+')->middleware('throttle:60,600')->name('admin.payments.remind');
+    $router->post('/payments/{src}/{id}/delete', [\App\Controllers\Admin\PaymentsController::class, 'deleteRecord'])->where('src', 'daraza|pesapal')->where('id', '\d+')->middleware('throttle:60,600')->name('admin.payments.delete');
     $router->post('/payments/{id}/confirm', [\App\Controllers\Admin\PaymentsController::class, 'confirm'])->where('id', '\d+')->middleware('throttle:30,600')->name('admin.payments.confirm');
     $router->post('/payments/{id}/close', [\App\Controllers\Admin\PaymentsController::class, 'close'])->where('id', '\d+')->middleware('throttle:30,600')->name('admin.payments.close');
     $router->post('/payments/{id}/check', [\App\Controllers\Admin\PaymentsController::class, 'check'])->where('id', '\d+')->middleware('throttle:60,600')->name('admin.payments.check');

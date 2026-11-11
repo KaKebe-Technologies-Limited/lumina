@@ -96,6 +96,14 @@ $rangeLabel = strtolower(PD::RANGES[$f['range']]);
         <button class="btn btn--primary btn--sm" type="submit"><?= icon('search', 'icon--sm') ?> Filter</button>
         <?php if ($f['q'] !== '' || $f['dir'] !== '' || $f['channel'] !== '' || $f['status'] !== '' || ($f['category'] ?? '') !== ''): ?><a class="btn btn--ghost btn--sm" href="<?= e(url('admin/payments?range=' . $f['range'])) ?>">Clear</a><?php endif; ?>
     </form>
+    <?php $unfinished = array_filter($rows, static fn(array $r): bool => $r['dir'] === 'in' && \App\Services\Payments\PaymentReminders::actionable((string) $r['src'], (string) $r['status'])); ?>
+    <?php if ($unfinished): ?>
+        <form method="post" action="<?= e(url('admin/payments/remind-all')) ?>" class="pd-remindall" data-confirm="E-mail a reminder to every payer with an unfinished payment in this list (at most 50, one per payment per day)?"><?= csrf_field() ?>
+            <?php foreach (['range' => $f['range'], 'channel' => $f['channel'], 'category' => $f['category'] ?? '', 'q' => $f['q']] as $kk => $kv): ?><input type="hidden" name="<?= e($kk) ?>" value="<?= e((string) $kv) ?>"><?php endforeach; ?>
+            <span class="text-muted"><?= count($unfinished) ?> unfinished payment<?= count($unfinished) === 1 ? '' : 's' ?> on this page.</span>
+            <button class="btn btn--outline btn--sm" type="submit"><?= icon('mail', 'icon--sm') ?> Remind all unfinished (current list)</button>
+        </form>
+    <?php endif; ?>
     <?php if (!$rows): ?><p class="text-muted">No payments match. Try a longer period or clear the filters.</p><?php else: ?>
     <div class="table-wrap"><table class="table table--compact">
         <caption class="visually-hidden">Payments</caption>
@@ -109,13 +117,19 @@ $rangeLabel = strtolower(PD::RANGES[$f['range']]);
                 <td data-label="Channel"><span class="pd-chan pd-chan--<?= e($r['channel']) ?>"><?= icon($chanIcon[$r['channel']] ?? 'phone', 'icon--sm') ?> <?= e(['mobile' => 'Mobile money', 'online' => 'Card / online', 'manual' => 'Bank / cash'][$r['channel']] ?? $r['channel']) ?></span></td>
                 <td class="num nowrap pd-amt<?= $out ? ' pd-amt--out' : '' ?>" data-label="Amount"><?= $out ? '−' : '+' ?> <?= e($r['cur']) ?> <?= e($m((int) $r['amt'])) ?></td>
                 <td data-label="Status"><?php $stale = $r['status'] === 'pending' && strtotime((string) $r['at']) < time() - 600; ?><span class="badge badge--<?= e($tone[$r['status']] ?? 'neutral') ?>"><?= e($stale ? 'Not confirmed' : (PD::STATUSES[$r['status']] ?? $r['status'])) ?></span><?php if ($stale && $r['src'] === 'daraza'): ?><span class="cell-sub">Check the Daraza wallet, then press Resolve</span><?php endif; ?></td>
-                <td><?php if ($r['src'] === 'daraza' && $r['dir'] === 'in' && in_array($r['status'], ['pending', 'failed'], true)): ?>
+                <td><?php if ($r['dir'] === 'in' && \App\Services\Payments\PaymentReminders::actionable((string) $r['src'], (string) $r['status'])): $keep = ['range' => $f['range'], 'channel' => $f['channel'], 'category' => $f['category'] ?? '', 'status' => $f['status'], 'dir' => $f['dir'], 'q' => $f['q']]; ?>
                     <details class="pd-fix"><summary class="btn btn--outline btn--sm">Resolve</summary>
                         <div class="pd-fix__box">
-                            <p class="text-muted">If the payer approved but it still shows waiting, Daraza's answer was lost on the way. First press <strong>Check again</strong>. If that cannot tell, look in your Daraza wallet or statement.</p>
-                            <form method="post" action="<?= e(url('admin/payments/' . (int) $r['id'] . '/check')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit">Check again</button></form>
-                            <form method="post" action="<?= e(url('admin/payments/' . (int) $r['id'] . '/confirm')) ?>" class="inline-form" data-confirm="Confirm only if you can see this money in the Daraza wallet or statement. The order or receipt will be completed. Continue?"><?= csrf_field() ?><input class="input" name="note" maxlength="120" placeholder="Note (optional)"><button class="btn btn--primary btn--sm" type="submit">Money received: confirm</button></form>
-                            <form method="post" action="<?= e(url('admin/payments/' . (int) $r['id'] . '/close')) ?>" class="inline-form" data-confirm="Close this payment as not received?"><?= csrf_field() ?><button class="btn btn--ghost btn--sm" type="submit">Not received: close</button></form>
+                            <?php if ($r['src'] === 'daraza'): ?>
+                                <p class="text-muted">If the payer approved but it still shows waiting, Daraza's answer was lost on the way. Press <strong>Check again</strong>; if that cannot tell, look in your Daraza wallet or statement.</p>
+                                <form method="post" action="<?= e(url('admin/payments/' . (int) $r['id'] . '/check')) ?>" class="inline-form"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit">Check again</button></form>
+                                <form method="post" action="<?= e(url('admin/payments/' . (int) $r['id'] . '/confirm')) ?>" class="inline-form" data-confirm="Confirm only if you can see this money in the Daraza wallet or statement. The order or receipt will be completed. Continue?"><?= csrf_field() ?><input class="input" name="note" maxlength="120" placeholder="Note (optional)"><button class="btn btn--primary btn--sm" type="submit">Money received: confirm</button></form>
+                                <form method="post" action="<?= e(url('admin/payments/' . (int) $r['id'] . '/close')) ?>" class="inline-form" data-confirm="Close this payment as not received?"><?= csrf_field() ?><button class="btn btn--ghost btn--sm" type="submit">Not received: close</button></form>
+                            <?php else: ?>
+                                <p class="text-muted">This card payment was started but not completed.</p>
+                            <?php endif; ?>
+                            <form method="post" action="<?= e(url('admin/payments/' . e((string) $r['src']) . '/' . (int) $r['id'] . '/remind')) ?>" class="inline-form"><?= csrf_field() ?><?php foreach ($keep as $kk => $kv): ?><input type="hidden" name="<?= e($kk) ?>" value="<?= e((string) $kv) ?>"><?php endforeach; ?><button class="btn btn--outline btn--sm" type="submit"><?= icon('mail', 'icon--sm') ?> Remind the payer by e-mail</button></form>
+                            <form method="post" action="<?= e(url('admin/payments/' . e((string) $r['src']) . '/' . (int) $r['id'] . '/delete')) ?>" class="inline-form" data-confirm="Delete this unfinished payment record? It cannot be undone. A paid payment is never deleted."><?php /* the audit trail keeps a note */ ?><?= csrf_field() ?><?php foreach ($keep as $kk => $kv): ?><input type="hidden" name="<?= e($kk) ?>" value="<?= e((string) $kv) ?>"><?php endforeach; ?><button class="btn btn--ghost btn--sm pd-fix__del" type="submit"><?= icon('trash', 'icon--sm') ?> Delete the record</button></form>
                         </div></details>
                 <?php endif; ?></td>
             </tr>

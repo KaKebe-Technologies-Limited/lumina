@@ -32702,3 +32702,63 @@ input:checked + .fund-card__body, .fund-card.is-picked .fund-card__body {
   background: #fff;
   width: 100%;
 }
+
+.pd-fix {
+  position: relative;
+}
+
+.pd-fix summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.pd-fix summary::-webkit-details-marker {
+  display: none;
+}
+
+.pd-fix__box {
+  display: grid;
+  gap: .5rem;
+  margin-top: .5rem;
+  padding: .8rem;
+  min-width: 15rem;
+  max-width: 22rem;
+  background: #fff;
+  border: 1px solid #e3e7f0;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(11, 27, 51, 0.14);
+  position: absolute;
+  right: 0;
+  z-index: 5;
+}
+
+.pd-fix__box p {
+  margin: 0;
+  font-size: .82rem;
+}
+
+.pd-fix__box .inline-form {
+  display: grid;
+  gap: .35rem;
+}
+
+.pd-fix__box .btn {
+  justify-content: center;
+}
+
+.pd-fix__del {
+  color: #b42318;
+}
+
+.pd-remindall {
+  display: flex;
+  gap: .8rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0 0 .8rem;
+  padding: .6rem .9rem;
+  border-radius: 12px;
+  background: #fff8e0;
+  border: 1px solid #f0dcb0;
+  font-size: .9rem;
+}

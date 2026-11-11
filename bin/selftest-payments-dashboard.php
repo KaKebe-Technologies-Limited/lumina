@@ -11,6 +11,7 @@ use App\Services\DarazaPay\DarazaApi;
 use App\Services\DarazaPay\DarazaPayments;
 use App\Services\Payments\PaymentEvents;
 use App\Services\Payments\PaymentThanks;
+use App\Services\Payments\PaymentReminders;
 use App\Services\Payments\PaymentsDashboard;
 use App\Core\Settings;
 
@@ -186,6 +187,26 @@ $nev = DarazaPayments::begin('donation', (int) Database::value('SELECT LAST_INSE
 $nevRow = DarazaPayments::byReference((string) $nev['reference']);
 $cl = DarazaPayments::closeAsNotReceived((int) $nevRow['id'], null);
 check('lost answer: staff can close a payment that never arrived (it stops showing as waiting, no thank-you)', $cl['ok'] && DarazaPayments::byReference((string) $nev['reference'])['status'] === 'failed' && (int) Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = ? AND event = 'thanks'", [(string) $nev['reference']], 0) === 0);
+
+// ---- remind the payer / delete an unfinished record
+$ppId = (int) Database::insert('pesapal_payments', ['merchant_reference' => 'ZZPD-PP9', 'purpose' => 'academy_cert', 'ref_id' => 1, 'amount_minor' => 300, 'currency' => 'USD', 'status' => 'pending', 'mode' => 'sandbox', 'payer_name' => 'Zz Pd Learner', 'payer_email' => 'zz-pd-learner@example.test']);
+$mailBeforeR = glob($mailDir . '/*.eml') ?: [];
+$rm = PaymentReminders::remind('pesapal', $ppId, null);
+$rmText = $mailText($mailBeforeR);
+check('remind: the learner gets an e-mail with the amount, the reference and a link to finish paying', $rm['ok'] && str_contains($rmText, 'zz-pd-learner@example.test') && str_contains($rmText, 'ZZPD-PP9') && str_contains($rmText, 'USD 3') && str_contains($rmText, 'academy/portal/certificates'), json_encode($rm));
+check('remind: the reminder is written in the audit trail', (int) Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = 'ZZPD-PP9' AND event = 'reminded'", [], 0) === 1);
+check('remind: a second reminder within a day is refused (no spam)', !PaymentReminders::remind('pesapal', $ppId, null)['ok']);
+$ppNoMail = (int) Database::insert('pesapal_payments', ['merchant_reference' => 'ZZPD-PP8', 'purpose' => 'donation', 'ref_id' => 1, 'amount_minor' => 300, 'currency' => 'USD', 'status' => 'pending', 'mode' => 'sandbox', 'payer_name' => 'Zz Pd NoMail', 'payer_email' => '']);
+check('remind: a payer without an e-mail address is skipped with a clear message', !PaymentReminders::remind('pesapal', $ppNoMail, null)['ok']);
+$dzLink = (int) Database::value("SELECT id FROM daraza_payments WHERE reference = ?", [(string) $nev['reference']], 0);
+check('delete: a payment started less than an hour ago (still waiting) cannot be deleted yet', !PaymentReminders::delete('pesapal', $ppId, null)['ok']);
+Database::execute("UPDATE pesapal_payments SET created_at = (NOW() - INTERVAL 2 DAY) WHERE id = ?", [$ppId]);
+check('delete: an old unfinished payment can be deleted, and the audit trail keeps a note', PaymentReminders::delete('pesapal', $ppId, null)['ok'] && Database::one('SELECT id FROM pesapal_payments WHERE id = ?', [$ppId]) === null && (int) Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = 'ZZPD-PP9' AND event = 'deleted'", [], 0) === 1);
+check('delete: a failed payment can be deleted at once', $dzLink > 0 && PaymentReminders::delete('daraza', $dzLink, null)['ok']);
+$paidId = (int) Database::value("SELECT id FROM daraza_payments WHERE reference = 'ZZPD-IN1'", [], 0);
+check('delete: a PAID payment is never deleted', !PaymentReminders::delete('daraza', $paidId, null)['ok'] && Database::one('SELECT id FROM daraza_payments WHERE id = ?', [$paidId]) !== null);
+check('remind: a paid payment is not reminded', !PaymentReminders::remind('daraza', $paidId, null)['ok']);
+Database::execute("DELETE FROM pesapal_payments WHERE merchant_reference IN ('ZZPD-PP8','ZZPD-PP9')");
 Settings::setMany(['daraza_api_donation_on' => (string) $prevSwitch]);
 Settings::flush();
 putenv('DARAZA_API_KEY');
@@ -229,6 +250,8 @@ $pg2 = $req('/admin/payments', null, $ja);
 $po = $req('/admin/payments/payout', ['_token' => $tok($pg2['body']), 'phone' => '0772000999', 'method' => '0', 'amount' => '5000'], $ja);
 check('admin: sending money without ticking the box does nothing (back to the dashboard)', $po['code'] === 302 && (int) Database::value("SELECT COUNT(*) FROM daraza_payments WHERE direction = 'out' AND phone = '+256772000999'", [], 0) === 0);
 check('the Payment options page still works', $req('/admin/daraza/api', null, $ja)['code'] === 200);
+$wp = $req('/admin/payments?range=30&q=ZZPD', null, $ja);
+check('admin: unfinished payments show a Resolve menu with Remind and Delete, and the list has a "Remind all" button', str_contains($wp['body'], 'Remind the payer by e-mail') && str_contains($wp['body'], 'Delete the record') && str_contains($wp['body'], 'Remind all unfinished'));
 $au = $req('/admin/payments/audit?range=30&q=Zz+Pd', null, $ja);
 check('admin: the audit trail page lists the steps (started, successful, unsuccessful) with a filter', $au['code'] === 200 && str_contains($au['body'], 'Payment started') && str_contains($au['body'], 'Successful') && str_contains($au['body'], 'Unsuccessful') && str_contains($au['body'], 'Zz Pd Giver'), (string) $au['code']);
 $dh = $req('/admin?range=30', null, $ja);

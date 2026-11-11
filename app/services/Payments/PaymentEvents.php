@@ -25,9 +25,9 @@ final class PaymentEvents
         'started' => 'attempt', 'requested' => 'attempt', 'unknown' => 'attempt',
         'success' => 'success',
         'failed' => 'failure', 'reversed' => 'failure', 'review' => 'failure',
-        'thanks' => 'notice',
+        'thanks' => 'notice', 'reminded' => 'notice', 'deleted' => 'notice',
     ];
-    public const EVENT_LABELS = ['started' => 'Payment started', 'requested' => 'Request sent', 'success' => 'Successful', 'failed' => 'Unsuccessful', 'unknown' => 'Waiting for an answer', 'reversed' => 'Reversed', 'review' => 'Needs a look', 'thanks' => 'Thank-you e-mail sent'];
+    public const EVENT_LABELS = ['started' => 'Payment started', 'requested' => 'Request sent', 'success' => 'Successful', 'failed' => 'Unsuccessful', 'unknown' => 'Waiting for an answer', 'reversed' => 'Reversed', 'review' => 'Needs a look', 'thanks' => 'Thank-you e-mail sent', 'reminded' => 'Reminder sent', 'deleted' => 'Record deleted'];
     public const GROUPS = ['attempt' => 'Attempts', 'success' => 'Successful', 'failure' => 'Unsuccessful'];
     public const CATEGORIES = ['membership' => 'Membership', 'shop' => 'Shop', 'donations' => 'Donations', 'projects' => 'Projects', 'academy' => 'Academy fees', 'payout' => 'Payouts', 'other' => 'Other'];
 
