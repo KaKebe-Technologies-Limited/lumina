@@ -90,6 +90,15 @@ check('send money: an Airtel number is detected, UGX 12,000 goes out and shows i
 DarazaApi::$transport = null;
 putenv('DARAZA_API_KEY');
 
+// ---- the Daraza Pay collections shown on the main dashboard
+$dz = PaymentsDashboard::darazaCollections('all', 50);
+$zrows = array_values(array_filter($dz['rows'], static fn(array $r): bool => str_starts_with((string) $r['reference'], 'ZZPD-')));
+check('daraza collections: only mobile-money money IN is listed (the payout is not), with who paid, country and category', count($zrows) === 3 && !in_array('ZZPD-OUT1', array_column($zrows, 'reference'), true));
+$byRef = array_column($zrows, null, 'reference');
+check('daraza collections: the country comes from the phone (+256 = Uganda) and the category from the purpose', ($byRef['ZZPD-IN1']['country'] ?? '') === 'Uganda' && ($byRef['ZZPD-IN1']['category'] ?? '') === 'shop' && ($byRef['ZZPD-IN2']['category'] ?? '') === 'donations' && ($byRef['ZZPD-IN1']['who'] ?? '') === 'Zz Payer');
+check('daraza collections: the totals split paid, waiting and failed, and MTN from Airtel', $dz['paid'] >= 2 && $dz['waiting'] >= 1 && $dz['paid_ugx'] >= 120000 && $dz['mtn'] >= 120000);
+check('country of a number: Uganda, Kenya, Tanzania; nothing for an empty number', PaymentsDashboard::countryOfPhone('+256772123456') === 'Uganda' && PaymentsDashboard::countryOfPhone('254712345678') === 'Kenya' && PaymentsDashboard::countryOfPhone('+255 712 345 678') === 'Tanzania' && PaymentsDashboard::countryOfPhone('') === '');
+
 // ---- the audit trail and the thank-you e-mails
 PaymentEvents::install();
 $prevSwitch = Settings::get('daraza_api_donation_on', '');
@@ -198,6 +207,7 @@ $au = $req('/admin/payments/audit?range=30&q=Zz+Pd', null, $ja);
 check('admin: the audit trail page lists the steps (started, successful, unsuccessful) with a filter', $au['code'] === 200 && str_contains($au['body'], 'Payment started') && str_contains($au['body'], 'Successful') && str_contains($au['body'], 'Unsuccessful') && str_contains($au['body'], 'Zz Pd Giver'), (string) $au['code']);
 $dh = $req('/admin?range=30', null, $ja);
 check('admin: the dashboard shows the money rings, the activity feed and the round attention tiles', $dh['code'] === 200 && str_contains($dh['body'], 'Money collected') && str_contains($dh['body'], 'dash-ring') && str_contains($dh['body'], 'Latest payment activity') && str_contains($dh['body'], 'Needs your attention') && str_contains($dh['body'], 'class="orb'), (string) $dh['code']);
+check('admin: the dashboard lists the Daraza Pay collections with who paid, category, country and time', str_contains($dh['body'], 'Daraza Pay collections') && str_contains($dh['body'], 'Zz Payer') && str_contains($dh['body'], 'Uganda') && str_contains($dh['body'], 'data-dz-group="paid"'));
 check('admin: the payments page can be filtered by category in the address', $req('/admin/payments?range=30&category=projects&q=RCT-ZZPD', null, $ja)['code'] === 200);
 
 @unlink($ja);

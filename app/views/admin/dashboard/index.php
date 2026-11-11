@@ -125,6 +125,46 @@ $greet = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good ev
             <?php endif; ?>
         </div>
     </section>
+    <section class="dash-pay dash-dz" aria-labelledby="dash-dz-title" data-dash-dz>
+        <?php $dz = $pay['dz']; $dzCats = \App\Services\Payments\PaymentEvents::CATEGORIES; ?>
+        <div class="dash-pay__head">
+            <h2 class="dash-pay__title" id="dash-dz-title"><?= icon('phone', 'icon--sm') ?> Daraza Pay collections</h2>
+            <div class="dash-chips" role="group" aria-label="Show">
+                <button class="dash-chip is-on" type="button" data-dz-filter="all">All (<?= (int) $dz['total'] ?>)</button>
+                <button class="dash-chip" type="button" data-dz-filter="paid">Paid (<?= (int) $dz['paid'] ?>)</button>
+                <button class="dash-chip" type="button" data-dz-filter="waiting">Waiting (<?= (int) $dz['waiting'] ?>)</button>
+                <button class="dash-chip" type="button" data-dz-filter="failed">Failed (<?= (int) $dz['failed'] ?>)</button>
+            </div>
+        </div>
+        <div class="dash-dz__kpis">
+            <div><span>Collected with Daraza Pay</span><strong>UGX <?= e(number_format((int) $dz['paid_ugx'])) ?></strong></div>
+            <div><span><span class="paynet__tag paynet__tag--mtn dash-dz__tag">MTN</span></span><strong>UGX <?= e(number_format((int) $dz['mtn'])) ?></strong></div>
+            <div><span><span class="paynet__tag paynet__tag--airtel dash-dz__tag">Airtel</span></span><strong>UGX <?= e(number_format((int) $dz['airtel'])) ?></strong></div>
+        </div>
+        <?php if (!$dz['rows']): ?><p class="dash-empty">No Daraza Pay payment in this period yet. Each collection will be listed here with who paid, when, the country and what it was for.</p><?php else: ?>
+        <div class="table-wrap"><table class="table table--compact dash-dz__table">
+            <caption class="visually-hidden">Payments collected with Daraza Pay</caption>
+            <thead><tr><th scope="col">Who paid</th><th scope="col">Category</th><th scope="col">Country</th><th scope="col">Time</th><th scope="col" class="num">Amount (UGX)</th><th scope="col">Status</th></tr></thead>
+            <tbody>
+            <?php foreach ($dz['rows'] as $r):
+                $grp = $r['status'] === 'paid' ? 'paid' : ($r['status'] === 'failed' ? 'failed' : 'waiting'); ?>
+                <tr data-dz-group="<?= e($grp) ?>">
+                    <td data-label="Who paid"><strong><?= e($r['who']) ?></strong><span class="cell-sub"><?= e(\App\Services\Payments\PaymentEvents::maskPhone($r['phone'])) ?> <?= e([1 => 'MTN', 2 => 'Airtel'][(int) $r['method']] ?? '') ?></span></td>
+                    <td data-label="Category"><?= e($dzCats[$r['category']] ?? $r['category']) ?><span class="cell-sub"><?= e(\App\Services\DarazaPay\DarazaPayments::PURPOSES[$r['purpose']] ?? '') ?></span></td>
+                    <td data-label="Country"><?= e($r['country'] !== '' ? $r['country'] : '—') ?></td>
+                    <td class="nowrap" data-label="Time"><time datetime="<?= e($r['at']) ?>"><?= e(format_datetime($r['at'], 'j M Y, H:i')) ?></time></td>
+                    <td class="num nowrap" data-label="Amount"><?= e(number_format((int) $r['amount_ugx'])) ?></td>
+                    <td data-label="Status"><span class="badge badge--<?= $grp === 'paid' ? 'success' : ($grp === 'failed' ? 'danger' : 'warning') ?>"><?= e(['paid' => 'Paid', 'failed' => 'Failed', 'waiting' => 'Waiting'][$grp]) ?></span></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table></div>
+        <?php endif; ?>
+        <div class="dash-pay__actions">
+            <a class="btn btn--outline btn--sm" href="<?= e(url('admin/payments?range=' . $pay['range'] . '&channel=mobile')) ?>"><?= icon('list', 'icon--sm') ?> All Daraza Pay payments</a>
+            <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/payments/audit?range=' . $pay['range'] . '&channel=mobile')) ?>">Audit trail</a>
+        </div>
+    </section>
 <?php endif; ?>
 
 <?php if ($tiles !== []): ?>

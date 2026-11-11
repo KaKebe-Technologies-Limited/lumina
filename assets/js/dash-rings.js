@@ -57,4 +57,16 @@
       Array.prototype.forEach.call(rows, function (r) { r.hidden = !(f === 'all' || r.getAttribute('data-feed-group') === f); });
     });
   });
+  var dz = document.querySelector('[data-dash-dz]');
+  if (dz) {
+    var dzChips = dz.querySelectorAll('[data-dz-filter]');
+    var dzRows = dz.querySelectorAll('[data-dz-group]');
+    Array.prototype.forEach.call(dzChips, function (c) {
+      c.addEventListener('click', function () {
+        var f = c.getAttribute('data-dz-filter');
+        Array.prototype.forEach.call(dzChips, function (x) { x.classList.toggle('is-on', x === c); });
+        Array.prototype.forEach.call(dzRows, function (r) { r.hidden = !(f === 'all' || r.getAttribute('data-dz-group') === f); });
+      });
+    });
+  }
 })();

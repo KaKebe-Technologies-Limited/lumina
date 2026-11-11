@@ -135,6 +135,7 @@ final class DashboardController extends AdminController
                 $pay = [
                     'range' => $range, 'sum' => \App\Services\Payments\PaymentsDashboard::summary($range), 'ev' => \App\Services\Payments\PaymentEvents::counts($range),
                     'feed' => \App\Services\Payments\PaymentEvents::rows([], 12)['rows'],
+                    'dz' => \App\Services\Payments\PaymentsDashboard::darazaCollections($range, 15),
                 ];
             } catch (\Throwable) {
                 $pay = null;

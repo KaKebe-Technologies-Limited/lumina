@@ -176,6 +176,59 @@ final class PaymentsDashboard
         ];
     }
 
+    /** Country of a phone number from its dialling code (the Daraza API only takes Ugandan numbers today, so this is Uganda unless that changes). */
+    public static function countryOfPhone(?string $phone): string
+    {
+        $d = preg_replace('/\D/', '', (string) $phone) ?? '';
+        foreach (['256' => 'Uganda', '254' => 'Kenya', '255' => 'Tanzania', '250' => 'Rwanda', '211' => 'South Sudan', '243' => 'DR Congo', '257' => 'Burundi', '251' => 'Ethiopia', '234' => 'Nigeria', '233' => 'Ghana', '27' => 'South Africa'] as $code => $name) {
+            if (str_starts_with($d, (string) $code)) {
+                return $name;
+            }
+        }
+        return $d === '' ? '' : 'Other';
+    }
+
+    /**
+     * THE DARAZA PAY COLLECTIONS: every mobile-money payment collected through the Daraza API (money in), newest first, with who paid, when, the country (from the phone) and the category.
+     * @return array{rows:list<array<string,mixed>>,total:int,paid:int,paid_ugx:int,waiting:int,failed:int,mtn:int,airtel:int}
+     */
+    public static function darazaCollections(string $range, int $limit = 15): array
+    {
+        $out = ['rows' => [], 'total' => 0, 'paid' => 0, 'paid_ugx' => 0, 'waiting' => 0, 'failed' => 0, 'mtn' => 0, 'airtel' => 0];
+        if (!DarazaPayments::install()) {
+            return $out;
+        }
+        $since = self::since($range);
+        $w = "direction = 'in'" . ($since === null ? '' : ' AND COALESCE(paid_at, created_at) >= ?');
+        $v = $since === null ? [] : [$since];
+        foreach (Database::all("SELECT status, method, COUNT(*) n, COALESCE(SUM(amount_ugx),0) s FROM daraza_payments WHERE {$w} GROUP BY status, method", $v) as $r) {
+            $n = (int) $r['n'];
+            $out['total'] += $n;
+            if ($r['status'] === 'paid') {
+                $out['paid'] += $n;
+                $out['paid_ugx'] += (int) $r['s'];
+                if ((int) $r['method'] === 2) {
+                    $out['airtel'] += (int) $r['s'];
+                } else {
+                    $out['mtn'] += (int) $r['s'];
+                }
+            } elseif ($r['status'] === 'failed') {
+                $out['failed'] += $n;
+            } else {
+                $out['waiting'] += $n;
+            }
+        }
+        foreach (Database::all("SELECT * FROM daraza_payments WHERE {$w} ORDER BY COALESCE(paid_at, created_at) DESC, id DESC LIMIT " . max(1, min(100, $limit)), $v) as $r) {
+            $name = trim((string) $r['payer_name']);
+            $r['who'] = $name !== '' ? $name : (string) ($r['payer_email'] !== '' ? $r['payer_email'] : 'Name not given');
+            $r['country'] = self::countryOfPhone((string) $r['phone']);
+            $r['category'] = PaymentEvents::category((string) $r['purpose']);
+            $r['at'] = (string) ($r['paid_at'] ?: $r['created_at']);
+            $out['rows'][] = $r;
+        }
+        return $out;
+    }
+
     /** Recipients used before for payouts, newest first (a quick "send again" list). @return list<array{phone:string,method:int,n:int}> */
     public static function recentRecipients(int $limit = 6): array
     {

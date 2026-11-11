@@ -5416,6 +5416,52 @@ body.admin-nav-open .admin-backdrop {
   }
 }
 
+.dash-dz__kpis {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  margin-bottom: 1rem;
+}
+
+.dash-dz__kpis > div {
+  display: grid;
+  gap: .2rem;
+  padding: .8rem 1rem;
+  border-radius: 16px;
+  background: #F3EFE5;
+  border: 1px solid #E5DED0;
+}
+
+.dash-dz__kpis span {
+  font-size: .8rem;
+  color: #5B6472;
+}
+
+.dash-dz__kpis strong {
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 1.25rem;
+  color: #142B4A;
+}
+
+.dash-dz__kpis .dash-dz__tag {
+  min-width: 3rem;
+  height: 1.5rem;
+  padding: 0 .6rem;
+  font-size: .72rem;
+}
+
+.dash-dz__kpis .dash-dz__tag.paynet__tag--mtn {
+  color: #1a1a1a;
+}
+
+.dash-dz__kpis .dash-dz__tag.paynet__tag--airtel {
+  color: #fff;
+}
+
+.dash-dz__table tr[hidden] {
+  display: none;
+}
+
 .admin .inline-form {
   display: inline;
   margin: 0;
