@@ -168,6 +168,16 @@ final class AcademyCertificatesController extends AcademyAdminController
         return $this->redirect('admin/academy/certificates?status=waiting');
     }
 
+    /** POST certificates/{id}/remind-pay and certificates-remind-pay-all: ask the learner(s) to pay the certificate fee BEFORE approval (portal message + e-mail). */
+    public function remindPay(Request $request, int|string|null $id = null): Response
+    {
+        $this->authorize('academy.manage');
+        $r = \App\Services\Academy\CertificatePayReminders::remind($id !== null ? (int) $id : null, \App\Core\Auth::id());
+        $this->audit('academy.certificates.pay_reminder', 'academy_certificate', $id !== null ? (int) $id : null, $id !== null ? 'Asked a learner to pay for a certificate before approval' : 'Asked every learner with a waiting certificate to pay before approval', ['learners' => $r['learners'], 'emailed' => $r['emailed'], 'held' => $r['held'], 'skipped' => $r['skipped']]);
+        $r['ok'] ? Flash::success($r['message']) : Flash::info($r['message']);
+        return $this->backTo($request);
+    }
+
     /** POST certificates-remind-fee-all: a portal message (and an e-mail when ticked) to every learner whose certificate waits for its fee. */
     public function remindFeeAll(Request $request): Response
     {

@@ -11,6 +11,16 @@
                 <button class="btn btn--primary btn--sm" type="submit">Approve all</button></form>
             <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/academy/certificates', ['status' => 'waiting'])) ?>">Show only these</a>
         </div>
+        <?php $askN = \App\Services\Academy\CertificatePayReminders::count(); ?>
+        <?php if ($askN > 0): ?>
+            <div class="aac-actions">
+                <form method="post" action="<?= e(url('admin/academy/certificates-remind-pay-all')) ?>" class="inline-form" data-confirm="Ask every learner with a waiting certificate to pay the certificate fee (<?= $askN ?> certificate<?= $askN === 1 ? '' : 's' ?>)? Each learner gets a portal message and an e-mail, and the certificates are held until the fee is paid. A learner already reminded in the last 24 hours is skipped."><?= csrf_field() ?><input type="hidden" name="back" value="waiting">
+                    <button class="btn btn--outline btn--sm" type="submit"><?= icon('mail', 'icon--sm') ?> Remind all to pay first (message + e-mail)</button></form>
+                <span class="text-muted">Asks the <?= $askN ?> unpaid learner<?= $askN === 1 ? '' : 's' ?> to pay before you approve.</span>
+            </div>
+        <?php elseif (!empty($ready) && \App\Services\Academy\AcademyFees::cert() === null): ?>
+            <p class="text-muted">To ask learners to pay before approval, set the certificate fee and switch a payment way on (Admin &gt; Pesapal payments &gt; LAF Academy fees), then a reminder button appears here.</p>
+        <?php endif; ?>
     </div>
 <?php endif; ?>
 <?php if (!empty($ready) && \App\Services\Academy\AcademyFees::cert() !== null && ($freeN = \App\Services\Academy\AcademyFees::certificatesWithoutFee()) > 0): ?>
@@ -72,6 +82,7 @@
                     <?php if ($isWaiting): ?>
                         <a class="btn btn--outline btn--sm" href="<?= e(url('admin/academy/certificates/' . $id . '/preview')) ?>" target="_blank" rel="noopener" title="Only administrators can see it until it is released to the learner" aria-label="View certificate <?= e($c['code']) ?> (not released)"><?= icon('eye', 'icon--sm') ?> View (not released)</a>
                         <?php if (\App\Services\Academy\AcademyFees::certDue($c)): ?><form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/mark-fee-paid')) ?>" class="inline-form" data-confirm="Mark the fee of <?= e($c['code']) ?> as PAID? Do this after you have seen the money (for example in the Daraza dashboard)."><?= csrf_field() ?><input type="hidden" name="back" value="<?= e($status) ?>"><button class="btn btn--outline btn--sm" type="submit">Mark fee paid</button></form><?php endif; ?>
+                        <?php if (\App\Services\Academy\AcademyFees::cert() !== null && in_array($c['fee_status'] ?? 'none', ['none', 'due'], true)): ?><form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/remind-pay')) ?>" class="inline-form" data-confirm="Ask <?= e($c['learner_name']) ?> to pay the certificate fee before you approve? A portal message and an e-mail are sent."><?= csrf_field() ?><input type="hidden" name="back" value="<?= e($status) ?>"><button class="btn btn--outline btn--sm" type="submit" title="Message and e-mail the learner to pay for this certificate"><?= icon('mail', 'icon--sm') ?> Remind to pay</button></form><?php endif; ?>
                         <form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/approve')) ?>" class="inline-form"<?= \App\Services\Academy\AcademyFees::certDue($c) ? ' data-confirm="The certificate fee is not paid. Waive it and approve this certificate?"' : '' ?>><?= csrf_field() ?><?= \App\Services\Academy\AcademyFees::certDue($c) ? '<input type="hidden" name="waive" value="1">' : '' ?><input type="hidden" name="back" value="<?= e($status) ?>"><button class="btn btn--primary btn--sm" type="submit"><?= \App\Services\Academy\AcademyFees::certDue($c) ? 'Release (waive the fee)' : 'Approve' ?></button><button class="btn btn--outline btn--sm" type="submit" name="email" value="1"><?= \App\Services\Academy\AcademyFees::certDue($c) ? 'Release and e-mail' : 'Approve and e-mail' ?></button></form>
                         <details class="aac-edit"><summary class="btn btn--ghost btn--sm">Decline</summary>
                             <form method="post" action="<?= e(url('admin/academy/certificates/' . $id . '/decline')) ?>" class="aac-edit__form" data-confirm="Decline the request for <?= e($c['code']) ?>?"><?= csrf_field() ?><input type="hidden" name="back" value="<?= e($status) ?>">

@@ -254,6 +254,44 @@ foreach ($keep as $k) {                                                         
     Database::update('academy_certificates', ['approved_at' => $k['approved_at'], 'approved_by' => $k['approved_by'], 'emailed_at' => $k['emailed_at']], 'id = ?', [(int) $k['id']]);
 }
 
+// ------------------------------------------------------------------------------------------------------------- ask learners to pay BEFORE approval (message + e-mail)
+$lpb = $mk('pb');
+$lpc = $mk('pc');
+$cb = CertificateService::issue($lpb, $course, 80.0, 60);
+$cc = $course2 !== null ? CertificateService::issue($lpb, $course2, 82.0, 60) : null;
+$cd = CertificateService::issue($lpc, $course, 70.0, 60);
+$oldFee = [Settings::get('academy_cert_fee', null), Settings::get('academy_pay_mobile_money', null)];
+Settings::set('academy_cert_fee', '0');
+Settings::flush();
+$r0 = \App\Services\Academy\CertificatePayReminders::remind(null, $adminId);
+check('pay reminder: without a certificate fee that can be paid nothing is sent and the admin is told what to set up', !$r0['ok'] && $r0['learners'] === 0 && str_contains($r0['message'], 'certificate fee') && (int) Database::value('SELECT COUNT(*) FROM academy_messages WHERE learner_id = ?', [(int) $lpb['id']], 0) === 0);
+Settings::set('academy_cert_fee', '5000');
+Settings::set('academy_pay_mobile_money', '0700 000 000');
+Settings::flush();
+check('pay reminder: with a payable fee the waiting unpaid certificates are counted', \App\Services\Academy\CertificatePayReminders::count() >= 2);
+$mailsPay = glob(STORAGE_PATH . '/mail/*.eml') ?: [];
+$wait = $req('GET', '/admin/academy/certificates?status=waiting', [], $jA);
+check('http: the waiting list offers "Remind all to pay first" and a "Remind to pay" button on each waiting certificate', str_contains($wait['body'], 'Remind all to pay first') && str_contains($wait['body'], 'Remind to pay') && str_contains($wait['body'], '/remind-pay'));
+$one = $post('/admin/academy/certificates/' . (int) $cd['id'] . '/remind-pay', ['back' => 'waiting'], $jA, '/admin/academy/certificates?status=waiting');
+$cdNow = Database::one('SELECT fee_status FROM academy_certificates WHERE id = ?', [(int) $cd['id']]);
+$msgC = (string) Database::value("SELECT body FROM academy_messages WHERE learner_id = ? AND sender = 'admin' ORDER BY id DESC LIMIT 1", [(int) $lpc['id']], '');
+check('http: "Remind to pay" on one certificate redirects back, puts it on fee due and leaves a portal message with the fee and the sign-in link', in_array($one['code'], [302, 303], true) && $cdNow['fee_status'] === 'due' && str_contains($msgC, 'Please pay the certificate fee of UGX 5,000') && str_contains($msgC, 'academy/login') && str_contains($msgC, $cd['course_title']), $msgC);
+$mailC = array_values(array_filter(array_diff(glob(STORAGE_PATH . '/mail/*.eml') ?: [], $mailsPay), static fn(string $f): bool => str_contains($mailText($f), 'zz-lce-pc@example.test')));
+check('pay reminder: the learner also gets an e-mail with the same words', count($mailC) === 1 && str_contains($mailText($mailC[0]), 'Please pay the certificate fee'));
+$again = $post('/admin/academy/certificates/' . (int) $cd['id'] . '/remind-pay', ['back' => 'waiting'], $jA, '/admin/academy/certificates?status=waiting');
+check('pay reminder: a second reminder within 24 hours is skipped (one message only)', (int) Database::value("SELECT COUNT(*) FROM academy_messages WHERE learner_id = ? AND sender = 'admin'", [(int) $lpc['id']], 0) === 1);
+$all = $post('/admin/academy/certificates-remind-pay-all', ['back' => 'waiting'], $jA, '/admin/academy/certificates?status=waiting');
+$msgsB = Database::all("SELECT body FROM academy_messages WHERE learner_id = ? AND sender = 'admin'", [(int) $lpb['id']]);
+check('http: "Remind all" writes ONE message per learner naming every course, holds their certificates, and skips the learner already reminded', in_array($all['code'], [302, 303], true) && count($msgsB) === 1 && (int) Database::value("SELECT COUNT(*) FROM academy_certificates WHERE learner_id = ? AND fee_status = 'due'", [(int) $lpb['id']], 0) === ($cc !== null ? 2 : 1) && ($cc === null || str_contains($msgsB[0]['body'], '2 courses')) && (int) Database::value("SELECT COUNT(*) FROM academy_messages WHERE learner_id = ? AND sender = 'admin'", [(int) $lpc['id']], 0) === 1);
+check('pay reminder: an approved certificate is never reminded', (function () use ($cb, $adminId) {
+    CertificateService::approve((int) $cb['id'], null, false, true);
+    return \App\Services\Academy\CertificatePayReminders::waiting((int) $cb['id']) === [];
+})());
+check('http: an editor (no academy.manage) is refused', ($req('POST', '/admin/academy/certificates-remind-pay-all', ['_token' => $tok($req('GET', '/admin/academy/certificates', [], $jE)['body'])], $jE)['code']) === 403);
+Settings::set('academy_cert_fee', $oldFee[0] ?? '0');
+Settings::set('academy_pay_mobile_money', $oldFee[1] ?? '');
+Settings::flush();
+
 $cleanup();
 foreach (array_diff(glob(STORAGE_PATH . '/mail/*.eml') ?: [], $mailsBefore) as $f) {
     if (str_contains($mailText($f), 'zz-lce-')) {

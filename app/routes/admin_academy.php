@@ -140,6 +140,8 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/certificates/{id}/decline', [AcademyCertificatesController::class, 'decline'])->middleware('throttle:60,60')->name('admin.academy.certificates.decline');
     $router->post('/certificates/{id}/email', [AcademyCertificatesController::class, 'email'])->middleware('throttle:60,60')->name('admin.academy.certificates.email');
     $router->post('/certificates/{id}/mark-fee-paid', [AcademyCertificatesController::class, 'markFeePaid'])->middleware('throttle:60,60')->name('admin.academy.certificates.mark_fee_paid');
+    $router->post('/certificates/{id}/remind-pay', [AcademyCertificatesController::class, 'remindPay'])->where('id', '\d+')->middleware('throttle:60,60')->name('admin.academy.certificates.remind_pay');
+    $router->post('/certificates-remind-pay-all', [AcademyCertificatesController::class, 'remindPay'])->middleware('throttle:5,60')->name('admin.academy.certificates.remind_pay_all');
     $router->post('/certificates-approve-all', [AcademyCertificatesController::class, 'approveAll'])->middleware('throttle:10,60')->name('admin.academy.certificates.approve_all');
     $router->post('/certificates-remind-fee-all', [AcademyCertificatesController::class, 'remindFeeAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.remind_fee_all');
     $router->post('/certificates-remind-fee-whatsapp-all', [AcademyCertificatesController::class, 'remindFeeWhatsAppAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.remind_fee_whatsapp_all');
