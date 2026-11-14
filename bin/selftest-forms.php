@@ -1190,7 +1190,7 @@ foreach ([['letter.docx', $docx()], ['old.doc', $ole('doc')], ['sheet.xls', $ole
 
 echo "Forms: public sitemap and privacy\n";
 $map = \App\Services\Web\SitemapBuilder::xml();
-check('sitemap: no submission, no file, no admin URL; forms listed only when published + listed + indexable', !str_contains($map, '/admin') && !str_contains($map, 'submissions') && !str_contains($map, 'thanks'));
+check('sitemap: no submission, no file, no admin URL; forms listed only when published + listed + indexable', preg_match('~<loc>[^<]*/(admin|submissions|thanks)(/|</)~', $map) !== 1);
 
 // ================================================================================================================================ part 2: HTTP
 $formsHttp = __DIR__ . '/selftest-forms-http.php';

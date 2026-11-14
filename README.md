@@ -33,7 +33,7 @@ Local development accepts only dev-looking host names (localhost, 127.x, private
 while `APP_URL` is empty; anything else gets HTTP 400.
 
 Other ways to run it: `php -S 127.0.0.1:8099 index.php` from the project root (built-in server; serves only `assets/` and `uploads/` as
-static files, everything else goes through the app). Health check: `php bin/selftest.php` must print `ALL CHECKS PASSED` (it includes the partners, newsletter, live-reflection and membership-card suites (engines, flows, HTTP, staff, designer and review regressions); run it once with `-d extension=gd` and once without).
+static files, everything else goes through the app). Tests: `php bin/test.php --group=quick` (1 s, no database) and `php bin/test.php --group=smoke` (about 3 min: payments, shop, membership, Academy, forms) before every upload; see `docs/TESTING.md`. Full health check: `php bin/selftest.php` must print `ALL CHECKS PASSED` (it includes the partners, newsletter, live-reflection and membership-card suites (engines, flows, HTTP, staff, designer and review regressions); run it once with `-d extension=gd` and once without).
 
 ## Using the admin
 
@@ -140,6 +140,9 @@ docs/       ARCHITECTURE.md, DESIGN.md, CONTENT_NOTES.md, live-snapshot/
 * `docs/NEWSLETTER.md` - the newsletter: JSON content model, issue workflow, admin editor and JSON API, public pages, e-mailing queue, SMTP driver, mock SMTP server, privacy notes.
 * `docs/PARTNERS_NEWSLETTER.md` - partners section, logo pipeline, PDF newsletters, live-reflection (cache) audit, schema/seed upgrade rules and known limits.
 * `docs/CALENDAR.md` - the calendar: data model, repeat rules, date engine, public and admin routes, JSON and iCal shapes, the sources of every seeded date and what could not be verified.
+* `CONTRIBUTING.md` - start here as a developer: where things go, the conventions that bite, the change loop (lint, build, test, document, deploy).
+* `docs/TESTING.md` - how to run the tests (`bin/test.php`), what each critical flow is guarded by, how to write a new test, safety rules (local database only, no real e-mail or money).
+* `docs/PAYMENTS.md` - every way to pay (Daraza mobile money, Pesapal, Flutterwave, manual), setup, the mobile-money life cycle and Resolve menu, pay-on-delivery deposit, payments dashboard and audit trail, how to add a purpose.
 * `docs/SHOP.md` - the shop: data model, money rules, order and payment state machines, the Flutterwave flow and its secrets, routes, abilities, sample content and the owner to-do list.
 * `docs/CONTENT_NOTES.md` - where the starter wording comes from and what the owner still has to confirm or supply.
 * `docs/live-snapshot/` - text of the live site pages used as the content source.
