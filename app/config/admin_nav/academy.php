@@ -22,6 +22,7 @@ return [
         ['key' => 'academy_certificates', 'label' => 'Certificates',    'url' => 'admin/academy/certificates', 'icon' => 'award',     'can' => 'academy.manage', 'order' => 50,
             // the number of certificates still WAITING to be issued (approved) - a yellow number so the administrator knows at a glance
             'badge' => static fn(): int => can('academy.manage') ? \App\Services\Academy\CertificateService::pendingCount() : 0, 'badge_tone' => 'yellow'],
+        ['key' => 'academy_fees',         'label' => 'Fees & payments', 'url' => 'admin/academy/fees',         'icon' => 'settings',  'can' => 'academy.manage', 'order' => 47, 'badge' => null],
         ['key' => 'academy_payments',     'label' => 'Payments',        'url' => 'admin/academy/payments',     'icon' => 'credit-card', 'can' => 'academy.manage', 'order' => 48, 'badge' => null],
         ['key' => 'academy_social',       'label' => 'Social follow check', 'url' => 'admin/academy/social', 'icon' => 'heart', 'can' => 'academy.manage', 'order' => 52,
             'badge' => static fn(): int => can('academy.manage') ? \App\Services\Academy\AcademySocial::counts()['unverified'] : 0, 'badge_tone' => 'yellow'],

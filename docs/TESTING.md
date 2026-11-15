@@ -50,6 +50,7 @@ local mock servers (`bin/dev/mock-*.php`): **no test sends a real e-mail or move
 | Donations and project giving | "Give now", amount cap, thanks page | `fund` |
 | Membership | application, fees, payment, renewal, card, staff review | `membership-pay`, `membership-card-designer`, `membership-card-fixes`, `full` (membership, card) |
 | Academy | sign-up, e-mail confirmation, enrolling, quizzes, fees, certificates, challenges | `academy*` |
+| Academy fees page and messages | fees, payment details, editable messages saved to the settings the site reads; certificate pay reminders | `academy-fees-page`, `academy-certificates` |
 | Admin access | roles and abilities, password reset | `full` (roles), `admin-reset` |
 | Newsletter, calendar, meetings, social | queue, sending, iCal, scheduling, posting | `newsletter*`, `calendar`, `meetings`, `social*` |
 

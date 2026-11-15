@@ -32,20 +32,19 @@ final class CertificatePayReminders
         return count(self::waiting());
     }
 
-    /** The wording sent to a learner: the certificate is ready, pay the fee to receive it. @param list<string> $courses */
+    /** The wording sent to a learner (Admin > Academy > Fees & payments can change it, see AcademyFeeMessages). @param list<string> $courses */
     public static function text(string $name, array $courses): string
     {
         $fee = AcademyFees::configured('cert');
-        $first = trim((string) strtok(trim($name), ' ')) ?: 'there';
         $many = count($courses) > 1;
-        $list = $many ? count($courses) . ' courses (' . implode(', ', array_map(static fn(string $c): string => '"' . $c . '"', $courses)) . ')' : '"' . $courses[0] . '"';
-        $how = AcademyFees::cert() !== null
-            ? 'Sign in at ' . abs_url('academy/login') . ', open My certificates and pay online: ' . ($many ? 'each certificate is' : 'it is') . ' released as soon as the payment is confirmed.'
-            : 'Reply to this message or contact the LAF Academy team to pay, and ' . ($many ? 'they are' : 'it is') . ' released as soon as the payment is confirmed.';
-        $manual = AcademyFees::manual();
-        $details = $manual !== null ? ' ' . trim(($manual['mobile'] !== '' ? 'Mobile money: ' . $manual['mobile'] . '. ' : '') . ($manual['bank'] !== '' ? 'Bank: ' . $manual['bank'] . '.' : '')) : '';
-        return 'Hello ' . $first . ', this is the LAF Academy team. Good news: your certificate' . ($many ? 's' : '') . ' for ' . $list . ($many ? ' are' : ' is') . ' ready. '
-            . 'Please pay the certificate fee' . ($fee !== null ? ' of ' . $fee['display'] . ($many ? ' for each certificate' : '') : '') . ' so that we can approve and release ' . ($many ? 'them' : 'it') . '. ' . $how . $details;
+        return AcademyFeeMessages::render('cert_pay', [
+            'first_name' => trim((string) strtok(trim($name), ' ')) ?: 'there',
+            'fee' => $fee['display'] ?? '',
+            'courses' => $many ? count($courses) . ' courses (' . implode(', ', array_map(static fn(string $c): string => '"' . $c . '"', $courses)) . ')' : '"' . $courses[0] . '"',
+            'sign_in_link' => abs_url('academy/login'),
+            'how_to_pay' => AcademyFeeMessages::howToPay('cert', $many),
+            'pay_details' => AcademyFeeMessages::payDetails(AcademyFees::manual()),
+        ]);
     }
 
     private static function recentlyReminded(int $learnerId): bool

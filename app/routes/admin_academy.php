@@ -12,6 +12,7 @@ use App\Controllers\Admin\AcademyClassesController;
 use App\Controllers\Admin\AcademyCoursesController;
 use App\Controllers\Admin\AcademyCurriculumController;
 use App\Controllers\Admin\AcademyFacilitatorsController;
+use App\Controllers\Admin\AcademyFeesController;
 use App\Controllers\Admin\AcademyLearnersController;
 use App\Controllers\Admin\AcademyMessagesController;
 use App\Controllers\Admin\AcademyPartnersController;
@@ -146,6 +147,8 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->post('/certificates-remind-fee-all', [AcademyCertificatesController::class, 'remindFeeAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.remind_fee_all');
     $router->post('/certificates-remind-fee-whatsapp-all', [AcademyCertificatesController::class, 'remindFeeWhatsAppAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.remind_fee_whatsapp_all');
     $router->get('/certificates-fee-reminders', [AcademyCertificatesController::class, 'feeReminders'])->middleware('throttle:60,60')->name('admin.academy.certificates.fee_reminders');
+    $router->get('/fees', [AcademyFeesController::class, 'index'])->name('admin.academy.fees');
+    $router->post('/fees/{section}', [AcademyFeesController::class, 'save'])->where('section', 'fees|details|messages')->middleware('throttle:60,60')->name('admin.academy.fees.save');
     $router->get('/payments', [AcademyPaymentsController::class, 'index'])->name('admin.academy.payments');
     $router->get('/payments-export', [AcademyPaymentsController::class, 'export'])->middleware('throttle:20,60')->name('admin.academy.payments.export');
     $router->post('/certificates-hold-all', [AcademyCertificatesController::class, 'holdAll'])->middleware('throttle:5,60')->name('admin.academy.certificates.hold_all');

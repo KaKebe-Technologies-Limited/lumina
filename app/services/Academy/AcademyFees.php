@@ -282,21 +282,14 @@ final class AcademyFees
     public static function reminderText(array $learner): string
     {
         $fee = self::configured('signup');
-        $first = trim((string) strtok(trim((string) $learner['name']), ' ')) ?: 'there';
-        $text = 'Hello ' . $first . ', this is the LAF Academy team. Your sign-up fee' . ($fee !== null ? ' of ' . $fee['display'] : '') . ' is not paid yet, so your account cannot be approved. ';
-        $ways = [];
-        $m = self::manual();
-        if ($m !== null) {
-            $ways[] = trim(($m['mobile'] !== '' ? 'mobile money: ' . preg_replace('/\s*\R\s*/', ', ', $m['mobile']) : '') . ($m['bank'] !== '' ? ($m['mobile'] !== '' ? '; ' : '') . 'bank: ' . preg_replace('/\s*\R\s*/', ', ', $m['bank']) : ''));
-        }
-        if (\App\Services\Pesapal\PesapalPayments::ready() || \App\Services\Daraza::enabled('signup')) {
-            $ways[] = 'online on the waiting page';
-        }
-        if ($ways !== []) {
-            $text .= 'You can pay by ' . implode(', or ', $ways) . '. ';
-        }
-        $text .= 'After paying, sign in at ' . abs_url('academy/login') . ' and use "I have paid" to send us the transaction ID. Your account is approved automatically as soon as the payment is confirmed.';
-        return $text;
+        return AcademyFeeMessages::render('signup_pay', [
+            'first_name' => trim((string) strtok(trim((string) $learner['name']), ' ')) ?: 'there',
+            'fee' => $fee['display'] ?? '',
+            'sign_in_link' => abs_url('academy/login'),
+            'how_to_pay' => AcademyFeeMessages::howToPay('signup', false),
+            'pay_details' => AcademyFeeMessages::payDetails(self::manual()),
+            'courses' => '',
+        ]);
     }
 
     /** True when a sign-up fee or a certificate fee is set: the Academy shows "Paid" instead of "Free" everywhere visitors see the status. */

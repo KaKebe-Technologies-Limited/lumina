@@ -22,7 +22,7 @@ use App\Services\Academy\CertificateService;
                 <article class="ac-panel card" data-reveal>
                     <h3 class="ac-panel__title"><?= icon('clock', 'icon--sm') ?> <?= e($w['course_title']) ?></h3>
                     <?php if (\App\Services\Academy\AcademyFees::certDue($w) && ($certFee = \App\Services\Academy\AcademyFees::configured('cert'))): ?>
-                        <p class="opp-notice ac-cert-wait"><?= icon('credit-card', 'icon--sm') ?> Your certificate is ready once the certificate fee of <strong><?= e($certFee['display']) ?></strong> is paid. You pay securely online.</p>
+                        <p class="opp-notice ac-cert-wait"><?= icon('credit-card', 'icon--sm') ?> <?= e(\App\Services\Academy\AcademyFeeMessages::render('cert_portal', ['fee' => $certFee['display'], 'courses' => (string) $w['course_title']])) ?></p>
                         <?php $certDz = \App\Services\Academy\AcademyFees::daraza('cert'); $payParts = []; ob_start(); ?>
                         <?php if (\App\Services\Academy\AcademyFees::mobileAvailable('cert')): ?><?= partial('partials/pay-banner', []) ?><form method="post" action="<?= e(url('academy/portal/certificates/' . (int) $w['id'] . '/pay-mobile')) ?>" style="margin-bottom:.75rem"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('phone', 'icon--sm') ?> Pay the certificate fee with MTN or Airtel mobile money</button></form><?php endif; ?>
 <?php $payParts['mobile'] = ob_get_clean(); ob_start(); ?>

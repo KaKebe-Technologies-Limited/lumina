@@ -22,7 +22,7 @@ if (PHP_SAPI !== 'cli') {
 /** group => tests that guard the money and sign-up paths. Keep this list short: it is what to run before every upload. */
 const FLOWS = [
     'quick' => ['core-units'],
-    'smoke' => ['core-units', 'payment-options', 'payments-dashboard', 'daraza', 'daraza-api', 'shop', 'membership-pay', 'academy', 'academy-payments', 'fund', 'forms', 'pesapal'],
+    'smoke' => ['core-units', 'payment-options', 'payments-dashboard', 'daraza', 'daraza-api', 'shop', 'membership-pay', 'academy', 'academy-payments', 'academy-fees-page', 'fund', 'forms', 'pesapal'],
     // the master script runs the older suites in one process: roles, membership, newsletter, calendar, meetings, cards, shop, social, academy... (20+ minutes)
     'full' => ['master'],
 ];
@@ -58,12 +58,14 @@ foreach (glob($root . '/bin/selftest-*.php') ?: [] as $f) {
 ksort($all);
 $all['master'] = $root . '/bin/selftest.php';   // only run on request (it repeats many of the others)
 
+$exact = [];
 if ($opts['group'] !== '') {
     if (!isset(FLOWS[$opts['group']])) {
         fwrite(STDERR, 'Unknown group "' . $opts['group'] . '". Groups: ' . implode(', ', array_keys(FLOWS)) . PHP_EOL);
         exit(2);
     }
-    $names = array_merge($names, FLOWS[$opts['group']]);
+    $exact = FLOWS[$opts['group']];                 // a group lists whole names: no partial matching for them
+    $names = array_merge($names, $exact);
 }
 
 $run = [];
@@ -75,7 +77,7 @@ foreach ($all as $name => $file) {
         continue;
     }
     foreach ($names as $n) {
-        if ($name === $n || (!in_array($n, array_merge(...array_values(FLOWS)), true) && str_contains($name, $n)) || ($opts['group'] !== '' && $name === $n)) {
+        if ($name === $n || (!in_array($n, $exact, true) && str_contains($name, $n))) {
             $run[$name] = $file;
         }
     }

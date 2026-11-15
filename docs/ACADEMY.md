@@ -266,3 +266,20 @@ A learner who is waiting for approval (or was rejected) cannot open the portal, 
 * **E-mail:** the "Also send it by e-mail" box (off by default because e-mail is limited); the page recommends it for learners who are not approved.
 
 The conversation page also warns that the learner cannot open the portal yet and offers **Approve now**; in the inbox such learners carry a "Not approved" badge. Test: `bin/selftest-academy-portal.php`.
+
+## Fees & payments (Admin > LAF Academy > Fees & payments)
+
+One page for everything the Academy charges and says about money. It writes the same settings the website and the learner portal already read, so a change shows at once.
+
+| Section | What it sets | Settings written |
+|---|---|---|
+| 1. Fees | sign-up fee on/off, sign-up and certificate amounts and currencies, automatic approval / release after an online payment | `academy_signup_fee_enabled`, `academy_signup_fee`, `academy_signup_fee_currency`, `academy_cert_fee`, `academy_cert_fee_currency`, `academy_fee_auto_approve`, `academy_cert_auto_release` |
+| 2. Ways to pay | read-only status of the four ways (Daraza mobile money, Pesapal, Daraza link, manual details) with a link to change each | none |
+| 3. Payment details | mobile-money and bank text shown to learners, plus the "show them" switch (the shared `pay_opt_manual` of Payment options), with a live preview of the learner's screen | `academy_pay_mobile_money`, `academy_pay_bank_details`, `pay_opt_manual` |
+| 4. Messages | the wording of the certificate payment reminder, the sign-up fee reminder and the notice on the learner's Certificates page | `academy_msg_cert_pay`, `academy_msg_signup_pay`, `academy_msg_cert_portal` |
+
+Code: `AcademyFeesController` (GET `admin/academy/fees`, POST `admin/academy/fees/{fees|details|messages}`, needs `academy.manage`), view `admin/academy/fees.php`, script `assets/js/academy-fees.js` (live previews and placeholder buttons; the forms work without it), styles `.af-*` in `scss/admin/_academy.scss`.
+
+**Messages** (`AcademyFeeMessages`): each has a built-in default; a saved text replaces it, empty brings the default back. `{placeholders}` (`first_name`, `fee`, `courses`, `sign_in_link`, `how_to_pay`, `pay_details`) are filled when the message is used; an unknown `{word}` is left as typed. Saving text identical to the default stores "not customised", so a later improvement of the default still reaches the site. Used by `CertificatePayReminders::text()`, `AcademyFees::reminderText()` and the learner portal certificates view. To add a message: add it to `AcademyFeeMessages::all()` (setting key, default, placeholders), use `AcademyFeeMessages::render()` where it is sent, and add a sample in `AcademyFeesController::index()`.
+
+**Certificate payment reminder** (Certificates page: "Remind all to pay" and "Remind to pay"): `CertificatePayReminders` puts each waiting, unpaid certificate on "fee due" when it can be paid online, then sends one portal message and one e-mail per learner (not more than one per 24 hours). Tests: `bin/selftest-academy-certificates.php`, `bin/selftest-academy-fees-page.php`.
