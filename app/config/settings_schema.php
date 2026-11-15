@@ -66,6 +66,7 @@ return [
                 'donate_intro'        => ['label' => 'Donation intro text', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:1000'],
                 'donate_bank_details' => ['label' => 'Bank transfer details', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:2000', 'help' => 'Leave empty until the foundation confirms its official account details.'],
                 'donate_mobile_money' => ['label' => 'Mobile money details', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:1000', 'help' => 'Leave empty until confirmed.'],
+                'donation_reminder_message' => ['label' => 'Pledge reminder e-mail (wording)', 'type' => 'textarea', 'default' => '', 'rules' => 'nullable|max:3000', 'help' => 'The thankful e-mail the Remind button on Admin > Donations sends to a donor whose pledge has not been received. Leave empty to use the built-in wording. Placeholders: {first_name} {amount} {pledge_date} {payment_details} (your bank, mobile money and PayPal details from above) {donate_link} {site_name}.'],
                 'donate_paypal_email' => ['label' => 'PayPal email', 'type' => 'email', 'default' => '', 'rules' => 'nullable|email'],
             ],
         ],

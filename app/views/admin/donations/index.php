@@ -83,6 +83,15 @@ $this->start('scripts'); ?>
 
     <?= partial('admin/inbox/_tabs', ['tabs' => $tabs, 'current' => $f['status'], 'base' => 'admin/donations', 'keep' => $keep]) ?>
 
+    <?php if (!empty($pledgeReminders)): ?>
+        <div class="alert alert--info don-remind" role="status">
+            <div><strong><?= (int) $pledgeReminders ?> pledge<?= (int) $pledgeReminders === 1 ? '' : 's' ?> waiting to be received.</strong>
+                Send each donor a warm thank-you e-mail that explains why their gift matters and gives your account details. One reminder per pledge per day.</div>
+            <form method="post" action="<?= e(url('admin/donations/remind-all')) ?>" class="inline-form" data-confirm="E-mail a thankful reminder, with your account details, to every donor with a waiting pledge (<?= (int) $pledgeReminders ?>)? A pledge reminded in the last 24 hours is skipped."><?= csrf_field() ?>
+                <button class="btn btn--primary btn--sm" type="submit"><?= icon('mail', 'icon--sm') ?> Send thankful reminders to all</button></form>
+        </div>
+    <?php endif; ?>
+
     <form class="filters" method="get" action="<?= e(url('admin/donations')) ?>" role="search">
         <?php if ($f['status'] !== 'all'): ?><input type="hidden" name="status" value="<?= e($f['status']) ?>"><?php endif; ?>
         <div class="field field--grow">
@@ -155,6 +164,12 @@ $this->start('scripts'); ?>
                                     <form method="post" action="<?= e(url('admin/donations/' . $id . '/status')) ?>" data-confirm="Mark this donation as received? A receipt number will be issued.">
                                         <?= csrf_field() ?><input type="hidden" name="status" value="received">
                                         <button class="btn btn--accent btn--sm" type="submit" title="Mark as received" aria-label="Mark donation #<?= $id ?> as received"><?= icon('check', 'icon--sm') ?><span class="inbox-btn-text">Mark received</span></button>
+                                    </form>
+                                <?php endif; ?>
+                                <?php if ($d['status'] === 'pledged' && !empty($d['donor_email']) && (float) ($d['amount'] ?? 0) > 0): ?>
+                                    <form method="post" action="<?= e(url('admin/donations/' . $id . '/remind')) ?>" data-confirm="E-mail a thankful reminder with your account details to <?= e((string) $d['donor_email']) ?>?">
+                                        <?= csrf_field() ?>
+                                        <button class="btn btn--outline btn--sm" type="submit" title="E-mail a thankful reminder with our account details" aria-label="Remind donor of donation #<?= $id ?>"><?= icon('mail', 'icon--sm') ?><span class="inbox-btn-text">Remind</span></button>
                                     </form>
                                 <?php endif; ?>
                                 <?php if ($d['status'] === 'received' && !empty($d['receipt_no'])): ?>

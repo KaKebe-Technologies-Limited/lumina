@@ -52,6 +52,7 @@ final class DonationController extends InboxController
             'statusLabels' => $this->statusLabels(),
             'canDelete'    => can('inbox.delete'),
             'canExport'    => can('export.csv'),
+            'pledgeReminders' => \App\Services\Payments\PledgeReminders::count(),
         ], ['title' => 'Donations', 'nav' => 'donations', 'breadcrumbs' => [['Donations', null]]]);
     }
 
@@ -106,6 +107,25 @@ final class DonationController extends InboxController
             Flash::warning('Receipt ' . $d['receipt_no'] . ' was already issued. The printable receipt now shows the new amount: tell the donor if they already hold the old one.');
         }
         return $this->redirect('admin/donations');
+    }
+
+    /** POST donations/{id}/remind: a thankful follow-up e-mail to the donor of ONE pledge, with the foundation's account details. */
+    public function remind(Request $request, int $id): Response
+    {
+        $this->authorize('inbox.manage');
+        $r = \App\Services\Payments\PledgeReminders::remind($id, \App\Core\Auth::id());
+        $r['ok'] ? Flash::success($r['message']) : Flash::error($r['message']);
+        return $this->back('admin/donations');
+    }
+
+    /** POST donations/remind-all: the same e-mail to every donor with a pledge that is still waiting (at most 100, one per pledge per day). */
+    public function remindAll(Request $request): Response
+    {
+        $this->authorize('inbox.manage');
+        $r = \App\Services\Payments\PledgeReminders::remindAll(\App\Core\Auth::id());
+        $this->audit('donation.remind_all', 'donation', null, 'Sent thankful reminders to donors with waiting pledges', ['sent' => $r['sent'], 'skipped' => $r['skipped']]);
+        $r['ok'] ? Flash::success($r['message']) : Flash::info($r['message']);
+        return $this->back('admin/donations');
     }
 
     /** Quick status change from the list (pledged / received / cancelled ...). */

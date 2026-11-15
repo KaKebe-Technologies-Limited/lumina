@@ -8216,6 +8216,15 @@ body.admin-receipt .receipt__sign-label {
   }
 }
 
+.don-remind {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin: 0 0 1rem;
+}
+
 .admin-org .org-sort {
   display: inline-flex;
   align-items: center;

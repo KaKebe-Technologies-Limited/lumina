@@ -74,3 +74,12 @@ when the deposit arrives; the rest is collected on delivery.
 
 `payment-options`, `payments-dashboard`, `daraza`, `daraza-api`, `pesapal`, `shop`, `fund`, `membership-pay`, `academy-payments` (see `TESTING.md`).
 Daraza is replaced by a fake client, so no test moves money.
+
+## Pledge reminders (Admin > Donations)
+
+A pledge from the website's pledge form stays "Pledged" until staff mark it received. `Payments\PledgeReminders` e-mails the donor a warm follow-up: it thanks them, says why their gift matters, gives the account details (Settings > Donations: bank transfer, mobile money, PayPal) and the donate link, and asks them to reply with the transaction number.
+
+* **Buttons**: "Remind" on each waiting pledge (needs an amount and a valid e-mail) and "Send thankful reminders to all" above the list (at most 100 per press). Routes `POST admin/donations/{id}/remind` and `POST admin/donations/remind-all` (ability `inbox.manage`).
+* **Rules**: refused until at least one set of account details exists; never for a received or cancelled donation; one reminder per pledge per 24 hours (the audit-trail `reminded` event, reference `DON-<id>`, is the memory); each reminder is also written to the activity log.
+* **Wording**: built in (`PledgeReminders::DEFAULT`); change it in Settings > Donations > "Pledge reminder e-mail (wording)". Placeholders: `{first_name} {amount} {pledge_date} {payment_details} {donate_link} {site_name}`. Empty = built-in.
+* **Test**: `bin/selftest-pledge-reminders.php`.

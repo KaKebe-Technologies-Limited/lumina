@@ -48,6 +48,7 @@ local mock servers (`bin/dev/mock-*.php`): **no test sends a real e-mail or move
 | Card / online payment (Pesapal) | order, IPN, status check, reversal, amount and currency mismatch | `pesapal` |
 | Shop | cart, stock race, orders, status and payment state machines, 60% pay-on-delivery deposit, e-mails | `shop`, `shop-laf` |
 | Donations and project giving | "Give now", amount cap, thanks page | `fund` |
+| Pledge reminders | thankful e-mail with account details, one per day, never for received pledges | `pledge-reminders` |
 | Membership | application, fees, payment, renewal, card, staff review | `membership-pay`, `membership-card-designer`, `membership-card-fixes`, `full` (membership, card) |
 | Academy | sign-up, e-mail confirmation, enrolling, quizzes, fees, certificates, challenges | `academy*` |
 | Academy fees page and messages | fees, payment details, editable messages saved to the settings the site reads; certificate pay reminders | `academy-fees-page`, `academy-certificates` |

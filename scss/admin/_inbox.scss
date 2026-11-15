@@ -226,3 +226,5 @@ body.admin-receipt {
         .receipt__sign { margin-top: $space-6; break-inside: avoid; page-break-inside: avoid; break-before: avoid; page-break-before: avoid; }
     }
 }
+
+.don-remind { display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 0 0 1rem; }
