@@ -8225,6 +8225,31 @@ body.admin-receipt .receipt__sign-label {
   margin: 0 0 1rem;
 }
 
+.don-account {
+  margin: 0 0 1rem;
+}
+
+.don-account summary {
+  display: flex;
+  gap: .6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: .9rem 1.1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.don-account summary::-webkit-details-marker {
+  display: none;
+}
+
+.don-account__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  margin-bottom: .6rem;
+}
+
 .admin-org .org-sort {
   display: inline-flex;
   align-items: center;

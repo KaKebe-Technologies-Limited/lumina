@@ -150,7 +150,16 @@ if (!$login('zz-pr-admin@example.test', $pwA, $jA) || !$login('zz-pr-editor@exam
     $sentTo = $mailText($before);
     $aAgain = Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = ? AND event = 'reminded'", ['DON-' . $a], 0);
     check('http: "Send thankful reminders to all" mails the waiting pledges that were not reminded today and skips the ones that were', in_array($all['code'], [302, 303], true) && (int) $aAgain === 1 && (int) Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = ? AND event = 'reminded'", ['DON-' . $e], 0) === 1);
-    check('http: an editor (no inbox.manage) is refused', $req('POST', '/admin/donations/' . $a . '/remind', ['_token' => 'x'], $jE)['code'] === 403 && $req('POST', '/admin/donations/remind-all', ['_token' => 'x'], $jE)['code'] === 403);
+    $pg = $req('GET', '/admin/donations', [], $jA);
+    check('http: the Donations page shows the "Your account details" box to an administrator', str_contains($pg['body'], 'Your account details') && str_contains($pg['body'], 'name="bank"') && str_contains($pg['body'], 'Pearl Bank'));
+    $sv = $post('/admin/donations/account-details', ['bank' => "Bank: Test Bank\nAccount Number: 111222", 'mobile' => 'MTN: 0772 999 000', 'paypal' => ''], $jA);
+    Settings::flush();
+    check('http: saving the account details writes the same settings as Site settings > Donations', in_array($sv['code'], [302, 303], true) && str_contains((string) Settings::get('donate_bank_details', ''), 'Test Bank') && (string) Settings::get('donate_mobile_money', '') === 'MTN: 0772 999 000');
+    $bp = $post('/admin/donations/account-details', ['bank' => 'Changed', 'mobile' => '', 'paypal' => 'not an email'], $jA);
+    Settings::flush();
+    check('http: a PayPal value that is not an e-mail address is refused and nothing changes', str_contains((string) Settings::get('donate_bank_details', ''), 'Test Bank'));
+    check('http: an editor cannot change the account details (administrators only)', $req('POST', '/admin/donations/account-details', ['_token' => 'x', 'bank' => 'x'], $jE)['code'] === 403);
+    check('http: an editor (no inbox.manage) is refused',$req('POST', '/admin/donations/' . $a . '/remind', ['_token' => 'x'], $jE)['code'] === 403 && $req('POST', '/admin/donations/remind-all', ['_token' => 'x'], $jE)['code'] === 403);
 }
 
 $restore();

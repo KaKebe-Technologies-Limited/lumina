@@ -67,6 +67,7 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth']], function ($route
     $router->post('/donations', [DonationController::class, 'store'])->name('admin.donations.store');
     $router->get('/donations/export', [DonationController::class, 'export'])->name('admin.donations.export');
     $router->get('/donations/{id}/edit', [DonationController::class, 'edit'])->name('admin.donations.edit');
+    $router->post('/donations/account-details', [DonationController::class, 'accountDetails'])->middleware('throttle:30,60')->name('admin.donations.account_details');
     $router->post('/donations/remind-all', [DonationController::class, 'remindAll'])->middleware('throttle:5,60')->name('admin.donations.remind_all');
     $router->post('/donations/{id}/remind', [DonationController::class, 'remind'])->where('id', '\d+')->middleware('throttle:60,60')->name('admin.donations.remind');
     $router->post('/donations/{id}', [DonationController::class, 'update'])->name('admin.donations.update');

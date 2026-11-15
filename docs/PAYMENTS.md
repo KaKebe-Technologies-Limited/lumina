@@ -83,3 +83,4 @@ A pledge from the website's pledge form stays "Pledged" until staff mark it rece
 * **Rules**: refused until at least one set of account details exists; never for a received or cancelled donation; one reminder per pledge per 24 hours (the audit-trail `reminded` event, reference `DON-<id>`, is the memory); each reminder is also written to the activity log.
 * **Wording**: built in (`PledgeReminders::DEFAULT`); change it in Settings > Donations > "Pledge reminder e-mail (wording)". Placeholders: `{first_name} {amount} {pledge_date} {payment_details} {donate_link} {site_name}`. Empty = built-in.
 * **Test**: `bin/selftest-pledge-reminders.php`.
+* **Account details box**: "Your account details" at the top of Admin > Donations (administrators, `settings.manage`) edits the bank, mobile-money and PayPal settings (`donate_bank_details`, `donate_mobile_money`, `donate_paypal_email`) without opening Site settings. `POST admin/donations/account-details`.

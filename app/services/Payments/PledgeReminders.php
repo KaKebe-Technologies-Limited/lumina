@@ -53,6 +53,13 @@ final class PledgeReminders
         return implode("\n\n", $parts);
     }
 
+    private static function needDetails(): string
+    {
+        return can('settings.manage')
+            ? 'Add your account details first: open "Your account details" on this page (Donations), fill in the bank transfer, mobile money or PayPal box and save. The e-mail needs them to tell donors where to send their gift.'
+            : 'The account details are not set yet. Ask an administrator to add them on the Donations page ("Your account details").';
+    }
+
     public static function template(): string
     {
         $t = trim((string) setting(self::SETTING, ''));
@@ -120,7 +127,7 @@ final class PledgeReminders
             return ['ok' => false, 'message' => 'This donor left no valid e-mail address, so no reminder can be sent.'];
         }
         if (self::paymentDetails() === '') {
-            return ['ok' => false, 'message' => 'Add your account details first (Settings > Donations: bank transfer, mobile money or PayPal), so the e-mail can tell donors where to send their gift.'];
+            return ['ok' => false, 'message' => self::needDetails()];
         }
         $ref = 'DON-' . $id;
         if (self::recently($ref)) {
@@ -146,7 +153,7 @@ final class PledgeReminders
     public static function remindAll(?int $adminId): array
     {
         if (self::paymentDetails() === '') {
-            return ['ok' => false, 'sent' => 0, 'skipped' => 0, 'message' => 'Add your account details first (Settings > Donations: bank transfer, mobile money or PayPal), so the e-mail can tell donors where to send their gift.'];
+            return ['ok' => false, 'sent' => 0, 'skipped' => 0, 'message' => self::needDetails()];
         }
         $sent = $skipped = 0;
         foreach (self::pending(100) as $d) {

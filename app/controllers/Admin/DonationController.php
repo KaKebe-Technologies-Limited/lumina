@@ -53,6 +53,8 @@ final class DonationController extends InboxController
             'canDelete'    => can('inbox.delete'),
             'canExport'    => can('export.csv'),
             'pledgeReminders' => \App\Services\Payments\PledgeReminders::count(),
+            'canAccount' => can('settings.manage'),
+            'account' => ['bank' => (string) setting('donate_bank_details', ''), 'mobile' => (string) setting('donate_mobile_money', ''), 'paypal' => (string) setting('donate_paypal_email', '')],
         ], ['title' => 'Donations', 'nav' => 'donations', 'breadcrumbs' => [['Donations', null]]]);
     }
 
@@ -106,6 +108,27 @@ final class DonationController extends InboxController
         if ($moneyChanged) {
             Flash::warning('Receipt ' . $d['receipt_no'] . ' was already issued. The printable receipt now shows the new amount: tell the donor if they already hold the old one.');
         }
+        return $this->redirect('admin/donations');
+    }
+
+    /** POST donations/account-details: the bank, mobile-money and PayPal details donors are told to pay to (the same settings as Site settings > Donations). Administrators only. */
+    public function accountDetails(Request $request): Response
+    {
+        $this->authorize('settings.manage');
+        $bank = trim((string) $request->post('bank', ''));
+        $mobile = trim((string) $request->post('mobile', ''));
+        $paypal = trim((string) $request->post('paypal', ''));
+        if (mb_strlen($bank) > 2000 || mb_strlen($mobile) > 1000) {
+            Flash::error('The bank box holds at most 2000 characters and the mobile-money box 1000.');
+            return $this->redirect('admin/donations');
+        }
+        if ($paypal !== '' && !\App\Core\Mailer::validEmail($paypal)) {
+            Flash::error('The PayPal address must be an e-mail address, or leave it empty.');
+            return $this->redirect('admin/donations');
+        }
+        \App\Core\Settings::setMany(['donate_bank_details' => $bank, 'donate_mobile_money' => $mobile, 'donate_paypal_email' => $paypal]);
+        $this->audit('donation.account_details', 'settings', null, 'Donation account details saved (bank ' . ($bank !== '' ? 'set' : 'empty') . ', mobile money ' . ($mobile !== '' ? 'set' : 'empty') . ', PayPal ' . ($paypal !== '' ? 'set' : 'empty') . ')');
+        Flash::success($bank . $mobile . $paypal === '' ? 'Saved. No account details are set.' : 'Your account details were saved. The Donate page and the reminder e-mails use them from now on.');
         return $this->redirect('admin/donations');
     }
 

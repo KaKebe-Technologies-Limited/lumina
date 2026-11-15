@@ -83,6 +83,24 @@ $this->start('scripts'); ?>
 
     <?= partial('admin/inbox/_tabs', ['tabs' => $tabs, 'current' => $f['status'], 'base' => 'admin/donations', 'keep' => $keep]) ?>
 
+    <?php $hasAccount = trim($account['bank'] . $account['mobile'] . $account['paypal']) !== ''; ?>
+    <?php if ($canAccount): ?>
+        <details class="card don-account" id="account-details"<?= $hasAccount ? '' : ' open' ?>>
+            <summary><?= icon('banknote', 'icon--sm') ?> <strong>Your account details</strong>
+                <span class="af-pill<?= $hasAccount ? ' af-pill--on' : '' ?>"><?= $hasAccount ? 'Set' : 'Not set yet' ?></span>
+                <span class="text-muted">Shown on the Donate page and in the pledge reminder e-mails.</span></summary>
+            <form method="post" action="<?= e(url('admin/donations/account-details')) ?>" class="card__body"><?= csrf_field() ?>
+                <div class="don-account__grid">
+                    <div class="field"><label class="field__label" for="acc-bank">Bank transfer</label><textarea class="textarea" id="acc-bank" name="bank" rows="4" maxlength="2000" placeholder="Bank: Pearl Bank&#10;Account Name: Lumina Africa Foundation&#10;Account Number: 0000000000"><?= e($account['bank']) ?></textarea></div>
+                    <div class="field"><label class="field__label" for="acc-mobile">Mobile money</label><textarea class="textarea" id="acc-mobile" name="mobile" rows="4" maxlength="1000" placeholder="MTN: 0772 000 000&#10;Airtel: 0700 000 000&#10;Name: Lumina Africa Foundation"><?= e($account['mobile']) ?></textarea></div>
+                    <div class="field"><label class="field__label" for="acc-paypal">PayPal e-mail (optional)</label><input class="input" id="acc-paypal" type="email" name="paypal" maxlength="190" value="<?= e($account['paypal']) ?>"></div>
+                </div>
+                <p class="text-muted">Write each detail on its own line, exactly as a donor should see it. Check the numbers carefully: donors send money to what you type here.</p>
+                <button class="btn btn--primary" type="submit"><?= icon('check', 'icon--sm') ?> Save the account details</button>
+            </form>
+        </details>
+    <?php endif; ?>
+
     <?php if (!empty($pledgeReminders)): ?>
         <div class="alert alert--info don-remind" role="status">
             <div><strong><?= (int) $pledgeReminders ?> pledge<?= (int) $pledgeReminders === 1 ? '' : 's' ?> waiting to be received.</strong>
