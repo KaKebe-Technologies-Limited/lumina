@@ -457,6 +457,7 @@
         const nodes = {
             time: $('[data-clock-time]', clockEl), date: $('[data-clock-date]', clockEl), year: $('[data-clock-year]', clockEl),
             hms: $('[data-clock-hms]', clockEl), tz: $('[data-clock-tz]', clockEl),
+            hh: $('[data-clock-h]', clockEl), hm: $('[data-clock-m]', clockEl), hs: $('[data-clock-s]', clockEl),
         };
         let fmt = null;
         try {
@@ -493,6 +494,11 @@
                 }
             }
 
+            // animation: the hands of the little clock face turn with the time (the second hand keeps counting up, so it never spins backwards at :59 -> :00), and the digits get a soft tick
+            const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            let turns = 0, lastSec = -1, drawn = false;
+            const hand = (el, deg) => { if (el) el.style.transform = 'rotate(' + deg + 'deg)'; };
+
             const render = () => {
                 const now = Date.now() + skew;
                 const sec = Math.floor(now / 1000) * 1000;
@@ -511,6 +517,13 @@
                 last = key;
                 if (withDate && nodes.date) { nodes.date.textContent = dateText; if (nodes.year) nodes.year.textContent = ' ' + y; }
                 nodes.hms.textContent = hms;
+                if (s < lastSec) turns++;
+                lastSec = s;
+                hand(nodes.hh, (h % 12) * 30 + mi / 2);
+                hand(nodes.hm, mi * 6 + s / 10);
+                hand(nodes.hs, turns * 360 + s * 6);
+                if (drawn && !still && nodes.hms.animate) nodes.hms.animate([{ opacity: 0.35, transform: 'translateY(3px)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.2,.8,.2,1)' });
+                drawn = true;
                 if (nodes.tz) nodes.tz.textContent = abbr;
                 const sign = offsetMin < 0 ? '-' : '+';
                 const abs = Math.abs(offsetMin);

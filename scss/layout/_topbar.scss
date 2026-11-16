@@ -95,6 +95,26 @@
     @include respond(md) { &__label, &__year { display: inline; } }
 }
 
+// ---- Animated clock face: three hands turned by main.js (hour, minute, second), a gold ring that pulses softly like a heartbeat, and a second hand that ticks
+// with a small bounce. Nothing moves for visitors who ask for reduced motion (the hands still show the right time).
+.clock__face { border-radius: 50%; overflow: visible;
+    .clock__hand { transform-box: view-box; transform-origin: 12px 12px; }
+    .clock__hand--s { stroke: $gold; stroke-width: 1.4; }
+    .clock__hand--h { stroke-width: 2.4; }
+}
+@media (prefers-reduced-motion: no-preference) {
+    .clock__face { animation: clock-ring 2.4s ease-out infinite;
+        .clock__hand { transition: transform 0.5s cubic-bezier(.3, 1.6, .5, 1); }
+        .clock__hand--m, .clock__hand--h { transition-duration: 0.8s; }
+    }
+    .clock--sec .clock__hms { text-shadow: 0 0 0 transparent; }
+    @keyframes clock-ring {
+        0%   { box-shadow: 0 0 0 0 rgba($gold, 0.55); }
+        70%  { box-shadow: 0 0 0 0.5rem rgba($gold, 0); }
+        100% { box-shadow: 0 0 0 0 rgba($gold, 0); }
+    }
+}
+
 // A page printed from the browser must not carry a frozen "now" in its header
 @media print { .clock { display: none; } }
 

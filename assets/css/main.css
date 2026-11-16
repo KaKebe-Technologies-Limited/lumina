@@ -1165,6 +1165,51 @@ body.has-sticky-header .site-main {
   }
 }
 
+.clock__face {
+  border-radius: 50%;
+  overflow: visible;
+}
+
+.clock__face .clock__hand {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+}
+
+.clock__face .clock__hand--s {
+  stroke: #D9A441;
+  stroke-width: 1.4;
+}
+
+.clock__face .clock__hand--h {
+  stroke-width: 2.4;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .clock__face {
+    animation: clock-ring 2.4s ease-out infinite;
+  }
+  .clock__face .clock__hand {
+    transition: transform 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+  .clock__face .clock__hand--m, .clock__face .clock__hand--h {
+    transition-duration: 0.8s;
+  }
+  .clock--sec .clock__hms {
+    text-shadow: 0 0 0 transparent;
+  }
+  @keyframes clock-ring {
+    0% {
+      box-shadow: 0 0 0 0 rgba(217, 164, 65, 0.55);
+    }
+    70% {
+      box-shadow: 0 0 0 0.5rem rgba(217, 164, 65, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(217, 164, 65, 0);
+    }
+  }
+}
+
 @media print {
   .clock {
     display: none;
