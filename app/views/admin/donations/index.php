@@ -35,7 +35,7 @@ $this->start('scripts'); ?>
 <script src="<?= e(asset('js/pages/admin-inbox.js')) ?>" defer></script>
 <?php $this->end(); ?>
 <div class="admin-inbox">
-    <?= partial('partials/admin/page-header', ['title' => 'Donations', 'subtitle' => 'Pledges from the website and gifts recorded by the team. Amounts in different currencies are never added together.', 'actions' => $headerActions]) ?>
+    <?= partial('partials/admin/page-header', ['title' => 'Donations', 'subtitle' => 'Pledges from the website and gifts recorded by the team. Use Remind to thank donors with a waiting pledge and send them your account details. Amounts in different currencies are never added together.', 'actions' => $headerActions]) ?>
 
     <section aria-labelledby="donation-totals">
         <h2 id="donation-totals" class="visually-hidden">Totals</h2>
