@@ -35,6 +35,10 @@ behind: delete them by hand (`WHERE email LIKE 'zz-%'`) and re-run. Never point 
 Mail is written to files in `storage/mail/` (`MAIL_DRIVER=file`), and the Daraza / Flutterwave / Pesapal / social gateways are replaced by fakes or
 local mock servers (`bin/dev/mock-*.php`): **no test sends a real e-mail or moves real money.**
 
+## On GitHub (every push)
+
+`.github/workflows/deploy.yml` runs a **Check the code** job on every push to `main`: `php -l` on every PHP file under `app/`, `bin/` and `index.php`, then `php bin/test.php --group=quick`. It has no database and no web server, so only tests that need neither can be in the `quick` group (see `FLOWS` in `bin/test.php`). The deploy job waits for it. The database and web-server tests (`smoke`, `full`) are run on your computer before you push.
+
 ## Critical flows and the test that guards each
 
 | Flow | What is checked | Test |

@@ -35,7 +35,7 @@ Hand-written PHP 8.2 MVC, MySQL/MariaDB, SCSS and vanilla JS. No Composer, no No
 4. **Add or extend a test** for any new behaviour or fixed bug (`bin/selftest-<feature>.php`). A change to money, sign-up, permissions or e-mails without a test is not finished.
 5. Update the matching file in `docs/` (or add one and link it from the README list).
 6. Commit with a message that says what a person gets, not which file changed. One topic per commit. Push to `main`.
-7. Deploy by uploading only the changed files to Hostinger `public_html` (or run the GitHub deploy action, `docs/DEPLOY.md`). Data (`uploads/`, `.env`, `storage/`) is never part of a deploy.
+7. Deploy through GitHub only (`docs/DEPLOY.md`): push to `main`; the **Check the code** job (PHP lint + quick tests) must pass, then the workflow uploads the changed files to Hostinger. Do not upload by hand: the next deploy would overwrite it. Data (`uploads/`, `.env`, `storage/`) and the database are never part of a deploy.
 
 ## Where to find things
 

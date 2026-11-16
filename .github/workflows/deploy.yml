@@ -6,6 +6,7 @@
 #   Variable (optional): AUTO_DEPLOY = true   -> every push to main deploys by itself. Leave it unset to deploy only with the "Run workflow" button.
 #
 # Run it by hand: GitHub > Actions > "Deploy to Hostinger" > Run workflow (tick "dry run" first to see what WOULD be sent without sending anything).
+# Every run first checks the code (PHP lint + quick tests); the upload only starts when that passes.
 # Full checklist for deploy day: docs/DEPLOY.md
 
 name: Deploy to Hostinger
@@ -25,8 +26,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Runs on EVERY push to main and every manual run, deploy or not: a broken push is caught here and never reaches the server.
+  # It needs no database and no secrets: it lints every PHP file (the server runs PHP 8.2) and runs the quick tests (bin/test.php --group=quick).
+  check:
+    name: Check the code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: none
+
+      - name: Every PHP file is valid
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            out=$(php -l "$f" 2>&1) || { echo "$out"; fail=1; }
+          done < <(find app bin index.php -name '*.php')
+          exit $fail
+
+      - name: Quick tests
+        run: |
+          cp .env.example .env
+          php bin/test.php --group=quick
+
   deploy:
     name: Upload changed files
+    needs: check
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || vars.AUTO_DEPLOY == 'true'
     steps:

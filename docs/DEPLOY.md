@@ -18,6 +18,14 @@ The live site is on Hostinger. **Code** comes from GitHub (this repository, bran
    - `FTP_DIR` the target folder with a trailing slash: `public_html/` (staging: `public_html/staging/`, or the staging subdomain's folder)
 3. Optional: **Variables > AUTO_DEPLOY = `true`** to deploy on every push to `main`. Without it, you deploy with the **Run workflow** button.
 
+### The check that runs before every deploy
+
+Every push to `main` and every manual run first runs the job **Check the code** (about a minute, no secrets, no database): every PHP file under `app/`, `bin/` and `index.php` must pass `php -l` on PHP 8.2 (the server's version), and `php bin/test.php --group=quick` must pass. **The upload only starts when the check is green.** A red check means the code is not uploaded: open the run in GitHub > Actions, read the failing line, fix it, push again. The check also runs when `AUTO_DEPLOY` is off, so every push gets a green or red mark on GitHub.
+
+Normal day, once everything above is set up: make the change, test it locally (`php bin/test.php --group=smoke`), `git push`. With `AUTO_DEPLOY` on, it is live a minute or two later; without it, press **Run workflow**. The `upload-...` folders in Downloads are not needed any more.
+
+What a deploy does **not** do: it never changes the database. If a change comes with a file in `database/updates/`, import it in phpMyAdmin once (step 5 of "Deploy day").
+
 ## Before the first live deploy: rehearse on staging
 
 1. hPanel: add a subdomain `staging.luminaafricafoundation.com` and a **new, empty database** for it.
