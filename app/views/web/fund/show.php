@@ -235,6 +235,12 @@ $cover = asset('img/projects/' . $p['cover'] . '.jpg');
             <p class="section-head__lead">Tell us where to send it. The complete proposal for <?= e($p['short']) ?> (the need, what it delivers, the budget and every way to give) arrives in your inbox as a PDF within a minute.</p></header>
         <form class="fund-proposal" method="post" action="<?= e(url('fund-a-project/' . $p['slug'] . '/proposal')) ?>" novalidate>
             <?= csrf_field() ?><?= honeypot_field() ?>
+            <?php $offered = array_values(array_filter(\App\Services\Fund\FundProjects::all(), static fn(array $q): bool => ($q['status'] ?? '') === 'proposal')); $picked = (string) old('pr_project', $p['slug']); ?>
+            <div class="field"><label class="field__label" for="pr-project">Which proposal would you like? <span class="req" aria-hidden="true">*</span></label>
+                <select class="select<?= error('pr_project') ? ' is-invalid' : '' ?>" id="pr-project" name="pr_project" required>
+                    <?php foreach ($offered as $q): ?><option value="<?= e($q['slug']) ?>"<?= $picked === $q['slug'] ? ' selected' : '' ?>><?= e($q['title']) ?></option><?php endforeach; ?>
+                    <option value="all"<?= $picked === 'all' ? ' selected' : '' ?>>All <?= count($offered) ?> project proposals</option>
+                </select><?php if (error('pr_project')): ?><p class="field__error"><?= e((string) error('pr_project')) ?></p><?php endif; ?></div>
             <div class="fund-proposal__grid">
                 <div class="field"><label class="field__label" for="pr-name">Your name <span class="req" aria-hidden="true">*</span></label><input class="input<?= error('pr_name') ? ' is-invalid' : '' ?>" id="pr-name" name="pr_name" maxlength="150" autocomplete="name" required value="<?= e((string) old('pr_name')) ?>"><?php if (error('pr_name')): ?><p class="field__error"><?= e((string) error('pr_name')) ?></p><?php endif; ?></div>
                 <div class="field"><label class="field__label" for="pr-email">E-mail address <span class="req" aria-hidden="true">*</span></label><input class="input<?= error('pr_email') ? ' is-invalid' : '' ?>" id="pr-email" type="email" name="pr_email" maxlength="190" autocomplete="email" required value="<?= e((string) old('pr_email')) ?>"><?php if (error('pr_email')): ?><p class="field__error"><?= e((string) error('pr_email')) ?></p><?php endif; ?></div>

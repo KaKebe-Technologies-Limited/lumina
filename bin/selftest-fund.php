@@ -230,7 +230,7 @@ check('proposal PDF: every proposal project builds a multi-page document of reas
 
 $prop = static function (string $slug, array $form) use ($req, $tok, $hp): array {
     $pg = $req('GET', '/fund-a-project/' . $slug);
-    return $req('POST', '/fund-a-project/' . $slug . '/proposal', $form + ['_token' => $tok($pg['body']), '_hp_ts' => $hp()]);
+    return $req('POST', '/fund-a-project/' . $slug . '/proposal', $form + ['pr_project' => $slug, '_token' => $tok($pg['body']), '_hp_ts' => $hp()]);       // the drop-down preselects the project being viewed
 };
 $mine = static function () use ($mailDir, $mailsBefore): array {
     $out = [];
@@ -261,12 +261,30 @@ $bad = $prop('digital-inclusion', ['pr_name' => '', 'pr_email' => 'not-an-email'
 check('proposal: a missing name and a bad e-mail address are refused and nothing is sent', in_array($bad['code'], [302, 303], true) && count($mine()) === 2 && (int) Database::value("SELECT COUNT(*) FROM contact_messages WHERE email = 'not-an-email'", [], 0) === 0);
 $rawPost = static function (array $form) use ($req, $tok): array {
     $pg = $req('GET', '/fund-a-project/digital-inclusion');
-    return $req('POST', '/fund-a-project/digital-inclusion/proposal', $form + ['_token' => $tok($pg['body'])]);
+    return $req('POST', '/fund-a-project/digital-inclusion/proposal', $form + ['pr_project' => 'digital-inclusion', '_token' => $tok($pg['body'])]);
 };
 $before = count($mine());
 $rawPost(['pr_name' => 'Bot', 'pr_email' => 'zz-fund-prop@example.test']);
 check('proposal: a post without the signed honeypot timestamp (a bot) sends nothing', count($mine()) === $before);
 check('proposal: a project in preparation refuses a proposal request (404)', $soon === null || $prop($soon['slug'], ['pr_name' => 'A B', 'pr_email' => 'zz-fund-p2@example.test'])['code'] === 404);
+check('proposal: the form has a drop-down of every funded project plus "all", with the project being viewed preselected', preg_match('/<select[^>]*name="pr_project"/', $page['body']) === 1 && count($ready) === 4 && substr_count($page['body'], 'name="pr_project"') === 1
+    && (static function () use ($page, $ready): bool {
+        foreach ($ready as $p) {
+            if (!str_contains($page['body'], '<option value="' . $p['slug'] . '"')) {
+                return false;
+            }
+        }
+        return str_contains($page['body'], '<option value="digital-inclusion" selected>') && str_contains($page['body'], '<option value="all">All 4 project proposals</option>');
+    })());
+$other = $prop('digital-inclusion', ['pr_project' => 'green-horizons', 'pr_name' => 'Amina Prop', 'pr_email' => 'zz-fund-prop@example.test']);
+$otherMail = array_values(array_filter($mine(), static fn(string $raw): bool => str_contains($raw, 'Proposal-Green-Horizons.pdf')));
+check('proposal: choosing another project in the list sends THAT proposal (not the page being viewed) and the request names it', in_array($other['code'], [302, 303], true) && count($otherMail) === 1 && !str_contains($otherMail[0], 'Proposal-Digital-Inclusion.pdf') && Database::value("SELECT COUNT(*) FROM contact_messages WHERE email = 'zz-fund-prop@example.test' AND subject = 'Full proposal request: Green Horizons'", [], 0) === 1);
+$allReq = $prop('digital-inclusion', ['pr_project' => 'all', 'pr_name' => 'Amina Prop', 'pr_email' => 'zz-fund-prop@example.test']);
+$allMail = array_values(array_filter($mine(), static fn(string $raw): bool => substr_count($raw, 'application/pdf') === 4));
+check('proposal: "all" sends ONE e-mail with the four proposals attached', in_array($allReq['code'], [302, 303], true) && count($allMail) === 1 && str_contains($allMail[0], 'Proposal-Digital-Inclusion.pdf') && str_contains($allMail[0], 'Proposal-Green-Horizons.pdf'));
+Database::execute('DELETE FROM rate_limits');      // the route allows 6 posts per 10 minutes per visitor; this test has made more
+$none = $prop('digital-inclusion', ['pr_project' => 'not-a-project', 'pr_name' => 'Amina Prop', 'pr_email' => 'zz-fund-prop@example.test']);
+check('proposal: a value that is not in the list is refused', in_array($none['code'], [302, 303], true) && count($mine()) === 4, 'code=' . $none['code'] . ' mails=' . count($mine()));
 Database::execute("DELETE FROM contact_messages WHERE email LIKE 'zz-fund-%'");
 foreach (array_diff(glob($mailDir . '/*.eml') ?: [], $mailsBefore) as $f) {
     if (str_contains((string) file_get_contents($f), 'zz-fund-')) {
