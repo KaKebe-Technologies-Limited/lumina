@@ -1,0 +1,109 @@
+// components/_vision-mission.scss: the Vision & Mission explorer (partials/vision-mission.php, behaviour in assets/js/vision-mission.js).
+// Without JavaScript both statements are shown one under the other (the tab bar is `hidden`); with it only the active one shows and the other is a tab away.
+// Motion lives inside `prefers-reduced-motion: no-preference`.
+
+.vm {
+    display: grid;
+    gap: $space-4;
+    min-width: 0;
+
+    // ---- the two big switches -------------------------------------------------------------------------------------------
+    &__tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-3; padding: 0.35rem; border-radius: 999px; background: $tint-cool; border: 1px solid $line; &[hidden] { display: none; } }
+    &__tab {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.75rem 0.55rem;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: $navy;
+        font: inherit;
+        font-weight: 700;
+        font-size: 0.875rem;
+        letter-spacing: 0;
+        white-space: nowrap;
+        cursor: pointer;
+        overflow: hidden;
+        transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+        &:hover { background: rgba($navy, 0.07); }
+        &:focus-visible { outline: 3px solid $navy; outline-offset: 2px; }
+        &.is-active { background: $navy; color: $white; box-shadow: 0 8px 18px rgba($navy-dark, 0.28); }
+        @include respond(sm) { font-size: $fs-base; letter-spacing: 0.04em; gap: 0.6rem; padding: 0.8rem 1rem; }
+    }
+    &__tab-icon { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: rgba($gold, 0.3); color: inherit; flex: none; svg { width: 1.05rem; height: 1.05rem; } }
+    &__tab.is-active &__tab-icon { background: $gold; color: $navy-dark; }
+    // the line under the active switch that fills while the explorer auto-advances
+    &__bar { position: absolute; left: 1.1rem; right: 1.1rem; bottom: 0.3rem; height: 3px; border-radius: 999px; background: transparent; overflow: hidden; i { display: block; height: 100%; width: 0; background: $gold; border-radius: inherit; } }
+    &__tab.is-active.is-playing &__bar { background: rgba($white, 0.18); i { animation: vm-fill var(--vm-ms, 9000ms) linear forwards; } }
+    &.is-paused &__tab.is-playing &__bar i { animation-play-state: paused; }
+
+    // ---- the stage ------------------------------------------------------------------------------------------------------
+    &__stage {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        border-radius: 28px;
+        background: radial-gradient(120% 140% at 0% 0%, lighten($navy, 7%) 0%, $navy 48%, $navy-dark 100%);
+        color: $white;
+        box-shadow: $shadow-lg;
+        @include respond(sm) { min-height: 18rem; }
+    }
+    &__glow { position: absolute; width: 22rem; height: 22rem; right: -7rem; top: -9rem; border-radius: 50%; background: radial-gradient(circle, rgba($gold, 0.3), transparent 65%); z-index: -1; pointer-events: none; }
+
+    &__panel {
+        display: grid;
+        gap: $space-5;
+        padding: $space-6 $space-5;
+        @include respond(sm) { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: $space-6; padding: $space-6; }
+        &:focus-visible { outline: 3px solid $gold; outline-offset: -6px; border-radius: 28px; }
+        & + & { border-top: 1px solid rgba($white, 0.14); }
+    }
+    // JS on: one panel at a time
+    &.is-ready &__panel { display: none; border-top: 0; &.is-active { display: grid; } }
+
+    // ---- the emblem: rings, a core icon and small orbiting dots ------------------------------------------------------------
+    &__emblem { position: relative; width: 8rem; height: 8rem; margin-inline: auto; flex: none; @include respond(sm) { width: 9.5rem; height: 9.5rem; } }
+    &__ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba($gold, 0.55); &--2 { inset: 12%; border-style: dashed; border-color: rgba($white, 0.35); } &--3 { inset: 26%; border-color: rgba($gold, 0.8); } }
+    &__core { position: absolute; inset: 34%; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(145deg, $gold, lighten($gold, 12%)); color: $navy-dark; box-shadow: 0 0 0 6px rgba($gold, 0.18), 0 10px 24px rgba(0, 0, 0, 0.35); svg { width: 52%; height: 52%; } }
+    &__dot { position: absolute; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: $gold; box-shadow: 0 0 10px rgba($gold, 0.9); top: 50%; left: 50%; margin: -0.275rem; &--1 { transform: translate(0, -4.5rem); } &--2 { transform: translate(3.9rem, 2.25rem); } &--3 { transform: translate(-3.9rem, 2.25rem); } }
+    &__panel--mission &__ring--2 { border-style: solid; }
+
+    &__body { min-width: 0; }
+    &__title { margin: 0 0 $space-2; font-family: $font-display; font-size: fluid(1.5rem, '1.2rem + 1.2vw', 2.2rem); color: $white; }
+    &__text { margin: 0; font-size: $fs-md; line-height: 1.65; color: rgba($white, 0.92); }
+    &__points { display: flex; flex-wrap: wrap; gap: $space-2; margin: $space-4 0 0; padding: 0; list-style: none; }
+    &__points li { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.8rem 0.35rem 0.6rem; border-radius: 999px; background: rgba($white, 0.1); border: 1px solid rgba($white, 0.18); font-size: $fs-sm; font-weight: 600; color: $white; svg { color: $gold; flex: none; } }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .vm__panel.is-active { animation: vm-in 0.6s $ease both; }
+    .vm.is-ready .vm__panel.is-active .vm__points li { animation: vm-pop 0.5s $ease both; animation-delay: calc(0.25s + var(--i, 0) * 90ms); }
+    .vm.is-ready .vm__panel.is-active .vm__emblem { animation: vm-emblem 0.8s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+    .vm__ring--1 { animation: vm-ring 4.5s ease-out infinite; }
+    .vm__ring--2 { animation: vm-spin 22s linear infinite; }
+    .vm__ring--3 { animation: vm-ring 4.5s ease-out 1.5s infinite; }
+    .vm__dot { animation: vm-orbit 14s linear infinite; }
+    .vm__dot--2 { animation-delay: -4.7s; }
+    .vm__dot--3 { animation-delay: -9.3s; }
+    .vm__glow { animation: vm-glow 9s ease-in-out infinite alternate; }
+    .vm__core { animation: vm-breathe 3.6s ease-in-out infinite; }
+    @keyframes vm-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes vm-pop { from { opacity: 0; transform: translateY(8px) scale(0.92); } to { opacity: 1; transform: none; } }
+    @keyframes vm-emblem { from { opacity: 0; transform: scale(0.7) rotate(-18deg); } to { opacity: 1; transform: none; } }
+    @keyframes vm-ring { 0% { opacity: 0.9; transform: scale(0.96); } 70%, 100% { opacity: 0.15; transform: scale(1.12); } }
+    @keyframes vm-spin { to { transform: rotate(360deg); } }
+    @keyframes vm-orbit { from { transform: rotate(0deg) translate(0, -4.4rem) rotate(0deg); } to { transform: rotate(360deg) translate(0, -4.4rem) rotate(-360deg); } }
+    @keyframes vm-glow { from { transform: translate(0, 0) scale(1); } to { transform: translate(-3rem, 2rem) scale(1.2); } }
+    @keyframes vm-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+}
+@keyframes vm-fill { from { width: 0; } to { width: 100%; } }
+@media (prefers-reduced-motion: reduce) {
+    .vm__tab, .vm__tab.is-active.is-playing .vm__bar i { transition: none; animation: none; }
+    .vm__tab.is-active .vm__bar i { width: 100%; }
+}
+
+// the section around it
+.home-mission__explorer { margin-top: $space-5; }

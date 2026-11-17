@@ -250,15 +250,21 @@ $quote = trim((string) content('home', 'founder.quote'));
 $founderImg = content_img('home', 'founder.image');
 $vmB1 = content_btn('home', 'vision_mission.cta');
 $vmB2 = content_btn('home', 'vision_mission.cta2');
+$this->start('scripts'); ?><script src="<?= e(asset('js/vision-mission.js')) ?>" defer></script><?php $this->end();
 section_begin('home', 'vision_mission', ['class' => 'home-mission', 'labelledby' => 'mission-title']);
 ?>
     <div class="split split--start home-mission__grid<?= $vmStack === '' ? ' home-mission__grid--solo' : '' ?>">
         <?= $vmStack ?>
         <div>
             <?= partial('partials/section-head', ['eyebrow' => content('home', 'vision_mission.eyebrow'), 'title' => content('home', 'vision_mission.title'), 'id' => 'mission-title', 'class' => 'mb-0']) ?>
-            <div class="home-mission__cards mt-5">
-                <?= partial('partials/feature-card', ['class' => 'feature-card--tint feature-card--row', 'icon' => 'eye', 'title' => content('home', 'vision_mission.vision_title'), 'text' => content('home', 'vision_mission.vision_text')]) ?>
-                <?= partial('partials/feature-card', ['class' => 'feature-card--tint feature-card--row', 'icon' => 'target', 'title' => content('home', 'vision_mission.mission_title'), 'text' => content('home', 'vision_mission.mission_text')]) ?>
+            <div class="home-mission__explorer">
+                <?php
+                $lines = static fn(string $t): array => array_values(array_filter(array_map('trim', preg_split('/\R/', $t) ?: []), static fn(string $l): bool => $l !== ''));
+                echo partial('partials/vision-mission', ['label' => (string) content('home', 'vision_mission.tabs_label'), 'items' => [
+                    ['key' => 'vision', 'icon' => 'eye', 'title' => (string) content('home', 'vision_mission.vision_title'), 'text' => (string) content('home', 'vision_mission.vision_text'), 'points' => $lines((string) content('home', 'vision_mission.vision_points'))],
+                    ['key' => 'mission', 'icon' => 'target', 'title' => (string) content('home', 'vision_mission.mission_title'), 'text' => (string) content('home', 'vision_mission.mission_text'), 'points' => $lines((string) content('home', 'vision_mission.mission_points'))],
+                ]]);
+                ?>
             </div>
             <?php if ($vmB1['has'] || $vmB2['has']): ?>
                 <p class="mt-5 home-mission__actions">
