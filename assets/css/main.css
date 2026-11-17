@@ -28460,6 +28460,39 @@ input:checked + .fund-card__body, .fund-card.is-picked .fund-card__body {
   }
 }
 
+.fund-proposal {
+  display: grid;
+  gap: 1rem;
+  max-width: 44rem;
+  margin: 2rem auto 0;
+  padding: 2rem;
+  border-radius: 22px;
+  background: #FFFFFF;
+  border: 1px solid #E5DED0;
+  box-shadow: 0 10px 30px rgba(11, 27, 51, 0.06);
+}
+
+.fund-proposal__grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .fund-proposal__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.fund-proposal__fine {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #5B6472;
+}
+
+.fund-proposal .btn {
+  justify-self: start;
+}
+
 .fs {
   position: relative;
   overflow: hidden;

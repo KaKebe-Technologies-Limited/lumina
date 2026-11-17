@@ -44,6 +44,7 @@ $router->get('/northern-uganda-story', [\App\Controllers\Web\StoryController::cl
 $router->get('/fund-a-project', [\App\Controllers\Web\FundController::class, 'index'])->name('fund');
 $router->get('/fund-a-project/{slug}', [\App\Controllers\Web\FundController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('fund.project');
 $router->post('/fund-a-project/{slug}/pledge', [\App\Controllers\Web\FundController::class, 'pledge'])->where('slug', '[a-z0-9-]+')->name('fund.pledge')->middleware(['honeypot', 'throttle:6,600']);
+$router->post('/fund-a-project/{slug}/proposal', [\App\Controllers\Web\FundController::class, 'proposal'])->where('slug', '[a-z0-9-]+')->name('fund.proposal')->middleware(['honeypot', 'throttle:6,600']);
 $router->get('/fund-a-project/{slug}/thanks', [\App\Controllers\Web\FundController::class, 'thanks'])->where('slug', '[a-z0-9-]+')->name('fund.thanks');
 
 // Donate (page + pledge form: a record of intent, never a payment)

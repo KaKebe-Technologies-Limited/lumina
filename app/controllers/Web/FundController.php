@@ -8,12 +8,15 @@ use App\Core\Flash;
 use App\Core\HttpException;
 use App\Core\Log;
 use App\Core\Mailer;
+use App\Core\RateLimit;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\ValidationException;
 use App\Core\Validator;
+use App\Models\ContactMessage;
 use App\Models\Donation;
+use App\Services\Fund\ProposalDocument;
 use App\Services\Fund\FundProjects;
 
 /**
@@ -173,6 +176,65 @@ final class FundController extends Controller
 
         Session::put('fund_thanks', ['slug' => $slug, 'label' => $label, 'detail' => $detail, 'amount' => (float) $record['amount'], 'currency' => $currency, 'method' => (string) $record['method'], 'name' => (string) $record['donor_name'], 'big' => $big]);
         return $this->redirect('fund-a-project/' . $slug . '/thanks');
+    }
+
+    /**
+     * POST /fund-a-project/{slug}/proposal: "Request the full proposal". Records the request in Admin > Messages, tells the team, and e-mails the visitor the full proposal (a PDF built from the
+     * project page, see ProposalDocument) at once. Spam traps: honeypot + throttle on the route, and at most two proposals per e-mail address per day.
+     */
+    public function proposal(Request $request, string $slug): Response
+    {
+        $p = FundProjects::find($slug) ?? throw new HttpException(404, 'Not found');
+        if (($p['status'] ?? '') !== 'proposal') {
+            throw new HttpException(404, 'Not found');
+        }
+        $back = 'fund-a-project/' . $slug . '#proposal';
+        $rules = ['pr_name' => 'required|max:150', 'pr_email' => 'required|email|max:190', 'pr_phone' => 'nullable|phone|max:40', 'pr_org' => 'nullable|max:150', 'pr_note' => 'nullable|max:1500'];
+        $d = $this->validate($rules, ['pr_name.required' => 'Please tell us your name.', 'pr_email.required' => 'Please type your e-mail address: the proposal is sent there.', 'pr_email.email' => 'That e-mail address does not look right.'], ['pr_name' => 'Name', 'pr_email' => 'E-mail', 'pr_phone' => 'Phone', 'pr_org' => 'Organisation', 'pr_note' => 'Message'], $back);
+        $name = trim((string) $d['pr_name']);
+        $email = strtolower(trim((string) $d['pr_email']));
+        $phone = trim((string) ($d['pr_phone'] ?? ''));
+        $org = trim((string) ($d['pr_org'] ?? ''));
+        $note = trim((string) ($d['pr_note'] ?? ''));
+
+        if (!RateLimit::attempt('proposal:' . hash('sha256', $email . '|' . $slug), 2, 86400)) {
+            Flash::info('We have already sent this proposal to ' . $email . '. Please check your inbox and spam folder, or write to us and we will send it again.');
+            return $this->redirect($back);
+        }
+
+        $site = (string) setting('site_name', 'Lumina Africa Foundation');
+        $team = (string) setting('email_info', setting('email_primary', ''));
+        $id = ContactMessage::create([
+            'name' => $name, 'email' => $email, 'phone' => $phone !== '' ? $phone : null,
+            'subject' => 'Full proposal request: ' . $p['short'],
+            'message' => 'Asked for the full proposal of "' . $p['title'] . '".' . ($org !== '' ? "\nOrganisation: " . $org : '') . ($note !== '' ? "\n\n" . $note : '') . "\n\n(The proposal PDF was e-mailed to the visitor automatically.)",
+            'status' => 'new', 'ip' => $request->ip(), 'user_agent' => $request->userAgent(),
+        ]);
+
+        $sent = false;
+        try {
+            $pdf = ProposalDocument::pdf($p, $name, $org);
+            $first = trim((string) strtok($name, ' '));
+            $text = 'Dear ' . ($first !== '' ? $first : 'friend') . ",\n\n"
+                . 'Thank you for your interest in "' . $p['title'] . '". Your support, or even a few minutes of your attention, means a great deal to the young people and families this project is for.' . "\n\n"
+                . "The full proposal is attached to this e-mail (PDF). It sets out the need, what the project delivers, why it is a sound choice, the budget and every way to give.\n\n"
+                . 'When you are ready, you can give or pledge here: ' . abs_url('fund-a-project/' . $slug) . "\n\n"
+                . 'If you would like the detailed budget, a conversation or a visit, just reply to this e-mail' . ($team !== '' ? ' or write to ' . $team : '') . ".\n\n"
+                . "With gratitude,\n" . $site . "\n" . abs_url('') . "\n";
+            $sent = Mailer::send($email, 'Your full proposal: ' . $p['title'], $text, ['attachments' => [['filename' => ProposalDocument::filename($p), 'content' => $pdf, 'type' => 'application/pdf']], 'reply_to' => $team !== '' ? $team : null]);
+        } catch (\Throwable $e) {
+            Log::warning('Proposal e-mail failed: ' . $e::class);
+        }
+
+        Mailer::notify('Full proposal requested: ' . $p['short'], implode("\n", [
+            'Name: ' . $name, 'Email: ' . $email, 'Phone: ' . ($phone !== '' ? $phone : '-'), 'Organisation: ' . ($org !== '' ? $org : '-'), 'Project: ' . $p['title'],
+            'Proposal e-mailed automatically: ' . ($sent ? 'yes' : 'NO, please send it by hand'), '', $note, '', 'Open in the admin: ' . abs_url('admin/messages/' . $id),
+        ]), $email);
+
+        Flash::success($sent
+            ? 'Thank you, ' . $name . '! We have e-mailed the full proposal to ' . $email . '. Please check your inbox (and the spam folder).'
+            : 'Thank you, ' . $name . '! We have your request and the team will e-mail the full proposal to ' . $email . ' very soon.');
+        return $this->redirect($back);
     }
 
     public function thanks(Request $request, string $slug): Response

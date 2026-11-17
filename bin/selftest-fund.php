@@ -204,6 +204,77 @@ foreach ($res['rows'] as $x) {
 }
 check('the report "Project pledges" lists the pledge with its project and contribution', $res['error'] === null && $row !== null && $row['project'] === 'digital-inclusion' && str_contains((string) $row['contribution'], 'Laptop'), json_encode($row));
 
+
+// ---- "Request the full proposal": a real form, the proposal PDF e-mailed at once
+echo "-- full proposal request --\n";
+$mailDir = STORAGE_PATH . '/mail';
+$mailsBefore = glob($mailDir . '/*.eml') ?: [];
+$page = $req('GET', '/fund-a-project/digital-inclusion');
+check('proposal: the button leads to a form on the page (no mailto: link any more) and the form asks for name and e-mail', str_contains($page['body'], 'href="#proposal"') && str_contains($page['body'], 'id="proposal"') && str_contains($page['body'], 'name="pr_email"') && !str_contains($page['body'], 'href="mailto:' . (string) setting('email_info', setting('email_primary', '')) . '?subject=Full'));
+$soon = array_values(array_filter($all, static fn(array $p): bool => $p['status'] !== 'proposal'))[0] ?? null;
+if ($soon !== null) {
+    $sp = $req('GET', '/fund-a-project/' . $soon['slug']);
+    check('proposal: a project still in preparation has no proposal form', !str_contains($sp['body'], 'id="proposal"'));
+}
+$doc = \App\Services\Fund\ProposalDocument::pdf(FundProjects::find('digital-inclusion'), 'Amina Test', 'Test Org', ['compress' => false]);
+check('proposal PDF: a real PDF on the letterhead with the project title, the budget, the ways to give and the questions', str_starts_with($doc, '%PDF-') && str_contains($doc, 'Digital Inclusion for Post-Conflict') && str_contains($doc, 'The budget') && str_contains($doc, 'UGX 1,096,147,200') && str_contains($doc, 'Ways to give') && str_contains($doc, 'Questions funders often ask') && str_contains($doc, 'Dear Amina,'));
+check('proposal PDF: every proposal project builds a multi-page document of reasonable size', (static function () use ($ready): bool {
+    foreach ($ready as $p) {
+        $b = \App\Services\Fund\ProposalDocument::pdf($p, 'X', '');
+        if (!str_starts_with($b, '%PDF-') || strlen($b) < 8000 || strlen($b) > 600000 || preg_match('/[^\x00-\x7F]/', \App\Services\Fund\ProposalDocument::body($p)) === 1) {
+            return false;
+        }
+    }
+    return true;
+})());
+
+$prop = static function (string $slug, array $form) use ($req, $tok, $hp): array {
+    $pg = $req('GET', '/fund-a-project/' . $slug);
+    return $req('POST', '/fund-a-project/' . $slug . '/proposal', $form + ['_token' => $tok($pg['body']), '_hp_ts' => $hp()]);
+};
+$mine = static function () use ($mailDir, $mailsBefore): array {
+    $out = [];
+    foreach (array_diff(glob($mailDir . '/*.eml') ?: [], $mailsBefore) as $f) {
+        $raw = (string) file_get_contents($f);
+        if (str_contains($raw, 'zz-fund-prop@example.test') && str_contains($raw, 'application/pdf')) {
+            $out[] = $raw;
+        }
+    }
+    return $out;
+};
+$r = $prop('digital-inclusion', ['pr_name' => 'Amina Prop', 'pr_email' => 'zz-fund-prop@example.test', 'pr_org' => 'Test Org', 'pr_phone' => '', 'pr_note' => 'Please send it']);
+$m = Database::one("SELECT * FROM contact_messages WHERE email = 'zz-fund-prop@example.test' ORDER BY id DESC LIMIT 1");
+check('proposal: a valid request is saved in Admin > Messages with the project in the subject and redirects back to the form', in_array($r['code'], [302, 303], true) && str_contains($r['loc'], 'fund-a-project/digital-inclusion') && $m !== null && $m['subject'] === 'Full proposal request: Digital Inclusion' && str_contains((string) $m['message'], 'Test Org'));
+$sentMails = $mine();
+$pdfOk = false;
+$nameOk = false;
+if (count($sentMails) === 1 && preg_match('/Content-Type: application\/pdf;[^\n]*\n(?:[^\n]*\n)*?\r?\n([A-Za-z0-9+\/=\r\n]+)/', $sentMails[0], $mm) === 1) {
+    $bytes = (string) base64_decode(preg_replace('/\s+/', '', $mm[1]) ?? '');
+    $pdfOk = str_starts_with($bytes, '%PDF-') && strlen($bytes) > 8000;
+    $nameOk = str_contains($sentMails[0], 'Proposal-Digital-Inclusion.pdf');
+}
+check('proposal: the visitor gets ONE e-mail with the proposal attached as a real PDF named after the project', count($sentMails) === 1 && $pdfOk && $nameOk, 'mails=' . count($sentMails));
+$r2 = $prop('digital-inclusion', ['pr_name' => 'Amina Prop', 'pr_email' => 'zz-fund-prop@example.test']);
+$r3 = $prop('digital-inclusion', ['pr_name' => 'Amina Prop', 'pr_email' => 'zz-fund-prop@example.test']);
+check('proposal: the same address gets at most two copies a day (no mail bombing through the form)', count($mine()) === 2 && in_array($r3['code'], [302, 303], true));
+$bad = $prop('digital-inclusion', ['pr_name' => '', 'pr_email' => 'not-an-email']);
+check('proposal: a missing name and a bad e-mail address are refused and nothing is sent', in_array($bad['code'], [302, 303], true) && count($mine()) === 2 && (int) Database::value("SELECT COUNT(*) FROM contact_messages WHERE email = 'not-an-email'", [], 0) === 0);
+$rawPost = static function (array $form) use ($req, $tok): array {
+    $pg = $req('GET', '/fund-a-project/digital-inclusion');
+    return $req('POST', '/fund-a-project/digital-inclusion/proposal', $form + ['_token' => $tok($pg['body'])]);
+};
+$before = count($mine());
+$rawPost(['pr_name' => 'Bot', 'pr_email' => 'zz-fund-prop@example.test']);
+check('proposal: a post without the signed honeypot timestamp (a bot) sends nothing', count($mine()) === $before);
+check('proposal: a project in preparation refuses a proposal request (404)', $soon === null || $prop($soon['slug'], ['pr_name' => 'A B', 'pr_email' => 'zz-fund-p2@example.test'])['code'] === 404);
+Database::execute("DELETE FROM contact_messages WHERE email LIKE 'zz-fund-%'");
+foreach (array_diff(glob($mailDir . '/*.eml') ?: [], $mailsBefore) as $f) {
+    if (str_contains((string) file_get_contents($f), 'zz-fund-')) {
+        @unlink($f);
+    }
+}
+Database::execute('DELETE FROM rate_limits');
+
 @unlink($jar);
 Database::execute("DELETE FROM donations WHERE donor_email LIKE 'zz-fund-%'");
 

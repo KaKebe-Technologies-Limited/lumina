@@ -9,7 +9,6 @@ $coming = $p['status'] !== 'proposal';
 $ugxFmt = static fn(float|int $v): string => 'UGX ' . number_format((float) $v);
 $usdFmt = static fn(float|int $v): string => 'USD ' . number_format((float) $v);
 $cover = asset('img/projects/' . $p['cover'] . '.jpg');
-$proposalMail = 'mailto:' . (string) setting('email_info', setting('email_primary', '')) . '?subject=' . rawurlencode('Full proposal: ' . $p['short']);
 ?>
 <section class="fund-hero">
     <div class="container">
@@ -22,7 +21,7 @@ $proposalMail = 'mailto:' . (string) setting('email_info', setting('email_primar
             <p class="fund-hero__meta"><?= icon('map-pin', 'icon--sm') ?> <?= e($p['where']) ?> &middot; <?= icon('calendar', 'icon--sm') ?> <?= e($p['period']) ?></p>
             <div class="fund-hero__actions">
                 <a class="btn btn--cta btn--caps" href="#give"><?= icon('heart', 'icon--sm') ?> <?= $coming ? 'Register your interest' : 'Choose how to give' ?></a>
-                <?php if (!$coming): ?><a class="btn btn--photo btn--caps" href="<?= e($proposalMail) ?>"><?= icon('mail', 'icon--sm') ?> Request the full proposal</a><?php endif; ?>
+                <?php if (!$coming): ?><a class="btn btn--photo btn--caps" href="#proposal"><?= icon('mail', 'icon--sm') ?> Request the full proposal</a><?php endif; ?>
             </div>
             <p class="fund-hero__note">A proposed project seeking funding. Choose what you would like to give, then press Give now.</p>
         </div>
@@ -223,10 +222,31 @@ $proposalMail = 'mailto:' . (string) setting('email_info', setting('email_primar
                 <details class="fund-faq__item"><summary><?= e($q) ?></summary><p><?= e($a) ?></p></details>
             <?php endforeach; ?>
         </div>
-        <p class="fund-faq__more">Want the full proposal and the detailed budget? <a href="<?= e($proposalMail) ?>">Ask us for them</a>, or call <a href="<?= e(phone_href((string) setting('phone_1', ''))) ?>"><?= e((string) setting('phone_1', '')) ?></a>.</p>
+        <p class="fund-faq__more">Want the full proposal and the detailed budget? <a href="#proposal">Ask us for them</a>, or call <a href="<?= e(phone_href((string) setting('phone_1', ''))) ?>"><?= e((string) setting('phone_1', '')) ?></a>.</p>
     </div>
 </section>
 <?php endif; ?>
+<?php endif; ?>
+
+<?php if (!$coming): ?>
+<section class="section" id="proposal" aria-labelledby="fund-proposal">
+    <div class="container container--narrow">
+        <header class="section-head section-head--center"><span class="eyebrow">The full proposal</span><h2 class="section-head__title" id="fund-proposal">Get the full proposal by e-mail</h2>
+            <p class="section-head__lead">Tell us where to send it. The complete proposal for <?= e($p['short']) ?> (the need, what it delivers, the budget and every way to give) arrives in your inbox as a PDF within a minute.</p></header>
+        <form class="fund-proposal" method="post" action="<?= e(url('fund-a-project/' . $p['slug'] . '/proposal')) ?>" novalidate>
+            <?= csrf_field() ?><?= honeypot_field() ?>
+            <div class="fund-proposal__grid">
+                <div class="field"><label class="field__label" for="pr-name">Your name <span class="req" aria-hidden="true">*</span></label><input class="input<?= error('pr_name') ? ' is-invalid' : '' ?>" id="pr-name" name="pr_name" maxlength="150" autocomplete="name" required value="<?= e((string) old('pr_name')) ?>"><?php if (error('pr_name')): ?><p class="field__error"><?= e((string) error('pr_name')) ?></p><?php endif; ?></div>
+                <div class="field"><label class="field__label" for="pr-email">E-mail address <span class="req" aria-hidden="true">*</span></label><input class="input<?= error('pr_email') ? ' is-invalid' : '' ?>" id="pr-email" type="email" name="pr_email" maxlength="190" autocomplete="email" required value="<?= e((string) old('pr_email')) ?>"><?php if (error('pr_email')): ?><p class="field__error"><?= e((string) error('pr_email')) ?></p><?php endif; ?></div>
+                <div class="field"><label class="field__label" for="pr-org">Organisation (optional)</label><input class="input" id="pr-org" name="pr_org" maxlength="150" autocomplete="organization" value="<?= e((string) old('pr_org')) ?>"></div>
+                <div class="field"><label class="field__label" for="pr-phone">Phone (optional)</label><input class="input<?= error('pr_phone') ? ' is-invalid' : '' ?>" id="pr-phone" type="tel" name="pr_phone" maxlength="40" autocomplete="tel" value="<?= e((string) old('pr_phone')) ?>"><?php if (error('pr_phone')): ?><p class="field__error"><?= e((string) error('pr_phone')) ?></p><?php endif; ?></div>
+            </div>
+            <div class="field"><label class="field__label" for="pr-note">Anything you would like us to know (optional)</label><textarea class="textarea" id="pr-note" name="pr_note" rows="3" maxlength="1500"><?= e((string) old('pr_note')) ?></textarea></div>
+            <p class="fund-proposal__fine">We use your details only to send the proposal and to follow up on your interest. We never share them.</p>
+            <button class="btn btn--cta btn--caps" type="submit"><?= icon('mail', 'icon--sm') ?> E-mail me the full proposal</button>
+        </form>
+    </div>
+</section>
 <?php endif; ?>
 
 <section class="section" aria-labelledby="fund-more">
