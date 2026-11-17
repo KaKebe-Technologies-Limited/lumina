@@ -193,7 +193,8 @@ final class DarazaPayments
         if ($r['state'] === 'unknown') {
             \App\Services\Payments\PaymentEvents::log('unknown', 'mobile', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), 'No answer yet: ' . $r['message']);
             Database::update('daraza_payments', ['status' => 'unknown', 'message' => mb_substr($r['message'], 0, 250)], 'id = ?', [(int) $row['id']]);
-            return ['state' => 'unknown', 'message' => $r['message'], 'row' => self::fresh((int) $row['id'])];
+            // the payer sees a plain sentence; the technical detail (which may name a time-out or a server) stays in the row and the audit trail for staff
+            return ['state' => 'unknown', 'message' => 'We have not heard back from the mobile-money service yet. If you approved the payment on your phone it will be confirmed shortly: please do not pay again.', 'row' => self::fresh((int) $row['id'])];
         }
         Database::update('daraza_payments', ['status' => 'failed', 'request_id' => $r['request_id'] !== '' ? $r['request_id'] : null, 'message' => mb_substr($r['message'], 0, 250)], 'id = ?', [(int) $row['id']]);
         \App\Services\Payments\PaymentEvents::log('failed', 'mobile', \App\Services\Payments\PaymentEvents::category((string) $row['purpose']), (string) $row['reference'], (int) $row['amount_minor'], (string) $row['currency'], (string) ($row['payer_name'] !== '' ? $row['payer_name'] : $row['payer_email']), $r['state'] === 'auth' ? 'The Daraza key was refused' : $r['message']);

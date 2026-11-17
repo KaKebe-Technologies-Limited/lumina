@@ -66,6 +66,7 @@ return [
     'auth' => [
         'max_failures'    => 5,     // per IP+email within the window
         'max_ip_failures' => 20,    // per IP within the window
+        'max_email_failures' => 30, // per e-mail address (from any IP) within the window
         'window'          => 900,   // seconds (15 min)
         'min_password'    => 10,
     ],

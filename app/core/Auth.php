@@ -29,6 +29,8 @@ final class Auth
     private static ?array $user = null;
     private static bool $loaded = false;
     private static ?string $error = null;
+    /** The account whose password was just verified by attempt($login = false) (the e-mail code step comes next). */
+    private static ?array $verified = null;
 
     /** Current user row (without password_hash) or null. Re-checked against the DB once per request (is_active). */
     public static function user(): ?array
@@ -46,6 +48,16 @@ final class Auth
             Session::forget('user_id');
             return self::$user = null;
         }
+        // The session belongs to the kind of browser that signed in (the family, not the version): a stolen cookie replayed from another program is refused.
+        $ua = self::browserPrint();
+        $seenUa = Session::get('_ua');
+        if (is_string($seenUa) && $seenUa !== '' && !hash_equals($seenUa, $ua)) {
+            Session::destroy();
+            return self::$user = null;
+        }
+        if (!is_string($seenUa) || $seenUa === '') {
+            Session::put('_ua', $ua);
+        }
         // A password change (own, or reset by an admin) signs every OTHER session of that account out: the session remembers a
         // fingerprint of the password hash it was created with.
         $fp = self::fingerprint((string) $u['password_hash']);
@@ -60,6 +72,13 @@ final class Auth
         }
         unset($u['password_hash']);
         return self::$user = $u;
+    }
+
+    /** A short print of the browser family (digits and dots removed, so an update does not sign anybody out). */
+    private static function browserPrint(): string
+    {
+        $ua = (string) (Request::current()?->userAgent() ?? '');
+        return substr(hash_hmac('sha256', (string) preg_replace('/[\d.]+/', '', strtolower($ua)), Config::appKey()), 0, 20);
     }
 
     private static function fingerprint(string $hash): string
@@ -102,9 +121,19 @@ final class Auth
         return self::$error;
     }
 
-    public static function attempt(Request $request, string $email, string $password): bool
+    /** The row (with password_hash) of the last attempt($login = false) that had the right password. */
+    public static function verifiedUser(): ?array
+    {
+        return self::$verified;
+    }
+
+    /**
+     * @param bool $login false = only check the password (the two-step sign-in then asks for the e-mailed code); verifiedUser() returns the account
+     */
+    public static function attempt(Request $request, string $email, string $password, bool $login = true): bool
     {
         self::$error = null;
+        self::$verified = null;
         $email = strtolower(trim($email));
         $ip = $request->ip();
         $window = (int) Config::get('auth.window', 900);
@@ -133,6 +162,10 @@ final class Auth
             User::update((int) $user['id'], ['password_hash' => self::hashPassword($password)]);
             $user['password_hash'] = (string) User::find((int) $user['id'])['password_hash'];
         }
+        if (!$login) {
+            self::$verified = $user;
+            return true;
+        }
         self::login($user);
         return true;
     }
@@ -148,6 +181,9 @@ final class Auth
             Session::forget('_pwv');
         }
         Session::put('_last_seen', time());
+        Session::put('_ua', self::browserPrint());
+        Session::put('_act', time());
+        Session::forget('_locked');
         Database::update('users', ['last_login_at' => date('Y-m-d H:i:s')], 'id = ?', [(int) $user['id']]);
         self::$loaded = false;
         self::$user = null;
@@ -284,7 +320,12 @@ final class Auth
                 return true;
             }
             $perIp = (int) Database::value('SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND ip = ? AND created_at >= ?', [$ip, $since]);
-            return $perIp > (int) Config::get('auth.max_ip_failures', 20);
+            if ($perIp > (int) Config::get('auth.max_ip_failures', 20)) {
+                return true;
+            }
+            // one account attacked from many addresses (a slow, spread-out guessing run): a higher limit for the e-mail alone
+            $perEmail = (int) Database::value('SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND email = ? AND created_at >= ?', [$email, $since]);
+            return $perEmail > (int) Config::get('auth.max_email_failures', 30);
         } catch (\Throwable) {
             return false;
         }

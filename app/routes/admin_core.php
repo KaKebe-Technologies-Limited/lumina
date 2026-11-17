@@ -34,6 +34,10 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
     // --- public admin entry points ---
     $router->get('/login', [AuthController::class, 'showLogin'])->name('admin.login')->middleware('guest');
     $router->post('/login', [AuthController::class, 'login'])->middleware(['guest', 'throttle:20,300']);
+    $router->get('/verify', [AuthController::class, 'showVerify'])->name('admin.verify')->middleware('guest');
+    $router->post('/verify', [AuthController::class, 'verify'])->middleware(['guest', 'throttle:20,300']);
+    $router->post('/verify/resend', [AuthController::class, 'resend'])->middleware(['guest', 'throttle:10,600']);
+    $router->post('/verify/cancel', [AuthController::class, 'cancelVerify'])->middleware('guest');
     $router->get('/forgot-password', [AuthController::class, 'showForgot'])->name('admin.forgot')->middleware('guest');
     $router->post('/forgot-password', [AuthController::class, 'sendReset'])->middleware(['guest', 'throttle:10,600']);
     $router->get('/reset-password/{token}', [AuthController::class, 'showReset'])->name('admin.reset')->middleware('guest');
@@ -43,6 +47,15 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
     $router->group(['middleware' => ['auth']], function ($router) use ($pageSlug) {
         $router->get('/', [DashboardController::class, 'index'])->name('admin.dashboard');
         $router->post('/logout', [AuthController::class, 'logout'])->name('admin.logout');
+        $router->get('/locked', [AuthController::class, 'showLocked'])->name('admin.locked');
+        $router->post('/locked', [AuthController::class, 'unlock'])->middleware('throttle:20,300');
+        // security: checklist, two-step sign-in, screen lock
+        $router->get('/security', [\App\Controllers\Admin\SecurityController::class, 'index'])->name('admin.security');
+        $router->post('/security/2fa-test', [\App\Controllers\Admin\SecurityController::class, 'sendTest'])->middleware('throttle:10,600');
+        $router->post('/security/2fa-on', [\App\Controllers\Admin\SecurityController::class, 'turnOn'])->middleware('throttle:20,600');
+        $router->post('/security/2fa-off', [\App\Controllers\Admin\SecurityController::class, 'turnOff'])->middleware('throttle:10,600');
+        $router->post('/security/settings', [\App\Controllers\Admin\SecurityController::class, 'saveSettings'])->middleware('throttle:30,600');
+        $router->post('/security/devices-forget', [\App\Controllers\Admin\SecurityController::class, 'forgetDevices'])->middleware('throttle:10,600');
         $router->get('/profile/password', [AuthController::class, 'showPassword'])->name('admin.password');
         $router->post('/profile/password', [AuthController::class, 'updatePassword'])->middleware('throttle:15,600');
         $router->post('/media/upload', [MediaController::class, 'upload'])->middleware('throttle:120,60');

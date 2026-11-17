@@ -56,4 +56,5 @@ foreach (['cache', 'logs', 'mail', 'private', 'sessions'] as $dir) {
     }
 }
 
-ErrorHandler::register((bool) Config::get('app.debug', false));
+// Technical error details (file names, code, traces) can only ever be shown on a LOCAL development site: APP_DEBUG=1 on a live server is ignored, so a forgotten line in .env cannot expose the code.
+ErrorHandler::register((bool) Config::get('app.debug', false) && (string) Config::get('app.env', 'production') === 'local');

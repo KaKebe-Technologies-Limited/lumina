@@ -57,6 +57,7 @@ local mock servers (`bin/dev/mock-*.php`): **no test sends a real e-mail or move
 | Academy | sign-up, e-mail confirmation, enrolling, quizzes, fees, certificates, challenges | `academy*` |
 | Academy fees page and messages | fees, payment details, editable messages saved to the settings the site reads; certificate pay reminders | `academy-fees-page`, `academy-certificates` |
 | Admin access | roles and abilities, password reset | `full` (roles), `admin-reset` |
+| Admin security | e-mail two-step sign-in, screen lock, sign-in limits, cookie binding, safe errors, secrets never in a browser | `security` |
 | Newsletter, calendar, meetings, social | queue, sending, iCal, scheduling, posting | `newsletter*`, `calendar`, `meetings`, `social*` |
 
 `bin/test.php` lists the smoke group in its `FLOWS` constant. If you add a feature that touches money or sign-up, add its test there.

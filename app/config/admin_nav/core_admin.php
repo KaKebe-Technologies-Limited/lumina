@@ -13,6 +13,7 @@ return [
         ['key' => 'connections', 'label' => 'E-mail and sign-in', 'url' => 'admin/connections', 'icon' => 'mail', 'can' => 'settings.manage', 'order' => 8],
         ['key' => 'settings', 'label' => 'Site settings', 'url' => 'admin/settings', 'icon' => 'settings', 'can' => 'settings.manage', 'order' => 10],
         ['key' => 'bono', 'label' => 'Bono AI', 'url' => 'admin/bono', 'icon' => 'message-circle', 'can' => 'settings.manage', 'order' => 15],
+        ['key' => 'security', 'label' => 'Security', 'url' => 'admin/security', 'icon' => 'shield', 'can' => 'settings.manage', 'order' => 12],
         ['key' => 'users', 'label' => 'Users', 'url' => 'admin/users', 'icon' => 'users', 'can' => 'users.manage', 'order' => 20],
         ['key' => 'roles', 'label' => 'Roles', 'url' => 'admin/roles', 'icon' => 'lock', 'can' => 'roles.manage', 'order' => 25],
         ['key' => 'audit', 'label' => 'Activity log', 'url' => 'admin/audit-log', 'icon' => 'history', 'can' => 'audit.view', 'order' => 30],

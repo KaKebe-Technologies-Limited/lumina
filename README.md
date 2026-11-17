@@ -140,6 +140,7 @@ docs/       ARCHITECTURE.md, DESIGN.md, CONTENT_NOTES.md, live-snapshot/
 * `docs/NEWSLETTER.md` - the newsletter: JSON content model, issue workflow, admin editor and JSON API, public pages, e-mailing queue, SMTP driver, mock SMTP server, privacy notes.
 * `docs/PARTNERS_NEWSLETTER.md` - partners section, logo pipeline, PDF newsletters, live-reflection (cache) audit, schema/seed upgrade rules and known limits.
 * `docs/CALENDAR.md` - the calendar: data model, repeat rules, date engine, public and admin routes, JSON and iCal shapes, the sources of every seeded date and what could not be verified.
+* `docs/SECURITY.md` - what protects the site and the admin (two-step sign-in by e-mail, screen lock, sign-in limits, safe error messages, secrets), how to switch each on, the Hostinger checklist, what to do after a break-in.
 * `CONTRIBUTING.md` - start here as a developer: where things go, the conventions that bite, the change loop (lint, build, test, document, deploy).
 * `docs/TESTING.md` - how to run the tests (`bin/test.php`), what each critical flow is guarded by, how to write a new test, safety rules (local database only, no real e-mail or money).
 * `docs/PAYMENTS.md` - every way to pay (Daraza mobile money, Pesapal, Flutterwave, manual), setup, the mobile-money life cycle and Resolve menu, pay-on-delivery deposit, payments dashboard and audit trail, how to add a purpose.

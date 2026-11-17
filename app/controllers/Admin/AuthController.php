@@ -11,9 +11,12 @@ use App\Core\Flash;
 use App\Core\FormState;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\RateLimit;
 use App\Core\Session;
 use App\Models\User;
 use App\Services\AdminPasswordReset;
+use App\Services\Security\AdminLock;
+use App\Services\Security\TwoFactor;
 
 /**
  * Admin sign-in / sign-out / password change. OWNER: B3 admin-core.
@@ -35,7 +38,8 @@ final class AuthController extends Controller
     {
         $email = $request->string('email');
         $password = (string) $request->post('password', '');
-        if (!Auth::attempt($request, $email, $password)) {
+        // password only: with two-step sign-in on, the e-mailed code comes next and nobody is signed in before it
+        if (!Auth::attempt($request, $email, $password, false)) {
             // log the address only when it belongs to a real account; anything else (typos, pasted passwords, junk) is recorded as a short hash
             $known = $email !== '' && User::findBy('email', strtolower(trim($email))) !== null;
             AuditLog::record('auth.login_failed', 'user', null, $known
@@ -45,13 +49,126 @@ final class AuthController extends Controller
             FormState::flash([], ['email' => mb_substr($email, 0, 190)]);
             return $this->redirect('admin/login');
         }
+        $user = (array) Auth::verifiedUser();
+        if (TwoFactor::enabled() && !TwoFactor::isTrusted($user, $request)) {
+            $r = TwoFactor::startLogin($user, $request);
+            if (!$r['ok']) {
+                AuditLog::record('auth.2fa_unavailable', 'user', (int) $user['id'], 'The sign-in code could not be sent (' . (string) ($r['error'] ?? '') . ')');
+                Flash::error(($r['error'] ?? '') === 'too_many'
+                    ? 'Too many sign-in codes were requested for this account. Please wait an hour and try again.'
+                    : 'We could not e-mail your sign-in code right now. Please try again in a minute.');
+                return $this->redirect('admin/login');
+            }
+            AuditLog::record('auth.2fa_sent', 'user', (int) $user['id'], 'A sign-in code was e-mailed');
+            return $this->redirect('admin/verify');
+        }
+        Auth::login($user);
         AuditLog::record('auth.login', 'user', Auth::id(), 'Signed in');
+        return $this->afterLogin();
+    }
+
+    /** Where a signed-in person goes next: the password page when it must change, the page they were heading for, or the dashboard. */
+    private function afterLogin(): Response
+    {
         if (Auth::mustChangePassword()) {
             return $this->redirect('admin/profile/password');
         }
         $intended = (string) Session::pull('intended', '');
-        if ($intended !== '' && preg_match('~^/admin(?:/|$|\?)~', $intended) && !str_starts_with($intended, '/admin/login') && !str_starts_with($intended, '/admin/logout')) {
+        if ($intended !== '' && preg_match('~^/admin(?:/|$|\?)~', $intended) && !str_starts_with($intended, '/admin/login') && !str_starts_with($intended, '/admin/logout') && !str_starts_with($intended, '/admin/verify')) {
             return $this->redirect(ltrim($intended, '/'));
+        }
+        return $this->redirect('admin');
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- step two: the e-mailed code
+
+    public function showVerify(Request $request): Response
+    {
+        $p = TwoFactor::pending();
+        if ($p === null) {
+            return $this->redirect('admin/login');
+        }
+        $u = User::find((int) $p['uid']);
+        return $this->render('admin/auth/verify', [
+            'masked' => TwoFactor::maskedEmail((string) ($u['email'] ?? '')), 'minutes' => TwoFactor::CODE_MINUTES, 'trustDays' => TwoFactor::trustDays(),
+            'wait' => max(0, TwoFactor::RESEND_SECONDS - (time() - (int) $p['sent'])),
+        ], ['title' => 'Check your e-mail', 'meta' => ['robots' => 'noindex,nofollow']])->withHeaders(self::NO_STORE);
+    }
+
+    public function verify(Request $request): Response
+    {
+        $r = TwoFactor::verify((string) $request->post('code', ''), $request);
+        if (!$r['ok']) {
+            $err = (string) ($r['error'] ?? '');
+            AuditLog::record('auth.2fa_failed', 'user', null, 'A wrong or expired sign-in code was typed');
+            if ($err === 'wrong') {
+                Flash::error('That code is not right. Check the newest e-mail and try again.');
+                return $this->redirect('admin/verify');
+            }
+            Flash::error($err === 'too_many' ? 'Too many tries. Please wait a few minutes.' : 'This sign-in has ended. Please sign in again.');
+            return $this->redirect('admin/login');
+        }
+        $user = (array) $r['user'];
+        Auth::login($user);
+        if ($request->bool('trust')) {
+            TwoFactor::trust($user, $request);
+        }
+        AuditLog::record('auth.login', 'user', (int) $user['id'], 'Signed in with an e-mailed code' . ($request->bool('trust') && TwoFactor::trustDays() > 0 ? ' and remembered this browser' : ''));
+        return $this->afterLogin();
+    }
+
+    public function resend(Request $request): Response
+    {
+        $r = TwoFactor::resend($request);
+        if ($r['ok']) {
+            Flash::success('A new code was sent. Use the newest e-mail.');
+        } elseif (($r['error'] ?? '') === 'wait') {
+            Flash::info('Please wait ' . (int) ($r['wait'] ?? 30) . ' seconds before asking for another code.');
+        } elseif (($r['error'] ?? '') === 'expired') {
+            Flash::error('This sign-in has ended. Please sign in again.');
+            return $this->redirect('admin/login');
+        } else {
+            Flash::error('A new code could not be sent right now. Please try again in a minute.');
+        }
+        return $this->redirect('admin/verify');
+    }
+
+    public function cancelVerify(Request $request): Response
+    {
+        TwoFactor::cancel();
+        return $this->redirect('admin/login');
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- the lock screen
+
+    public function showLocked(Request $request): Response
+    {
+        if (!AdminLock::isLocked()) {
+            return $this->redirect('admin');
+        }
+        return $this->render('admin/auth/locked', ['name' => (string) (Auth::user()['name'] ?? ''), 'email' => (string) (Auth::user()['email'] ?? '')], ['title' => 'Screen locked', 'meta' => ['robots' => 'noindex,nofollow']])->withHeaders(self::NO_STORE);
+    }
+
+    public function unlock(Request $request): Response
+    {
+        $uid = (int) Auth::id();
+        if (!RateLimit::attempt('unlock:' . $uid, 5, 900)) {
+            AuditLog::record('auth.unlock_blocked', 'user', $uid, 'Too many wrong passwords on the lock screen: signed out');
+            Auth::logout();
+            Session::start(true);
+            Flash::error('Too many wrong passwords. You have been signed out.');
+            return $this->redirect('admin/login');
+        }
+        $row = User::find($uid);
+        if ($row === null || !Auth::verifyPassword((string) $request->post('password', ''), (string) $row['password_hash'])) {
+            AuditLog::record('auth.unlock_failed', 'user', $uid, 'Wrong password on the lock screen');
+            Flash::error('That password is not right.');
+            return $this->redirect('admin/locked');
+        }
+        AdminLock::unlock();
+        $back = (string) Session::pull('intended_unlock', '');
+        if ($back !== '' && preg_match('~^/admin(?:/|$|\?)~', $back) && !str_starts_with($back, '/admin/locked') && !str_starts_with($back, '/admin/logout')) {
+            return $this->redirect(ltrim($back, '/'));
         }
         return $this->redirect('admin');
     }

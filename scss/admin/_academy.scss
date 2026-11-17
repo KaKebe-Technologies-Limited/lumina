@@ -103,3 +103,20 @@ tr.is-unread td { background: #FFFBEA; }
 .af-bubble { position: relative; padding: $space-3 $space-4; border-radius: 4px 20px 20px 20px; background: #eaf2ff; color: #16294a; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
   &__tag { display: block; font-size: $fs-xs; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: #4a5f86; margin-bottom: .3rem; } p { margin: 0; } }
 @media (max-width: 40rem) { .af-amount { grid-template-columns: 1fr; } }
+
+// ---- Admin > Security (checklist, two-step steps) and the code / lock screens
+.sec-badge { display: inline-block; margin-left: .6rem; padding: .15rem .7rem; border-radius: 999px; font-size: $fs-xs; font-weight: 700; vertical-align: middle; &--ok { background: rgba(31, 122, 77, .14); color: #14603a; } &--warn { background: #fff3d6; color: #8a5a00; } &--bad { background: rgba($danger, .12); color: $danger; } }
+.sec-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.sec-item { display: flex; gap: .8rem; align-items: flex-start; padding: .8rem 1rem; border-radius: 14px; background: #f6f3ea; border: 1px solid $border;
+  p { margin: .15rem 0 0; font-size: $fs-sm; color: $ink-soft; } &__fix { color: $ink !important; }
+  &__icon { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; svg { width: 1.1rem; height: 1.1rem; } }
+  &--ok { background: #f3faf6; border-color: rgba(31, 122, 77, .35); .sec-item__icon { background: rgba(31, 122, 77, .14); color: #14603a; } }
+  &--warn { background: #fffaf0; border-color: #f0dcb0; .sec-item__icon { background: #fff3d6; color: #8a5a00; } }
+  &--bad { background: #fff5f4; border-color: rgba($danger, .4); .sec-item__icon { background: rgba($danger, .12); color: $danger; } } }
+.sec-steps { display: grid; gap: $space-4; margin-top: $space-3; }
+.sec-step { display: flex; gap: .9rem; align-items: flex-start; padding: $space-4; border-radius: 16px; border: 1px solid $border; background: #fbfaf6; p { margin: .2rem 0 .6rem; }
+  &__n { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: $navy; color: #fff; font-weight: 700; } }
+.sec-inline { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin-top: .5rem; }
+.sec-grid { display: grid; gap: $space-4; margin-bottom: $space-3; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sec-rule { border: 0; border-top: 1px solid $border; margin: $space-4 0; }
+.input--code { font-family: ui-monospace, Consolas, monospace; font-size: 1.5rem; letter-spacing: .35em; text-align: center; max-width: 12rem; }

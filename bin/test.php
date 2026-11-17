@@ -22,7 +22,7 @@ if (PHP_SAPI !== 'cli') {
 /** group => tests that guard the money and sign-up paths. Keep this list short: it is what to run before every upload. */
 const FLOWS = [
     'quick' => ['core-units'],
-    'smoke' => ['core-units', 'payment-options', 'payments-dashboard', 'daraza', 'daraza-api', 'shop', 'membership-pay', 'academy', 'academy-payments', 'academy-fees-page', 'fund', 'pledge-reminders', 'forms', 'pesapal'],
+    'smoke' => ['core-units', 'payment-options', 'payments-dashboard', 'daraza', 'daraza-api', 'shop', 'membership-pay', 'academy', 'academy-payments', 'academy-fees-page', 'fund', 'pledge-reminders', 'forms', 'pesapal', 'security'],
     // the master script runs the older suites in one process: roles, membership, newsletter, calendar, meetings, cards, shop, social, academy... (20+ minutes)
     'full' => ['master'],
 ];

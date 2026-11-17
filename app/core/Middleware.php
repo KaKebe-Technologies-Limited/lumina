@@ -91,6 +91,16 @@ final class Middleware
                 Flash::info('Please sign in to continue.');
                 return Response::redirect(url('admin/login'));
             }
+            // the screen lock: after the idle time the page is hidden until the password is typed again
+            if (\App\Services\Security\AdminLock::enforce($request) && !$request->pathIs('/admin/locked') && !$request->pathIs('/admin/logout')) {
+                if ($request->expectsJson()) {
+                    return Response::json(['error' => 'Locked'], 423);
+                }
+                if ($request->isGet()) {
+                    Session::put('intended_unlock', $request->uri());
+                }
+                return Response::redirect(url('admin/locked'));
+            }
             if (Auth::mustChangePassword()
                 && !$request->pathIs('/admin/profile/password')
                 && !$request->pathIs('/admin/logout')) {
