@@ -61,3 +61,39 @@
     .contact-closing__panel { padding-block: $space-7; text-align: center; @include respond(lg) { padding-block: $space-8; } }
     .closing-line { max-width: 36rem; margin-inline: auto; font-family: $font-display; font-size: fluid(1.3rem, '1.05rem + 1vw', 2rem); font-weight: 500; line-height: 1.4; color: $white; text-wrap: balance; }
 }
+
+// ---- the form's small helpers: topic buttons, characters-left line, "looks right" tick, a pulsing pin ----------------------------------------------
+.page-contact {
+    .contact-topics { grid-column: 1 / -1; display: grid; gap: $space-2; margin-block: $space-1; }
+    .contact-topics__label { font-weight: 600; font-size: $fs-sm; color: $navy; }
+    .contact-topics__chips { display: flex; flex-wrap: wrap; gap: $space-2; }
+    .contact-chip {
+        padding: 0.45rem 0.95rem;
+        border: 1px solid $line;
+        border-radius: 999px;
+        background: $white;
+        color: $navy;
+        font: inherit;
+        font-size: $fs-sm;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, translate 0.2s ease, box-shadow 0.2s ease;
+        &:hover { border-color: $gold; translate: 0 -2px; box-shadow: 0 6px 14px rgba($navy-dark, 0.1); }
+        &:focus-visible { outline: 3px solid $navy; outline-offset: 2px; }
+        &[aria-pressed='true'] { background: $navy; border-color: $navy; color: $white; }
+    }
+
+    .contact-counter { display: flex; align-items: center; gap: $space-3; margin-top: $space-2; font-size: $fs-xs; color: $ink-soft; }
+    .contact-counter__bar { flex: 1; height: 4px; border-radius: 999px; background: $tint-cool; overflow: hidden; i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, $gold, $navy); transition: width 0.2s ease; } }
+    .contact-counter.is-low .contact-counter__text { color: $danger; font-weight: 600; }
+
+    .field { position: relative; }
+    .field.is-valid input[type='email'] { border-color: #1f9d63; padding-inline-end: 2.6rem; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f9d63' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") no-repeat right 0.9rem center / 1.15rem; }
+
+    .map-fallback__icon { position: relative; }
+    @media (prefers-reduced-motion: no-preference) {
+        .map-fallback__icon::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid $gold; animation: contact-pin 2.6s ease-out infinite; }
+        @keyframes contact-pin { 0% { opacity: 0.9; transform: scale(1); } 80%, 100% { opacity: 0; transform: scale(1.9); } }
+    }
+}
+.contact-hub-section .eyebrow { color: $gold; &::after { background: $gold; } }

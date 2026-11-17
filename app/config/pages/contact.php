@@ -38,6 +38,14 @@ return [
                 ['key' => 'name_label', 'label' => 'Name: label', 'type' => 'text', 'default' => 'Your Name'],
                 ['key' => 'email_label', 'label' => 'Email: label', 'type' => 'text', 'default' => 'Your Email Address'],
                 ['key' => 'phone_label', 'label' => 'Phone: label', 'type' => 'text', 'default' => 'Phone Number'],
+                ['key' => 'topics_label', 'label' => 'Topic buttons: heading (above the subject)', 'type' => 'text', 'default' => 'What is it about?'],
+                ['key' => 'topics', 'label' => 'Topic buttons: one per line (clicking one fills the subject)', 'type' => 'textarea', 'rows' => 6, 'default' => "General inquiry
+Partnership
+Volunteering
+Donations and giving
+LAF Academy
+Media and press", 'help' => 'Leave empty to hide the buttons. Visitors can still type their own subject.'],
+                ['key' => 'counter_label', 'label' => 'Message counter: word after the number', 'type' => 'text', 'default' => 'characters left'],
                 ['key' => 'subject_label', 'label' => 'Subject: label', 'type' => 'text', 'default' => 'Subject'],
                 ['key' => 'message_label', 'label' => 'Message: label', 'type' => 'text', 'default' => 'Your Message'],
                 ['key' => 'submit', 'label' => 'Submit button', 'type' => 'text', 'default' => 'Send Message'],
@@ -68,6 +76,8 @@ return [
                 ['key' => 'hours', 'label' => 'Opening hours', 'type' => 'text', 'default' => 'Mon-Fri, 9am-5pm', 'help' => 'Leave empty to hide.'],
                 ['key' => 'whatsapp_label', 'label' => 'WhatsApp button', 'type' => 'text', 'default' => 'Chat on WhatsApp'],
                 ['key' => 'social_title', 'label' => 'Social media heading', 'type' => 'text', 'default' => 'Follow us'],
+                ['key' => 'copy_label', 'label' => 'Copy button: text', 'type' => 'text', 'default' => 'Copy'],
+                ['key' => 'copied_label', 'label' => 'Copy button: text after copying', 'type' => 'text', 'default' => 'Copied'],
             ],
         ],
         [

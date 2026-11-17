@@ -287,8 +287,12 @@ return [
             'key' => 'contact', 'label' => '10. Contact teaser', 'toggle' => true, 'default_visible' => true,
             'help' => 'A short "get in touch" card. The contact details come from Settings > Contact details; the button leads to the Contact page. (The newsletter form is in the footer.)',
             'fields' => [
+                ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'Let’s connect'],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Contact Us', 'help' => $hl],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Get in touch to empower youth and communities.'],
+                ['key' => 'whatsapp_cta', 'label' => 'Second button: WhatsApp text', 'type' => 'text', 'default' => 'Chat on WhatsApp', 'help' => 'Shown next to the main button when a WhatsApp number is set in Settings.'],
+                ['key' => 'copy_label', 'label' => 'Copy button: text', 'type' => 'text', 'default' => 'Copy'],
+                ['key' => 'copied_label', 'label' => 'Copy button: text after copying', 'type' => 'text', 'default' => 'Copied'],
                 ['key' => 'cta_label', 'label' => 'Button: text', 'type' => 'text', 'default' => 'Submit Your Inquiry'],
                 ['key' => 'cta_url', 'label' => 'Button: link', 'type' => 'url', 'default' => '/contact'],
                 ['key' => 'email_label', 'label' => 'Label: email', 'type' => 'text', 'default' => 'Email'],

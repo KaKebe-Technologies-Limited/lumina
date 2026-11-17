@@ -557,3 +557,13 @@ Build note: `bin/build-scss.py` now strips the UTF-8 BOM that libsass prepends t
 * **Admin > Pages repeaters:** a sub-field missing from a row saved before it existed shows the registry default in the editor (an unchanged Save no longer rewrites the icon).
 * **Lightbox / video labels:** `global > labels` has `image_viewer`, `prev_image`, `next_image`, `video_fallback_title` (and `close`); `_tile.php` and `video-button.php` pass them as data attributes; the redundant `allowFullscreen` line is gone.
 * **Image weight:** `photo-founder-tall.jpg` is now 832 x 1248 (100 KB); the 1440 x 2160 master is `docs/brand/photo-founder-tall-master.jpg` (not web served).
+
+## The connect hub (contact tiles)
+
+`partials/contact-hub.php` (+ `scss/components/_contact-hub.scss`, `assets/js/contact-hub.js`) shows contact details as tiles joined by small glowing connectors over a quietly animated network of nodes. It is used by the home page contact band (`web/home/index.php`, section "10. Contact teaser") and the Contact page (`web/contact/index.php`, "Office and contact details"). It is made for deep-navy backgrounds.
+
+* **Data:** the view builds `$tiles` = `[['key' => mail|phone|whatsapp|map|clock|office, 'icon', 'label', 'wide' => bool, 'lines' => [['text', 'href', 'external', 'copy', 'html']]]]`; the partial works out the connectors (`has-up`, `has-right`) for a two-column grid, so any mix of tiles stays connected. `wide` tiles (long e-mail addresses) fill a whole row.
+* **Without JavaScript** every detail is a real `mailto:` / `tel:` / WhatsApp / map link. The script adds the "Copy" buttons (they are in the HTML with `hidden`), a live "Copied" message for screen readers and a light that follows the pointer.
+* **Motion** (pulsing icon rings, running light on the connectors, twinkling nodes, the glow in the band) is wrapped in `prefers-reduced-motion: no-preference`; hover lift uses the `translate` property so it does not fight the scroll-reveal `transform`.
+* **Wording** (small heading, WhatsApp button, copy labels, the form's topic buttons and counter text) is editable in Admin > Pages > Home / Contact.
+* **Contact form helpers** (`assets/js/pages/contact.js`): topic buttons fill the subject, a characters-left line under the message, a green tick on a valid e-mail. Test: `bin/selftest-contact-hub.php`.

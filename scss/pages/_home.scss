@@ -210,29 +210,6 @@ $b1-pages: '.page-home, .page-about, .page-programs, .page-projects, .page-invol
     .home-background .prose { max-width: none; }
     .home-background .prose p { font-size: $fs-md; line-height: 1.75; }
 
-    // ---- 10e. CONTACT TEASER -------------------------------------------------------------------------------------------
-    .home-contact__box {
-        display: grid;
-        gap: $space-6;
-        align-items: center;
-        padding: $space-6 $space-4;
-        border: 1px solid $line;
-        border-radius: $radius-panel;
-        background: $white;
-        box-shadow: $shadow-card;
-        @include respond(sm) { padding: $space-6 $space-5; }
-        @include respond(md) { padding: $space-7; }
-        @include respond(lg) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: $space-8; }
-    }
-    .home-contact__list {
-        display: grid;
-        gap: $space-4;
-        li { display: flex; align-items: flex-start; gap: $space-3; min-width: 0; @include respond(sm) { gap: $space-4; } }
-        li > .icon { margin-top: 0.15rem; padding: 0.6rem; box-sizing: content-box; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: rgba($gold, 0.28); color: $navy; flex: none; }
-        li > span { display: flex; flex-direction: column; min-width: 0; overflow-wrap: break-word; }
-        a { font-weight: 600; font-size: $fs-sm; @include respond(sm) { font-size: inherit; } }
-    }
-    .home-contact__label { font-size: $fs-xs; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: $ink-soft; }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -9,6 +9,7 @@
 $meetingOn = \App\Services\Meetings\MeetingRequestService::enabled() && section_on('contact', 'meeting_request');
 
 $this->start('scripts'); ?>
+<script src="<?= e(asset('js/contact-hub.js')) ?>" defer></script>
 <script src="<?= e(asset('js/pages/contact.js')) ?>" defer></script>
 <?php if (!empty($calendar)): ?><script src="<?= e(asset('js/calendar.js')) ?>" defer></script><?php endif; ?>
 <?php if ($meetingOn): ?><script src="<?= e(asset('js/meetings.js')) ?>" defer></script><?php endif; ?>
@@ -33,24 +34,29 @@ $socials = social_links('contact');
 $mapQuery = rawurlencode(implode(', ', array_filter([$siteName, ...$addressLines])));
 $heroImg = content_img('contact', 'hero.image');
 
-// the contact cards: [icon, heading, ready-made SAFE html]
-$cards = [];
+// the contact tiles of the connect hub (partials/contact-hub): office, e-mail, phone, hours and WhatsApp, each with what a visitor does next
+$mapsHref = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode(implode(', ', array_filter([$siteName, ...$addressLines])));
+$tiles = [];
 if ($addressLines) {
-    $cards[] = ['icon' => 'map-pin', 'title' => (string) content('contact', 'details.office_title'),
-        'html' => '<address class="contact-card__text">' . ($siteName !== '' ? '<strong>' . e($siteName) . '</strong><br>' : '') . implode('<br>', array_map('e', $addressLines)) . '</address>'];
+    $tiles[] = ['key' => 'office', 'icon' => 'map-pin', 'label' => (string) content('contact', 'details.office_title'),
+        'lines' => [['html' => '<address class="cx-tile__value cx-tile__value--plain">' . ($siteName !== '' ? '<strong>' . e($siteName) . '</strong><br>' : '') . implode('<br>', array_map('e', $addressLines)) . '</address>'],
+                    ['text' => (string) content('contact', 'map.link_label'), 'href' => $mapsHref, 'external' => true]]];
 }
 if ($emails) {
-    $cards[] = ['icon' => 'mail', 'title' => (string) content('contact', 'details.email_title'),
-        'html' => '<p class="contact-card__text">' . implode('<br>', array_map(static fn(string $em): string => '<a href="mailto:' . e($em) . '">' . email_html($em) . '</a>', $emails)) . '</p>'];
+    $tiles[] = ['key' => 'mail', 'icon' => 'mail', 'label' => (string) content('contact', 'details.email_title'),
+        'lines' => array_map(static fn(string $em): array => ['html' => '<a class="cx-tile__value" href="mailto:' . e($em) . '">' . email_html($em) . '</a>', 'copy' => $em], $emails)];
 }
 if ($phones) {
-    $cards[] = ['icon' => 'phone', 'title' => (string) content('contact', 'details.phone_title'),
-        'html' => '<p class="contact-card__text">' . implode('<br>', array_map(static fn(string $ph): string => '<a href="' . e(phone_href($ph)) . '">' . e($ph) . '</a>', $phones)) . '</p>'];
+    $tiles[] = ['key' => 'phone', 'icon' => 'phone', 'label' => (string) content('contact', 'details.phone_title'),
+        'lines' => array_map(static fn(string $ph): array => ['text' => $ph, 'href' => phone_href($ph), 'copy' => $ph], $phones)];
+}
+if ($wa !== '') {
+    $waDigits = preg_replace('/[^0-9]/', '', (string) preg_replace('~^https?://wa\.me/~i', '', (string) setting('whatsapp', ''))) ?? '';
+    $tiles[] = ['key' => 'whatsapp', 'icon' => 'whatsapp', 'label' => 'WhatsApp', 'lines' => [['text' => (string) content('contact', 'details.whatsapp_label'), 'href' => $wa, 'external' => true, 'copy' => strlen($waDigits) >= 7 ? '+' . $waDigits : '']]];
 }
 if ($hours !== '') {
-    $cards[] = ['icon' => 'clock', 'title' => (string) content('contact', 'details.hours_title'), 'html' => '<p class="contact-card__text">' . e($hours) . '</p>'];
+    $tiles[] = ['key' => 'clock', 'icon' => 'clock', 'label' => (string) content('contact', 'details.hours_title'), 'lines' => [['text' => $hours]]];
 }
-$cardsClass = count($cards) >= 4 ? ' feature-row--4' : (count($cards) === 2 ? ' feature-row--2' : '');
 
 $showMap = $mapOn && ($mapUrl !== '' || $addressLines);
 // the live wording repeats the page title as the heading of the cards: show it once (the section keeps an accessible name)
@@ -73,37 +79,22 @@ $fieldMeta = [
     'actions' => $meetingOn ? [['label' => strip_highlight((string) content('contact', 'meeting_request.title')), 'url' => '#meeting-request', 'class' => 'btn--white btn--caps']] : [],
 ]) ?>
 
-<?php /* ------------------------------------------------------------------ CONTACT CARDS */ ?>
-<?php if ($detailsOn && ($cards || $wa !== '' || $socials)): ?>
-<section class="section contact-details" id="contact-details"<?= $detailsDup ? ' aria-label="' . e((string) content('contact', 'details.office_title')) . '"' : ' aria-labelledby="details-title"' ?>>
+<?php /* ------------------------------------------------------------------ CONNECT HUB (contact tiles joined by animated connectors) */ ?>
+<?php if ($detailsOn && ($tiles || $socials)): ?>
+<section class="section section--navy contact-hub-section" id="contact-details"<?= $detailsDup ? ' aria-label="' . e((string) content('contact', 'details.office_title')) . '"' : ' aria-labelledby="details-title"' ?>>
     <div class="container">
         <?= partial('partials/section-head', ['eyebrow' => (string) content('contact', 'details.eyebrow'), 'title' => $detailsDup ? '' : $detailsTitle, 'lead' => (string) content('contact', 'details.text'), 'align' => 'center', 'id' => 'details-title']) ?>
-        <?php if ($cards): ?>
-            <div class="feature-row contact-cards<?= $cardsClass ?>">
-                <?php foreach ($cards as $c): ?>
-                    <article class="feature-card contact-card" data-reveal>
-                        <span class="feature-card__icon"><?= icon($c['icon']) ?></span>
-                        <div class="feature-card__body">
-                            <h2 class="feature-card__title"><?= e($c['title']) ?></h2>
-                            <?= $c['html'] ?>
-                        </div>
-                    </article>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-        <?php if ($wa !== '' || $socials): ?>
+        <?= partial('partials/contact-hub', ['tiles' => $tiles, 'variant' => 'page', 'copyLabel' => (string) content('contact', 'details.copy_label'), 'copiedLabel' => (string) content('contact', 'details.copied_label')]) ?>
+        <?php if ($socials): ?>
             <div class="contact-extra" data-reveal>
-                <?php if ($wa !== ''): ?><a class="btn btn--outline btn--caps" href="<?= e($wa) ?>" target="_blank" rel="noopener noreferrer"><?= icon('whatsapp', 'icon--sm') ?> <?= e(content('contact', 'details.whatsapp_label')) ?></a><?php endif; ?>
-                <?php if ($socials): ?>
-                    <div class="contact-social">
-                        <span class="contact-social__title" id="contact-social-title"><?= e(content('contact', 'details.social_title')) ?></span>
-                        <ul class="ia-social" aria-labelledby="contact-social-title">
-                            <?php foreach ($socials as $s): ?>
-                                <li><a href="<?= e($s['url']) ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= e($s['label']) ?>"><?= icon($s['icon']) ?></a></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                <?php endif; ?>
+                <div class="contact-social">
+                    <span class="contact-social__title" id="contact-social-title"><?= e(content('contact', 'details.social_title')) ?></span>
+                    <ul class="ia-social" aria-labelledby="contact-social-title">
+                        <?php foreach ($socials as $s): ?>
+                            <li><a href="<?= e($s['url']) ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= e($s['label']) ?>"><?= icon($s['icon']) ?></a></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
             </div>
         <?php endif; ?>
     </div>
@@ -124,8 +115,15 @@ $fieldMeta = [
                         <?= partial('partials/form-field', ['name' => 'name', 'id' => 'contact-name', 'label' => $fieldMeta['name']['label'], 'required' => true, 'autocomplete' => 'name', 'maxlength' => 150]) ?>
                         <?= partial('partials/form-field', ['name' => 'email', 'id' => 'contact-email', 'label' => $fieldMeta['email']['label'], 'type' => 'email', 'required' => true, 'autocomplete' => 'email', 'maxlength' => 190]) ?>
                         <?= partial('partials/form-field', ['name' => 'phone', 'id' => 'contact-phone', 'label' => $fieldMeta['phone']['label'], 'type' => 'tel', 'autocomplete' => 'tel', 'maxlength' => 40]) ?>
-                        <?= partial('partials/form-field', ['name' => 'subject', 'id' => 'contact-subject', 'label' => $fieldMeta['subject']['label'], 'maxlength' => 220]) ?>
-                        <?= partial('partials/form-field', ['name' => 'message', 'id' => 'contact-message', 'label' => $fieldMeta['message']['label'], 'type' => 'textarea', 'rows' => 7, 'required' => true, 'maxlength' => 5000, 'class' => 'field--full']) ?>
+                                                <?php $topics = array_values(array_filter(array_map('trim', preg_split('/\R/', (string) content('contact', 'form.topics')) ?: []), static fn(string $t): bool => $t !== '')); ?>
+                        <?php if ($topics): ?>
+                            <div class="contact-topics" role="group" aria-labelledby="contact-topics-label">
+                                <span class="contact-topics__label" id="contact-topics-label"><?= e(content('contact', 'form.topics_label')) ?></span>
+                                <div class="contact-topics__chips"><?php foreach ($topics as $t): ?><button class="contact-chip" type="button" data-topic="<?= e($t) ?>" aria-pressed="false"><?= e($t) ?></button><?php endforeach; ?></div>
+                            </div>
+                        <?php endif; ?>
+                        <?= partial('partials/form-field', ['name' => 'subject', 'attrs' => ['data-contact-subject' => true], 'id' => 'contact-subject', 'label' => $fieldMeta['subject']['label'], 'maxlength' => 220]) ?>
+                        <?= partial('partials/form-field', ['name' => 'message', 'id' => 'contact-message', 'label' => $fieldMeta['message']['label'], 'type' => 'textarea', 'rows' => 7, 'required' => true, 'maxlength' => 5000, 'attrs' => ['data-contact-message' => true, 'data-counter-label' => (string) content('contact', 'form.counter_label')], 'class' => 'field--full']) ?>
                     </div>
                     <div class="form-actions">
                         <button class="btn btn--cta btn--caps btn--lg" type="submit" data-loading-text="<?= e(content('contact', 'form.sending')) ?>"><?= e(content('contact', 'form.submit')) ?></button>

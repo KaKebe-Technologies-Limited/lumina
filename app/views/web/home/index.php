@@ -309,29 +309,35 @@ $wa = whatsapp_url();
 $waDigits = preg_replace('/[^0-9]/', '', (string) preg_replace('~^https?://wa\.me/~i', '', (string) setting('whatsapp', ''))) ?? '';
 $waText = strlen($waDigits) >= 7 ? '+' . $waDigits : $wa;
 $where = implode(', ', array_filter([trim((string) setting('address', '')), $city]));
+$mapsHref = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode(trim((string) setting('site_name', '')) . ', ' . $where);
+$tiles = [];
+foreach ($emails as $em) {
+    $tiles[] = ['key' => 'mail', 'wide' => true, 'icon' => 'mail', 'label' => (string) content('home', 'contact.email_label'), 'lines' => [['html' => '<a class="cx-tile__value" href="mailto:' . e($em) . '">' . email_html($em) . '</a>', 'copy' => $em]]];
+}
+foreach ($phones as $ph) {
+    $tiles[] = ['key' => 'phone', 'icon' => 'phone', 'label' => (string) content('home', 'contact.phone_label'), 'lines' => [['text' => $ph, 'href' => phone_href($ph), 'copy' => $ph]]];
+}
+if ($wa !== '') {
+    $tiles[] = ['key' => 'whatsapp', 'icon' => 'whatsapp', 'label' => (string) content('home', 'contact.whatsapp_label'), 'lines' => [['text' => $waText, 'href' => $wa, 'external' => true, 'copy' => $waText]]];
+}
+if ($where !== '') {
+    $tiles[] = ['key' => 'map', 'icon' => 'map-pin', 'label' => (string) content('home', 'contact.location_label'), 'lines' => [['text' => $where, 'href' => $mapsHref, 'external' => true]]];
+}
+$this->start('scripts'); ?><script src="<?= e(asset('js/contact-hub.js')) ?>" defer></script><?php $this->end();
 section_begin('home', 'contact', ['class' => 'section--tint home-contact', 'labelledby' => 'contact-title']);
 ?>
     <div class="home-contact__box" data-reveal>
         <div class="home-contact__text">
+            <?php if (trim((string) content('home', 'contact.eyebrow')) !== ''): ?><span class="home-contact__eyebrow"><?= e(content('home', 'contact.eyebrow')) ?></span><?php endif; ?>
             <h2 id="contact-title"><?= highlight((string) content('home', 'contact.title')) ?></h2>
             <?php if (trim((string) content('home', 'contact.text')) !== ''): ?><p class="lead"><?= e(content('home', 'contact.text')) ?></p><?php endif; ?>
-            <?php if ($cbtn['has']): ?><p class="mt-5"><a class="btn btn--cta btn--caps btn--lg" href="<?= e($cbtn['url']) ?>"><?= e($cbtn['label']) ?></a></p><?php endif; ?>
+            <?php if ($cbtn['has'] || $wa !== ''): ?>
+                <div class="home-contact__actions">
+                    <?php if ($cbtn['has']): ?><a class="btn btn--cta btn--caps btn--lg" href="<?= e($cbtn['url']) ?>"><?= e($cbtn['label']) ?></a><?php endif; ?>
+                    <?php if ($wa !== '' && trim((string) content('home', 'contact.whatsapp_cta')) !== ''): ?><a class="btn btn--outline btn--caps btn--lg home-contact__wa" href="<?= e($wa) ?>" target="_blank" rel="noopener noreferrer"><?= icon('whatsapp', 'icon--sm') ?> <?= e(content('home', 'contact.whatsapp_cta')) ?></a><?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
-        <?php if ($emails || $phones || $wa !== '' || $where !== ''): ?>
-            <ul class="home-contact__list">
-                <?php foreach ($emails as $em): ?>
-                    <li><?= icon('mail', 'icon--lg') ?><span><span class="home-contact__label"><?= e(content('home', 'contact.email_label')) ?></span><a href="mailto:<?= e($em) ?>"><?= email_html($em) ?></a></span></li>
-                <?php endforeach; ?>
-                <?php foreach ($phones as $ph): ?>
-                    <li><?= icon('phone', 'icon--lg') ?><span><span class="home-contact__label"><?= e(content('home', 'contact.phone_label')) ?></span><a href="<?= e(phone_href($ph)) ?>"><?= e($ph) ?></a></span></li>
-                <?php endforeach; ?>
-                <?php if ($wa !== ''): ?>
-                    <li><?= icon('whatsapp', 'icon--lg') ?><span><span class="home-contact__label"><?= e(content('home', 'contact.whatsapp_label')) ?></span><a href="<?= e($wa) ?>" target="_blank" rel="noopener noreferrer"><?= e($waText) ?></a></span></li>
-                <?php endif; ?>
-                <?php if ($where !== ''): ?>
-                    <li><?= icon('map-pin', 'icon--lg') ?><span><span class="home-contact__label"><?= e(content('home', 'contact.location_label')) ?></span><span><?= e($where) ?></span></span></li>
-                <?php endif; ?>
-            </ul>
-        <?php endif; ?>
+        <?= partial('partials/contact-hub', ['tiles' => $tiles, 'variant' => 'home', 'copyLabel' => (string) content('home', 'contact.copy_label'), 'copiedLabel' => (string) content('home', 'contact.copied_label')]) ?>
     </div>
 <?php section_end(); ?>
