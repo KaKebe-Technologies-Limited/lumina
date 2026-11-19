@@ -13,7 +13,7 @@ $copy = [
 $purpose = (string) ($row['purpose'] ?? '');
 if ($purpose === 'academy_signup' || $purpose === 'academy_cert') {
     $what = $purpose === 'academy_signup' ? 'sign-up fee' : 'certificate fee';
-    $approvedNow = $purpose === 'academy_signup' && $state === 'paid' && AppCoreDatabase::value('SELECT email_verified_at FROM academy_learners WHERE id = ?', [(int) ($row['ref_id'] ?? 0)]) !== null;
+    $approvedNow = $purpose === 'academy_signup' && $state === 'paid' && \App\Core\Database::value('SELECT email_verified_at FROM academy_learners WHERE id = ?', [(int) ($row['ref_id'] ?? 0)]) !== null;
     $next = $purpose === 'academy_signup' ? ($approvedNow ? 'Your account is approved: you can sign in to your learner portal now.' : 'Your account is now with the Academy team: sign in after it is approved (you do not need to pay again).') : 'Sign in to your learner portal to open your certificate.';
     $academy = [
         'paid'    => ['check-circle', 'Payment received', 'Thank you! Your ' . $what . ' was received. ' . $next],

@@ -348,6 +348,17 @@ putenv($envKey === false ? 'PESAPAL_CONSUMER_KEY' : 'PESAPAL_CONSUMER_KEY=' . $e
 putenv($envSecret === false ? 'PESAPAL_CONSUMER_SECRET' : 'PESAPAL_CONSUMER_SECRET=' . $envSecret);
 putenv($envMode === false ? 'PESAPAL_ENV' : 'PESAPAL_ENV=' . $envMode);
 
+// a class name written without its backslashes ("AppServicesPesapalPesapalPayments::ready()") is a fatal error only when that line runs: it once gave learners a 500 page right after they finished a course
+$mangled = [];
+foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(dirname(__DIR__) . '/app', \FilesystemIterator::SKIP_DOTS)) as $file) {
+    if ($file->isFile() && str_ends_with($file->getFilename(), '.php')) {
+        if (preg_match('/(?<![\x5CA-Za-z0-9_])App(?:Services|Core|Models|Controllers)[A-Z][A-Za-z]*::/', (string) file_get_contents($file->getPathname())) === 1) {
+            $mangled[] = str_replace(dirname(__DIR__) . DIRECTORY_SEPARATOR, '', $file->getPathname());
+        }
+    }
+}
+check('no class name has lost its backslashes (AppServices..., AppCore...)', $mangled === [], implode(', ', $mangled));
+
 if (!empty($standalone)) {
     echo $fail === 0 ? "\nALL OK\n" : "\n{$fail} FAILED\n";
     exit($fail === 0 ? 0 : 1);
