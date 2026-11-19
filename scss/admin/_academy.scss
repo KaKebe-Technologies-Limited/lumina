@@ -120,3 +120,6 @@ tr.is-unread td { background: #FFFBEA; }
 .sec-grid { display: grid; gap: $space-4; margin-bottom: $space-3; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .sec-rule { border: 0; border-top: 1px solid $border; margin: $space-4 0; }
 .input--code { font-family: ui-monospace, Consolas, monospace; font-size: 1.5rem; letter-spacing: .35em; text-align: center; max-width: 12rem; }
+
+.aac-actions .btn { white-space: nowrap; }
+.aac-actions .inline-form { display: inline-flex; flex-wrap: wrap; align-items: center; gap: $space-2; }

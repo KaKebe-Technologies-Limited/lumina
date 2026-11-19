@@ -27240,6 +27240,17 @@ input:focus-visible + .af-switch__track {
   max-width: 12rem;
 }
 
+.aac-actions .btn {
+  white-space: nowrap;
+}
+
+.aac-actions .inline-form {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .vis-cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

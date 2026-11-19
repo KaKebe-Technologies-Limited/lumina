@@ -6,9 +6,9 @@
         <strong><?= (int) $waiting ?> certificate<?= (int) $waiting === 1 ? '' : 's' ?> waiting for your approval.</strong>
         A learner cannot open or download it, and the public check page does not know it, until you approve it. A certificate can be viewed only once it has been issued.
         <div class="aac-actions">
-            <form method="post" action="<?= e(url('admin/academy/certificates-approve-all')) ?>" class="inline-form" data-confirm="Approve all <?= (int) $waiting ?> waiting certificates?"><?= csrf_field() ?>
-                <label class="check"><input type="checkbox" name="email" value="1" checked><span>E-mail each learner</span></label>
-                <button class="btn btn--primary btn--sm" type="submit">Approve all</button></form>
+            <form method="post" action="<?= e(url('admin/academy/certificates-approve-all')) ?>" class="inline-form" data-confirm="Approve all <?= (int) $waiting ?> waiting certificates and e-mail each learner? Up to 100 are done at a time."><?= csrf_field() ?>
+                <input type="hidden" name="email" value="1">
+                <button class="btn btn--primary btn--sm" type="submit"><?= icon('mail', 'icon--sm') ?> Approve all and e-mail the learners</button></form>
             <a class="btn btn--ghost btn--sm" href="<?= e(url('admin/academy/certificates', ['status' => 'waiting'])) ?>">Show only these</a>
         </div>
         <?php $askN = \App\Services\Academy\CertificatePayReminders::count(); ?>
