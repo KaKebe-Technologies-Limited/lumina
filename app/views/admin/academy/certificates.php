@@ -1,6 +1,27 @@
 <?php /** Admin > Academy > Certificates. Vars: $rows, $pagination, $q, $status, $total, $waiting (certificates waiting for approval), $approved (approved ones), $ready (approval columns exist). */ ?>
 <?= partial('partials/admin/page-header', ['title' => 'Certificates', 'subtitle' => 'Every certificate issued. Anyone can check one by its number on the public Academy; a withdrawn certificate says so there.',
     'actions' => [['label' => 'Download CSV', 'url' => url('admin/academy/certificates-export'), 'icon' => 'download', 'class' => 'btn--outline']]]) ?>
+<?php if (!empty($flagged)): ?>
+    <section class="card" aria-labelledby="fl-t" style="margin-bottom:1rem">
+        <div class="card__header"><h2 class="card__title" id="fl-t"><?= icon('alert-triangle', 'icon--sm') ?> Flagged exams to review (<?= count($flagged) ?>)</h2></div>
+        <div class="card__body">
+            <p class="text-muted">These exams were submitted automatically because the learner left the exam page too often. They do not count towards a certificate until you clear them. Clearing one that passed files the certificate for approval, as usual.</p>
+            <div class="table-wrap"><table class="table table--stack"><thead><tr><th scope="col">Learner</th><th scope="col">Course</th><th scope="col">Score</th><th scope="col">Time taken</th><th scope="col">Left the page</th><th scope="col"><span class="visually-hidden">Decide</span></th></tr></thead><tbody>
+                <?php foreach ($flagged as $fa): ?>
+                    <tr><td class="cell-main" data-label="Learner"><span class="cell-title"><a href="<?= e(url('admin/academy/learners/' . (int) $fa['learner_id'])) ?>"><?= e($fa['learner_name']) ?></a></span><span class="cell-sub"><?= e($fa['learner_email']) ?></span></td>
+                        <td data-label="Course"><?= e($fa['course_title']) ?></td>
+                        <td data-label="Score"><?= (int) $fa['correct'] ?>/<?= (int) $fa['total'] ?> (<?= (int) round((float) $fa['score_pct']) ?>%) <span class="badge badge--<?= (int) $fa['passed'] === 1 ? 'success' : 'warning' ?>"><?= (int) $fa['passed'] === 1 ? 'Passed' : 'Not yet' ?></span></td>
+                        <td data-label="Time taken"><?= e((string) \App\Services\Academy\ExamSecurity::duration($fa)) ?><span class="cell-sub">of <?= (int) $fa['time_limit_min'] + (int) $fa['extra_minutes'] ?> min</span></td>
+                        <td data-label="Left the page"><?= (int) $fa['leave_count'] ?><?= partial('admin/academy/_exam_events', ['events' => \App\Services\Academy\ExamSecurity::events((int) $fa['id'])]) ?></td>
+                        <td class="col-actions"><div class="table__actions">
+                            <form method="post" action="<?= e(url('admin/academy/exam-attempts/' . (int) $fa['id'] . '/review')) ?>" class="inline-form"><?= csrf_field() ?><input type="hidden" name="decision" value="clear"><button class="btn btn--primary btn--sm" type="submit">Clear: it counts</button></form>
+                            <form method="post" action="<?= e(url('admin/academy/exam-attempts/' . (int) $fa['id'] . '/review')) ?>" class="inline-form" data-confirm="Reject this attempt? It will not count towards a certificate."><?= csrf_field() ?><input type="hidden" name="decision" value="reject"><button class="btn btn--ghost btn--sm" type="submit">Reject</button></form>
+                        </div></td></tr>
+                <?php endforeach; ?>
+            </tbody></table></div>
+        </div>
+    </section>
+<?php endif; ?>
 <?php if (!empty($waiting)): ?>
     <div class="alert alert--warning" role="status">
         <strong><?= (int) $waiting ?> certificate<?= (int) $waiting === 1 ? '' : 's' ?> waiting for your approval.</strong>
@@ -73,7 +94,7 @@
             <tr class="<?= $c['revoked_at'] ? 'is-muted' : '' ?>">
                 <td data-label="Number"><a href="<?= e(url('academy/certificate/' . $c['code'])) ?>" target="_blank" rel="noopener"><code><?= e($c['code']) ?></code></a></td>
                 <td class="cell-main" data-label="Learner"><span class="cell-title"><?= e($c['learner_name']) ?></span><span class="cell-sub"><?= e((string) ($c['learner_email'] ?? 'account deleted')) ?></span></td>
-                <td data-label="Course"><?= e($c['course_title']) ?><span class="cell-sub"><?= $c['score_pct'] !== null ? e(rtrim(rtrim(number_format((float) $c['score_pct'], 1), '0'), '.')) . '%' : 'no exam' ?></span></td>
+                <td data-label="Course"><?= e($c['course_title']) ?><span class="cell-sub"><?= $c['score_pct'] !== null ? e(rtrim(rtrim(number_format((float) $c['score_pct'], 1), '0'), '.')) . '%' : 'no exam' ?></span><?php $ex = $exam[(int) $c['learner_id'] . ':' . (int) $c['course_id']] ?? null; if ($ex !== null && (int) $ex['secured'] === 1): ?><span class="cell-sub">Exam: <?= e((string) \App\Services\Academy\ExamSecurity::duration($ex)) ?>, left the page <?= (int) $ex['leave_count'] ?>x<?php if ((int) $ex['flagged'] === 1): ?> <span class="badge badge--danger">Flagged<?= ($ex['flag_review'] ?? null) === 'cleared' ? ' - cleared' : '' ?></span><?php endif; ?></span><?php endif; ?></td>
                 <td data-label="Issued"><span class="nowrap"><?= e(format_date($c['issued_at'], 'j M Y')) ?></span></td>
                 <td data-label="Status"><?= $c['revoked_at'] ? '<span class="badge badge--danger">Withdrawn</span>' : ($isWaiting ? (\App\Services\Academy\AcademyFees::certDue($c) ? '<span class="badge badge--warning">Fee unpaid</span>' : '<span class="badge badge--warning">Waiting for approval</span>') : '<span class="badge badge--success">Valid</span>') ?><?php if (!empty($c['emailed_at'])): ?><span class="cell-sub">E-mailed <?= e(format_date($c['emailed_at'], 'j M')) ?></span><?php endif; ?></td>
                 <td class="col-actions"><div class="table__actions">

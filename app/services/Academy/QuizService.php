@@ -12,8 +12,8 @@ use App\Core\Database;
  */
 final class QuizService
 {
-    /** Extra seconds allowed after the time limit (slow connections). Later answers count as blank. */
-    private const GRACE_SECONDS = 90;
+    /** Extra seconds allowed after the time limit (slow connections). Answers sent later are ignored: what was autosaved is graded. */
+    private const GRACE_SECONDS = ExamSecurity::GRACE_SECONDS;
 
     // ------------------------------------------------------------------------------------------------------------- authoring
 
@@ -117,9 +117,10 @@ final class QuizService
         return Database::one('SELECT * FROM academy_attempts WHERE learner_id = ? AND quiz_id = ? AND submitted_at IS NOT NULL ORDER BY score_pct DESC, id DESC LIMIT 1', [$learnerId, $quizId]);
     }
 
+    /** The best passing attempt that COUNTS: an attempt flagged for leaving the exam too often does not count until an administrator clears it. */
     public static function passedBest(int $learnerId, int $quizId): ?array
     {
-        return Database::one('SELECT * FROM academy_attempts WHERE learner_id = ? AND quiz_id = ? AND passed = 1 ORDER BY score_pct DESC, id DESC LIMIT 1', [$learnerId, $quizId]);
+        return Database::one('SELECT * FROM academy_attempts WHERE learner_id = ? AND quiz_id = ? AND passed = 1' . ExamSecurity::countsSql() . ' ORDER BY score_pct DESC, id DESC LIMIT 1', [$learnerId, $quizId]);
     }
 
     /** @return list<array<string,mixed>> */
@@ -136,6 +137,7 @@ final class QuizService
         }
         $max = (int) $quiz['max_attempts'];
         if ($max > 0) {
+            $max += ExamSecurity::extraAttempts($learnerId, (int) $quiz['id']);
             $used = self::attemptsUsed($learnerId, (int) $quiz['id']);
             if ($used >= $max && self::passedBest($learnerId, (int) $quiz['id']) === null) {
                 return ['ok' => false, 'reason' => 'You have used all ' . $max . ' attempts. Please ask your facilitator for help.', 'left' => 0];
@@ -154,16 +156,28 @@ final class QuizService
         return $a;
     }
 
-    /** Start (or resume an unfinished, unexpired) attempt. @return array<string,mixed> the attempt row */
-    public static function start(int $learnerId, array $quiz): array
+    /** An unfinished attempt that is past its deadline plus the grace is closed and graded with the answers that were saved (it counts as an attempt used). */
+    public static function closeExpired(int $learnerId, array $quiz): void
     {
         $open = Database::one('SELECT * FROM academy_attempts WHERE learner_id = ? AND quiz_id = ? AND submitted_at IS NULL ORDER BY id DESC LIMIT 1', [$learnerId, (int) $quiz['id']]);
         if ($open !== null) {
             $left = self::secondsLeft($open, $quiz);
-            if ($left === null || $left > -self::GRACE_SECONDS) {
-                return $open;
+            if ($left !== null && $left < -self::GRACE_SECONDS) {
+                self::submit($open, $quiz, null, 'time');
             }
-            Database::execute('DELETE FROM academy_attempts WHERE id = ?', [(int) $open['id']]);     // abandoned and out of time: start fresh
+        }
+    }
+
+    /**
+     * Start (or resume an unfinished attempt: the SAME deadline, the same question order). A new attempt stores its start, its time limit and its deadline on the server.
+     * $agreed = the learner ticked "I understand and agree" on the rules screen. @return array<string,mixed> the attempt row
+     */
+    public static function start(int $learnerId, array $quiz, bool $agreed = false): array
+    {
+        self::closeExpired($learnerId, $quiz);
+        $open = Database::one('SELECT * FROM academy_attempts WHERE learner_id = ? AND quiz_id = ? AND submitted_at IS NULL ORDER BY id DESC LIMIT 1', [$learnerId, (int) $quiz['id']]);
+        if ($open !== null) {
+            return $open;
         }
         $qs = self::questions((int) $quiz['id']);
         $order = self::shuffled(array_map(static fn(array $q): int => (int) $q['id'], $qs));
@@ -175,9 +189,24 @@ final class QuizService
             'learner_id' => $learnerId, 'quiz_id' => (int) $quiz['id'], 'course_id' => (int) $quiz['course_id'],
             'layout' => json_encode(['q' => $order, 'o' => $opts]),
         ]);
+        if (ExamSecurity::ready()) {
+            $now = time();
+            $limit = ExamSecurity::limitMinutes($quiz);
+            $extra = ExamSecurity::takeExtraMinutes($learnerId, (int) $quiz['id'], $id);
+            Database::update('academy_attempts', [
+                'started_at' => date('Y-m-d H:i:s', $now), 'time_limit_min' => $limit, 'extra_minutes' => $extra,
+                'deadline_at' => $limit !== null ? date('Y-m-d H:i:s', $now + ($limit + $extra) * 60) : null,
+                'secured' => ExamSecurity::applies($quiz) ? 1 : 0, 'agreed_at' => $agreed ? date('Y-m-d H:i:s', $now) : null,
+            ], 'id = ?', [$id]);
+        }
         return (array) Database::one('SELECT * FROM academy_attempts WHERE id = ?', [$id]);
     }
 
+    /** Does this attempt use the exam rules (time limit, one window, leave watch, no copy and paste)? Attempts made before the update do not. */
+    public static function isSecured(array $attempt): bool
+    {
+        return (int) ($attempt['secured'] ?? 0) === 1;
+    }
     public static function attempt(int $id, int $learnerId): ?array
     {
         return Database::one('SELECT * FROM academy_attempts WHERE id = ? AND learner_id = ? LIMIT 1', [$id, $learnerId]);
@@ -186,11 +215,11 @@ final class QuizService
     /** Seconds left to answer (negative once over), or null without a time limit. */
     public static function secondsLeft(array $attempt, array $quiz): ?int
     {
-        $limit = (int) ($quiz['time_limit_min'] ?? 0);
+        $limit = (int) ($attempt['time_limit_min'] ?? $quiz['time_limit_min'] ?? 0);        // the limit stored when the attempt started wins over later edits of the quiz
         if ($limit <= 0) {
             return null;
         }
-        return (int) (strtotime((string) $attempt['started_at']) + $limit * 60 - time());
+        return (int) (strtotime((string) $attempt['started_at']) + ($limit + (int) ($attempt['extra_minutes'] ?? 0)) * 60 - time());
     }
 
     /**
@@ -226,23 +255,13 @@ final class QuizService
     }
 
     /**
-     * Grade and close an attempt. $posted = question id => list of chosen option ids (anything else is ignored).
+     * Turn posted answers into question id => sorted valid option ids (anything else is ignored; a "pick one" question keeps one answer).
      * @param array<int|string,mixed> $posted
-     * @return array<string,mixed> the updated attempt row
+     * @return array<int,list<int>>
      */
-    public static function submit(array $attempt, array $quiz, array $posted): array
+    private static function normalize(array $qs, array $posted): array
     {
-        if ($attempt['submitted_at'] !== null) {
-            return $attempt;
-        }
-        $left = self::secondsLeft($attempt, $quiz);
-        $late = $left !== null && $left < -self::GRACE_SECONDS;
-        $qs = [];
-        foreach (self::questions((int) $quiz['id']) as $q) {
-            $qs[(int) $q['id']] = $q;
-        }
         $answers = [];
-        $correct = 0;
         foreach ($qs as $qid => $q) {
             $valid = array_map(static fn(array $o): int => (int) $o['id'], $q['options']);
             $raw = $posted[$qid] ?? $posted[(string) $qid] ?? [];
@@ -250,11 +269,64 @@ final class QuizService
             if ($q['type'] === 'single' && count($chosen) > 1) {
                 $chosen = [$chosen[0]];
             }
-            if ($late) {
-                $chosen = [];
-            }
             sort($chosen);
             $answers[$qid] = $chosen;
+        }
+        return $answers;
+    }
+
+    /** @return array<int,array<string,mixed>> the quiz questions keyed by id */
+    private static function byId(int $quizId): array
+    {
+        $qs = [];
+        foreach (self::questions($quizId) as $q) {
+            $qs[(int) $q['id']] = $q;
+        }
+        return $qs;
+    }
+
+    /**
+     * Autosave the answers of an open attempt (the page does it every few seconds). Refused after the deadline plus the grace.
+     * @param array<int|string,mixed> $posted
+     */
+    public static function saveAnswers(array $attempt, array $quiz, array $posted): bool
+    {
+        if ($attempt['submitted_at'] !== null || !ExamSecurity::ready()) {
+            return false;
+        }
+        $left = self::secondsLeft($attempt, $quiz);
+        if ($left !== null && $left < -self::GRACE_SECONDS) {
+            return false;
+        }
+        $answers = self::normalize(self::byId((int) $quiz['id']), $posted);
+        Database::update('academy_attempts', ['saved_answers' => json_encode($answers), 'saved_at' => date('Y-m-d H:i:s')], 'id = ? AND submitted_at IS NULL', [(int) $attempt['id']]);
+        return true;
+    }
+
+    /**
+     * Grade and close an attempt. $posted = question id => list of chosen option ids (anything else is ignored); null = grade what was autosaved.
+     * Answers that arrive after the deadline plus the grace are ignored: the autosaved answers are graded instead.
+     * $reason: manual | time | violations | late. $flag marks the attempt "flagged" (stopped for leaving the exam too often): it does not count for the certificate until an administrator clears it.
+     * @param array<int|string,mixed>|null $posted
+     * @return array<string,mixed> the updated attempt row
+     */
+    public static function submit(array $attempt, array $quiz, ?array $posted, string $reason = 'manual', bool $flag = false): array
+    {
+        if ($attempt['submitted_at'] !== null) {
+            return $attempt;
+        }
+        $left = self::secondsLeft($attempt, $quiz);
+        $late = $left !== null && $left < -self::GRACE_SECONDS;
+        $saved = json_decode((string) ($attempt['saved_answers'] ?? ''), true);
+        $source = ($late || $posted === null) ? (is_array($saved) ? $saved : []) : $posted;
+        if ($late && $reason === 'manual') {
+            $reason = 'late';
+        }
+        $qs = self::byId((int) $quiz['id']);
+        $answers = self::normalize($qs, $source);
+        $correct = 0;
+        foreach ($qs as $qid => $q) {
+            $chosen = $answers[$qid];
             $right = array_values(array_map(static fn(array $o): int => (int) $o['id'], array_filter($q['options'], static fn(array $o): bool => (int) $o['is_correct'] === 1)));
             sort($right);
             if ($chosen !== [] && $chosen === $right) {
@@ -264,13 +336,18 @@ final class QuizService
         $total = count($qs);
         $pct = $total > 0 ? round($correct * 100 / $total, 2) : 0.0;
         $passed = $total > 0 && $pct >= (float) $quiz['pass_mark'];
-        Database::update('academy_attempts', [
+        $data = [
             'submitted_at' => date('Y-m-d H:i:s'), 'answers' => json_encode($answers), 'correct' => $correct, 'total' => $total,
             'score_pct' => $pct, 'passed' => $passed ? 1 : 0,
-        ], 'id = ?', [(int) $attempt['id']]);
+        ];
+        if (ExamSecurity::ready()) {
+            $data['submit_reason'] = $reason;
+            $data['flagged'] = $flag ? 1 : 0;
+            $data['heartbeat_at'] = null;
+        }
+        Database::update('academy_attempts', $data, 'id = ? AND submitted_at IS NULL', [(int) $attempt['id']]);
         return (array) Database::one('SELECT * FROM academy_attempts WHERE id = ?', [(int) $attempt['id']]);
     }
-
     /**
      * The review of a submitted attempt: every question with the learner choice, the right answers and the explanation.
      * @return list<array<string,mixed>>

@@ -11,6 +11,7 @@ use App\Core\Uploader;
 use App\Services\Academy\CertificateService;
 use App\Services\Academy\ClassService;
 use App\Services\Academy\CourseService;
+use App\Services\Academy\ExamSecurity;
 use App\Services\Academy\QuizService;
 
 /**
@@ -257,13 +258,17 @@ final class AcademyLearnController extends AcademyBaseController
         $quiz = $this->quizOf($c, $id);
         $isExam = $quiz['module_id'] === null;
         $lid = (int) $c['learner']['id'];
+        QuizService::closeExpired($lid, $quiz);          // an abandoned attempt that ran out of time is graded now (it cannot be used to reset the clock)
         $can = QuizService::canStart($lid, $quiz);
+        $secured = ExamSecurity::applies($quiz);
         $locked = $isExam && !CourseService::examUnlocked($c['progress']);
         $open = \App\Core\Database::one('SELECT id FROM academy_attempts WHERE learner_id = ? AND quiz_id = ? AND submitted_at IS NULL ORDER BY id DESC LIMIT 1', [$lid, $id]);
         return $this->renderAcademy('web/academy/quiz', [
             'course' => $c['course'], 'tree' => $c['tree'], 'progress' => $c['progress'], 'quiz' => $quiz, 'isExam' => $isExam, 'can' => $can, 'locked' => $locked,
             'questions' => QuizService::questionCount($id), 'history' => QuizService::history($lid, $id), 'best' => QuizService::best($lid, $id),
             'passed' => QuizService::passedBest($lid, $id) !== null, 'openAttempt' => $open['id'] ?? null,
+            'secured' => $secured, 'limitMinutes' => $secured ? ExamSecurity::limitMinutes($quiz) : null, 'extraMinutes' => $secured ? ExamSecurity::pendingExtraMinutes($lid, $id) : 0,
+            'maxLeaves' => ExamSecurity::maxLeaves(),
             'certificate' => CertificateService::activeFor($lid, (int) $c['course']['id']), 'certificatePending' => CertificateService::pendingFor($lid, (int) $c['course']['id']),
             'certificateRequestable' => CertificateService::eligible($lid, (int) $c['course']['id']), 'quizState' => $this->quizStates($c),
         ], [
@@ -285,12 +290,19 @@ final class AcademyLearnController extends AcademyBaseController
             Flash::warning('Finish every lesson first, then the final exam opens.');
             return $this->redirect('academy/learn/' . $c['course']['slug'] . '/quiz/' . $id);
         }
+        QuizService::closeExpired($lid, $quiz);
+        $hasOpen = \App\Core\Database::value('SELECT id FROM academy_attempts WHERE learner_id = ? AND quiz_id = ? AND submitted_at IS NULL LIMIT 1', [$lid, $id]) !== null;
         $can = QuizService::canStart($lid, $quiz);
-        if (!$can['ok']) {
+        if (!$can['ok'] && !$hasOpen) {
             Flash::error((string) $can['reason']);
             return $this->redirect('academy/learn/' . $c['course']['slug'] . '/quiz/' . $id);
         }
-        $attempt = QuizService::start($lid, $quiz);
+        $agreed = $request->bool('agree');
+        if (!$hasOpen && ExamSecurity::applies($quiz) && !$agreed) {
+            Flash::error('Please read the exam rules and tick "I understand and agree" to start.');
+            return $this->redirect('academy/learn/' . $c['course']['slug'] . '/quiz/' . $id);
+        }
+        $attempt = QuizService::start($lid, $quiz, $agreed);
         return $this->redirect('academy/learn/' . $c['course']['slug'] . '/attempt/' . $attempt['id']);
     }
 
@@ -309,10 +321,31 @@ final class AcademyLearnController extends AcademyBaseController
         $crumbs = [[$this->academyLabel(), url('academy')], [(string) $c['course']['title'], url('academy/courses/' . $c['course']['slug'])], [(string) $quiz['title'], url('academy/learn/' . $c['course']['slug'] . '/quiz/' . $quiz['id'])], [$attempt['submitted_at'] === null ? 'Attempt' : 'Result', null]];
         if ($attempt['submitted_at'] === null) {
             $left = QuizService::secondsLeft($attempt, $quiz);
+            if ($left !== null && $left < -ExamSecurity::GRACE_SECONDS) {        // far past the deadline: grade what was saved
+                QuizService::submit($attempt, $quiz, null, 'time');
+                return $this->redirect('academy/learn/' . $c['course']['slug'] . '/attempt/' . $attempt['id']);
+            }
+            $secured = QuizService::isSecured($attempt);
+            $token = '';
+            if ($secured) {
+                $lock = ExamSecurity::claim($attempt);
+                if (!$lock['ok']) {
+                    return $this->renderAcademy('web/academy/attempt-locked', [
+                        'course' => $c['course'], 'tree' => $c['tree'], 'progress' => $c['progress'], 'quiz' => $quiz, 'attempt' => $attempt, 'quizState' => $this->quizStates($c),
+                    ], ['bodyClass' => 'is-academy is-academy-learn is-academy-attempt', 'breadcrumbs' => $crumbs, 'meta' => ['title' => $quiz['title']]], true);
+                }
+                $token = $lock['token'];
+                if ($attempt['saved_at'] !== null || (int) $attempt['leave_count'] > 0) {
+                    ExamSecurity::record((int) $attempt['id'], 'resumed', false, null, 'The exam page was opened again');
+                }
+            }
+            $saved = json_decode((string) ($attempt['saved_answers'] ?? ''), true);
             return $this->renderAcademy('web/academy/attempt', [
                 'course' => $c['course'], 'tree' => $c['tree'], 'progress' => $c['progress'], 'quiz' => $quiz, 'attempt' => $attempt,
                 'questions' => QuizService::present($attempt, (int) $quiz['id']), 'secondsLeft' => $left, 'isExam' => $quiz['module_id'] === null, 'quizState' => $this->quizStates($c),
-            ], ['bodyClass' => 'is-academy is-academy-learn is-academy-attempt', 'breadcrumbs' => $crumbs, 'meta' => ['title' => $quiz['title']]], true);
+                'secured' => $secured, 'token' => $token, 'savedAnswers' => is_array($saved) ? $saved : [], 'maxLeaves' => ExamSecurity::maxLeaves(), 'fullscreen' => ExamSecurity::fullscreenOffered(),
+                'syncUrl' => url('academy/learn/' . $c['course']['slug'] . '/attempt/' . $attempt['id'] . '/sync'),
+            ], ['bodyClass' => 'is-academy is-academy-learn is-academy-attempt' . ($secured ? ' is-exam-secure' : ''), 'breadcrumbs' => $crumbs, 'meta' => ['title' => $quiz['title']]], true);
         }
         $next = $quiz['module_id'] !== null ? $this->nextAfterModuleQuiz($c, (int) $quiz['module_id']) : null;
         return $this->renderAcademy('web/academy/result', [
@@ -351,9 +384,13 @@ final class AcademyLearnController extends AcademyBaseController
         }
         $quiz = $this->quizOf($c, (int) $attempt['quiz_id']);
         if ($attempt['submitted_at'] === null) {
+            if (QuizService::isSecured($attempt) && ExamSecurity::heldByOther($attempt, (string) $request->post('token', ''))) {
+                Flash::error('This exam is open in another window. Only that window can send the answers.');
+                return $this->redirect('academy/learn/' . $c['course']['slug'] . '/attempt/' . $attempt['id']);
+            }
             $posted = (array) $request->post('answer', []);
-            $attempt = QuizService::submit($attempt, $quiz, $posted);
-            if ((int) $attempt['passed'] === 1) {
+            $attempt = QuizService::submit($attempt, $quiz, $posted, $request->string('reason') === 'time' ? 'time' : 'manual');
+            if ((int) $attempt['passed'] === 1 && !ExamSecurity::blocksCertificate($attempt)) {
                 $cert = CourseService::checkCompletion($lid, (int) $c['course']['id']);
                 if ($cert !== null) {
                     Flash::success(!empty($cert['waiting']) ? CertificateService::waitingNotice() : (!empty($cert['requestable']) ? 'You passed and completed the course. You can now request your certificate.' : 'You passed and completed the course. Your certificate is ready!'));
@@ -361,5 +398,33 @@ final class AcademyLearnController extends AcademyBaseController
             }
         }
         return $this->redirect('academy/learn/' . $c['course']['slug'] . '/attempt/' . $attempt['id']);
+    }
+
+    /**
+     * Called by the open exam page every few seconds (and at once when the learner leaves the page): keeps the "one window" lock, autosaves the answers, records leave events.
+     * Answers: JSON text of question id => option ids. Replies JSON {status: open|submitted|locked, left, leaves, max}.
+     */
+    public function sync(Request $request, string $slug, int $id): Response
+    {
+        $l = $this->learner();
+        if ($l === null) {
+            return $this->json(['status' => 'signedout'], 401);
+        }
+        $attempt = QuizService::attempt($id, (int) $l['id']);
+        if ($attempt === null || !QuizService::isSecured($attempt)) {
+            return $this->json(['status' => 'none'], 404);
+        }
+        $quiz = QuizService::find((int) $attempt['quiz_id']);
+        if ($quiz === null) {
+            return $this->json(['status' => 'none'], 404);
+        }
+        $answers = null;
+        $raw = $request->post('answers');
+        if (is_string($raw) && $raw !== '') {
+            $dec = json_decode($raw, true);
+            $answers = is_array($dec) ? $dec : null;
+        }
+        $res = ExamSecurity::sync($attempt, $quiz, (string) $request->post('token', ''), $answers, ExamSecurity::cleanEvent($request->string('event')), max(0, min(65000, (int) $request->post('away', 0))), mb_substr($request->string('detail'), 0, 120));
+        return $this->json($res);
     }
 }

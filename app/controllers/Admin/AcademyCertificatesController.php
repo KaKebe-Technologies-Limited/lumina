@@ -11,6 +11,7 @@ use App\Core\Pagination;
 use App\Core\Request;
 use App\Core\Response;
 use App\Services\Academy\CertificateService;
+use App\Services\Academy\ExamSecurity;
 
 /**
  * Admin > LAF Academy > Certificates (administrators): every certificate issued, search by number / name / course, withdraw a certificate (the public check page then
@@ -48,7 +49,16 @@ final class AcademyCertificatesController extends AcademyAdminController
         $total = (int) Database::value('SELECT COUNT(*) FROM academy_certificates c' . $whereSql, $params, 0);
         $pagination = Pagination::make($total, $request->page(), $this->perPage());
         $rows = Database::all('SELECT c.*, l.email AS learner_email FROM academy_certificates c LEFT JOIN academy_learners l ON l.id = c.learner_id' . $whereSql . ' ORDER BY c.id DESC LIMIT ? OFFSET ?', array_merge($params, [$pagination->perPage, $pagination->offset]));
-        return $this->render('admin/academy/certificates', ['rows' => $rows, 'pagination' => $pagination, 'q' => $q, 'status' => $st, 'login' => $login, 'total' => $total, 'waiting' => CertificateService::pendingCount(), 'approved' => CertificateService::approvedCount(), 'ready' => $ready],
+        $exam = [];
+        if (ExamSecurity::ready() && $rows !== []) {
+            $lids = array_values(array_unique(array_map(static fn(array $r): int => (int) $r['learner_id'], array_filter($rows, static fn(array $r): bool => $r['learner_id'] !== null))));
+            if ($lids !== []) {
+                foreach (Database::all('SELECT a.* FROM academy_attempts a JOIN academy_quizzes q ON q.id = a.quiz_id AND q.module_id IS NULL WHERE a.submitted_at IS NOT NULL AND a.learner_id IN (' . implode(',', $lids) . ') ORDER BY a.passed ASC, a.id ASC') as $a) {
+                    $exam[(int) $a['learner_id'] . ':' . (int) $a['course_id']] = $a;          // the last passing attempt wins (passed = 1 sorts after 0, newest last)
+                }
+            }
+        }
+        return $this->render('admin/academy/certificates', ['exam' => $exam, 'flagged' => ExamSecurity::flaggedWaiting(), 'rows' => $rows, 'pagination' => $pagination, 'q' => $q, 'status' => $st, 'login' => $login, 'total' => $total, 'waiting' => CertificateService::pendingCount(), 'approved' => CertificateService::approvedCount(), 'ready' => $ready],
             ['title' => 'Certificates', 'nav' => 'academy_certificates', 'breadcrumbs' => $this->crumbs('Certificates')]);
     }
 
@@ -104,6 +114,24 @@ final class AcademyCertificatesController extends AcademyAdminController
             $res['mailed'] ? Flash::success('Certificate ' . $c['code'] . ' was approved and e-mailed to the learner.') : Flash::warning('Certificate ' . $c['code'] . ' was approved, but the e-mail could not be sent (check Settings > E-mail). The learner can still download it from the Academy.');
         } else {
             Flash::success('Certificate ' . $c['code'] . ' was approved: the learner can download it now.');
+        }
+        return $this->backTo($request);
+    }
+
+    /** An administrator decides about a flagged exam attempt: clear it (it counts again and the normal certificate steps follow) or reject it (it does not count). */
+    public function reviewAttempt(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $a = Database::one('SELECT * FROM academy_attempts WHERE id = ?', [$id]) ?? throw new HttpException(404, 'Not found');
+        $clear = $request->string('decision') === 'clear';
+        $ok = ExamSecurity::review($id, $clear ? 'cleared' : 'rejected', \App\Core\Auth::id());
+        $this->audit('academy.exam.review', 'academy_attempt', $id, ($ok ? ($clear ? 'Cleared' : 'Rejected') : 'Could not review') . ' the flagged exam attempt #' . $id . ' of learner #' . (int) $a['learner_id']);
+        if (!$ok) {
+            Flash::error('Only a flagged exam attempt can be reviewed.');
+        } elseif ($clear) {
+            Flash::success('The attempt now counts. If the learner has finished the course, the certificate was filed for approval as usual.');
+        } else {
+            Flash::success('The attempt was rejected: it does not count. You can give the learner a retake from their page.');
         }
         return $this->backTo($request);
     }

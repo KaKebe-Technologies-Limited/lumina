@@ -138,13 +138,31 @@ $lid = (int) $l['id']; ?>
     <div class="card__header"><h2 class="card__title" id="ln-att">Recent quiz results</h2></div>
     <div class="card__body">
         <?php if ($attempts === []): ?><p class="text-muted">No quiz taken yet.</p><?php else: ?>
-        <div class="table-wrap"><table class="table table--stack"><thead><tr><th scope="col">Quiz</th><th scope="col">Course</th><th scope="col">Score</th><th scope="col">Result</th><th scope="col">When</th></tr></thead><tbody>
-            <?php foreach ($attempts as $a): ?>
+        <div class="table-wrap"><table class="table table--stack"><thead><tr><th scope="col">Quiz</th><th scope="col">Course</th><th scope="col">Score</th><th scope="col">Result</th><th scope="col">Time taken</th><th scope="col">Left the page</th><th scope="col">When</th></tr></thead><tbody>
+            <?php foreach ($attempts as $a): $isFlag = (int) ($a['flagged'] ?? 0) === 1; $secured = (int) ($a['secured'] ?? 0) === 1; ?>
                 <tr><td data-label="Quiz"><?= e($a['quiz_title']) ?></td><td data-label="Course"><?= e($a['course_title']) ?></td>
                     <td data-label="Score"><?= (int) $a['correct'] ?>/<?= (int) $a['total'] ?> (<?= (int) round((float) $a['score_pct']) ?>%)</td>
-                    <td data-label="Result"><span class="badge badge--<?= (int) $a['passed'] === 1 ? 'success' : 'warning' ?>"><?= (int) $a['passed'] === 1 ? 'Passed' : 'Not yet' ?></span></td>
+                    <td data-label="Result"><span class="badge badge--<?= (int) $a['passed'] === 1 ? 'success' : 'warning' ?>"><?= (int) $a['passed'] === 1 ? 'Passed' : 'Not yet' ?></span>
+                        <?php if ($isFlag): ?><span class="badge badge--danger">Flagged<?= ($a['flag_review'] ?? null) === 'cleared' ? ' - cleared' : (($a['flag_review'] ?? null) === 'rejected' ? ' - rejected' : ' - to review') ?></span><?php endif; ?></td>
+                    <td data-label="Time taken"><?php if ($secured): ?><?= e((string) \App\Services\Academy\ExamSecurity::duration($a)) ?><?php if ($a['time_limit_min'] !== null): ?><span class="cell-sub">of <?= (int) $a['time_limit_min'] + (int) $a['extra_minutes'] ?> min - <?= e(\App\Services\Academy\ExamSecurity::submitReasonLabel($a['submit_reason'] ?? null)) ?></span><?php endif; ?><?php else: ?>-<?php endif; ?></td>
+                    <td data-label="Left the page"><?php if ($secured): ?><?= (int) $a['leave_count'] ?><?= partial('admin/academy/_exam_events', ['events' => $events[(int) $a['id']] ?? []]) ?><?php if ($isFlag && ($a['flag_review'] ?? null) === null && $manager): ?>
+                        <form method="post" action="<?= e(url('admin/academy/exam-attempts/' . (int) $a['id'] . '/review')) ?>" class="inline-form"><?= csrf_field() ?><input type="hidden" name="back" value="learner:<?= (int) $l['id'] ?>"><input type="hidden" name="decision" value="clear"><button class="btn btn--primary btn--sm" type="submit">Clear: it counts</button></form>
+                        <form method="post" action="<?= e(url('admin/academy/exam-attempts/' . (int) $a['id'] . '/review')) ?>" class="inline-form" data-confirm="Reject this attempt? It will not count towards a certificate."><?= csrf_field() ?><input type="hidden" name="back" value="learner:<?= (int) $l['id'] ?>"><input type="hidden" name="decision" value="reject"><button class="btn btn--ghost btn--sm" type="submit">Reject</button></form>
+                    <?php endif; ?><?php else: ?>-<?php endif; ?></td>
                     <td data-label="When"><?= e(format_datetime($a['submitted_at'], 'j M, H:i')) ?></td></tr>
             <?php endforeach; ?>
         </tbody></table></div><?php endif; ?>
+        <?php if (!empty($manager) && !empty($examQuizzes)): ?>
+            <form method="post" action="<?= e(url('admin/academy/learners/' . (int) $l['id'] . '/exam-grant')) ?>" class="aac-note" style="margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--surface)">
+                <?= csrf_field() ?>
+                <strong><?= icon('refresh', 'icon--sm') ?> Retake or extra time</strong>
+                <p class="text-muted">Let this learner retake a final exam (even when the attempts are used up) and/or give extra minutes. Extra minutes are added to an exam that is open now, or to the next attempt.</p>
+                <div class="field"><label class="field__label" for="eg-quiz">Exam</label><select class="select" id="eg-quiz" name="quiz_id"><?php foreach ($examQuizzes as $xq): ?><option value="<?= (int) $xq['id'] ?>"><?= e($xq['title']) ?></option><?php endforeach; ?></select></div>
+                <div class="field"><label class="field__label" for="eg-att">Extra attempts</label><input class="input" type="number" id="eg-att" name="extra_attempts" min="0" max="10" value="1"></div>
+                <div class="field"><label class="field__label" for="eg-min">Extra minutes</label><input class="input" type="number" id="eg-min" name="extra_minutes" min="0" max="240" value="0"></div>
+                <div class="field"><label class="field__label" for="eg-note">Note (only you see it)</label><input class="input" type="text" id="eg-note" name="note" maxlength="190"></div>
+                <button class="btn btn--primary btn--sm" type="submit">Give retake / extra time</button>
+            </form>
+        <?php endif; ?>
     </div>
 </section>

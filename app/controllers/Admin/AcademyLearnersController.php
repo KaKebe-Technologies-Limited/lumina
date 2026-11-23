@@ -15,6 +15,7 @@ use App\Core\Response;
 use App\Services\Academy\AcademyAccess;
 use App\Services\Academy\CertificateService;
 use App\Services\Academy\CourseService;
+use App\Services\Academy\ExamSecurity;
 use App\Services\Academy\LearnerAuth;
 use App\Services\Academy\LearnerRegistry;
 use App\Services\Academy\LearnerPortrait;
@@ -147,12 +148,18 @@ final class AcademyLearnersController extends AcademyAdminController
             'SELECT a.*, q.title AS quiz_title, q.module_id, c.title AS course_title FROM academy_attempts a JOIN academy_quizzes q ON q.id = a.quiz_id JOIN academy_courses c ON c.id = a.course_id WHERE a.learner_id = ? AND a.submitted_at IS NOT NULL' . $cond . ' ORDER BY a.id DESC LIMIT 30',
             [$id]
         );
+        $events = [];
+        foreach ($attempts as $a0) {
+            if ((int) ($a0['secured'] ?? 0) === 1) {
+                $events[(int) $a0['id']] = ExamSecurity::events((int) $a0['id']);
+            }
+        }
         $certs = AcademyAccess::manager() ? CertificateService::forLearner($id, false) : [];
         [$sc, $sp] = AcademyAccess::courseScope('c');
         $enrolledIds = array_map(static fn(array $e): int => (int) $e['course_id'], Database::all('SELECT course_id FROM academy_enrollments WHERE learner_id = ?', [$id]));
         $available = array_values(array_filter(Database::all("SELECT c.id, c.title FROM academy_courses c WHERE c.status <> 'archived' AND " . $sc . ' ORDER BY c.title', $sp), static fn(array $c): bool => !in_array((int) $c['id'], $enrolledIds, true)));
         return $this->render('admin/academy/learners/show', [
-            'l' => $l, 'enrolments' => $enr, 'attempts' => $attempts, 'certs' => $certs, 'available' => $available, 'manager' => AcademyAccess::manager(),
+            'events' => $events, 'examQuizzes' => ExamSecurity::ready() ? Database::all('SELECT q.id, c.title FROM academy_quizzes q JOIN academy_courses c ON c.id = q.course_id WHERE q.module_id IS NULL AND (q.course_id IN (SELECT course_id FROM academy_enrollments WHERE learner_id = ?) OR q.id IN (SELECT quiz_id FROM academy_attempts WHERE learner_id = ?)) ORDER BY c.title', [$id, $id]) : [], 'l' => $l, 'enrolments' => $enr, 'attempts' => $attempts, 'certs' => $certs, 'available' => $available, 'manager' => AcademyAccess::manager(),
         ], ['title' => (string) $l['name'], 'nav' => 'academy_learners', 'breadcrumbs' => $this->crumbs('Learners', [(string) $l['name'], null])]);
     }
 
@@ -276,6 +283,28 @@ final class AcademyLearnersController extends AcademyAdminController
             Flash::success($n . ' certificate' . ($n === 1 ? ' was' : 's were') . ' approved' . ($request->bool('email') ? ' and e-mailed to the learner.' : ': the learner can download ' . ($n === 1 ? 'it' : 'them') . ' now.'));
         }
         return $this->redirect($request->string('back') === 'list' ? 'admin/academy/learners' : 'admin/academy/learners/' . $id);
+    }
+
+    /** Let this learner retake an exam and/or give extra minutes (used by the next attempt; extra minutes also extend an attempt that is open now). */
+    public function examGrant(Request $request, int $id): Response
+    {
+        $this->authorize('academy.manage');
+        $l = $this->learner($id);
+        $quiz = QuizService::find($request->int('quiz_id'));
+        if ($quiz === null || $quiz['module_id'] !== null || !ExamSecurity::ready()) {
+            Flash::error('Choose one of the exams in the list.');
+            return $this->redirect('admin/academy/learners/' . $id);
+        }
+        $att = max(0, min(10, $request->int('extra_attempts')));
+        $min = max(0, min(240, $request->int('extra_minutes')));
+        if ($att === 0 && $min === 0) {
+            Flash::error('Give at least one extra attempt or some extra minutes.');
+            return $this->redirect('admin/academy/learners/' . $id);
+        }
+        ExamSecurity::grant($id, (int) $quiz['id'], $att, $min, mb_substr($request->string('note'), 0, 190), Auth::id());
+        $this->audit('academy.exam.grant', 'academy_learner', $id, 'Gave ' . $l['email'] . ' ' . $att . ' extra attempt(s) and ' . $min . ' extra minute(s) on the exam "' . $quiz['title'] . '"');
+        Flash::success('Done: ' . ($att > 0 ? $att . ' extra attempt' . ($att === 1 ? '' : 's') : '') . ($att > 0 && $min > 0 ? ' and ' : '') . ($min > 0 ? $min . ' extra minute' . ($min === 1 ? '' : 's') : '') . ' for ' . $l['name'] . '.');
+        return $this->redirect('admin/academy/learners/' . $id);
     }
 
     /** Send a fresh confirmation code to the learner's WhatsApp number (saved at sign-up or typed by the learner). */

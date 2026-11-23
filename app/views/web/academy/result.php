@@ -3,6 +3,8 @@
 $base = 'academy/learn/' . $course['slug'];
 $passed = (int) $attempt['passed'] === 1;
 $pct = (int) round((float) $attempt['score_pct']);
+$flagged = \App\Services\Academy\ExamSecurity::blocksCertificate($attempt);
+$passedOk = $passed && !$flagged;
 ?>
 <section class="ac-player">
     <div class="container">
@@ -17,20 +19,22 @@ $pct = (int) round((float) $attempt['score_pct']);
                 <div class="ac-result <?= $passed ? 'is-pass' : 'is-fail' ?>" role="status">
                     <div class="ac-result__score"><b><?= $pct ?>%</b><span><?= (int) $attempt['correct'] ?> of <?= (int) $attempt['total'] ?> correct</span></div>
                     <div class="ac-result__text">
-                        <strong><?= $passed ? 'Well done, you passed!' : 'Not there yet' ?></strong>
-                        <p><?= $passed ? ($isExam ? 'You passed the final exam.' : 'You are ready for the next part of the course.') : 'You need ' . (int) $quiz['pass_mark'] . '% to pass. Read the explanations below, review the lessons and try again.' ?></p>
+                        <strong><?= $flagged ? 'Submitted for review' : ($passed ? 'Well done, you passed!' : 'Not there yet') ?></strong>
+                        <p><?= $flagged ? 'Your score is recorded. The Academy team will decide whether it counts.' : ($passed ? ($isExam ? 'You passed the final exam.' : 'You are ready for the next part of the course.') : 'You need ' . (int) $quiz['pass_mark'] . '% to pass. Read the explanations below, review the lessons and try again.') ?></p>
                     </div>
                 </div>
 
+                <?php if ($flagged): ?><p class="opp-notice opp-notice--closed" role="status"><?= icon('alert-triangle', 'icon--sm') ?> <span>This exam was submitted automatically because you left the exam page too often. It is <b>flagged</b>: the Academy team will review it, and until then it does not count towards your certificate.</span></p>
+                <?php elseif (($attempt['submit_reason'] ?? null) === 'time'): ?><p class="ac-note"><?= icon('clock', 'icon--sm') ?> The time was over, so the answers you had given so far were marked.</p><?php endif; ?>
                 <div class="ac-result__actions">
-                    <?php if ($isExam && $passed && $certificate !== null): ?>
+                    <?php if ($isExam && $passedOk && $certificate !== null): ?>
                         <a class="btn btn--cta btn--caps" href="<?= e(url('academy/certificate/' . $certificate['code'])) ?>"><?= icon('award', 'icon--sm') ?> Open my certificate</a>
-                    <?php elseif ($isExam && $passed && !empty($certificatePending)): ?>
+                    <?php elseif ($isExam && $passedOk && !empty($certificatePending)): ?>
                         <p class="opp-notice ac-cert-wait" role="status"><?= icon('clock', 'icon--sm') ?> <?= e(\App\Services\Academy\CertificateService::waitingNotice()) ?></p>
-                    <?php elseif ($isExam && $passed && !empty($certificateRequestable)): ?>
+                    <?php elseif ($isExam && $passedOk && !empty($certificateRequestable)): ?>
                         <form method="post" action="<?= e(url('academy/courses/' . $course['slug'] . '/certificate')) ?>" class="ac-cert-request"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('award', 'icon--sm') ?> Request my certificate</button></form>
                         <p class="text-muted">The Academy team approves your request, then you can download your certificate.</p>
-                    <?php elseif ($isExam && $passed): ?>
+                    <?php elseif ($isExam && $passedOk): ?>
                         <a class="btn btn--cta btn--caps" href="<?= e(url($base)) ?>">Finish the remaining lessons</a>
                     <?php elseif ($passed && $next !== null): ?>
                         <a class="btn btn--cta btn--caps" href="<?= e(url($base . '/lesson/' . $next)) ?>">Next module <?= icon('arrow-right', 'icon--sm') ?></a>

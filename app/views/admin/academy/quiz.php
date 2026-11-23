@@ -52,7 +52,7 @@ Q: Which of these are input devices? (choose all that apply)
                 <div class="card__body">
                     <?= partial('partials/form-field', ['name' => 'title', 'label' => 'Title', 'required' => true, 'maxlength' => 190, 'value' => $v('title')]) ?>
                     <?= partial('partials/form-field', ['name' => 'pass_mark', 'label' => 'Pass mark (%)', 'type' => 'number', 'min' => 1, 'max' => 100, 'value' => $v('pass_mark', 70), 'required' => true]) ?>
-                    <?= partial('partials/form-field', ['name' => 'time_limit_min', 'label' => 'Time limit (minutes)', 'type' => 'number', 'min' => 1, 'max' => 240, 'value' => $v('time_limit_min', ''), 'help' => 'Leave empty for no time limit.']) ?>
+                    <?= partial('partials/form-field', ['name' => 'time_limit_min', 'label' => 'Time limit (minutes)', 'type' => 'number', 'min' => 1, 'max' => 240, 'value' => $v('time_limit_min', ''), 'help' => !empty($isExam) ? 'Leave empty to use the site default: ' . \App\Services\Academy\ExamSecurity::minutesPerQuestion() . ' minute(s) per question, never under 10 or over 120 minutes (' . \App\Services\Academy\ExamSecurity::defaultMinutes((int) ($count ?? 0)) . ' minutes for this exam now). Change the default under Settings > LAF Academy.' : (\App\Services\Academy\ExamSecurity::lessonQuizzes() ? 'Leave empty to use the site default for exams (the exam rules also apply to lesson quizzes).' : 'Leave empty for no time limit.')]) ?>
                     <?= partial('partials/form-field', ['name' => 'max_attempts', 'label' => 'Attempts allowed', 'type' => 'number', 'min' => 0, 'max' => 100, 'value' => $v('max_attempts', 0), 'help' => '0 = as many as the learner likes.']) ?>
                 </div>
             </section>

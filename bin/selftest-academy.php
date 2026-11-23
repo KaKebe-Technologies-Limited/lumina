@@ -254,13 +254,14 @@ foreach ($tree['lesson_ids'] as $id) {
     CourseService::completeLesson($lid, (array) CourseService::lesson((int) $id));
 }
 check('no certificate before the exam is passed', CourseService::checkCompletion($lid, (int) $course['id']) === null && CertificateService::activeFor($lid, (int) $course['id']) === null);
-$exStart = $acPost('/academy/learn/computer-basics/quiz/' . $exam['id'] . '/start', [], $jA, '/academy/learn/computer-basics/quiz/' . $exam['id']);
+$exStart = $acPost('/academy/learn/computer-basics/quiz/' . $exam['id'] . '/start', ['agree' => '1'], $jA, '/academy/learn/computer-basics/quiz/' . $exam['id']);
 preg_match('~/attempt/(\d+)~', $exStart['loc'], $em);
 $exAnswers = [];
 foreach (QuizService::questions((int) $exam['id']) as $q) {
     $exAnswers[(int) $q['id']] = array_values(array_map(static fn(array $o): int => (int) $o['id'], array_filter($q['options'], static fn(array $o): bool => (int) $o['is_correct'] === 1)));
 }
-$exSub = $acPost('/academy/learn/computer-basics/attempt/' . ($em[1] ?? 0), ['answer' => $exAnswers], $jA, '/academy/learn/computer-basics/attempt/' . ($em[1] ?? 0), true);
+$acReq('GET', '/academy/learn/computer-basics/attempt/' . ($em[1] ?? 0), [], $jA);       // opening the exam page takes the one-window lock; the form sends its token
+$exSub = $acPost('/academy/learn/computer-basics/attempt/' . ($em[1] ?? 0), ['answer' => $exAnswers, 'token' => (string) Database::value('SELECT token FROM academy_attempts WHERE id = ?', [(int) ($em[1] ?? 0)], '')], $jA, '/academy/learn/computer-basics/attempt/' . ($em[1] ?? 0), true);
 $exPage = $acReq('GET', '/academy/learn/computer-basics/attempt/' . ($em[1] ?? 0), [], $jA)['body'];
 check('request: passing the exam files the certificate at once for approval and signing (not available to the learner yet)', CertificateService::pendingFor($lid, (int) $course['id']) !== null && CertificateService::activeFor($lid, (int) $course['id']) === null
     && !CertificateService::eligible($lid, (int) $course['id']));

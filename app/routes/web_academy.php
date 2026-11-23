@@ -85,6 +85,7 @@ $router->get('/academy/learn/{slug}/quiz/{id}', [AcademyLearnController::class, 
 $router->post('/academy/learn/{slug}/quiz/{id}/start', [AcademyLearnController::class, 'startQuiz'])->middleware('throttle:60,600')->name('academy.quiz.start');
 $router->get('/academy/learn/{slug}/attempt/{id}', [AcademyLearnController::class, 'attempt'])->name('academy.attempt');
 $router->post('/academy/learn/{slug}/attempt/{id}', [AcademyLearnController::class, 'submit'])->middleware('throttle:60,600')->name('academy.attempt.submit');
+$router->post('/academy/learn/{slug}/attempt/{id}/sync', [AcademyLearnController::class, 'sync'])->middleware('throttle:400,600')->name('academy.attempt.sync');
 
 // ---- volunteer facilitators, challenges and winners (docs/ACADEMY.md) --------------------------------------------------------
 $router->get('/academy/facilitate', [AcademyFacilitateController::class, 'form'])->name('academy.facilitate');

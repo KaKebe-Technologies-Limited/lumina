@@ -138,6 +138,8 @@ $router->group(['prefix' => 'admin/academy', 'middleware' => ['auth', 'can:acade
     $router->get('/certificates-export', [AcademyCertificatesController::class, 'export'])->middleware('throttle:10,60')->name('admin.academy.certificates.export');
     $router->get('/certificates/{id}/preview', [AcademyCertificatesController::class, 'preview'])->middleware('throttle:60,60')->name('admin.academy.certificates.preview');
     $router->post('/certificates/{id}/approve', [AcademyCertificatesController::class, 'approve'])->name('admin.academy.certificates.approve');
+    $router->post('/exam-attempts/{id}/review', [AcademyCertificatesController::class, 'reviewAttempt'])->middleware('throttle:120,60')->name('admin.academy.exam.review');
+    $router->post('/learners/{id}/exam-grant', [AcademyLearnersController::class, 'examGrant'])->middleware('throttle:60,60')->name('admin.academy.learners.exam_grant');
     $router->post('/certificates/{id}/decline', [AcademyCertificatesController::class, 'decline'])->middleware('throttle:60,60')->name('admin.academy.certificates.decline');
     $router->post('/certificates/{id}/email', [AcademyCertificatesController::class, 'email'])->middleware('throttle:60,60')->name('admin.academy.certificates.email');
     $router->post('/certificates/{id}/mark-fee-paid', [AcademyCertificatesController::class, 'markFeePaid'])->middleware('throttle:60,60')->name('admin.academy.certificates.mark_fee_paid');
