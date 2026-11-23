@@ -128,10 +128,7 @@ $fieldMeta = [
                     <div class="form-actions">
                         <button class="btn btn--cta btn--caps btn--lg" type="submit" data-loading-text="<?= e(content('contact', 'form.sending')) ?>"><?= e(content('contact', 'form.submit')) ?></button>
                     </div>
-                    <?php if (trim((string) content('contact', 'form.privacy_note')) !== ''): ?>
-                        <p class="form-note mt-4"><?= e(content('contact', 'form.privacy_note')) ?>
-                            <?php if (trim((string) content('contact', 'form.privacy_link_label')) !== ''): ?><a href="<?= e(url('privacy')) ?>"><?= e(content('contact', 'form.privacy_link_label')) ?></a><?php endif; ?></p>
-                    <?php endif; ?>
+                    <?= partial('partials/privacy-note', ['key' => 'contact', 'text' => (string) content('contact', 'form.privacy_note')]) ?>
                 </form>
             </div>
 

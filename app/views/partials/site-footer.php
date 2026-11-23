@@ -33,7 +33,7 @@ $ftGroupMap = [
 $ftLegal = [];
 $ftGroups = array_fill_keys(array_keys($ftGroupMap), []);
 foreach ($ftLinks as $l) {
-    if (in_array($l['slug'], ['privacy', 'terms', 'cookies'], true)) {
+    if (in_array($l['slug'], ['privacy', 'data-rights', 'terms', 'cookies'], true)) {
         $ftLegal[] = $l;
         continue;
     }

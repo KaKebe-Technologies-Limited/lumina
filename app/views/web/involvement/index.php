@@ -123,6 +123,7 @@ section_begin('involvement', 'form', ['id' => 'join', 'class' => 'involvement-jo
                     <button class="btn btn--cta btn--caps btn--lg" type="submit" data-loading-text="<?= e(content('involvement', 'form.sending_label')) ?>"><?= e(content('involvement', 'form.submit_label')) ?></button>
                     <?php if (trim((string) content('involvement', 'form.required_note')) !== ''): ?><span class="form-note"><?= e(content('involvement', 'form.required_note')) ?></span><?php endif; ?>
                 </div>
+                <?= partial('partials/privacy-note', ['key' => 'involvement']) ?>
             </form>
         </div>
     </div>

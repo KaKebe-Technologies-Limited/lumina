@@ -50,7 +50,7 @@ Media and press", 'help' => 'Leave empty to hide the buttons. Visitors can still
                 ['key' => 'message_label', 'label' => 'Message: label', 'type' => 'text', 'default' => 'Your Message'],
                 ['key' => 'submit', 'label' => 'Submit button', 'type' => 'text', 'default' => 'Send Message'],
                 ['key' => 'sending', 'label' => 'Submit button: text while sending', 'type' => 'text', 'default' => 'Sending…'],
-                ['key' => 'privacy_note', 'label' => 'Privacy note under the button', 'type' => 'text', 'default' => 'We use your details only to reply to your message.'],
+                ['key' => 'privacy_note', 'label' => 'Privacy note under the button', 'type' => 'text', 'default' => ''],
                 ['key' => 'privacy_link_label', 'label' => 'Privacy note: link text', 'type' => 'text', 'default' => 'Read our Privacy Policy'],
                 ['key' => 'success', 'label' => 'Success message', 'type' => 'textarea', 'rows' => 2, 'default' => 'Thank you for contacting us. Your message has been received and our team will get back to you soon.'],
                 ['key' => 'error_title', 'label' => 'Error summary: heading (shown above the form when something needs fixing)', 'type' => 'text', 'default' => 'Please check the following before sending'],

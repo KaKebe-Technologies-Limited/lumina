@@ -40,6 +40,11 @@ final class SubscribeController extends Controller
             Flash::error((string) content('site_newsletter', 'messages.invalid'));
             return Response::redirect($back);
         }
+        // forms that show the consent tick box send consent_notice=1: then the tick is required (older callers without the marker still work)
+        if ($request->string('consent_notice') === '1' && $request->string('consent') !== '1') {
+            Flash::error('Please tick the box to say you agree to receive our newsletter.');
+            return Response::redirect($back);
+        }
         $source = substr((string) preg_replace('/[^a-z0-9_-]/', '', strtolower($request->string('source'))), 0, 60);
 
         // An address that opted out is NEVER switched back on by an anonymous form post (anyone could re-enrol a stranger that way);

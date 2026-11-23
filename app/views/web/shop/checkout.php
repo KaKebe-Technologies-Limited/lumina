@@ -189,6 +189,7 @@ foreach ($methods as $m) {
                     <?php endif; ?>
                 </div>
                 <p class="sh-secure"><?= icon('shield', 'icon--sm') ?> <span><?= e(content('shop', 'checkout.secure_note')) ?></span></p>
+                <?= partial('partials/privacy-note', ['key' => 'shop']) ?>
             </form>
             <?php endif; ?>
 

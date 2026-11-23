@@ -377,10 +377,16 @@ CREATE TABLE IF NOT EXISTS `contact_messages` (
   `replied_at` DATETIME NULL,
   `ip` VARCHAR(45) NULL,
   `user_agent` VARCHAR(255) NULL,
+  `kind` VARCHAR(12) NOT NULL DEFAULT 'message',            -- 'message' | 'dsr' (a data-protection rights request, with reference + due_at)
+  `reference` VARCHAR(24) NULL,
+  `request_type` VARCHAR(24) NULL,
+  `due_at` DATE NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `ix_contact_status` (`status`, `created_at`)
+  KEY `ix_contact_status` (`status`, `created_at`),
+  KEY `ix_contact_kind` (`kind`, `status`, `due_at`),
+  KEY `ix_contact_reference` (`reference`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `subscribers` (
@@ -2051,6 +2057,44 @@ CREATE TABLE IF NOT EXISTS `academy_attempts` (
   CONSTRAINT `fk_academy_attempts_quiz` FOREIGN KEY (`quiz_id`) REFERENCES `academy_quizzes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Exam security (docs/ACADEMY.md, "Exam integrity"): time limit + deadline, autosave, one-tab lock, leave log, flagged attempts, retake grants.
+SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_attempts' AND column_name = 'deadline_at');
+SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_attempts` ADD COLUMN `deadline_at` DATETIME NULL, ADD COLUMN `time_limit_min` SMALLINT UNSIGNED NULL, ADD COLUMN `extra_minutes` SMALLINT UNSIGNED NOT NULL DEFAULT 0, ADD COLUMN `secured` TINYINT(1) NOT NULL DEFAULT 0, ADD COLUMN `agreed_at` DATETIME NULL, ADD COLUMN `token` CHAR(32) NULL, ADD COLUMN `heartbeat_at` DATETIME NULL, ADD COLUMN `saved_answers` MEDIUMTEXT NULL, ADD COLUMN `saved_at` DATETIME NULL, ADD COLUMN `leave_count` SMALLINT UNSIGNED NOT NULL DEFAULT 0, ADD COLUMN `flagged` TINYINT(1) NOT NULL DEFAULT 0, ADD COLUMN `flag_review` VARCHAR(12) NULL, ADD COLUMN `flag_reviewed_by` INT UNSIGNED NULL, ADD COLUMN `flag_reviewed_at` DATETIME NULL, ADD COLUMN `submit_reason` VARCHAR(20) NULL, ADD KEY `ix_academy_attempts_flagged` (`flagged`, `flag_review`)', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
+-- Every time the learner left the exam page (or another noteworthy moment), with the time it happened.
+CREATE TABLE IF NOT EXISTS `academy_exam_events` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `attempt_id` INT UNSIGNED NOT NULL,
+  `kind` VARCHAR(20) NOT NULL,                                    -- leave, return, blur, pagehide, fullscreen_exit, copy_blocked, resumed, second_tab, auto_submit
+  `counted` TINYINT(1) NOT NULL DEFAULT 0,                        -- 1 = counted towards the leave limit
+  `seconds_away` SMALLINT UNSIGNED NULL,
+  `detail` VARCHAR(190) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_exam_events_attempt` (`attempt_id`, `id`),
+  CONSTRAINT `fk_academy_exam_events_attempt` FOREIGN KEY (`attempt_id`) REFERENCES `academy_attempts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- An administrator lets one learner retake an exam (extra attempts) and/or gives extra minutes. Used up by the learner's next attempt (extra minutes also extend an open attempt at once).
+CREATE TABLE IF NOT EXISTS `academy_exam_grants` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `learner_id` INT UNSIGNED NOT NULL,
+  `quiz_id` INT UNSIGNED NOT NULL,
+  `extra_attempts` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `extra_minutes` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `note` VARCHAR(190) NULL,
+  `granted_by` INT UNSIGNED NULL,
+  `used_attempt_id` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_academy_exam_grants_learner` (`learner_id`, `quiz_id`, `used_attempt_id`),
+  CONSTRAINT `fk_academy_exam_grants_learner` FOREIGN KEY (`learner_id`) REFERENCES `academy_learners` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_academy_exam_grants_quiz` FOREIGN KEY (`quiz_id`) REFERENCES `academy_quizzes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- A certificate keeps a snapshot of the learner name and the course title, so it stays valid and verifiable if the account or the course is changed.
 CREATE TABLE IF NOT EXISTS `academy_certificates` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -2541,6 +2585,77 @@ CREATE TABLE IF NOT EXISTS `geo_cache` (
   `checked_at` DATETIME NOT NULL,
   PRIMARY KEY (`ip_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Official letters
+CREATE TABLE IF NOT EXISTS `letters` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `ref_no` VARCHAR(60) NULL,
+  `letter_date` DATE NOT NULL,
+  `use_letterhead` TINYINT(1) NOT NULL DEFAULT 1,
+  `to_name` VARCHAR(190) NULL,
+  `to_title` VARCHAR(190) NULL,
+  `to_org` VARCHAR(190) NULL,
+  `to_address` TEXT NULL,
+  `salutation` VARCHAR(190) NULL,
+  `subject` VARCHAR(300) NOT NULL,
+  `body` MEDIUMTEXT NOT NULL,
+  `closing` VARCHAR(120) NULL,
+  `sig_mode` VARCHAR(10) NOT NULL DEFAULT 'blank',
+  `signatory_id` INT UNSIGNED NULL,
+  `from_name` VARCHAR(190) NULL,
+  `from_title` VARCHAR(190) NULL,
+  `from_office` VARCHAR(190) NULL,
+  `cc` TEXT NULL,
+  `enclosures` TEXT NULL,
+  `status` VARCHAR(10) NOT NULL DEFAULT 'draft',
+  `created_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_letters_status` (`status`, `updated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `letter_contacts` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(190) NOT NULL DEFAULT '',
+  `email` VARCHAR(190) NOT NULL,
+  `organisation` VARCHAR(190) NULL,
+  `phone` VARCHAR(60) NULL,
+  `grp` VARCHAR(80) NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_letter_contacts_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `letter_sends` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `letter_id` INT UNSIGNED NOT NULL,
+  `mode` VARCHAR(10) NOT NULL DEFAULT 'each',
+  `subject` VARCHAR(300) NOT NULL,
+  `message` TEXT NULL,
+  `total` INT UNSIGNED NOT NULL DEFAULT 0,
+  `sent_count` INT UNSIGNED NOT NULL DEFAULT 0,
+  `failed_count` INT UNSIGNED NOT NULL DEFAULT 0,
+  `created_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_letter_sends_letter` (`letter_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `letter_recipients` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `send_id` INT UNSIGNED NOT NULL,
+  `letter_id` INT UNSIGNED NOT NULL,
+  `name` VARCHAR(190) NOT NULL DEFAULT '',
+  `email` VARCHAR(190) NOT NULL,
+  `status` VARCHAR(10) NOT NULL DEFAULT 'sent',
+  `error` VARCHAR(255) NULL,
+  `sent_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_letter_recipients_send` (`send_id`),
+  KEY `ix_letter_recipients_letter` (`letter_id`, `email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 
 -- ======================================================================

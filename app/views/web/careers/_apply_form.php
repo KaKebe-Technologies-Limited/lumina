@@ -53,6 +53,7 @@ $fieldMeta = [
             <?php if (has_error('consent')): ?><div class="field__error" id="<?= e($idPrefix) ?>-consent-error" role="alert"><?= e(error('consent')) ?></div><?php endif; ?>
         </div>
     </div>
+    <?= partial('partials/privacy-note', ['key' => 'careers']) ?>
     <div class="form-actions">
         <button class="btn btn--cta btn--caps btn--lg" type="submit" data-loading-text="<?= e(content('careers', 'form.sending')) ?>"><?= e($submit) ?></button>
     </div>

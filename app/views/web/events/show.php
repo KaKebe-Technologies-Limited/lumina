@@ -153,6 +153,7 @@ $ld = array_filter([
                                     <button class="btn btn--cta btn--caps btn--lg" type="submit" data-loading-text="<?= e(content('events', 'register.sending')) ?>"><?= e(content('events', 'register.submit')) ?></button>
                                     <?php if ($placesLeft !== ''): ?><span class="form-note"><?= e($placesLeft) ?></span><?php endif; ?>
                                 </div>
+                                <?= partial('partials/privacy-note', ['key' => 'events']) ?>
                             </form>
                         <?php endif; ?>
 

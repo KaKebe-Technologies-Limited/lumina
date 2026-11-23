@@ -323,6 +323,7 @@ $minor = !empty($minor);
                 <div class="form-actions mb-form__actions">
                     <button class="btn btn--cta btn--caps btn--lg" type="submit" data-loading-text="<?= e($c('form.sending_label')) ?>"><?= e($c('form.submit_label')) ?></button>
                 </div>
+                <?= partial('partials/privacy-note', ['key' => 'membership']) ?>
             </form>
         </div>
     </div>

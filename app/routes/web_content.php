@@ -56,6 +56,9 @@ $router->post('/unsubscribe/{token}', [SubscribeController::class, 'confirmUnsub
 
 // ---- Privacy policy ----------------------------------------------------------------------------------------------------------
 $router->get('/privacy', [PrivacyController::class, 'index'])->name('privacy.index');
+$router->get('/privacy/request', [\App\Controllers\Web\DataRightsController::class, 'index'])->name('privacy.request');
+$router->post('/privacy/request', [\App\Controllers\Web\DataRightsController::class, 'send'])
+    ->name('privacy.request.send')->middleware(['page.published:data-rights', 'honeypot', 'throttle:5,600']);
 
 // ---- Search engines ------------------------------------------------------------------------------------------------------------
 $router->get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('seo.sitemap');

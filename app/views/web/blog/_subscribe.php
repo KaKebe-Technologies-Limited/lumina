@@ -20,5 +20,6 @@ $eyebrow = trim((string) ($eyebrow ?? ''));
         <label class="visually-hidden" for="<?= e($id) ?>-email"><?= e($placeholder) ?></label>
         <input class="input" id="<?= e($id) ?>-email" type="email" name="email" autocomplete="email" required maxlength="190" placeholder="<?= e($placeholder) ?>">
         <button class="btn btn--gold btn--caps" type="submit"><?= e($button) ?></button>
+        <?= partial('partials/newsletter-consent', ['id' => $id . '-consent']) ?>
     </form>
 </div>

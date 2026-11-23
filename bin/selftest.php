@@ -266,6 +266,7 @@ set_time_limit(0); require __DIR__ . '/selftest-academy-payments.php';          
 set_time_limit(0); require __DIR__ . '/selftest-pesapal.php';                    // Pesapal payment gateway: client, donations, shop orders, endpoints (mock transport)
 set_time_limit(0); require __DIR__ . '/selftest-home-focus.php';                // Home page: the four focus areas (numbered colour ribbons): registry section, order, colours, markup, style
 set_time_limit(0); require __DIR__ . '/selftest-academy-catalog.php';           // Academy course cards: banner colours, Free / Certificate pills, level dots, what you will learn, stylesheet
+set_time_limit(0); require __DIR__ . '/selftest-data-policy.php';               // Data protection: privacy policy + rights page, TOC anchors, notices on every form, rights request stored and acknowledged, newsletter consent, admin page access, no placeholder wording
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";
 exit($fail === 0 ? 0 : 1);

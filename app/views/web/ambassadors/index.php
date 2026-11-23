@@ -305,6 +305,7 @@ section_begin('ambassadors', 'form', ['id' => 'apply', 'class' => 'amb-apply', '
                     <?= partial('partials/form-field', ['name' => 'consent', 'label' => (string) content('ambassadors', 'form.consent_label'), 'type' => 'checkbox', 'required' => true]) ?>
                     <?= partial('partials/form-field', ['name' => 'public_ok', 'label' => (string) content('ambassadors', 'form.public_label'), 'type' => 'checkbox']) ?>
                 </div>
+                <?= partial('partials/privacy-note', ['key' => 'ambassador']) ?>
                 <div class="form-actions">
                     <button class="btn btn--cta btn--caps btn--lg" type="submit" data-loading-text="<?= e(content('ambassadors', 'form.sending_label')) ?>"><?= e(content('ambassadors', 'form.submit_label')) ?></button>
                     <span class="form-note">Fields marked * are required. <?= e(content('ambassadors', 'form.privacy_note')) ?></span>

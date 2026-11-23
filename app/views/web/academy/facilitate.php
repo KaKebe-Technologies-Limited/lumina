@@ -52,6 +52,7 @@ $req = array_values(array_filter(array_map('trim', preg_split('/\R/', (string) c
                     <label class="check"><input type="checkbox" name="consent" value="1"<?= old('consent') ? ' checked' : '' ?> required><span>I agree that Lumina Africa Foundation may keep and review my CV and papers to decide on this application.</span></label>
                     <?php if (error('consent')): ?><div class="field__error"><?= e((string) error('consent')) ?></div><?php endif; ?>
                 </div>
+                <?= partial('partials/privacy-note', ['key' => 'facilitator']) ?>
                 <button class="btn btn--cta btn--caps btn--block" type="submit">Send my application</button>
             </div>
         </form>

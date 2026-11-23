@@ -49,6 +49,8 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
         $router->post('/logout', [AuthController::class, 'logout'])->name('admin.logout');
         $router->get('/locked', [AuthController::class, 'showLocked'])->name('admin.locked');
         $router->post('/locked', [AuthController::class, 'unlock'])->middleware('throttle:20,300');
+        // data protection: inventory summary, rights requests, retention reminders, owner checklist
+        $router->get('/data-protection', [\App\Controllers\Admin\DataProtectionController::class, 'index'])->name('admin.dataprot');
         // security: checklist, two-step sign-in, screen lock
         $router->get('/security', [\App\Controllers\Admin\SecurityController::class, 'index'])->name('admin.security');
         $router->post('/security/2fa-test', [\App\Controllers\Admin\SecurityController::class, 'sendTest'])->middleware('throttle:10,600');

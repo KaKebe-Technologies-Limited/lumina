@@ -108,7 +108,7 @@ $restore = $errors === [] && $input === [];
         <p class="lf__note"><?= e(FormText::get('ui.required_note')) ?></p>
         <?php
         $note = trim((string) ($cfg['privacy_note'] ?? ''));
-        $link = '<a href="' . e(url('privacy')) . '">' . e(FormText::get('ui.privacy_link')) . '</a>';
+        $link = '<a href="' . e(url('privacy')) . '#collect-forms">' . e(FormText::get('ui.privacy_link')) . '</a>';
         ?>
         <p class="lf__privacy"><?= icon('lock', 'icon--sm') ?> <span><?= $note !== '' ? e($note) : str_replace('{link}', $link, e(FormText::get('ui.privacy_note'))) ?></span></p>
         <p class="lf__draft" data-lf-draft hidden><?= e(FormText::get('ui.draft_notice')) ?> <button class="btn btn--link" type="button" data-lf-draft-clear><?= e(FormText::get('ui.draft_clear')) ?></button></p>

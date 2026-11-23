@@ -29,6 +29,7 @@ $this->start('scripts'); ?><script src="<?= e(asset('js/mobile-money.js')) ?>" d
                             <label class="mm__net mm__net--mtn"><input type="radio" name="method" value="1" data-mm-net><span><b>MTN</b> Mobile Money</span></label>
                             <label class="mm__net mm__net--airtel"><input type="radio" name="method" value="2" data-mm-net><span><b>Airtel</b> Money</span></label>
                         </fieldset>
+                        <?= partial('partials/privacy-note', ['key' => 'donate']) ?>
                         <p class="field__error" role="alert" data-mm-error hidden></p>
                         <button class="btn btn--cta btn--caps btn--lg" type="submit" data-mm-pay><?= icon('lock', 'icon--sm') ?> Pay UGX <?= e(number_format((int) $row['amount_ugx'])) ?></button>
                     </form>

@@ -201,6 +201,7 @@ $cards = content_list('donate', 'support.items'); $supportUrl = H::href('donate'
                     </div>
                 <?php endforeach; ?>
             </div>
+            <?= partial('partials/privacy-note', ['key' => 'donate']) ?>
         </form>
         <?php endif; ?>
         <?php if (!empty($darazaDonate) && empty($giveOnline) && empty($mobileGive)): ?>
@@ -272,6 +273,7 @@ section_begin('donate', 'pledge', ['class' => 'donate-pledge', 'labelledby' => '
                     <button class="btn btn--cta btn--caps btn--lg" type="submit" data-loading-text="<?= e(content('donate', 'pledge.sending_label')) ?>"><?= icon('heart', 'icon--sm') ?> <?= e(content('donate', 'pledge.submit_label')) ?></button>
                     <?php if (trim((string) content('donate', 'pledge.required_note')) !== ''): ?><span class="form-note"><?= e(content('donate', 'pledge.required_note')) ?></span><?php endif; ?>
                 </div>
+                <?= partial('partials/privacy-note', ['key' => 'donate']) ?>
             </form>
         </div>
     </div>

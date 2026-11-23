@@ -47,6 +47,7 @@
                         <label class="check"><input type="checkbox" name="agree" value="1"<?= old('agree') ? ' checked' : '' ?> required><span><?= e(content('academy', 'auth.consent')) ?></span></label>
                         <?php if (error('agree')): ?><div class="field__error"><?= e((string) error('agree')) ?></div><?php endif; ?>
                     </div>
+                    <?= partial('partials/privacy-note', ['key' => 'academy']) ?>
                     <?php if ($acFee = \App\Services\Academy\AcademyFees::signup()): ?>
                     <div class="ac-feebox" role="note">
                         <span class="ac-feebox__icon" aria-hidden="true"><?= icon('credit-card') ?></span>

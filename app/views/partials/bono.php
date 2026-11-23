@@ -23,6 +23,6 @@ $sw = \App\Services\Academy\LearnerAuth::supportWhatsapp();
             <input class="bono__input" id="bono-q" name="q" type="text" maxlength="500" autocomplete="off" placeholder="Ask me about the foundation...">
             <button class="bono__send" type="submit" aria-label="Send"><?= icon('send', 'icon--sm') ?></button>
         </form>
-        <p class="bono__note">Bono AI answers from this website and learns it every day.<?php if ($sw !== null): ?> For anything urgent: <a href="<?= e($sw['url']) ?>" target="_blank" rel="noopener">WhatsApp <?= e($sw['display']) ?></a>.<?php endif; ?></p>
+        <p class="bono__note"><a href="<?= e(url('privacy')) ?>#collect-bono">Please do not type private details.</a> Bono AI answers from this website and learns it every day.<?php if ($sw !== null): ?> For anything urgent: <a href="<?= e($sw['url']) ?>" target="_blank" rel="noopener">WhatsApp <?= e($sw['display']) ?></a>.<?php endif; ?></p>
     </section>
 </div>

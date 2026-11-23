@@ -194,6 +194,7 @@ $cover = asset('img/projects/' . $p['cover'] . '.jpg');
                     <?= partial('partials/form-field', ['name' => 'message', 'label' => 'Message (optional)', 'type' => 'textarea', 'rows' => 3, 'maxlength' => 1500, 'placeholder' => 'Tell us anything you would like us to know, or how you would like to be recognised.']) ?>
                     <?= partial('partials/form-field', ['name' => 'is_anonymous', 'label' => 'I would like my gift to stay anonymous', 'type' => 'checkbox']) ?>
                     <button class="btn btn--cta btn--caps btn--block" type="submit"><?= icon('heart', 'icon--sm') ?> <span data-fund-give>Give now</span></button>
+                    <?= partial('partials/privacy-note', ['key' => 'donate']) ?>
                     <p class="fund-details__note"><?= isset($methods['mobile_now']) ? 'Press Give now to pay with MTN or Airtel mobile money. You approve the payment on your phone.' : 'Press Give now and we will contact you with the details to complete your gift.' ?></p>
                 </div>
             </aside>
@@ -250,6 +251,7 @@ $cover = asset('img/projects/' . $p['cover'] . '.jpg');
             <div class="field"><label class="field__label" for="pr-note">Anything you would like us to know (optional)</label><textarea class="textarea" id="pr-note" name="pr_note" rows="3" maxlength="1500"><?= e((string) old('pr_note')) ?></textarea></div>
             <p class="fund-proposal__fine">We use your details only to send the proposal and to follow up on your interest. We never share them.</p>
             <button class="btn btn--cta btn--caps" type="submit"><?= icon('mail', 'icon--sm') ?> E-mail me the full proposal</button>
+            <?= partial('partials/privacy-note', ['key' => 'fund']) ?>
         </form>
     </div>
 </section>

@@ -2,7 +2,8 @@
 // The unsubscribe page uses the .notice-hero block from _blog.scss. Reading typography (mixin reading-prose) is in _blog.scss.
 
 // ---- privacy notice ------------------------------------------------------------------------------------------------
-.page-privacy {
+.page-privacy,
+.page-data-rights {
     .legal__layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: $space-6; @include respond(lg) { grid-template-columns: 18rem minmax(0, 1fr); gap: $space-8; align-items: start; } }
 
     .legal__toc {

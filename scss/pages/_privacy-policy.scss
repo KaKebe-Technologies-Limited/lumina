@@ -1,0 +1,89 @@
+// pages/_privacy-policy.scss - the privacy policy ("in brief" box, data table, rights steps), the data rights request page, the "Why we ask for this" note beside forms, and print rules.
+
+.legal__layout--single { grid-template-columns: minmax(0, 1fr) !important; max-width: 52rem; margin-inline: auto; }
+
+// ---- "in brief" box ------------------------------------------------------------------------------------------------
+.privacy-brief {
+    margin-bottom: $space-6;
+    padding: $space-5 $space-6;
+    border-radius: $radius-card;
+    border-left: 6px solid $gold;
+    background: $tint-cool;
+    h2 { margin-bottom: $space-3; font-size: $fs-lg; }
+    ul { margin: 0; padding-left: 1.2rem; display: grid; gap: $space-2; }
+    p:last-child { margin-bottom: 0; }
+}
+
+// ---- the table of what we collect ------------------------------------------------------------------------------------
+.privacy-table-wrap { overflow-x: auto; margin: $space-4 0; }
+.privacy-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: $fs-sm;
+    th, td { padding: $space-3; text-align: left; vertical-align: top; border-bottom: 1px solid $line; }
+    thead th { background: $navy; color: #fff; font-family: $font-heading; font-size: $fs-xs; letter-spacing: 0.06em; text-transform: uppercase; }
+    tbody th { font-weight: 700; color: $navy; }
+    tbody tr { scroll-margin-top: #{$header-h + 24px}; }
+    tbody tr:target { background: rgba($gold, 0.2); }
+
+    @media (max-width: 74.99rem) {      // phones and narrow screens: each row becomes a card, with the column name before each answer
+        thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+        &, tbody, tr, th, td { display: block; width: 100%; }
+        tr { margin-bottom: $space-4; border: 1px solid $line; border-radius: $radius-card; overflow: hidden; }
+        tbody th { background: $tint-cool; }
+        td::before { content: attr(data-label); display: block; font-size: $fs-xs; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: $orange-text; }
+        th, td { border-bottom: 1px solid $line; }
+    }
+}
+
+// ---- rights request page -----------------------------------------------------------------------------------------------
+.rights-done { margin-bottom: $space-5; padding: $space-5; border-radius: $radius-card; h2 { font-size: $fs-lg; margin-bottom: $space-2; } p:last-child { margin-bottom: 0; } }
+.rights-ref strong { font-size: $fs-lg; letter-spacing: 0.05em; }
+.rights-target { display: flex; gap: 0.5rem; align-items: flex-start; font-weight: 600; color: $navy; .icon { color: $orange-text; margin-top: 0.2rem; } }
+.rights-complaint { margin-top: $space-6; }
+.page-data-rights .form-card { margin-top: $space-5; }
+
+// ---- "Why we ask for this" note beside forms -------------------------------------------------------------------------------
+.privacy-note {
+    display: grid;
+    gap: 0.25rem;
+    margin: $space-4 0 0;
+    padding: $space-3 $space-4;
+    border-radius: $radius-card;
+    background: $tint-cool;
+    border-left: 4px solid $gold;
+    font-size: $fs-sm;
+    line-height: 1.5;
+    color: $ink;
+    &__title { display: flex; align-items: center; gap: 0.4rem; color: $navy; .icon { color: $orange-text; } }
+    &__link { justify-self: start; font-weight: 600; color: $navy; text-decoration: underline; &:hover { color: $orange-text; } }
+}
+
+// ---- print -------------------------------------------------------------------------------------------------------------
+@media print {
+    .page-privacy, .page-data-rights {
+        .site-header, .site-footer, .footer-pre, .legal__toc, .skip-link, .breadcrumbs, .page-hero__bg, .back-to-top, .form-card { display: none !important; }
+        .legal__layout { display: block; }
+        .legal__section { break-inside: avoid-page; border-top: 1px solid #999; }
+        .legal__num { background: none; color: #000; border: 1px solid #000; }
+        .privacy-table { font-size: 9pt; th, td { border: 1px solid #999; } thead th { background: #eee; color: #000; } }
+        .privacy-table-wrap { overflow: visible; }
+        a[href^="http"]::after { content: ' (' attr(href) ')'; font-size: 8pt; }
+        .privacy-brief { border: 1px solid #000; background: none; }
+    }
+}
+
+// newsletter consent tick box (inside the compact sign-up forms)
+.nl-consent {
+    flex: 1 0 100%;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    margin-top: $space-2;
+    font-size: $fs-xs;
+    line-height: 1.4;
+    color: inherit;
+    input { margin-top: 0.15rem; flex: none; }
+    a { color: inherit; text-decoration: underline; }
+}
+.newsletter-row__form, .subscribe-box__form { flex-wrap: wrap; }

@@ -23,5 +23,6 @@ $nlId = preg_replace('/[^a-z0-9_-]/i', '', (string) ($idp ?? 'newsletter')) . '-
         <label class="visually-hidden" for="<?= e($nlId) ?>"><?= e($nlPlaceholder) ?></label>
         <input class="input" id="<?= e($nlId) ?>" type="email" name="email" autocomplete="email" required maxlength="190" placeholder="<?= e($nlPlaceholder) ?>">
         <button class="btn btn--gold btn--caps" type="submit"><?= e($nlButton) ?></button>
+        <?= partial('partials/newsletter-consent', ['id' => $nlId . '-consent']) ?>
     </form>
 </section>
