@@ -43,6 +43,11 @@ $why = '';
 foreach (['', '/about', '/programs', '/involvement', '/opportunities', '/shop', '/contact', '/donate', '/membership'] as $path) {
     $h = (string) @file_get_contents($base . $path);
     $imgs = preg_match_all('~<img[^>]*class="(?:page-hero|hero-photo)__bg"[^>]*>~', $h, $m);
+    if ($path === '') {
+        // the home page hero is an animated slideshow: two to six photos, one of them first
+        $slides = preg_match_all('~<img[^>]*class="hero-photo__img"[^>]*>~', $h, $m2);
+        $imgs = ($slides >= 1 && $slides <= 6) ? 1 : $slides;
+    }
     $stray = preg_match('~\?>" alt=|" alt="[^"]*" fetchpriority~', $h) === 1 || str_contains($h, "?>\"");
     if ($imgs !== 1 || $stray) {
         $ok = false;

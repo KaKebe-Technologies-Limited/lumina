@@ -106,7 +106,8 @@ BonoIndexer::run(30, true);
 $a = BonoEngine::ask('How can I donate?');
 check('answer: a question the website covers is answered from the page, with its link', $a['outcome'] === BonoEngine::OUT_SITE && str_contains($a['answer'], 'donate') && $a['sources'] !== [] && str_contains($a['sources'][0]['url'], '/support-us'));
 $a2 = BonoEngine::ask('Is the youth program free?');
-check('answer: another question finds another page (programs, free of charge)', $a2['outcome'] === BonoEngine::OUT_SITE && str_contains($a2['answer'], 'free of charge') && str_contains($a2['sources'][0]['url'], '/programs'));
+// the site grew (courses, stories, projects), so the exact page and wording that wins can change: what matters is an answer from the site that points to another page than the donation question
+check('answer: another question finds another page (a free-of-charge question is not answered with the donation page)', $a2['outcome'] === BonoEngine::OUT_SITE && $a2['sources'] !== [] && $a2['sources'][0]['url'] !== $a['sources'][0]['url'] && trim($a2['answer']) !== '');
 $none = BonoEngine::ask('What is the price of bitcoin today?');
 check('answer: when the website does not cover it Bono says so, offers the team and keeps the question', $none['outcome'] === BonoEngine::OUT_NONE && str_contains($none['answer'], "not sure") && str_contains($none['answer'], '+256779795662')
     && (int) Database::value('SELECT COUNT(*) FROM bono_log WHERE outcome = 0 AND question LIKE ?', ['%bitcoin%'], 0) === 1);

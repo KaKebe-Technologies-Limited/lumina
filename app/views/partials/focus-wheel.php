@@ -73,7 +73,7 @@ $fwProjects = static function (string $raw): array {
                 <header class="fw-panel__head">
                     <span class="fw-panel__icon"><?= icon((string) ($a['icon'] ?? 'check-circle'), 'icon--lg') ?></span>
                     <div>
-                        <span class="fw-panel__kicker"><?= $pos === 0 ? e((string) ($leadWord ?? 'Our top focus')) : ($fwWord !== '' ? e($fwWord) : 'Focus area') ?> &middot; <?= str_pad((string) ($pos + 1), 2, '0', STR_PAD_LEFT) ?></span>
+                        <span class="fw-panel__kicker"><?= $pos === 0 ? e((string) ($leadWord ?? 'Our top focus')) : ($fwWord !== '' ? e($fwWord) : 'Focus area') ?> &middot; <?= str_pad((string) ($pos + 1), 2, '0', STR_PAD_LEFT) ?><?php if (empty($a['image']) && !empty($a['badge'])): ?> &middot; <?= e((string) $a['badge']) ?><?php endif; ?></span>
                         <h3 class="fw-panel__title"><?= e($a['title']) ?></h3>
                     </div>
                 </header>

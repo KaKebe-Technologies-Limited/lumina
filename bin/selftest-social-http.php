@@ -262,7 +262,7 @@ PostQueue::claim($failedRow['id']);
 PostQueue::markFailed($failedRow['id'], 'The platform refused the post');
 $dashShare = $zsHttp('GET', 'admin', ['jar' => $zsJar['share']]);
 $dashManage = $zsHttp('GET', 'admin', ['jar' => $zsJar['manage']]);
-$tileHref = static fn(string $html): string => preg_match('~<a[^>]*stat-tile--alert[^>]*href="([^"]*)"|<a[^>]*href="([^"]*)"[^>]*stat-tile--alert~', $html, $m) === 1 ? ($m[1] !== '' ? $m[1] : ($m[2] ?? '')) : '';
+$tileHref = static fn(string $html): string => preg_match('~<a[^>]*(?:stat-tile|orb)--alert[^>]*href="([^"]*)"|<a[^>]*href="([^"]*)"[^>]*(?:stat-tile|orb)--alert~', $html, $m) === 1 ? ($m[1] !== '' ? $m[1] : ($m[2] ?? '')) : '';
 check('the dashboard tile "Social media needs attention" links to a page the person may open: social.share-only -> the share log, social.manage-only -> the channels screen (never a 403)', str_contains($tileHref($dashShare['body']), 'admin/social/log') && str_contains($tileHref($dashManage['body']), 'admin/social/channels') && $code('manage', 'admin/social/channels') === 200, json_encode([$tileHref($dashShare['body']), $tileHref($dashManage['body'])]));
 // the live counter never works on unbounded text
 $r = $zsHttp('POST', 'admin/api/newsletters/' . $issueId . '/share/count', ['jar' => $zsJar['editor'], 'headers' => array_merge($jh, ['X-CSRF-TOKEN: ' . $etok]), 'post' => json_encode(['channel' => 'x', 'text' => str_repeat('A https://example.org/x ', 2500)])]);

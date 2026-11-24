@@ -53,15 +53,17 @@ $html = (string) curl_exec($ch);
 $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 curl_close($ch);
 check('page: the home page opens', $code === 200);
-preg_match('~<section[^>]*home-focus.*?</section>~s', $html, $m);
-$block = $m[0] ?? '';
-check('page: the section shows its heading, an ordered list of four numbered rows and the tagline', $block !== '' && str_contains($block, 'focus areas') && substr_count($block, 'class="focus-row focus-row--') === 4 && str_contains($block, '<ol class="focus-list">') && str_contains($block, 'Igniting Light. Inspiring Change.'));
-check('page: the rows are numbered 01 to 04 and coloured red, green, gold, purple in that order', preg_match_all('~focus-row focus-row--(\w+)~', $block, $t) === 4 && $t[1] === ['red', 'green', 'gold', 'purple'] && preg_match_all('~focus-row__num">(\d\d)<~', $block, $n) === 4 && $n[1] === ['01', '02', '03', '04']);
-check('page: each row has its title, one line and an icon (decorative, hidden from screen readers)', preg_match_all('~focus-row__title">([^<]+)<~', $block, $tt) === 4 && $tt[1][2] === 'Technology &amp; Innovation' && substr_count($block, 'focus-row__icon" aria-hidden="true"') === 4 && str_contains($block, 'Digital skills for a brighter tomorrow.'));
-check('page: a row with a link is clickable as a whole and keeps an accessible name', str_contains($block, 'class="focus-row__link"') && preg_match('~focus-row__link"[^>]*><span class="visually-hidden">Health</span>~', $block) === 1);
+// the wheel holds one <section> per area, so the block runs from the focus section to the program highlights
+$p0 = strpos($html, 'home-focus');
+$p1 = strpos($html, 'home-programs', (int) $p0);
+$block = $p0 !== false ? substr($html, $p0, ($p1 !== false ? $p1 : $p0 + 60000) - $p0) : '';
+check('page: the section shows its heading and the wheel with four area nodes', $block !== '' && str_contains($block, 'focus areas') && substr_count($block, 'data-fw-node=') === 4 && str_contains($block, 'class="fw fw--n4"'), 'nodes ' . substr_count($block, 'data-fw-node='));
+check('page: Technology & Innovation is the lead node at the top, the others are coloured red, green, gold, purple in the editable order', preg_match('~<a class="fw__node fw__node--(\w+) is-lead"[^>]*data-fw-node="0"~', $block, $lead) === 1 && preg_match_all('~fw__node fw__node--(\w+)~', $block, $t) === 4 && count(array_unique($t[1])) === 4 && str_contains($block, 'fw__node-label">Technology'), json_encode($t[1] ?? []));
+check('page: every area has a panel with its title and an icon, and the panels are labelled', preg_match_all('~<section class="fw-panel[^"]*"[^>]*aria-label="([^"]+)"~', $block, $pp) === 4 && in_array('Technology &amp; Innovation', $pp[1], true) && in_array('Health', $pp[1], true) && substr_count($block, 'fw-panel__icon') === 4, json_encode($pp[1] ?? []));
+check('page: each node is a real link (works without JavaScript) and the script is loaded', substr_count($block, '<a class="fw__node') === 4 && str_contains($html, 'focus-wheel.js'));
 check('page: the section comes after the hero and before the program highlights', ($p1 = strpos($html, 'home-focus')) !== false && ($p2 = strpos($html, 'home-programs')) !== false ? $p1 < $p2 : true);
 $css = (string) file_get_contents(dirname(__DIR__) . '/assets/css/main.min.css');
-check('style: the ribbons are in the stylesheet (and the old clashing number-tile class is gone)', str_contains($css, '.focus-row--purple') && str_contains($css, '.focus-tagline') && !str_contains($css, '.ac-stats{list-style'));
+check('style: the wheel is in the stylesheet (and the old clashing number-tile class is gone)', str_contains($css, '.fw__node') && str_contains($css, '.fw-panel') && !str_contains($css, '.ac-stats{list-style'));
 
 if (!empty($standalone)) {
     echo PHP_EOL . ($fail === 0 ? 'ALL CHECKS PASSED' : "{$fail} check(s) FAILED.") . PHP_EOL;
