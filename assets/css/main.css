@@ -31997,6 +31997,11 @@ input:checked + .fund-card__body, .fund-card.is-picked .fund-card__body {
 
 .vm__photo img {
   object-fit: cover;
+  object-position: 50% 45%;
+}
+
+.vm__photo + .vm__photo img {
+  object-position: 48% 30%;
 }
 
 .vm__photo::before {

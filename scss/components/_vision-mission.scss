@@ -31,7 +31,9 @@
         background: $navy;
         box-shadow: $shadow-lg;
         picture, img { display: block; width: 100%; height: 100%; }
-        img { object-fit: cover; }
+        img { object-fit: cover; object-position: 50% 45%; }
+        // the Mission photo (a mentor and a pupil, side by side) keeps both faces in the tall frame
+        & + & img { object-position: 48% 30%; }
         // the calm gold frame, drawn inside the photo so it never pushes the page wider
         &::before { content: ''; position: absolute; inset: 0.8rem; z-index: 1; border: 1.5px solid rgba($gold, 0.85); border-radius: ($radius-photo - 13px); pointer-events: none; }
     }
