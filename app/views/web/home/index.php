@@ -245,35 +245,21 @@ if ($involved):
 
 <?php /* ------------------------------------------------------------------ 7. ABOUT US (short: vision, mission, founder quote; the full story is on the About page) */ ?>
 <?php
-$vmStack = partial('partials/photo-stack', ['images' => [content_img('home', 'vision_mission.image1'), content_img('home', 'vision_mission.image2')]]);
 $quote = trim((string) content('home', 'founder.quote'));
 $founderImg = content_img('home', 'founder.image');
 $vmB1 = content_btn('home', 'vision_mission.cta');
 $vmB2 = content_btn('home', 'vision_mission.cta2');
+$lines = static fn(string $t): array => array_values(array_filter(array_map('trim', preg_split('/\R/', $t) ?: []), static fn(string $l): bool => $l !== ''));
+$vmActions = ($vmB1['has'] ? '<a class="btn btn--cta btn--caps" href="' . e($vmB1['url']) . '">' . e($vmB1['label']) . '</a>' : '')
+    . ($vmB2['has'] ? '<a class="btn btn--outline btn--caps" href="' . e($vmB2['url']) . '">' . e($vmB2['label']) . ' ' . icon('arrow-right', 'icon--arrow') . '</a>' : '');
 $this->start('scripts'); ?><script src="<?= e(asset('js/vision-mission.js')) ?>" defer></script><?php $this->end();
 section_begin('home', 'vision_mission', ['class' => 'home-mission', 'labelledby' => 'mission-title']);
 ?>
-    <div class="split split--start home-mission__grid<?= $vmStack === '' ? ' home-mission__grid--solo' : '' ?>">
-        <?= $vmStack ?>
-        <div>
-            <?= partial('partials/section-head', ['eyebrow' => content('home', 'vision_mission.eyebrow'), 'title' => content('home', 'vision_mission.title'), 'id' => 'mission-title', 'class' => 'mb-0']) ?>
-            <div class="home-mission__explorer">
-                <?php
-                $lines = static fn(string $t): array => array_values(array_filter(array_map('trim', preg_split('/\R/', $t) ?: []), static fn(string $l): bool => $l !== ''));
-                echo partial('partials/vision-mission', ['label' => (string) content('home', 'vision_mission.tabs_label'), 'items' => [
-                    ['key' => 'vision', 'icon' => 'eye', 'title' => (string) content('home', 'vision_mission.vision_title'), 'text' => (string) content('home', 'vision_mission.vision_text'), 'points' => $lines((string) content('home', 'vision_mission.vision_points'))],
-                    ['key' => 'mission', 'icon' => 'target', 'title' => (string) content('home', 'vision_mission.mission_title'), 'text' => (string) content('home', 'vision_mission.mission_text'), 'points' => $lines((string) content('home', 'vision_mission.mission_points'))],
-                ]]);
-                ?>
-            </div>
-            <?php if ($vmB1['has'] || $vmB2['has']): ?>
-                <p class="mt-5 home-mission__actions">
-                    <?php if ($vmB1['has']): ?><a class="btn btn--cta btn--caps" href="<?= e($vmB1['url']) ?>"><?= e($vmB1['label']) ?></a><?php endif; ?>
-                    <?php if ($vmB2['has']): ?><a class="btn btn--outline btn--caps" href="<?= e($vmB2['url']) ?>"><?= e($vmB2['label']) ?> <?= icon('arrow-right', 'icon--arrow') ?></a><?php endif; ?>
-                </p>
-            <?php endif; ?>
-        </div>
-    </div>
+    <?= partial('partials/section-head', ['eyebrow' => content('home', 'vision_mission.eyebrow'), 'title' => content('home', 'vision_mission.title'), 'id' => 'mission-title', 'align' => 'center', 'class' => 'home-mission__head']) ?>
+    <?= partial('partials/vision-mission', ['label' => (string) content('home', 'vision_mission.tabs_label'), 'actions' => $vmActions, 'items' => [
+        ['key' => 'vision', 'icon' => 'eye', 'title' => (string) content('home', 'vision_mission.vision_title'), 'text' => (string) content('home', 'vision_mission.vision_text'), 'points' => $lines((string) content('home', 'vision_mission.vision_points')), 'explain' => preg_split('/\R/', (string) content('home', 'vision_mission.vision_explain')) ?: [], 'image' => content_img('home', 'vision_mission.image1')],
+        ['key' => 'mission', 'icon' => 'target', 'title' => (string) content('home', 'vision_mission.mission_title'), 'text' => (string) content('home', 'vision_mission.mission_text'), 'points' => $lines((string) content('home', 'vision_mission.mission_points')), 'explain' => preg_split('/\R/', (string) content('home', 'vision_mission.mission_explain')) ?: [], 'image' => content_img('home', 'vision_mission.image2')],
+    ]]) ?>
     <?php if ($quote !== ''): ?>
         <div class="home-mission__lower">
             <?= partial('partials/quote-card', [

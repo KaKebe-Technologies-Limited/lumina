@@ -1,46 +1,129 @@
 // components/_vision-mission.scss: the Vision & Mission explorer (partials/vision-mission.php, behaviour in assets/js/vision-mission.js).
-// Without JavaScript both statements are shown one under the other (the tab bar is `hidden`); with it only the active one shows and the other is a tab away.
+// Two equal columns: one photo that changes with the switch, and one navy card with the statement. Without JavaScript both statements (each with its photo) are shown
+// one under the other and the switch is `hidden`; with it (`.is-ready`) the panels and photos share one cell, so the height never jumps between the two.
 // Motion lives inside `prefers-reduced-motion: no-preference`.
 
 .vm {
     display: grid;
-    gap: $space-4;
+    gap: $space-6;
     min-width: 0;
+    @include respond(lg) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-7; align-items: stretch; }
+    @include respond(xl) { gap: $space-8; }
+    &--solo { grid-template-columns: minmax(0, 1fr); }
 
-    // ---- the two big switches -------------------------------------------------------------------------------------------
-    &__tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: $space-3; padding: 0.35rem; border-radius: 999px; background: $tint-cool; border: 1px solid $line; &[hidden] { display: none; } }
+    // ---- the photo ------------------------------------------------------------------------------------------------------
+    &__media { display: grid; min-width: 0; }
+    &__frame {
+        position: relative;
+        display: grid;
+        gap: $space-4;
+        min-width: 0;
+        transform: perspective(1100px) rotateX(var(--vm-rx, 0deg)) rotateY(var(--vm-ry, 0deg));
+        transition: transform 0.25s ease-out;
+        will-change: transform;
+    }
+    &__photo {
+        position: relative;
+        margin: 0;
+        aspect-ratio: 4 / 3;
+        overflow: hidden;
+        border-radius: $radius-photo;
+        background: $navy;
+        box-shadow: $shadow-lg;
+        picture, img { display: block; width: 100%; height: 100%; }
+        img { object-fit: cover; }
+        // the calm gold frame, drawn inside the photo so it never pushes the page wider
+        &::before { content: ''; position: absolute; inset: 0.8rem; z-index: 1; border: 1.5px solid rgba($gold, 0.85); border-radius: ($radius-photo - 13px); pointer-events: none; }
+    }
+    // the little caption chip (the name of the statement the photo belongs to)
+    &__chipcap {
+        position: absolute;
+        z-index: 2;
+        left: 1.55rem;
+        bottom: 1.55rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        max-width: calc(100% - 3.1rem);
+        padding: 0.35rem 1rem 0.35rem 0.4rem;
+        border-radius: 999px;
+        background: rgba($navy-dark, 0.82);
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
+        color: $white;
+        font-size: $fs-sm;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+    &__chipcap-icon { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: $gold; color: $navy-dark; flex: none; svg { width: 1.05rem; height: 1.05rem; } }
+
+    // JS on: the photos share one frame and cross-fade
+    &.is-ready &__frame { display: block; }
+    &.is-ready &__photo { position: absolute; inset: 0; aspect-ratio: auto; opacity: 0; visibility: hidden; transition: opacity 0.7s ease, visibility 0s linear 0.7s; &.is-active { opacity: 1; visibility: visible; transition: opacity 0.7s ease, visibility 0s; } }
+    &.is-ready &__frame { aspect-ratio: 16 / 10; @include respond(lg) { aspect-ratio: auto; min-height: 24rem; } }
+
+    // ---- the main column ------------------------------------------------------------------------------------------------
+    &__main { display: grid; gap: $space-4; align-content: center; min-width: 0; }
+
+    // the two big switches: a sliding thumb behind the active one
+    &__tabs {
+        --vm-pad: 0.35rem;
+        --vm-gap: 0.35rem;
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--vm-gap);
+        padding: var(--vm-pad);
+        border-radius: 999px;
+        background: $tint-cool;
+        border: 1px solid $line;
+        &[hidden] { display: none; }
+    }
+    &__thumb {
+        position: absolute;
+        top: var(--vm-pad);
+        bottom: var(--vm-pad);
+        left: var(--vm-pad);
+        width: calc((100% - 2 * var(--vm-pad) - var(--vm-gap)) / 2);
+        border-radius: 999px;
+        background: $navy;
+        box-shadow: 0 8px 18px rgba($navy-dark, 0.28);
+        transition: transform 0.4s $ease;
+    }
+    &__tabs[data-active="1"] &__thumb { transform: translateX(calc(100% + var(--vm-gap))); }
     &__tab {
         position: relative;
+        z-index: 1;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.4rem;
-        padding: 0.75rem 0.55rem;
+        min-height: 2.9rem;
+        padding: 0.7rem 0.55rem;
         border: 0;
         border-radius: 999px;
         background: transparent;
         color: $navy;
         font: inherit;
         font-weight: 700;
-        font-size: 0.875rem;
-        letter-spacing: 0;
+        font-size: 0.9375rem;
         white-space: nowrap;
         cursor: pointer;
         overflow: hidden;
-        transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
-        &:hover { background: rgba($navy, 0.07); }
+        transition: color 0.3s ease;
+        &:hover:not(.is-active) { background: rgba($navy, 0.07); }
         &:focus-visible { outline: 3px solid $navy; outline-offset: 2px; }
-        &.is-active { background: $navy; color: $white; box-shadow: 0 8px 18px rgba($navy-dark, 0.28); }
-        @include respond(sm) { font-size: $fs-base; letter-spacing: 0.04em; gap: 0.6rem; padding: 0.8rem 1rem; }
+        &.is-active { color: $white; }
+        @include respond(sm) { font-size: $fs-base; gap: 0.6rem; padding: 0.7rem 1rem; }
     }
-    &__tab-icon { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: rgba($gold, 0.3); color: inherit; flex: none; svg { width: 1.05rem; height: 1.05rem; } }
+    &__tab-icon { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: rgba($gold, 0.3); color: inherit; flex: none; transition: background-color 0.3s ease, color 0.3s ease; svg { width: 1.05rem; height: 1.05rem; } }
     &__tab.is-active &__tab-icon { background: $gold; color: $navy-dark; }
     // the line under the active switch that fills while the explorer auto-advances
     &__bar { position: absolute; left: 1.1rem; right: 1.1rem; bottom: 0.3rem; height: 3px; border-radius: 999px; background: transparent; overflow: hidden; i { display: block; height: 100%; width: 0; background: $gold; border-radius: inherit; } }
     &__tab.is-active.is-playing &__bar { background: rgba($white, 0.18); i { animation: vm-fill var(--vm-ms, 9000ms) linear forwards; } }
     &.is-paused &__tab.is-playing &__bar i { animation-play-state: paused; }
 
-    // ---- the stage ------------------------------------------------------------------------------------------------------
+    // ---- the card -------------------------------------------------------------------------------------------------------
     &__stage {
         position: relative;
         isolation: isolate;
@@ -49,61 +132,63 @@
         background: radial-gradient(120% 140% at 0% 0%, lighten($navy, 7%) 0%, $navy 48%, $navy-dark 100%);
         color: $white;
         box-shadow: $shadow-lg;
-        @include respond(sm) { min-height: 18rem; }
     }
-    &__glow { position: absolute; width: 22rem; height: 22rem; right: -7rem; top: -9rem; border-radius: 50%; background: radial-gradient(circle, rgba($gold, 0.3), transparent 65%); z-index: -1; pointer-events: none; }
-
+    &__glow { position: absolute; width: 22rem; height: 22rem; right: -7rem; top: -9rem; border-radius: 50%; background: radial-gradient(circle, rgba($gold, 0.28), transparent 65%); z-index: -1; pointer-events: none; }
     &__panel {
         display: grid;
-        gap: $space-5;
-        padding: $space-6 $space-5;
-        @include respond(sm) { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: $space-6; padding: $space-6; }
+        align-content: center;
+        gap: $space-4;
+        padding: $space-5;
+        @include respond(sm) { padding: $space-6; }
         &:focus-visible { outline: 3px solid $gold; outline-offset: -6px; border-radius: 28px; }
         & + & { border-top: 1px solid rgba($white, 0.14); }
     }
-    // JS on: one panel at a time
-    &.is-ready &__panel { display: none; border-top: 0; &.is-active { display: grid; } }
+    // JS on: one panel at a time, all in the same cell so the card keeps the height of the tallest
+    &.is-ready &__stage { display: grid; }
+    &.is-ready &__panel { grid-area: 1 / 1; border-top: 0; opacity: 0; visibility: hidden; &.is-active { opacity: 1; visibility: visible; } }
 
-    // ---- the emblem: rings, a core icon and small orbiting dots ------------------------------------------------------------
-    &__emblem { position: relative; width: 8rem; height: 8rem; margin-inline: auto; flex: none; @include respond(sm) { width: 9.5rem; height: 9.5rem; } }
-    &__ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba($gold, 0.55); &--2 { inset: 12%; border-style: dashed; border-color: rgba($white, 0.35); } &--3 { inset: 26%; border-color: rgba($gold, 0.8); } }
-    &__core { position: absolute; inset: 34%; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(145deg, $gold, lighten($gold, 12%)); color: $navy-dark; box-shadow: 0 0 0 6px rgba($gold, 0.18), 0 10px 24px rgba(0, 0, 0, 0.35); svg { width: 52%; height: 52%; } }
-    &__dot { position: absolute; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: $gold; box-shadow: 0 0 10px rgba($gold, 0.9); top: 50%; left: 50%; margin: -0.275rem; &--1 { transform: translate(0, -4.5rem); } &--2 { transform: translate(3.9rem, 2.25rem); } &--3 { transform: translate(-3.9rem, 2.25rem); } }
-    &__panel--mission &__ring--2 { border-style: solid; }
+    &__head { display: flex; align-items: center; gap: $space-3; }
+    &__emblem { position: relative; display: grid; place-items: center; width: 3.4rem; height: 3.4rem; flex: none; }
+    &__ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba($gold, 0.6); }
+    &__core { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: linear-gradient(145deg, $gold, lighten($gold, 12%)); color: $navy-dark; box-shadow: 0 0 0 5px rgba($gold, 0.16); svg { width: 52%; height: 52%; } }
+    &__title { margin: 0; font-family: $font-display; font-size: fluid(1.6rem, '1.3rem + 1vw', 2.2rem); line-height: 1.15; color: $white; }
+    &__text { margin: 0; max-width: 60ch; font-size: $fs-md; line-height: 1.65; color: $white; }
 
-    &__body { min-width: 0; }
-    &__title { margin: 0 0 $space-2; font-family: $font-display; font-size: fluid(1.5rem, '1.2rem + 1.2vw', 2.2rem); color: $white; }
-    &__text { margin: 0; font-size: $fs-md; line-height: 1.65; color: rgba($white, 0.92); }
-    &__points { display: flex; flex-wrap: wrap; gap: $space-2; margin: $space-4 0 0; padding: 0; list-style: none; }
-    &__points li { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.8rem 0.35rem 0.6rem; border-radius: 999px; background: rgba($white, 0.1); border: 1px solid rgba($white, 0.18); font-size: $fs-sm; font-weight: 600; color: $white; svg { color: $gold; flex: none; } }
+    // ---- the key points: chips ------------------------------------------------------------------------------------------
+    &__points { display: flex; flex-wrap: wrap; gap: $space-2; margin: $space-2 0 0; padding: 0; list-style: none; }
+    &__points li { display: flex; flex-direction: column; gap: 0.2rem; max-width: 100%; }
+    &__chip-label, &__chip { display: inline-flex; align-items: center; gap: 0.45rem; max-width: 100%; padding: 0.4rem 0.9rem 0.4rem 0.7rem; border-radius: 1rem; background: rgba($white, 0.1); border: 1px solid rgba($white, 0.28); font: inherit; font-size: $fs-sm; font-weight: 600; line-height: 1.3; text-align: left; color: $white; svg { color: $gold; flex: none; } span { min-width: 0; } }
+    &__chip { min-height: 2.5rem; cursor: pointer; transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.25s $ease; &:hover { background: rgba($white, 0.18); border-color: rgba($white, 0.5); } &:focus-visible { outline: 3px solid $gold; outline-offset: 2px; } &[aria-pressed="true"] { background: $gold; border-color: $gold; color: $navy-dark; svg { color: $navy-dark; } } }
+    // without JavaScript the one-line explanation sits under its chip; with it only the chosen one shows, below all the chips
+    &__note { font-size: $fs-sm; line-height: 1.5; color: rgba($white, 0.9); padding-inline: 0.2rem; }
+    &.is-ready &__note { display: none; }
+    &__explain { margin: 0; font-size: $fs-sm; line-height: 1.55; color: $white; border-left: 3px solid $gold; padding-left: $space-3; min-height: 3.1em; opacity: 0; transition: opacity 0.3s ease; &.is-on { opacity: 1; } &[hidden] { display: none; } }
+
+    // ---- the buttons under the card ----------------------------------------------------------------------------------------
+    &__actions { display: flex; flex-wrap: wrap; gap: $space-3; margin: $space-2 0 0; }
 }
 
+// the underline of the heading draws itself once, when the section scrolls into view
 @media (prefers-reduced-motion: no-preference) {
-    .vm__panel.is-active { animation: vm-in 0.6s $ease both; }
-    .vm.is-ready .vm__panel.is-active .vm__points li { animation: vm-pop 0.5s $ease both; animation-delay: calc(0.25s + var(--i, 0) * 90ms); }
-    .vm.is-ready .vm__panel.is-active .vm__emblem { animation: vm-emblem 0.8s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
-    .vm__ring--1 { animation: vm-ring 4.5s ease-out infinite; }
-    .vm__ring--2 { animation: vm-spin 22s linear infinite; }
-    .vm__ring--3 { animation: vm-ring 4.5s ease-out 1.5s infinite; }
-    .vm__dot { animation: vm-orbit 14s linear infinite; }
-    .vm__dot--2 { animation-delay: -4.7s; }
-    .vm__dot--3 { animation-delay: -9.3s; }
-    .vm__glow { animation: vm-glow 9s ease-in-out infinite alternate; }
+    .home-mission.vm-live:not(.vm-seen) .hl { background-size: 0 0.3em; }
+    .home-mission.vm-live .hl { transition: background-size 1.1s $ease 0.25s; }
+    .vm__panel.is-active { animation: vm-in 0.55s $ease both; }
+    .vm.is-ready .vm__panel.is-active .vm__points li { animation: vm-pop 0.5s $ease both; animation-delay: calc(0.2s + var(--i, 0) * 80ms); }
+    .vm.is-ready .vm__photo.is-active img { animation: vm-zoom 1.1s $ease both; }
+    .vm__ring { animation: vm-ring 4.5s ease-out infinite; }
     .vm__core { animation: vm-breathe 3.6s ease-in-out infinite; }
-    @keyframes vm-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-    @keyframes vm-pop { from { opacity: 0; transform: translateY(8px) scale(0.92); } to { opacity: 1; transform: none; } }
-    @keyframes vm-emblem { from { opacity: 0; transform: scale(0.7) rotate(-18deg); } to { opacity: 1; transform: none; } }
-    @keyframes vm-ring { 0% { opacity: 0.9; transform: scale(0.96); } 70%, 100% { opacity: 0.15; transform: scale(1.12); } }
-    @keyframes vm-spin { to { transform: rotate(360deg); } }
-    @keyframes vm-orbit { from { transform: rotate(0deg) translate(0, -4.4rem) rotate(0deg); } to { transform: rotate(360deg) translate(0, -4.4rem) rotate(-360deg); } }
+    .vm__glow { animation: vm-glow 9s ease-in-out infinite alternate; }
+    @keyframes vm-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes vm-pop { from { opacity: 0; transform: translateY(8px) scale(0.94); } to { opacity: 1; transform: none; } }
+    @keyframes vm-zoom { from { transform: scale(1.06); } to { transform: none; } }
+    @keyframes vm-ring { 0% { opacity: 0.9; transform: scale(0.94); } 70%, 100% { opacity: 0.1; transform: scale(1.18); } }
     @keyframes vm-glow { from { transform: translate(0, 0) scale(1); } to { transform: translate(-3rem, 2rem) scale(1.2); } }
     @keyframes vm-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
 }
 @keyframes vm-fill { from { width: 0; } to { width: 100%; } }
 @media (prefers-reduced-motion: reduce) {
-    .vm__tab, .vm__tab.is-active.is-playing .vm__bar i { transition: none; animation: none; }
-    .vm__tab.is-active .vm__bar i { width: 100%; }
+    .vm__frame, .vm__thumb, .vm__tab, .vm__tab-icon, .vm__chip, .vm__explain, .vm__photo, .vm.is-ready .vm__photo, .vm.is-ready .vm__photo.is-active { transition: none; }
+    .vm__bar { display: none; }
 }
-
-// the section around it
-.home-mission__explorer { margin-top: $space-5; }
+// the tilt only exists for a mouse
+@media (hover: none), (pointer: coarse) { .vm__frame { transform: none; } }

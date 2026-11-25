@@ -240,7 +240,7 @@ return [
         // ------------------------------------------------------------------ 5. vision & mission
         [
             'key' => 'vision_mission', 'label' => '7. About us block (vision, mission and founder quote, with links to the About page)', 'toggle' => true, 'default_visible' => true,
-            'help' => 'A short introduction to who we are: photo collage, the vision and mission cards, the founder quote and two buttons that lead to the About and Team pages. The longer story is on the About page.',
+            'help' => 'A short introduction to who we are: a photo that changes with the Vision / Mission switch, the vision and mission card, the founder quote and two buttons that lead to the About and Team pages. The longer story is on the About page.',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title', 'type' => 'text', 'default' => 'About Lumina Africa Foundation'],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Our [[vision]] and mission', 'help' => $hl],
@@ -248,11 +248,13 @@ return [
                 ['key' => 'vision_text', 'label' => 'Vision: text', 'type' => 'textarea', 'rows' => 4, 'default' => 'An inclusive digital future for Northern Uganda where all young people and women are equipped, connected, and empowered to thrive in the global digital economy.'],
                 ['key' => 'mission_title', 'label' => 'Mission: heading', 'type' => 'text', 'default' => 'Our Mission'],
                 ['key' => 'mission_text', 'label' => 'Mission: text', 'type' => 'textarea', 'rows' => 4, 'default' => 'We aim to strengthen access to learning, improve practical competencies, build confidence and help young people prepare for further education, employment, entrepreneurship and leadership.'],
-                ['key' => 'vision_points', 'label' => 'Vision: key points (one per line)', 'type' => 'textarea', 'rows' => 4, 'default' => "An inclusive digital future\nYoung people and women\nEquipped and connected\nThriving in the global digital economy", 'help' => 'Short phrases shown as small badges under the vision. Leave empty to hide them.'],
-                ['key' => 'mission_points', 'label' => 'Mission: key points (one per line)', 'type' => 'textarea', 'rows' => 4, 'default' => "Access to learning\nPractical competencies\nConfidence\nEducation, jobs, enterprise and leadership", 'help' => 'Short phrases shown as small badges under the mission. Leave empty to hide them.'],
+                ['key' => 'vision_points', 'label' => 'Vision: key points (one per line)', 'type' => 'textarea', 'rows' => 4, 'default' => "An inclusive digital future\nYoung people and women\nEquipped and connected\nThriving in the global digital economy", 'help' => 'Short phrases shown as small tappable chips under the vision. Leave empty to hide them.'],
+                ['key' => 'vision_explain', 'label' => 'Vision: one-line explanation of each key point (optional, one per line, same order)', 'type' => 'textarea', 'rows' => 4, 'default' => '', 'help' => 'Shown under the chips when a visitor taps a key point. Leave empty to show only the highlight.'],
+                ['key' => 'mission_points', 'label' => 'Mission: key points (one per line)', 'type' => 'textarea', 'rows' => 4, 'default' => "Access to learning\nPractical competencies\nConfidence\nEducation, jobs, enterprise and leadership", 'help' => 'Short phrases shown as small tappable chips under the mission. Leave empty to hide them.'],
+                ['key' => 'mission_explain', 'label' => 'Mission: one-line explanation of each key point (optional, one per line, same order)', 'type' => 'textarea', 'rows' => 4, 'default' => '', 'help' => 'Shown under the chips when a visitor taps a key point. Leave empty to show only the highlight.'],
                 ['key' => 'tabs_label', 'label' => 'Switch: accessible name (read by screen readers)', 'type' => 'text', 'default' => 'Vision and mission'],
-                ['key' => 'image1', 'label' => 'Collage: front photo', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
-                ['key' => 'image2', 'label' => 'Collage: photo behind (optional)', 'type' => 'image', 'default' => 'assets/img/site/photo-05.jpg', 'alt' => 'Young people seated in a training room, one of them typing on a laptop'],
+                ['key' => 'image1', 'label' => 'Photo shown with the Vision', 'type' => 'image', 'default' => 'assets/img/site/photo-06.jpg', 'alt' => 'Young people seated at desks in a lecture hall'],
+                ['key' => 'image2', 'label' => 'Photo shown with the Mission (optional: the Vision photo is used when empty)', 'type' => 'image', 'default' => 'assets/img/site/photo-05.jpg', 'alt' => 'Young people seated in a training room, one of them typing on a laptop'],
                 ['key' => 'cta_label', 'label' => 'First button: text', 'type' => 'text', 'default' => 'Read our story'],
                 ['key' => 'cta_url', 'label' => 'First button: link', 'type' => 'url', 'default' => '/about'],
                 ['key' => 'cta2_label', 'label' => 'Second button: text (optional)', 'type' => 'text', 'default' => 'Meet the team'],
