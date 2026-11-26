@@ -13,7 +13,7 @@ ServerSignature Off
 AddDefaultCharset UTF-8
 
 # ---- 1. Block secrets, source and tooling files wherever they are ----
-<FilesMatch "(^\.env|\.(env|sql|md|py|log|ini|bak|sh|dist|lock|scss|map|yml|yaml|eml|swp)$|^(composer|package)(-lock)?\.json$)">
+<FilesMatch "(^\.env|\.(env|sql|md|py|log|ini|bak|sh|dist|lock|scss|map|yml|yaml|eml|swp|zip|gz|tgz|tar|7z|rar|old|orig|save|dump|key|pem|crt|pfx|p12|sqlite3?|db)$|^(composer|package)(-lock)?\.json$)">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -71,7 +71,7 @@ AddDefaultCharset UTF-8
     RewriteRule (^|/)\.(?!well-known/) - [F,L]
 
     # Sensitive file types anywhere.
-    RewriteRule \.(env|sql|md|py|log|ini|bak|sh|lock|scss|eml)$ - [F,NC,L]
+    RewriteRule \.(env|sql|md|py|log|ini|bak|sh|lock|scss|eml|zip|gz|tgz|tar|7z|rar|old|orig|save|dump|key|pem|crt|pfx|p12|sqlite3?|db|swp|inc|dist)$ - [F,NC,L]
 
     # ALLOW-LIST: only real files below assets/ and uploads/ are served directly (their own .htaccess then restricts the
     # file types). A backup, dump, log or key file dropped anywhere else in the project root is never handed out: it is
@@ -95,3 +95,31 @@ AddDefaultCharset UTF-8
         Require all denied
     </IfModule>
 </IfModule>
+
+# ---- 4. OPTIONAL: let ONLY Cloudflare (and this server itself) reach the origin  -- OFF BY DEFAULT ------------------------------
+# Purpose: once Cloudflare is live, nobody can bypass its filters by calling the hosting address directly.
+#
+#   !!! WARNING: switching this on BEFORE Cloudflare is live and working takes the WHOLE SITE OFFLINE (everybody gets "403 Forbidden").
+#   !!! Do it only when ALL of these are true:
+#       1. The name servers have been switched and Cloudflare shows the site as "Active" for at least a few days;
+#       2. Admin > Security > Cloudflare says "This request arrived through Cloudflare" AND shows "connection from" an address that
+#          is a Cloudflare address (if the connection comes from some other address, Hostinger's own front server sits between
+#          Cloudflare and the site and THIS BLOCK MUST STAY OFF: it would block Hostinger's server);
+#       3. You can reach the file manager to undo it (put the "#" signs back) if the site goes down.
+#
+# To switch it on, remove the "# " at the start of the lines between "BEGIN" and "END" below. The list is Cloudflare's published ranges
+# (copied 2026-11-26 from https://www.cloudflare.com/ips-v4 and /ips-v6; check those pages again every year and update this list AND
+# app/core/Cloudflare.php). Your own server's loopback address is allowed so the site can call itself (cache check, cron jobs).
+# Authenticated Origin Pulls (Cloudflare proves itself with a certificate) is the stronger version, but it needs an SSL setting
+# that Hostinger shared hosting does not offer; the address list below is the practical choice. See docs/CLOUDFLARE.md section 12.
+#
+# BEGIN origin lock (Cloudflare only)
+# <IfModule mod_authz_core.c>
+#     <RequireAny>
+#         Require ip 127.0.0.1 ::1
+#         Require ip 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20
+#         Require ip 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22
+#         Require ip 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+#     </RequireAny>
+# </IfModule>
+# END origin lock

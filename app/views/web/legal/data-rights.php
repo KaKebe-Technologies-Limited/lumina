@@ -33,7 +33,7 @@ $tok = static fn(string $s): string => TextTokens::text(str_replace('{days}', (s
 
                 <form class="form-card ia-form" id="request-form" method="post" action="<?= e(url('privacy/request')) ?>" novalidate>
                     <?= csrf_field() ?>
-                    <?= honeypot_field() ?>
+                    <?= honeypot_field() ?><?= turnstile_widget() ?>
                     <div class="form-grid">
                         <?= partial('partials/form-field', ['name' => 'name', 'id' => 'dr-name', 'label' => (string) content('data-rights', 'form.name_label'), 'required' => true, 'autocomplete' => 'name', 'maxlength' => 150]) ?>
                         <?= partial('partials/form-field', ['name' => 'email', 'id' => 'dr-email', 'label' => (string) content('data-rights', 'form.email_label'), 'type' => 'email', 'required' => true, 'autocomplete' => 'email', 'maxlength' => 190]) ?>

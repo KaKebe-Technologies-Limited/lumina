@@ -167,7 +167,7 @@ $cards = content_list('donate', 'support.items'); $supportUrl = H::href('donate'
                 'give_amount' => ['id' => 'f-give_amount', 'label' => 'Amount'], 'give_currency' => ['id' => 'f-give_currency', 'label' => 'Currency'],
             ], 'sid' => 'give-online']) ?>
             <?= csrf_field() ?>
-            <?= honeypot_field() ?>
+            <?= honeypot_field() ?><?= turnstile_widget() ?>
             <div class="form-grid">
                 <?= partial('partials/form-field', ['name' => 'give_name', 'label' => 'Your name', 'required' => true, 'autocomplete' => 'name', 'maxlength' => 150]) ?>
                 <?= partial('partials/form-field', ['name' => 'give_email', 'label' => 'E-mail (for your receipt)', 'type' => 'email', 'required' => true, 'autocomplete' => 'email', 'maxlength' => 190]) ?>
@@ -248,7 +248,7 @@ section_begin('donate', 'pledge', ['class' => 'donate-pledge', 'labelledby' => '
             <form class="form-card ia-form" method="post" action="<?= e(url('donate/pledge')) ?>" novalidate>
                 <?= partial('web/inner-a/_error_summary', ['title' => (string) content('donate', 'pledge.error_title'), 'fields' => $fieldMeta, 'sid' => 'pledge']) ?>
                 <?= csrf_field() ?>
-                <?= honeypot_field() ?>
+                <?= honeypot_field() ?><?= turnstile_widget() ?>
                 <div class="form-grid">
                     <?= partial('partials/form-field', ['name' => 'donor_name', 'label' => $fieldMeta['donor_name']['label'], 'required' => true, 'autocomplete' => 'name', 'maxlength' => 150]) ?>
                     <?= partial('partials/form-field', ['name' => 'donor_email', 'label' => $fieldMeta['donor_email']['label'], 'type' => 'email', 'required' => true, 'autocomplete' => 'email', 'maxlength' => 190]) ?>

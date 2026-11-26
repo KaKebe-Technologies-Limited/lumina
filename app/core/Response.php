@@ -159,8 +159,11 @@ class Response
         if (!isset($this->headers['Cache-Control']) && str_starts_with($ct, 'text/html')) {
             // PHP's session cache limiter is off (see Session), so say it explicitly: admin pages are never stored; public pages
             // may sit in the back/forward cache but must be revalidated (they embed a per-request form token).
-            $admin = Request::current()?->pathIs('/admin') ?? false;
+            // The admin, the learner / member / shop / payment areas (Cloudflare::NO_STORE_PREFIXES) are never stored by any cache, Cloudflare included.
+            $admin = Cloudflare::noStorePath(Request::current()?->path() ?? '');
             $h['Cache-Control'] = $admin ? 'private, no-store' : 'private, max-age=0, must-revalidate';
+        } elseif (!isset($this->headers['Cache-Control']) && in_array($this->status, [302, 303, 307], true)) {
+            $h['Cache-Control'] = 'private, no-store';   // a temporary redirect (after a sign-in or a form) must never be replayed to someone else
         }
         if (str_starts_with($ct, 'text/html')) {
             $gaId = function_exists('analytics_id') ? analytics_id() : trim((string) setting('analytics_id', ''));
@@ -176,14 +179,16 @@ class Response
             $trStyle = $tr ? ' https://translate.googleapis.com https://www.gstatic.com' : '';
             $trFrame = $tr ? ' data:' : '';
             $trConnect = $tr ? ' https://translate.googleapis.com https://translate-pa.googleapis.com' : '';
+            // Cloudflare Turnstile: allowed ONLY on a page that really embeds the widget (Turnstile::widget() sets the flag while the page renders)
+            $ts = \App\Services\Security\Turnstile::rendered() ? ' https://challenges.cloudflare.com' : '';
             $h['Content-Security-Policy'] = "default-src 'self'; "
-                . "script-src 'self'" . $analytics . $trScript . "; "
+                . "script-src 'self'" . $analytics . $trScript . $ts . "; "
                 . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com" . $trStyle . "; "
                 . "font-src 'self' https://fonts.gstatic.com data:; "
                 . "img-src 'self' data: blob: https:; "
                 . "media-src 'self' https:; "
-                . "frame-src 'self'" . $trFrame . " https://www.google.com https://maps.google.com https://www.youtube-nocookie.com https://www.youtube.com; "
-                . "connect-src 'self'" . $analyticsConnect . $trConnect . "; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'";
+                . "frame-src 'self'" . $trFrame . $ts . " https://www.google.com https://maps.google.com https://www.youtube-nocookie.com https://www.youtube.com; "
+                . "connect-src 'self'" . $analyticsConnect . $trConnect . $ts . "; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'";
         }
         if (Request::current()?->isSecure()) {
             $h['Strict-Transport-Security'] = 'max-age=15552000; includeSubDomains';

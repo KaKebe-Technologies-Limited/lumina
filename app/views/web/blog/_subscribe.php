@@ -15,7 +15,7 @@ $eyebrow = trim((string) ($eyebrow ?? ''));
     </div>
     <form class="subscribe-box__form" method="post" action="<?= e(url('subscribe')) ?>" novalidate<?= trim((string) $title) !== '' ? ' aria-labelledby="' . e($id) . '-title"' : '' ?>>
         <?= csrf_field() ?>
-        <?= honeypot_field() ?>
+        <?= honeypot_field() ?><?= turnstile_widget() ?>
         <input type="hidden" name="source" value="<?= e($source ?? 'website') ?>">
         <label class="visually-hidden" for="<?= e($id) ?>-email"><?= e($placeholder) ?></label>
         <input class="input" id="<?= e($id) ?>-email" type="email" name="email" autocomplete="email" required maxlength="190" placeholder="<?= e($placeholder) ?>">

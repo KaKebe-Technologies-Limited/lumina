@@ -37,19 +37,19 @@ $router->get('/opportunities/{slug}/file', [OpportunitiesController::class, 'fil
 $router->get('/careers', [CareersController::class, 'index'])->name('careers.index');
 $router->get('/careers/{slug}', [CareersController::class, 'show'])->name('careers.show');
 $router->post('/careers/apply', [CareersController::class, 'applyGeneral'])
-    ->name('careers.apply_general')->middleware(['page.published:careers', 'honeypot', 'throttle:5,600']);
+    ->name('careers.apply_general')->middleware(['page.published:careers', 'honeypot', 'turnstile', 'throttle:5,600']);
 $router->post('/careers/{slug}/apply', [CareersController::class, 'apply'])
-    ->name('careers.apply')->middleware(['page.published:careers', 'honeypot', 'throttle:5,600']);
+    ->name('careers.apply')->middleware(['page.published:careers', 'honeypot', 'turnstile', 'throttle:5,600']);
 
 // ---- Contact ----------------------------------------------------------------------------------------------------------
 $router->get('/contact', [ContactController::class, 'index'])->name('contact.index');
 $router->post('/contact', [ContactController::class, 'send'])
-    ->name('contact.send')->middleware(['page.published:contact', 'honeypot', 'throttle:5,600']);
+    ->name('contact.send')->middleware(['page.published:contact', 'honeypot', 'turnstile', 'throttle:5,600']);
 
 // ---- Newsletter -------------------------------------------------------------------------------------------------------------
 $router->get('/subscribe', [SubscribeController::class, 'landing'])->name('subscribe.redirect');
 $router->post('/subscribe', [SubscribeController::class, 'store'])
-    ->name('subscribe.store')->middleware(['honeypot', 'throttle:5,600']);
+    ->name('subscribe.store')->middleware(['honeypot', 'turnstile', 'throttle:5,600']);
 $router->get('/unsubscribe/{token}', [SubscribeController::class, 'showUnsubscribe'])->name('unsubscribe.show');
 $router->post('/unsubscribe/{token}', [SubscribeController::class, 'confirmUnsubscribe'])
     ->name('unsubscribe.confirm')->middleware(['csrf.exempt', 'throttle:20,600']);      // exempt: also receives the RFC 8058 one-click POST from mail clients; the controller checks CSRF itself for the form
@@ -58,7 +58,7 @@ $router->post('/unsubscribe/{token}', [SubscribeController::class, 'confirmUnsub
 $router->get('/privacy', [PrivacyController::class, 'index'])->name('privacy.index');
 $router->get('/privacy/request', [\App\Controllers\Web\DataRightsController::class, 'index'])->name('privacy.request');
 $router->post('/privacy/request', [\App\Controllers\Web\DataRightsController::class, 'send'])
-    ->name('privacy.request.send')->middleware(['page.published:data-rights', 'honeypot', 'throttle:5,600']);
+    ->name('privacy.request.send')->middleware(['page.published:data-rights', 'honeypot', 'turnstile', 'throttle:5,600']);
 
 // ---- Search engines ------------------------------------------------------------------------------------------------------------
 $router->get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('seo.sitemap');

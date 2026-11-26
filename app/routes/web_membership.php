@@ -17,7 +17,7 @@ use App\Controllers\Web\MembershipController;
 $router->get('/membership', [MembershipController::class, 'index'])->name('membership')->middleware('page.published:membership');
 $router->get('/membership/register', [MembershipController::class, 'register'])->name('membership.register')->middleware('page.published:membership');
 $router->post('/membership/register', [MembershipController::class, 'submit'])->name('membership.submit')
-    ->middleware(['page.published:membership', 'honeypot', 'throttle:5,600']);
+    ->middleware(['page.published:membership', 'honeypot', 'turnstile', 'throttle:5,600']);
 $router->get('/membership/confirmation/{ref}', [MembershipController::class, 'confirmation'])->name('membership.confirmation')
     ->where('ref', '[A-Za-z0-9-]{6,40}')->middleware(['page.published:membership', 'throttle:30,600']);
 $router->get('/membership/terms', [MembershipController::class, 'terms'])->name('membership.terms')->middleware('page.published:membership-terms');

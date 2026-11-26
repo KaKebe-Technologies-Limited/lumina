@@ -298,6 +298,12 @@ function honeypot_field(?string $keep = null): string
     return Honeypot::field($keep);
 }
 
+/** Cloudflare Turnstile widget for a form (empty unless Turnstile is switched on in .env). Pair it with the 'turnstile' route middleware. */
+function turnstile_widget(string $action = ''): string
+{
+    return \App\Services\Security\Turnstile::widget($action);
+}
+
 /** Old input after a failed validation redirect (ESCAPE it: <?= e(old('email')) ?>). */
 function old(string $key, mixed $default = ''): mixed
 {

@@ -151,7 +151,7 @@ $minor = !empty($minor);
                     </ul>
                 </div>
                 <?= csrf_field() ?>
-                <?= honeypot_field() ?>
+                <?= honeypot_field() ?><?= turnstile_widget() ?>
                 <p class="form-note mb-form__note"><?= e($c('form.required_note')) ?></p>
 
                 <?php /* ------------------------------------------------------------------ 1. membership type */ ?>

@@ -15,6 +15,7 @@ namespace App\Core;
  *   'throttle:5,60'   at most 5 requests per 60 seconds per IP per path (429 afterwards). Defaults 10,60.
  *   'page.published:about'  404 unless the page 'about' is published (pages.is_published; a page with no row counts as published)
  *   'honeypot'        public form spam trap: if Honeypot::passes() fails the request is silently accepted-and-dropped
+ *   'turnstile'       optional Cloudflare Turnstile check (inert unless its keys are in .env; the form needs turnstile_widget())
  */
 final class Middleware
 {
@@ -147,6 +148,16 @@ final class Middleware
             if ($request->isPost() && !Honeypot::passes($request)) {
                 Log::info('honeypot rejected a submission', ['path' => $request->path(), 'ip' => $request->ip()]);
                 Flash::success(self::formMessage('honeypot_ok', 'Thank you. Your submission has been received.'));
+                return Response::redirect(Honeypot::safeBackUrl($request));
+            }
+            return $next($request);
+        });
+
+        // Optional Cloudflare Turnstile (off unless its keys are in .env). A refused check bounces the visitor back with a plain message; the honeypot
+        // and the throttle stay in place. The widget must be in the form (turnstile_widget()).
+        self::register('turnstile', static function (Request $request, callable $next) {
+            if ($request->isPost() && !\App\Services\Security\Turnstile::verify($request)) {
+                Flash::error('We could not confirm that you are a person. Please try again.');
                 return Response::redirect(Honeypot::safeBackUrl($request));
             }
             return $next($request);

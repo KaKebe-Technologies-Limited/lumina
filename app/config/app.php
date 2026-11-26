@@ -106,6 +106,19 @@ return [
     // extra Host values accepted besides the APP_URL host (comma list). Only enforced when APP_ENV is not "local".
     'allowed_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) Env::get('ALLOWED_HOSTS', ''))))),
     'trusted_proxies' => array_values(array_filter(array_map('trim', explode(',', (string) Env::get('TRUSTED_PROXIES', ''))))),
+    // Cloudflare (docs/CLOUDFLARE.md). Inert unless CLOUDFLARE_PROXY=1: then Cloudflare's published address ranges count as trusted proxies and
+    // CF-Connecting-IP / CF-Visitor are believed, but only on connections that really come from those ranges. Extra ranges: comma list.
+    'cloudflare' => [
+        'proxy'        => Env::bool('CLOUDFLARE_PROXY', false),
+        'extra_ranges' => array_values(array_filter(array_map('trim', explode(',', (string) Env::get('CLOUDFLARE_EXTRA_RANGES', ''))))),
+    ],
+    // Cloudflare Turnstile (optional bot check on the riskiest public forms). Keys ONLY in .env (the secret is read straight from the environment by Turnstile::secret(), never kept in config); both must be set, and TURNSTILE_ENABLED must not be 0.
+    // TURNSTILE_FAIL=open (default: if Cloudflare's check cannot be reached the form still works, logged) | closed (the form is refused).
+    'turnstile' => [
+        'site_key' => trim((string) Env::get('TURNSTILE_SITE_KEY', '')),
+        'enabled'  => Env::bool('TURNSTILE_ENABLED', true),
+        'fail'     => strtolower(trim((string) Env::get('TURNSTILE_FAIL', 'open'))) === 'closed' ? 'closed' : 'open',
+    ],
     'pagination' => ['per_page' => 12, 'admin_per_page' => 20],
 
     /**

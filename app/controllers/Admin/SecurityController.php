@@ -11,6 +11,8 @@ use App\Core\Response;
 use App\Core\Settings;
 use App\Models\User;
 use App\Services\Security\AdminLock;
+use App\Services\Security\CloudflareStatus;
+use App\Services\Security\Turnstile;
 use App\Services\Security\SecurityStatus;
 use App\Services\Security\TwoFactor;
 
@@ -35,6 +37,8 @@ final class SecurityController extends AdminController
             'twoFactor' => TwoFactor::enabled(), 'forced' => TwoFactor::forced(), 'ready' => TwoFactor::install(),
             'email' => (string) ($me['email'] ?? ''), 'masked' => TwoFactor::maskedEmail((string) ($me['email'] ?? '')),
             'lockMinutes' => AdminLock::minutes(), 'lockChoices' => self::LOCK_CHOICES,
+            'cf' => CloudflareStatus::request($request), 'cfSteps' => CloudflareStatus::STEPS, 'cfTicks' => CloudflareStatus::ticks(), 'cfCache' => CloudflareStatus::lastCheck(),
+            'turnstile' => Turnstile::status(),
             'trustDays' => TwoFactor::trustDays(), 'trustChoices' => self::TRUST_CHOICES, 'devices' => TwoFactor::deviceCount(),
         ], ['title' => 'Security', 'nav' => 'security', 'breadcrumbs' => [['Security', null]]]);
     }
@@ -96,6 +100,28 @@ final class SecurityController extends AdminController
         $this->audit('security.settings', 'settings', null, 'Screen lock ' . ($lock > 0 ? $lock . ' minutes' : 'off') . ', remember-browser ' . ($trust > 0 ? $trust . ' days' : 'off'));
         Flash::success('Saved.');
         return $this->redirect('admin/security#settings');
+    }
+
+    /** Cloudflare card: the owner's own ticks (a record only; nothing is changed at Cloudflare). */
+    public function cloudflareSteps(Request $request): Response
+    {
+        $this->authorize('settings.manage');
+        $posted = $request->post('steps', []);
+        CloudflareStatus::saveTicks(is_array($posted) ? array_values(array_filter($posted, 'is_string')) : []);
+        $this->audit('security.cloudflare_steps', 'settings', null, 'Cloudflare checklist updated');
+        Flash::success('Saved.');
+        return $this->redirect('admin/security#cloudflare');
+    }
+
+    /** Cloudflare card: fetch the site's own key pages without a cookie and report their cache headers. */
+    public function cloudflareCheck(Request $request): Response
+    {
+        $this->authorize('settings.manage');
+        $rows = CloudflareStatus::runCacheCheck(rtrim((string) abs_url(''), '/'));
+        $bad = count(array_filter($rows, static fn(array $r): bool => $r['status'] === 'bad'));
+        $this->audit('security.cloudflare_cache_check', 'settings', null, 'Cache-header check: ' . $bad . ' problem' . ($bad === 1 ? '' : 's'));
+        $bad > 0 ? Flash::error($bad . ' page' . ($bad === 1 ? '' : 's') . ' could be stored by a shared cache. See the list below.') : Flash::success('Cache headers look right.');
+        return $this->redirect('admin/security#cloudflare');
     }
 
     public function forgetDevices(Request $request): Response

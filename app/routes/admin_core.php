@@ -33,7 +33,7 @@ $pageSlug = '[a-z0-9]+(?:[_-][a-z0-9]+)*';
 $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
     // --- public admin entry points ---
     $router->get('/login', [AuthController::class, 'showLogin'])->name('admin.login')->middleware('guest');
-    $router->post('/login', [AuthController::class, 'login'])->middleware(['guest', 'throttle:20,300']);
+    $router->post('/login', [AuthController::class, 'login'])->middleware(['guest', 'turnstile', 'throttle:20,300']);
     $router->get('/verify', [AuthController::class, 'showVerify'])->name('admin.verify')->middleware('guest');
     $router->post('/verify', [AuthController::class, 'verify'])->middleware(['guest', 'throttle:20,300']);
     $router->post('/verify/resend', [AuthController::class, 'resend'])->middleware(['guest', 'throttle:10,600']);
@@ -57,6 +57,8 @@ $router->group(['prefix' => 'admin'], function ($router) use ($pageSlug) {
         $router->post('/security/2fa-on', [\App\Controllers\Admin\SecurityController::class, 'turnOn'])->middleware('throttle:20,600');
         $router->post('/security/2fa-off', [\App\Controllers\Admin\SecurityController::class, 'turnOff'])->middleware('throttle:10,600');
         $router->post('/security/settings', [\App\Controllers\Admin\SecurityController::class, 'saveSettings'])->middleware('throttle:30,600');
+        $router->post('/security/cloudflare-steps', [\App\Controllers\Admin\SecurityController::class, 'cloudflareSteps'])->middleware('throttle:30,600');
+        $router->post('/security/cloudflare-check', [\App\Controllers\Admin\SecurityController::class, 'cloudflareCheck'])->middleware('throttle:10,600');
         $router->post('/security/devices-forget', [\App\Controllers\Admin\SecurityController::class, 'forgetDevices'])->middleware('throttle:10,600');
         $router->get('/profile/password', [AuthController::class, 'showPassword'])->name('admin.password');
         $router->post('/profile/password', [AuthController::class, 'updatePassword'])->middleware('throttle:15,600');

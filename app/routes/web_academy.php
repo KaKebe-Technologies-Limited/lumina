@@ -26,7 +26,7 @@ $router->get('/academy/certificate/{code}/pdf', [AcademyController::class, 'cert
 
 // ---- accounts -------------------------------------------------------------------------------------------------------------
 $router->get('/academy/register', [AcademyAccountController::class, 'registerForm'])->name('academy.register');
-$router->post('/academy/register', [AcademyAccountController::class, 'register'])->middleware(['honeypot', 'throttle:10,600'])->name('academy.register.post');
+$router->post('/academy/register', [AcademyAccountController::class, 'register'])->middleware(['honeypot', 'turnstile', 'throttle:10,600'])->name('academy.register.post');
 $router->get('/academy/check-email', [AcademyAccountController::class, 'checkEmail'])->name('academy.check_email');
 $router->post('/academy/verify/resend', [AcademyAccountController::class, 'resend'])->middleware(['honeypot', 'throttle:6,600'])->name('academy.verify.resend');
 $router->post('/academy/verify/code', [AcademyAccountController::class, 'verifyCode'])->middleware(['honeypot', 'throttle:20,600'])->name('academy.verify.code');
@@ -48,7 +48,7 @@ $router->post('/academy/fee/pay', [AcademyAccountController::class, 'payFee'])->
 $router->get('/academy/google', [AcademyAccountController::class, 'googleStart'])->middleware('throttle:30,600')->name('academy.google');
 $router->get('/academy/google/callback', [AcademyAccountController::class, 'googleCallback'])->middleware('throttle:30,600')->name('academy.google.callback');
 $router->get('/academy/login', [AcademyAccountController::class, 'loginForm'])->name('academy.login');
-$router->post('/academy/login', [AcademyAccountController::class, 'login'])->middleware(['honeypot', 'throttle:20,600'])->name('academy.login.post');
+$router->post('/academy/login', [AcademyAccountController::class, 'login'])->middleware(['honeypot', 'turnstile', 'throttle:20,600'])->name('academy.login.post');
 $router->post('/academy/logout', [AcademyAccountController::class, 'logout'])->name('academy.logout');
 $router->get('/academy/forgot', [AcademyAccountController::class, 'forgotForm'])->name('academy.forgot');
 $router->post('/academy/forgot', [AcademyAccountController::class, 'forgot'])->middleware(['honeypot', 'throttle:6,600'])->name('academy.forgot.post');

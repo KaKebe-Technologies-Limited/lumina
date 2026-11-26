@@ -101,7 +101,7 @@ section_begin('involvement', 'form', ['id' => 'join', 'class' => 'involvement-jo
             <form class="form-card ia-form" method="post" action="<?= e(url('involvement')) ?>" enctype="multipart/form-data" novalidate data-inv-form>
                 <?= partial('web/inner-a/_error_summary', ['title' => (string) content('involvement', 'form.error_title'), 'fields' => $fieldMeta, 'sid' => 'inv']) ?>
                 <?= csrf_field() ?>
-                <?= honeypot_field() ?>
+                <?= honeypot_field() ?><?= turnstile_widget() ?>
                 <div class="form-grid">
                     <?= partial('partials/form-field', ['name' => 'name', 'label' => $fieldMeta['name']['label'], 'required' => true, 'autocomplete' => 'name', 'maxlength' => 150]) ?>
                     <?= partial('partials/form-field', ['name' => 'email', 'label' => $fieldMeta['email']['label'], 'type' => 'email', 'required' => true, 'autocomplete' => 'email', 'maxlength' => 190]) ?>

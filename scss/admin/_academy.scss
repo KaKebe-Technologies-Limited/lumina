@@ -118,6 +118,9 @@ tr.is-unread td { background: #FFFBEA; }
   &__n { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: $navy; color: #fff; font-weight: 700; } }
 .sec-inline { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin-top: .5rem; }
 .sec-grid { display: grid; gap: $space-4; margin-bottom: $space-3; @include respond(md) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.table .sec-badge { margin-left: 0; border-radius: 10px; white-space: normal; font-weight: 600; }
+.sec-sub { margin: $space-4 0 .4rem; font-size: 1.05rem; }
+.sec-item__label { display: flex; gap: .55rem; align-items: center; cursor: pointer; input { width: 1.1rem; height: 1.1rem; flex: none; } }
 .sec-rule { border: 0; border-top: 1px solid $border; margin: $space-4 0; }
 .input--code { font-family: ui-monospace, Consolas, monospace; font-size: 1.5rem; letter-spacing: .35em; text-align: center; max-width: 12rem; }
 

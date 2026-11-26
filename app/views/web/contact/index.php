@@ -110,7 +110,7 @@ $fieldMeta = [
                 <form class="form-card ia-form" method="post" action="<?= e(url('contact')) ?>" novalidate data-contact-form>
                     <?= partial('web/inner-a/_error_summary', ['title' => (string) content('contact', 'form.error_title'), 'fields' => $fieldMeta, 'sid' => 'contact']) ?>
                     <?= csrf_field() ?>
-                    <?= honeypot_field() ?>
+                    <?= honeypot_field() ?><?= turnstile_widget() ?>
                     <div class="form-grid">
                         <?= partial('partials/form-field', ['name' => 'name', 'id' => 'contact-name', 'label' => $fieldMeta['name']['label'], 'required' => true, 'autocomplete' => 'name', 'maxlength' => 150]) ?>
                         <?= partial('partials/form-field', ['name' => 'email', 'id' => 'contact-email', 'label' => $fieldMeta['email']['label'], 'type' => 'email', 'required' => true, 'autocomplete' => 'email', 'maxlength' => 190]) ?>

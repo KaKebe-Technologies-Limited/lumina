@@ -254,7 +254,19 @@ final class Request
         if ($https !== '' && strtolower((string) $https) !== 'off') {
             return true;
         }
-        return $this->fromTrustedProxy() && strtolower((string) ($this->server['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
+        if (!$this->fromTrustedProxy()) {
+            return false;                 // forwarding headers are believed only from a trusted proxy (TRUSTED_PROXIES / Cloudflare)
+        }
+        $xfp = strtolower(trim(explode(',', (string) ($this->server['HTTP_X_FORWARDED_PROTO'] ?? ''))[0]));
+        if ($xfp === 'https') {
+            return true;
+        }
+        // Cloudflare tells the origin what the VISITOR used in CF-Visitor: {"scheme":"https"} (only believed when a Cloudflare address is in the chain)
+        if ($this->viaCloudflare()) {
+            $cv = json_decode((string) ($this->server['HTTP_CF_VISITOR'] ?? ''), true);
+            return is_array($cv) && strtolower((string) ($cv['scheme'] ?? '')) === 'https';
+        }
+        return false;
     }
 
     public function scheme(): string
@@ -395,7 +407,7 @@ final class Request
 
     private function fromTrustedProxy(): bool
     {
-        return self::ipInList((string) ($this->server['REMOTE_ADDR'] ?? ''), (array) Config::get('trusted_proxies', []));
+        return self::ipInList((string) ($this->server['REMOTE_ADDR'] ?? ''), Cloudflare::trustedList());
     }
 
     /** Exact match or CIDR match (IPv4 and IPv6) of $ip against a list such as ['127.0.0.1', '10.0.0.0/8', '::1']. */
@@ -434,16 +446,40 @@ final class Request
     }
 
     /**
-     * Client IP. X-Forwarded-For is only read when REMOTE_ADDR is a trusted proxy (TRUSTED_PROXIES, CIDR allowed), and the
-     * chain is walked RIGHT to LEFT: every proxy appends the address it saw, so the first hop from the right that is not a
-     * trusted proxy is the real client. Anything further left is client-supplied and ignored.
+     * Client IP. Forwarding headers are only read when REMOTE_ADDR is a trusted proxy (TRUSTED_PROXIES, CIDR allowed; with CLOUDFLARE_PROXY=1 also
+     * Cloudflare's published ranges). The chain (REMOTE_ADDR, then X-Forwarded-For from the RIGHT) is walked: every proxy appends the address it saw,
+     * so the first hop that is not a trusted proxy is the real client; anything further left is client-supplied and ignored. When a Cloudflare
+     * address is reached inside the trusted part of the chain, CF-Connecting-IP (which Cloudflare always overwrites) names the visitor. A request that
+     * reaches the origin from any other address can never choose its own IP, whatever headers it sends.
      */
     public function ip(): string
     {
-        $ip = (string) ($this->server['REMOTE_ADDR'] ?? '0.0.0.0');
-        if ($this->fromTrustedProxy() && !empty($this->server['HTTP_X_FORWARDED_FOR'])) {
-            $trusted = (array) Config::get('trusted_proxies', []);
-            $hops = array_reverse(array_map('trim', explode(',', (string) $this->server['HTTP_X_FORWARDED_FOR'])));
+        return $this->resolveClient()[0];
+    }
+
+    /** True when the request really came through Cloudflare: CLOUDFLARE_PROXY=1 and a Cloudflare address sits in the trusted part of the chain. */
+    public function viaCloudflare(): bool
+    {
+        return $this->resolveClient()[1];
+    }
+
+    /** @return array{0:string,1:bool} [client ip, came through Cloudflare] */
+    private function resolveClient(): array
+    {
+        $remote = (string) ($this->server['REMOTE_ADDR'] ?? '0.0.0.0');
+        $trusted = Cloudflare::trustedList();
+        $cfOn = Cloudflare::proxyEnabled();
+        $ip = $remote;
+        $viaCf = false;
+        if (self::ipInList($remote, $trusted)) {
+            $hops = [$remote];
+            if (!empty($this->server['HTTP_X_FORWARDED_FOR'])) {
+                foreach (array_reverse(array_map('trim', explode(',', (string) $this->server['HTTP_X_FORWARDED_FOR']))) as $h) {
+                    $hops[] = $h;
+                }
+            }
+            $cf = trim((string) ($this->server['HTTP_CF_CONNECTING_IP'] ?? ''));
+            $cf = filter_var($cf, FILTER_VALIDATE_IP) ? $cf : '';
             foreach ($hops as $hop) {
                 if (!filter_var($hop, FILTER_VALIDATE_IP)) {
                     break;                       // garbage in the chain: stop trusting it
@@ -452,11 +488,17 @@ final class Request
                 if (!self::ipInList($hop, $trusted)) {
                     break;
                 }
+                if ($cfOn && Cloudflare::isCloudflareIp($hop)) {
+                    $viaCf = true;
+                    if ($cf !== '') {
+                        $ip = $cf;
+                        break;
+                    }
+                }
             }
         }
-        return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
+        return [filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0', $viaCf];
     }
-
     public function isAjax(): bool
     {
         return strtolower((string) ($this->server['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';

@@ -15,6 +15,7 @@ What protects the website and the admin, how to switch each protection on, and w
 | **Protective headers** | `Response::securityHeaders` | Content-Security-Policy (no inline scripts), HSTS on https, no sniffing, no framing, referrer and permissions policy, `X-Powered-By` removed |
 | **Secrets never in a browser** | `SecretStore`, `.env` | API keys live in the server `.env`; secrets typed in the admin are stored encrypted (AES-256-GCM, keyed from `APP_KEY`) and are **write-only**: no page ever prints them back. Scripts and public pages contain no key |
 | **Files that must not be downloaded** | root `.htaccess` + one in every folder | `.env`, source code, `database/`, `storage/`, logs, `*.sql`, `*.md` are refused |
+| **Cloudflare readiness** | `Cloudflare`, `Request::ip()`, `Turnstile`, `CloudflareStatus` | the real visitor address behind Cloudflare (only from Cloudflare's own addresses, never from a header alone), no-store on private areas, optional Turnstile, origin-lock block in `.htaccess` (off), Admin > Security > Cloudflare card. Guide: docs/CLOUDFLARE.md |
 | **Spam and abuse traps** | `honeypot`, `throttle` middleware, CSRF tokens | every public form |
 | **Audit trail** | Admin > Activity log | every sign-in, failure, code, lock and security change (never a password or code) |
 
@@ -66,5 +67,5 @@ An account's code goes to the e-mail address stored on its user record (Admin > 
 
 * Authenticator-app (TOTP) codes and printed recovery codes (e-mail codes are used because every user already has a mailbox).
 * Allow-listing admin IP addresses (awkward when addresses change; a hosting firewall or Cloudflare Access can do it).
-* A web-application firewall and DDoS protection (hosting level, for example Cloudflare).
+* A web-application firewall and DDoS protection: Cloudflare (free plan) is prepared in the code and described step by step in `docs/CLOUDFLARE.md`; it is switched on by the owner (name servers, then `CLOUDFLARE_PROXY=1` in `.env`). Admin > Security > Cloudflare shows the state. No tool removes every threat: it is one more layer.
 * Automatic scanning of uploaded files for malware (uploads are type-checked and images are scrubbed, see docs/ARCHITECTURE.md).

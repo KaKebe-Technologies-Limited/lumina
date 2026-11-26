@@ -27226,6 +27226,31 @@ input:focus-visible + .af-switch__track {
   }
 }
 
+.table .sec-badge {
+  margin-left: 0;
+  border-radius: 10px;
+  white-space: normal;
+  font-weight: 600;
+}
+
+.sec-sub {
+  margin: 1rem 0 0.4rem;
+  font-size: 1.05rem;
+}
+
+.sec-item__label {
+  display: flex;
+  gap: .55rem;
+  align-items: center;
+  cursor: pointer;
+}
+
+.sec-item__label input {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+}
+
 .sec-rule {
   border: 0;
   border-top: 1px solid #E5DED0;

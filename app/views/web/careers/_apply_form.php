@@ -22,7 +22,7 @@ $fieldMeta = [
 <form class="form-card ia-form apply-form" method="post" action="<?= e($action) ?>" enctype="multipart/form-data" novalidate data-apply-form>
     <?= partial('web/inner-a/_error_summary', ['title' => (string) content('careers', 'form.error_title'), 'fields' => $fieldMeta, 'sid' => $idPrefix]) ?>
     <?= csrf_field() ?>
-    <?= honeypot_field() ?>
+    <?= honeypot_field() ?><?= turnstile_widget() ?>
     <div class="form-grid">
         <?= partial('partials/form-field', ['name' => 'name', 'id' => $fieldMeta['name']['id'], 'label' => $fieldMeta['name']['label'], 'required' => true, 'autocomplete' => 'name', 'maxlength' => 150]) ?>
         <?= partial('partials/form-field', ['name' => 'email', 'id' => $fieldMeta['email']['id'], 'label' => $fieldMeta['email']['label'], 'type' => 'email', 'required' => true, 'autocomplete' => 'email', 'maxlength' => 190]) ?>

@@ -16,6 +16,7 @@
             <button class="btn btn--outline btn--sm" type="button" data-password-toggle aria-controls="f-password" aria-pressed="false">Show</button>
         </div>
     </div>
+    <?= turnstile_widget('admin_login') ?>
     <button class="btn btn--primary btn--lg btn--block" type="submit" data-loading-text="Signing in...">Sign in</button>
 </form>
 <p class="auth__footer"><a href="<?= e(url('admin/forgot-password')) ?>">Forgot your password?</a></p>

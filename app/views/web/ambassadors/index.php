@@ -189,7 +189,7 @@ section_begin('ambassadors', 'form', ['id' => 'apply', 'class' => 'amb-apply', '
             <form class="form-card ia-form amb-form" method="post" action="<?= e(url('involvement/ambassadors')) ?>" enctype="multipart/form-data" novalidate data-amb-form>
                 <?= partial('web/inner-a/_error_summary', ['title' => $errTitle, 'fields' => $fieldMeta, 'sid' => 'amb']) ?>
                 <?= csrf_field() ?>
-                <?= honeypot_field() ?>
+                <?= honeypot_field() ?><?= turnstile_widget() ?>
 
                 <fieldset class="amb-form__group">
                     <legend>1. About you</legend>

@@ -315,6 +315,11 @@ foreach ($before as $k => $v) {
         Settings::set($k, (string) $v);
     }
 }
+// put the settings back as they were: a fee left behind turns every course card of the Academy page to "Paid" and fails the catalog test that runs after this one
+foreach ($before as $k => $v) {
+    $v === null ? Settings::reset($k) : Settings::set($k, (string) $v);
+}
+Settings::flush();
 PesapalClient::$transport = null;
 PesapalClient::resetToken();
 putenv($keys[0] === false ? 'PESAPAL_CONSUMER_KEY' : 'PESAPAL_CONSUMER_KEY=' . $keys[0]);

@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin > Security. Vars: $checks, $activity (failed, ok, locked in 24 h), $recent, $twoFactor, $forced (on|off|null: .env override), $ready, $email, $masked, $lockMinutes, $lockChoices, $trustDays, $trustChoices, $devices.
+ * Admin > Security. Vars (Cloudflare card: $cf, $cfSteps, $cfTicks, $cfCache, $turnstile): $checks, $activity (failed, ok, locked in 24 h), $recent, $twoFactor, $forced (on|off|null: .env override), $ready, $email, $masked, $lockMinutes, $lockChoices, $trustDays, $trustChoices, $devices.
  */
 $tone = ['ok' => 'ok', 'warn' => 'warn', 'bad' => 'bad'];
 $icons = ['ok' => 'check-circle', 'warn' => 'alert-triangle', 'bad' => 'alert-circle'];
@@ -75,6 +75,53 @@ $warn = count(array_filter($checks, static fn(array $c): bool => $c['status'] ==
     <form method="post" action="<?= e(url('admin/security/devices-forget')) ?>" class="sec-inline" data-confirm="Forget every remembered browser? Everybody will type a code at their next sign-in."><?= csrf_field() ?>
         <span><strong><?= (int) $devices ?></strong> remembered browser<?= (int) $devices === 1 ? '' : 's' ?> right now.</span>
         <button class="btn btn--outline btn--sm" type="submit">Forget all remembered browsers</button>
+    </form>
+</div></section>
+
+<?php
+$cfRows = is_array($cfCache) ? (array) $cfCache['rows'] : [];
+$cfOk = ['ok' => 'ok', 'warn' => 'warn', 'bad' => 'bad', 'unknown' => 'warn'];
+$cfDone = count(array_filter($cfTicks));
+?>
+<section class="card af-card" id="cloudflare"><div class="card__body">
+    <h2 class="card__title">Cloudflare protection <span class="af-pill<?= $cf['through'] ? ' af-pill--on' : '' ?>"><?= $cf['through'] ? 'Active' : 'Not in front yet' ?></span></h2>
+    <p class="text-muted">Cloudflare is a free shield that stands in front of the website: it filters attacks and bots before they reach the hosting. It reduces risk; no tool removes every threat. Step by step guide: <code>docs/CLOUDFLARE.md</code>. Nothing on this card changes anything at Cloudflare.</p>
+
+    <ul class="sec-list">
+        <li class="sec-item sec-item--<?= $cf['through'] ? 'ok' : 'warn' ?>"><span class="sec-item__icon"><?= icon($cf['through'] ? 'check-circle' : 'alert-triangle') ?></span>
+            <div><strong><?= $cf['through'] ? 'This request arrived through Cloudflare' : 'This request did not arrive through Cloudflare' ?></strong>
+                <p><?= $cf['through'] ? 'A Cloudflare ray ID is present and the connection came from a Cloudflare address' . ($cf['country'] !== '' ? ' (visitor country: ' . e($cf['country']) . ')' : '') . '.' : ($cf['ray'] ? 'A Cloudflare header is present but the connection did not come from a Cloudflare address, so it is ignored.' : 'Normal until you switch Cloudflare on (the name servers are changed at the end of the guide).') ?></p></div></li>
+        <li class="sec-item sec-item--<?= ($cf['through'] && !$cf['proxy_enabled']) ? 'bad' : 'ok' ?>"><span class="sec-item__icon"><?= icon(($cf['through'] && !$cf['proxy_enabled']) ? 'alert-circle' : 'check-circle') ?></span>
+            <div><strong>Visitor address seen by the site: <code><?= e($cf['visitor']) ?></code> (connection from <code><?= e($cf['peer']) ?></code>)</strong>
+                <p><?= $cf['proxy_enabled'] ? 'CLOUDFLARE_PROXY=1 is set: the real visitor address is read from Cloudflare only when the connection really comes from a Cloudflare address.' : 'CLOUDFLARE_PROXY is not set, so only your own TRUSTED_PROXIES setting is used.' ?></p>
+                <?php if ($cf['through'] && !$cf['proxy_enabled']): ?><p class="sec-item__fix"><b>What to do:</b> add the line <code>CLOUDFLARE_PROXY=1</code> to the server .env file. Until then every visitor looks like the same Cloudflare address and shares one sign-in and form limit.</p><?php endif; ?></div></li>
+        <li class="sec-item sec-item--<?= $cf['https'] ? 'ok' : 'warn' ?>"><span class="sec-item__icon"><?= icon($cf['https'] ? 'check-circle' : 'alert-triangle') ?></span>
+            <div><strong><?= $cf['https'] ? 'This page was opened over HTTPS' : 'This page was NOT opened over HTTPS' ?></strong>
+                <p><?= $cf['https'] ? 'HSTS is sent. In Cloudflare keep SSL/TLS on Full (strict); "Flexible" would make visitors loop between http and https.' : 'Local test sites are fine. On the live site this must be https.' ?></p></div></li>
+        <li class="sec-item sec-item--<?= $turnstile['enabled'] ? 'ok' : 'warn' ?>"><span class="sec-item__icon"><?= icon($turnstile['enabled'] ? 'check-circle' : 'alert-triangle') ?></span>
+            <div><strong>Turnstile bot check: <?= $turnstile['enabled'] ? 'ON' : 'off (optional)' ?></strong>
+                <p>Site key: <?= $turnstile['site_key_set'] ? 'set' : 'not set' ?>. Secret key: <?= $turnstile['secret_set'] ? 'Set (hidden)' : 'not set' ?>. If Cloudflare cannot be asked: <?= $turnstile['fail'] === 'closed' ? 'the form is refused' : 'the form still works (logged)' ?>.
+                <?= $turnstile['enabled'] ? 'Applied to: admin sign-in, learner sign-in and sign-up, membership, contact, newsletter, donate, volunteer, ambassador, job applications and the data-rights request.' : 'Add TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY to the server .env to switch it on (guide section 10).' ?></p></div></li>
+    </ul>
+
+    <h3 class="sec-sub">Cache check</h3>
+    <p class="text-muted">The private areas (admin, academy, membership, shop, donate, payments, api) must never be stored by Cloudflare. <?= $cfRows !== [] ? 'Last check: ' . e((string) $cfCache['at']) . '.' : 'Not run yet.' ?></p>
+    <form method="post" action="<?= e(url('admin/security/cloudflare-check')) ?>"><?= csrf_field() ?><button class="btn btn--outline btn--sm" type="submit"><?= icon('refresh', 'icon--sm') ?> Check the cache headers now</button></form>
+    <?php if ($cfRows !== []): ?>
+        <div class="table-wrap"><table class="table"><thead><tr><th scope="col">Page</th><th scope="col">Cache-Control sent</th><th scope="col">Cloudflare cache</th><th scope="col">Result</th></tr></thead><tbody>
+            <?php foreach ($cfRows as $r): ?><tr><td><code><?= e((string) $r['path']) ?></code></td><td><code><?= e((string) $r['cache_control']) !== '' ? e((string) $r['cache_control']) : '-' ?></code></td><td><?= e((string) $r['cf_cache']) !== '' ? e((string) $r['cf_cache']) : '-' ?></td><td><span class="sec-badge sec-badge--<?= e($cfOk[$r['status']] ?? 'warn') ?>"><?= e((string) $r['note']) ?></span></td></tr><?php endforeach; ?>
+        </tbody></table></div>
+    <?php endif; ?>
+
+    <h3 class="sec-sub">Your set-up checklist <span class="text-muted">(<?= (int) $cfDone ?> of <?= count($cfSteps) ?>)</span></h3>
+    <form method="post" action="<?= e(url('admin/security/cloudflare-steps')) ?>"><?= csrf_field() ?>
+        <ul class="sec-list">
+            <?php foreach ($cfSteps as $k => [$t, $hint]): ?>
+                <li class="sec-item sec-item--<?= !empty($cfTicks[$k]) ? 'ok' : 'warn' ?>"><div><label class="sec-item__label"><input type="checkbox" name="steps[]" value="<?= e((string) $k) ?>"<?= !empty($cfTicks[$k]) ? ' checked' : '' ?>> <strong><?= e($t) ?></strong></label><p class="text-muted"><?= e($hint) ?></p></div></li>
+            <?php endforeach; ?>
+        </ul>
+        <button class="btn btn--primary btn--sm" type="submit"><?= icon('check', 'icon--sm') ?> Save my ticks</button>
+        <p class="text-muted">The ticks are only your own notes. The menus in Cloudflare may look slightly different from the guide: Cloudflare changes its screens from time to time.</p>
     </form>
 </div></section>
 
