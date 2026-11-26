@@ -127,3 +127,19 @@
   &__n { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: rgba($navy, 0.1); color: $navy; font-weight: 800; .icon { width: 1.1rem; height: 1.1rem; } }
   &__steps .is-done &__n, &__steps .is-done .ac-locked__n { background: #138A45; color: $white; }
   &__actions { display: flex; flex-wrap: wrap; gap: $space-3; } }
+
+// ---- the "add your WhatsApp number" pop-up (_contact-gate.php; assets/js/academy.js makes the page behind inert). It cannot be closed, so there is no close button.
+//      Without JavaScript it is still a full-screen layer. On a phone it fills the screen and scrolls inside itself.
+html.ac-gate-open { overflow: hidden; }
+.ac-gate { position: fixed; inset: 0; z-index: $z-modal + 100; display: grid; place-items: center; padding: $space-4; overflow-y: auto; overscroll-behavior: contain; background: rgba($navy-dark, 0.78); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  &__dialog { width: 100%; max-width: 34rem; margin: auto; padding: $space-6 $space-5; background: $white; border-radius: $radius-lg; border-top: 6px solid $gold; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45); outline: 0; @include respond(sm) { padding: $space-6; } }
+  &__icon { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; margin: 0 0 $space-3; border-radius: 50%; background: #25D366; color: $white; .icon { width: 1.7rem; height: 1.7rem; } }
+  &__title { margin: 0 0 $space-2; font-family: $font-heading; font-size: #{'clamp(1.35rem, 4.5vw, 1.75rem)'}; line-height: 1.2; color: $navy; text-wrap: balance; }
+  &__lead { margin: 0 0 $space-5; line-height: 1.55; color: $ink-soft; text-wrap: pretty; }
+  &__form { margin: 0; .field { margin-bottom: $space-4; } }
+  &__save { width: 100%; justify-content: center; }
+  &__out { margin: $space-4 0 0; text-align: center; &--note { margin-top: 0; font-size: 0.9rem; color: $ink-soft; } }
+  &__link { padding: 0.6rem 0.8rem; border: 0; background: none; font: inherit; font-size: 0.9rem; color: $ink-soft; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; border-radius: $radius-sm;
+    &:hover, &:focus-visible { color: $navy; } &:focus-visible { outline: 3px solid $gold; outline-offset: 2px; } } }
+@media (prefers-reduced-motion: no-preference) { .ac-gate__dialog { animation: ac-gate-in 0.28s ease-out both; } }
+@keyframes ac-gate-in { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }

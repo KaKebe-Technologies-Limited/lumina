@@ -383,3 +383,38 @@
     inputs.forEach(function (inp) { if (inp.value.trim() === '') inp.value = '+' + prev + ' '; });
   }
 })();
+
+/* LAF Academy dashboard: the "add your WhatsApp number" pop-up (_contact-gate.php, [data-ac-gate]). It cannot be closed: no close button, Escape and a click outside do nothing,
+   the page behind is inert and does not scroll, and Tab stays inside the box. The server is the real lock (LearnerAuth::contactGate); this is the friendly face of it.
+   Without this script the box is still a full-screen layer (CSS). */
+(function () {
+  'use strict';
+  var gate = document.querySelector('[data-ac-gate]');
+  if (!gate) return;
+  var dialog = gate.querySelector('[role=dialog]') || gate;
+  document.body.appendChild(gate);                                   // a direct child of <body>, so everything else can be made inert
+  Array.prototype.slice.call(document.body.children).forEach(function (n) {
+    if (n !== gate && n.tagName !== 'SCRIPT' && n.tagName !== 'NOSCRIPT' && !n.hasAttribute('inert')) n.setAttribute('inert', '');
+  });
+  document.documentElement.classList.add('ac-gate-open');
+  function focusable() {
+    return Array.prototype.slice.call(dialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'))
+      .filter(function (el) { return el.offsetWidth > 0 || el.offsetHeight > 0; });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); return; }
+    if (e.key !== 'Tab') return;
+    var list = focusable();
+    if (!list.length) { e.preventDefault(); return; }
+    var first = list[0], last = list[list.length - 1], at = document.activeElement;
+    if (!dialog.contains(at)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && at === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && at === last) { e.preventDefault(); first.focus(); }
+  }, true);
+  function blank(f) { var v = (f.value || '').replace(/\s+/g, ''); return v === '' || (f.tagName !== 'SELECT' && /^\+?\d{0,4}$/.test(v)); }   // empty, or only a phone code the country filled in
+  var start = gate.querySelector('[aria-invalid=true]') || Array.prototype.slice.call(gate.querySelectorAll('select,input:not([type=hidden])')).filter(blank)[0] || gate.querySelector('input:not([type=hidden])');
+  if (start) {
+    try { start.focus({ preventScroll: true }); } catch (e) { start.focus(); }
+    if (start.getAttribute('aria-invalid') === 'true' && start.scrollIntoView) start.scrollIntoView({ block: 'nearest' });   // a phone shows only the top of the box: bring the field with the message into view
+  }
+})();

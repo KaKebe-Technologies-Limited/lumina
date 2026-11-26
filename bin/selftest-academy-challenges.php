@@ -198,7 +198,7 @@ check('decline: the application is declined and the applicant e-mailed with the 
 
 // ---- challenges: the engine --------------------------------------------------------------------------------------------------
 $learner = static function (string $name, string $email, string $pw = 'Learner pass 8271'): array {
-    $id = Database::insert('academy_learners', ['name' => $name, 'email' => $email, 'password_hash' => Auth::hashPassword($pw), 'email_verified_at' => date('Y-m-d H:i:s'), 'is_active' => 1]);
+    $id = Database::insert('academy_learners', ['name' => $name, 'email' => $email, 'password_hash' => Auth::hashPassword($pw), 'phone' => '+256700000082', 'country' => 'Uganda', 'whatsapp' => '256700000082', 'email_verified_at' => date('Y-m-d H:i:s'), 'is_active' => 1]);   // phone, country and WhatsApp: without them the portal pages stay locked (academy.contact)
     return (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$id]);
 };
 $L1 = $learner('ZZ Chal Amina Kato', 'zz-chal-l1@example.test');

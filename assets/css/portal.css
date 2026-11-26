@@ -1005,3 +1005,134 @@
   flex-wrap: wrap;
   gap: 0.75rem;
 }
+
+html.ac-gate-open {
+  overflow: hidden;
+}
+
+.ac-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: rgba(11, 27, 51, 0.78);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.ac-gate__dialog {
+  width: 100%;
+  max-width: 34rem;
+  margin: auto;
+  padding: 2rem 1.5rem;
+  background: #FFFFFF;
+  border-radius: 20px;
+  border-top: 6px solid #D9A441;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  outline: 0;
+}
+
+@media (min-width: 576px) {
+  .ac-gate__dialog {
+    padding: 2rem;
+  }
+}
+
+.ac-gate__icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 0 0.75rem;
+  border-radius: 50%;
+  background: #25D366;
+  color: #FFFFFF;
+}
+
+.ac-gate__icon .icon {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+.ac-gate__title {
+  margin: 0 0 0.5rem;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: clamp(1.35rem, 4.5vw, 1.75rem);
+  line-height: 1.2;
+  color: #142B4A;
+  text-wrap: balance;
+}
+
+.ac-gate__lead {
+  margin: 0 0 1.5rem;
+  line-height: 1.55;
+  color: #5B6472;
+  text-wrap: pretty;
+}
+
+.ac-gate__form {
+  margin: 0;
+}
+
+.ac-gate__form .field {
+  margin-bottom: 1rem;
+}
+
+.ac-gate__save {
+  width: 100%;
+  justify-content: center;
+}
+
+.ac-gate__out {
+  margin: 1rem 0 0;
+  text-align: center;
+}
+
+.ac-gate__out--note {
+  margin-top: 0;
+  font-size: 0.9rem;
+  color: #5B6472;
+}
+
+.ac-gate__link {
+  padding: 0.6rem 0.8rem;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.9rem;
+  color: #5B6472;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.ac-gate__link:hover, .ac-gate__link:focus-visible {
+  color: #142B4A;
+}
+
+.ac-gate__link:focus-visible {
+  outline: 3px solid #D9A441;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ac-gate__dialog {
+    animation: ac-gate-in 0.28s ease-out both;
+  }
+}
+
+@keyframes ac-gate-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

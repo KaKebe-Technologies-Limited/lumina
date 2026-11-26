@@ -224,6 +224,37 @@ final class LearnerAuth
             || (VerificationCode::ready() && trim((string) ($learner['whatsapp'] ?? '')) === '');
     }
 
+    /**
+     * THE HARD GATE. A signed-in learner who has not given the phone, country and WhatsApp number cannot use the portal: every learner action (courses, lessons,
+     * quizzes, certificates, messages, challenges, enrolling) answers this instead of its page. A page is sent to the dashboard, where a pop-up asks for the
+     * details and cannot be closed; the page they wanted is remembered and opened after saving. A background request (quiz autosave) gets a plain 403.
+     * Open on purpose (they do not carry the middleware): /academy/dashboard, /academy/account, sign-out, the Security page (delete the account / change the password),
+     * the public pages, and an exam or challenge quiz that is already open (it must be finishable). null = nothing to do (not signed in, or the details are complete).
+     */
+    public static function contactGate(\App\Core\Request $request): ?\App\Core\Response
+    {
+        $learner = self::current();
+        if ($learner === null || !self::missingContact($learner)) {
+            return null;
+        }
+        if ($request->expectsJson() || $request->isAjax()) {
+            return \App\Core\Response::json(['error' => 'Please add your WhatsApp number to continue.', 'gate' => 'contact'], 403)->header('Cache-Control', 'private, no-store');
+        }
+        if ($request->isGet()) {
+            $next = ltrim($request->path(), '/');
+            $base = trim(base_path(), '/');
+            if ($base !== '' && str_starts_with($next, $base . '/')) {
+                $next = substr($next, strlen($base) + 1);
+            }
+            $uri = $request->uri();
+            if (str_starts_with($next, 'academy/')) {
+                Session::put('academy_next', $next . (str_contains($uri, '?') ? '?' . explode('?', $uri, 2)[1] : ''));
+            }
+        }
+        \App\Core\Flash::info('One more step: please add your WhatsApp number to continue. The Academy team uses it to support you.');
+        return \App\Core\Response::redirect(url('academy/dashboard'))->header('Cache-Control', 'private, no-store');
+    }
+
     /** The Academy support WhatsApp line: ['display' => '+256 779 795 662', 'digits' => '256779795662', 'url' => 'https://wa.me/...'] or null when switched off. */
     public static function supportWhatsapp(): ?array
     {

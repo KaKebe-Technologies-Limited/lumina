@@ -221,7 +221,7 @@ $again = $acPost('/academy/learn/computer-basics/attempt/' . $attId, ['answer' =
 check('a submitted attempt cannot be re-graded', (float) Database::value('SELECT score_pct FROM academy_attempts WHERE id = ?', [$attId]) === 100.0);
 // other learner cannot see this attempt
 $emailB = 'zz-academy-b@example.test';
-Database::insert('academy_learners', ['name' => 'ZZ Academy B', 'email' => $emailB, 'password_hash' => \App\Core\Auth::hashPassword('Second learner 99'), 'email_verified_at' => date('Y-m-d H:i:s')]);
+Database::insert('academy_learners', ['name' => 'ZZ Academy B', 'email' => $emailB, 'password_hash' => \App\Core\Auth::hashPassword('Second learner 99'), 'phone' => '+256700000084', 'country' => 'Uganda', 'whatsapp' => '256700000084', 'email_verified_at' => date('Y-m-d H:i:s')]);
 $jB = null;
 $acPost('/academy/login', ['email' => $emailB, 'password' => 'Second learner 99'], $jB, '/academy/login');
 $lidB = (int) Database::value('SELECT id FROM academy_learners WHERE email = ?', [$emailB]);

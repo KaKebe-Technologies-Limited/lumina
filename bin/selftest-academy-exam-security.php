@@ -106,6 +106,7 @@ Database::execute('UPDATE academy_quizzes SET time_limit_min = NULL WHERE id = ?
 
 $mkL = static fn(string $tag): array => (array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [(int) Database::insert('academy_learners', [
     'name' => 'ZZ Exs ' . $tag, 'email' => 'zz-exs-' . $tag . '@example.test', 'password_hash' => Auth::hashPassword('Secret-12345'), 'email_verified_at' => date('Y-m-d H:i:s'), 'is_active' => 1,
+    'phone' => '+256700000083', 'country' => 'Uganda', 'whatsapp' => '256700000083',
 ])]);
 $la = $mkL('a');
 $lidA = (int) $la['id'];

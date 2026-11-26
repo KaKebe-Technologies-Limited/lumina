@@ -14,6 +14,7 @@ namespace App\Core;
  *   'can:settings.manage'  logged-in user must hold the ability (config 'abilities' in app/config/app.php)
  *   'throttle:5,60'   at most 5 requests per 60 seconds per IP per path (429 afterwards). Defaults 10,60.
  *   'page.published:about'  404 unless the page 'about' is published (pages.is_published; a page with no row counts as published)
+ *   'academy.contact' LAF Academy learner actions: a learner without phone, country and WhatsApp number is sent to the dashboard pop-up first
  *   'honeypot'        public form spam trap: if Honeypot::passes() fails the request is silently accepted-and-dropped
  *   'turnstile'       optional Cloudflare Turnstile check (inert unless its keys are in .env; the form needs turnstile_widget())
  */
@@ -142,6 +143,12 @@ final class Middleware
                 throw new HttpException(404, 'Not found');
             }
             return $next($request);
+        });
+
+        // LAF Academy: a learner who has not given the phone, country and WhatsApp number is kept on the dashboard pop-up (LearnerAuth::contactGate).
+        self::register('academy.contact', static function (Request $request, callable $next) {
+            $stop = \App\Services\Academy\LearnerAuth::contactGate($request);
+            return $stop ?? $next($request);
         });
 
         self::register('honeypot', static function (Request $request, callable $next) {

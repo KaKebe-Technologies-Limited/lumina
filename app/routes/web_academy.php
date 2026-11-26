@@ -19,8 +19,9 @@ $router->get('/academy/courses/{slug}', [AcademyController::class, 'course'])->n
 $router->get('/academy/impact', [AcademyController::class, 'impact'])->name('academy.impact');
 $router->get('/academy/faq', [AcademyController::class, 'faq'])->name('academy.faq');
 $router->get('/academy/partner-courses', [AcademyController::class, 'partners'])->name('academy.partners');
-$router->get('/academy/classes', [AcademyController::class, 'classes'])->name('academy.classes');
-$router->get('/academy/classes/{id}/calendar.ics', [AcademyController::class, 'calendar'])->middleware('throttle:60,60')->name('academy.class.ics');
+// the class list shows join links, passcodes and recordings to a signed-in learner, so a learner without the contact details is held on the pop-up here too (visitors are not affected)
+$router->get('/academy/classes', [AcademyController::class, 'classes'])->middleware('academy.contact')->name('academy.classes');
+$router->get('/academy/classes/{id}/calendar.ics', [AcademyController::class, 'calendar'])->middleware(['academy.contact', 'throttle:60,60'])->name('academy.class.ics');
 $router->get('/academy/certificate/{code}', [AcademyController::class, 'certificate'])->middleware('throttle:120,60')->name('academy.certificate');
 $router->get('/academy/certificate/{code}/pdf', [AcademyController::class, 'certificatePdf'])->middleware('throttle:60,60')->name('academy.certificate.pdf');
 
@@ -65,24 +66,29 @@ $router->post('/academy/account/delete', [AcademyAccountController::class, 'dele
 
 // ---- learning -------------------------------------------------------------------------------------------------------------
 $router->get('/academy/dashboard', [AcademyPortalController::class, 'overview'])->name('academy.dashboard');
-$router->get('/academy/portal/courses', [AcademyPortalController::class, 'courses'])->name('academy.portal.courses');
-$router->get('/academy/portal/certificates', [AcademyPortalController::class, 'certificates'])->name('academy.portal.certificates');
-$router->get('/academy/portal/certificates/{id}/preview', [AcademyPortalController::class, 'certificatePreview'])->where('id', '[0-9]+')->name('academy.portal.certificates.preview');
-$router->post('/academy/portal/certificates/{id}/pay-mobile', [AcademyPortalController::class, 'payCertificateMobile'])->where('id', '[0-9]+')->middleware('throttle:10,600')->name('academy.portal.certificates.pay_mobile');
-$router->post('/academy/portal/certificates/{id}/pay', [AcademyPortalController::class, 'payCertificate'])->where('id', '[0-9]+')->middleware('throttle:10,600')->name('academy.portal.certificates.pay');
-$router->get('/academy/portal/messages', [AcademyPortalController::class, 'messages'])->name('academy.portal.messages');
-$router->post('/academy/portal/messages', [AcademyPortalController::class, 'sendMessage'])->middleware('throttle:30,600')->name('academy.portal.messages.send');
-$router->get('/academy/portal/security', [AcademyPortalController::class, 'security'])->name('academy.portal.security');
-$router->post('/academy/courses/{slug}/enroll', [AcademyLearnController::class, 'enroll'])->middleware('throttle:30,600')->name('academy.enroll');
-$router->post('/academy/courses/{slug}/certificate', [AcademyLearnController::class, 'requestCertificate'])->middleware('throttle:20,600')->name('academy.certificate.request');
-$router->post('/academy/courses/{slug}/leave', [AcademyLearnController::class, 'unenroll'])->middleware('throttle:10,600')->name('academy.leave');
-$router->get('/academy/learn/{slug}', [AcademyLearnController::class, 'resume'])->name('academy.learn');
-$router->get('/academy/learn/{slug}/lesson/{id}', [AcademyLearnController::class, 'lesson'])->name('academy.lesson');
-$router->post('/academy/learn/{slug}/lesson/{id}/complete', [AcademyLearnController::class, 'complete'])->middleware('throttle:200,600')->name('academy.lesson.complete');
-$router->post('/academy/learn/{slug}/lesson/{id}/reopen', [AcademyLearnController::class, 'reopen'])->middleware('throttle:60,600')->name('academy.lesson.reopen');
-$router->get('/academy/learn/{slug}/lesson/{id}/file', [AcademyLearnController::class, 'file'])->middleware('throttle:60,60')->name('academy.lesson.file');
-$router->get('/academy/learn/{slug}/quiz/{id}', [AcademyLearnController::class, 'quiz'])->name('academy.quiz');
-$router->post('/academy/learn/{slug}/quiz/{id}/start', [AcademyLearnController::class, 'startQuiz'])->middleware('throttle:60,600')->name('academy.quiz.start');
+// A learner without phone, country and WhatsApp number is held on the dashboard pop-up until they are added: the learner actions below carry
+// 'academy.contact' (LearnerAuth::contactGate). Open on purpose: the dashboard, My account, the sign-out, the Security page (password, delete the account), an exam or quiz
+// attempt that is already open, and the public pages. A NEW learner route that needs a signed-in learner must carry 'academy.contact'.
+$router->get('/academy/portal/courses', [AcademyPortalController::class, 'courses'])->middleware('academy.contact')->name('academy.portal.courses');
+$router->get('/academy/portal/certificates', [AcademyPortalController::class, 'certificates'])->middleware('academy.contact')->name('academy.portal.certificates');
+$router->get('/academy/portal/certificates/{id}/preview', [AcademyPortalController::class, 'certificatePreview'])->where('id', '[0-9]+')->middleware('academy.contact')->name('academy.portal.certificates.preview');
+$router->post('/academy/portal/certificates/{id}/pay-mobile', [AcademyPortalController::class, 'payCertificateMobile'])->where('id', '[0-9]+')->middleware(['academy.contact', 'throttle:10,600'])->name('academy.portal.certificates.pay_mobile');
+$router->post('/academy/portal/certificates/{id}/pay', [AcademyPortalController::class, 'payCertificate'])->where('id', '[0-9]+')->middleware(['academy.contact', 'throttle:10,600'])->name('academy.portal.certificates.pay');
+$router->get('/academy/portal/messages', [AcademyPortalController::class, 'messages'])->middleware('academy.contact')->name('academy.portal.messages');
+$router->post('/academy/portal/messages', [AcademyPortalController::class, 'sendMessage'])->middleware(['academy.contact', 'throttle:30,600'])->name('academy.portal.messages.send');
+$router->get('/academy/portal/security', [AcademyPortalController::class, 'security'])->name('academy.portal.security');                       // open on purpose: the only place to change the password or delete the account, which nobody should have to give details first to do
+$router->post('/academy/courses/{slug}/enroll', [AcademyLearnController::class, 'enroll'])->middleware(['academy.contact', 'throttle:30,600'])->name('academy.enroll');
+$router->post('/academy/courses/{slug}/certificate', [AcademyLearnController::class, 'requestCertificate'])->middleware(['academy.contact', 'throttle:20,600'])->name('academy.certificate.request');
+$router->post('/academy/courses/{slug}/leave', [AcademyLearnController::class, 'unenroll'])->middleware(['academy.contact', 'throttle:10,600'])->name('academy.leave');
+$router->get('/academy/learn/{slug}', [AcademyLearnController::class, 'resume'])->middleware('academy.contact')->name('academy.learn');
+$router->get('/academy/learn/{slug}/lesson/{id}', [AcademyLearnController::class, 'lesson'])->middleware('academy.contact')->name('academy.lesson');
+$router->post('/academy/learn/{slug}/lesson/{id}/complete', [AcademyLearnController::class, 'complete'])->middleware(['academy.contact', 'throttle:200,600'])->name('academy.lesson.complete');
+$router->post('/academy/learn/{slug}/lesson/{id}/reopen', [AcademyLearnController::class, 'reopen'])->middleware(['academy.contact', 'throttle:60,600'])->name('academy.lesson.reopen');
+$router->get('/academy/learn/{slug}/lesson/{id}/file', [AcademyLearnController::class, 'file'])->middleware(['academy.contact', 'throttle:60,60'])->name('academy.lesson.file');
+$router->get('/academy/learn/{slug}/quiz/{id}', [AcademyLearnController::class, 'quiz'])->middleware('academy.contact')->name('academy.quiz');
+$router->post('/academy/learn/{slug}/quiz/{id}/start', [AcademyLearnController::class, 'startQuiz'])->middleware(['academy.contact', 'throttle:60,600'])->name('academy.quiz.start');
+// An attempt that is already open (page, autosave, final answers) is NOT gated: the exam clock keeps running on the server, so a learner caught mid-exam must be able to finish it.
+// Starting something new (quiz start above, enrolling, challenge start) stays behind the gate.
 $router->get('/academy/learn/{slug}/attempt/{id}', [AcademyLearnController::class, 'attempt'])->name('academy.attempt');
 $router->post('/academy/learn/{slug}/attempt/{id}', [AcademyLearnController::class, 'submit'])->middleware('throttle:60,600')->name('academy.attempt.submit');
 $router->post('/academy/learn/{slug}/attempt/{id}/sync', [AcademyLearnController::class, 'sync'])->middleware('throttle:400,600')->name('academy.attempt.sync');
@@ -94,12 +100,12 @@ $router->get('/academy/facilitate/thanks', [AcademyFacilitateController::class, 
 
 $router->get('/academy/challenges', [AcademyChallengesController::class, 'index'])->name('academy.challenges');
 $router->get('/academy/challenges/{slug}', [AcademyChallengesController::class, 'show'])->name('academy.challenge');
-$router->post('/academy/challenges/{slug}/apply', [AcademyChallengesController::class, 'apply'])->middleware('throttle:20,600')->name('academy.challenge.apply');
-$router->post('/academy/challenges/{slug}/withdraw', [AcademyChallengesController::class, 'withdraw'])->middleware('throttle:20,600')->name('academy.challenge.withdraw');
-$router->post('/academy/challenges/{slug}/photo', [AcademyChallengesController::class, 'photo'])->middleware('throttle:20,600')->name('academy.challenge.photo');
-$router->post('/academy/challenges/{slug}/quiz/start', [AcademyChallengesController::class, 'quizStart'])->middleware('throttle:20,600')->name('academy.challenge.quiz.start');
-$router->get('/academy/challenges/{slug}/quiz', [AcademyChallengesController::class, 'quiz'])->name('academy.challenge.quiz');
+$router->post('/academy/challenges/{slug}/apply', [AcademyChallengesController::class, 'apply'])->middleware(['academy.contact', 'throttle:20,600'])->name('academy.challenge.apply');
+$router->post('/academy/challenges/{slug}/withdraw', [AcademyChallengesController::class, 'withdraw'])->middleware(['academy.contact', 'throttle:20,600'])->name('academy.challenge.withdraw');
+$router->post('/academy/challenges/{slug}/photo', [AcademyChallengesController::class, 'photo'])->middleware(['academy.contact', 'throttle:20,600'])->name('academy.challenge.photo');
+$router->post('/academy/challenges/{slug}/quiz/start', [AcademyChallengesController::class, 'quizStart'])->middleware(['academy.contact', 'throttle:20,600'])->name('academy.challenge.quiz.start');
+$router->get('/academy/challenges/{slug}/quiz', [AcademyChallengesController::class, 'quiz'])->name('academy.challenge.quiz');                       // a quiz already started can be finished (see the course attempts above)
 $router->post('/academy/challenges/{slug}/quiz/submit', [AcademyChallengesController::class, 'quizSubmit'])->middleware('throttle:20,600')->name('academy.challenge.quiz.submit');
-$router->post('/academy/challenges/{slug}/project', [AcademyChallengesController::class, 'project'])->middleware('throttle:30,600')->name('academy.challenge.project');
+$router->post('/academy/challenges/{slug}/project', [AcademyChallengesController::class, 'project'])->middleware(['academy.contact', 'throttle:30,600'])->name('academy.challenge.project');
 $router->get('/academy/winners', [AcademyChallengesController::class, 'winners'])->name('academy.winners');
 $router->get('/academy/winners/{id}/photo', [AcademyChallengesController::class, 'winnerPhoto'])->middleware('throttle:300,60')->name('academy.winner.photo');

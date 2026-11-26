@@ -46,10 +46,10 @@ check('registry: the number is LAF-AC-year-six digits', LearnerRegistry::format(
 
 // ------------------------------------------------------------------------------------------------------------- the sign-up form (over HTTP)
 $base = 'http://localhost/' . basename(dirname(__DIR__));
-$req = static function (string $method, string $path, array $form = [], ?string &$jar = null) use ($base): array {
+$req = static function (string $method, string $path, array $form = [], ?string &$jar = null, array $headers = []) use ($base): array {
     $jar ??= tempnam(sys_get_temp_dir(), 'lrj');
     $ch = curl_init($base . $path);
-    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_TIMEOUT => 60, CURLOPT_COOKIEJAR => $jar, CURLOPT_COOKIEFILE => $jar, CURLOPT_FOLLOWLOCATION => false]);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_TIMEOUT => 60, CURLOPT_COOKIEJAR => $jar, CURLOPT_COOKIEFILE => $jar, CURLOPT_FOLLOWLOCATION => false, CURLOPT_HTTPHEADER => $headers]);
     if ($method === 'POST') {
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($form));
@@ -153,12 +153,46 @@ $gid = (int) Database::insert('academy_learners', ['name' => 'Zed Lre Gap', 'ema
 check('contact: a learner without them is recognised', LearnerAuth::missingContact((array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$gid])));
 $jG = null;
 $lg = $post('/academy/login', ['email' => 'zz-lre-gap@example.test', 'password' => $pw], $jG, '/academy/login');
-check('contact: after signing in they are taken to the form to add them first', in_array($lg['code'], [302, 303], true) && str_contains($lg['head'], 'academy/account'));
+$toDash = static fn(array $r): bool => in_array($r['code'], [302, 303], true) && preg_match('~^Location:\s*\S*academy/dashboard\s*$~mi', $r['head']) === 1;
+check('contact: after signing in they land on the dashboard, where the pop-up asks for the details first', in_array($lg['code'], [302, 303], true) && preg_match('~^Location:\s*\S*academy/dashboard\s*$~mi', $lg['head']) === 1);
 $dashG = $req('GET', '/academy/dashboard', [], $jG)['body'];
 check('contact: the dashboard keeps asking until they are given', str_contains($dashG, 'complete my details'));
-$sv = $post('/academy/account/profile', ['name' => 'Zed Lre Gap', 'phone' => '+256700000003', 'country' => 'Uganda', 'whatsapp' => '+256 701 000 004'], $jG, '/academy/account');
+check('contact: the dashboard opens a pop-up (modal dialog) with the WhatsApp field, and it has no way to be closed', str_contains($dashG, 'data-ac-gate') && str_contains($dashG, 'role="dialog"') && str_contains($dashG, 'aria-modal="true"') && str_contains($dashG, 'name="whatsapp"') && str_contains($dashG, 'name="gate"') && !preg_match('~ac-gate[^>]*(close|dismiss)~i', $dashG));
+check('contact: the pop-up still offers to sign out, so nobody is trapped', str_contains($dashG, 'class="ac-gate__out"') && str_contains($dashG, 'academy/logout'));
+// the gate itself (server side): every learner page and action sends the learner back to the pop-up
+foreach (['/academy/portal/courses', '/academy/portal/certificates', '/academy/portal/messages', '/academy/learn/zz-none', '/academy/learn/zz-none/lesson/1', '/academy/learn/zz-none/quiz/1', '/academy/classes', '/academy/classes/1/calendar.ics'] as $locked) {
+    $gr1 = $req('GET', $locked, [], $jG);
+    check('contact gate: ' . $locked . ' is not shown, the learner goes to the dashboard pop-up (and the page is not cached)', $toDash($gr1) && stripos($gr1['head'], 'no-store') !== false);
+}
+foreach (['/academy/portal/messages' => ['body' => 'hello'], '/academy/courses/zz-none/enroll' => [], '/academy/learn/zz-none/lesson/1/complete' => [], '/academy/learn/zz-none/quiz/1/start' => [], '/academy/challenges/zz-none/apply' => [], '/academy/challenges/zz-none/quiz/start' => []] as $locked => $fields) {
+    $gr2 = $post($locked, $fields, $jG, '/academy/account');
+    check('contact gate: sending to ' . $locked . ' is refused until the details are given', $toDash($gr2));
+}
+$jsG = $req('POST', '/academy/learn/zz-none/lesson/1/complete', ['_token' => $tok($req('GET', '/academy/account', [], $jG)['body'])], $jG, ['Accept: application/json', 'X-Requested-With: XMLHttpRequest']);
+check('contact gate: a background request (a button that talks to the server without reloading) gets a plain 403 with a JSON message, not a page', $jsG['code'] === 403 && str_contains($jsG['body'], '"gate"') && str_contains($jsG['body'], 'WhatsApp'));
+check('contact gate: My account and the public Academy pages stay open, so the details can be given', $req('GET', '/academy/account', [], $jG)['code'] === 200 && $req('GET', '/academy', [], $jG)['code'] === 200 && $req('GET', '/academy/faq', [], $jG)['code'] === 200);
+check('contact gate: the Security page stays open, so an account can be deleted or its password changed without giving any details', $req('GET', '/academy/portal/security', [], $jG)['code'] === 200 && str_contains($dashG, 'academy/portal/security'));
+// an exam or quiz that is already open can be finished (the clock runs on the server): these answer the controller (404 for the made-up course), never the pop-up redirect
+$jsA = $req('POST', '/academy/learn/zz-none/attempt/1/sync', ['_token' => $tok($req('GET', '/academy/account', [], $jG)['body'])], $jG, ['Accept: application/json', 'X-Requested-With: XMLHttpRequest']);
+check('contact gate: an exam attempt that is already open can still be viewed, saved and handed in (not sent to the pop-up)', !$toDash($req('GET', '/academy/learn/zz-none/attempt/1', [], $jG)) && !$toDash($post('/academy/learn/zz-none/attempt/1', [], $jG, '/academy/account')) && !str_contains($jsA['body'], '"gate"') && !$toDash($req('GET', '/academy/challenges/zz-none/quiz', [], $jG)) && !$toDash($post('/academy/challenges/zz-none/quiz/submit', [], $jG, '/academy/account')));
+$jN = null;
+$noSession = $req('GET', '/academy/portal/courses', [], $jN);
+check('contact gate: a visitor who is not signed in is still sent to the sign-in page, not the pop-up', in_array($noSession['code'], [302, 303], true) && preg_match('~^Location:\s*\S*academy/login~mi', $noSession['head']) === 1);
+// the pop-up form: a wrong number is refused, the learner is back on the pop-up with the message and nothing was saved
+$badWa = $post('/academy/account/profile', ['gate' => '1', 'phone' => '+256700000003', 'country' => 'Uganda', 'whatsapp' => 'abc'], $jG, '/academy/dashboard');
+$backG = $req('GET', '/academy/dashboard', [], $jG)['body'];
+check('contact gate: a wrong WhatsApp number goes back to the pop-up with a message and nothing is saved', $toDash($badWa) && str_contains($backG, 'WhatsApp number with the country code') && str_contains($backG, 'data-ac-gate') && LearnerAuth::missingContact((array) Database::one('SELECT * FROM academy_learners WHERE id = ?', [$gid])));
+if (LearnerAuth::bioReady()) {
+    Database::execute('UPDATE academy_learners SET bio = ? WHERE id = ?', ['I like robots.', $gid]);
+}
+$req('GET', '/academy/portal/messages', [], $jG);                                   // the page the learner wanted is remembered
+$sv = $post('/academy/account/profile', ['gate' => '1', 'name' => 'Someone Else', 'phone' => '+256700000003', 'country' => 'Uganda', 'whatsapp' => '+256 701 000 004'], $jG, '/academy/dashboard');
 $gr = Database::one('SELECT * FROM academy_learners WHERE id = ?', [$gid]);
-check('contact: saving the details stores them and ends the reminder', $gr['whatsapp'] === '256701000004' && !LearnerAuth::missingContact((array) $gr) && !str_contains($req('GET', '/academy/dashboard', [], $jG)['body'], 'complete my details'));
+check('contact: saving in the pop-up stores the three details and nothing else (name and bio stay)', $gr['whatsapp'] === '256701000004' && $gr['phone'] === '+256700000003' && $gr['country'] === 'Uganda' && !LearnerAuth::missingContact((array) $gr) && $gr['name'] === 'Zed Lre Gap' && (!LearnerAuth::bioReady() || $gr['bio'] === 'I like robots.'));
+check('contact gate: after saving the learner goes on to the page they wanted', in_array($sv['code'], [302, 303], true) && preg_match('~^Location:\s*\S*academy/portal/messages\s*$~mi', $sv['head']) === 1);
+$afterDash = $req('GET', '/academy/dashboard', [], $jG)['body'];
+check('contact: once given, the pop-up and the reminder are gone', !str_contains($afterDash, 'data-ac-gate') && !str_contains($afterDash, 'complete my details'));
+check('contact gate: the portal opens normally afterwards', $req('GET', '/academy/portal/courses', [], $jG)['code'] === 200 && $req('GET', '/academy/portal/messages', [], $jG)['code'] === 200);
 $bare = $post('/academy/account/profile', ['name' => 'Zed Lre Gap', 'phone' => '', 'country' => '', 'whatsapp' => ''], $jG, '/academy/account');
 check('contact: the details cannot be emptied again', Database::value('SELECT country FROM academy_learners WHERE id = ?', [$gid]) === 'Uganda');
 

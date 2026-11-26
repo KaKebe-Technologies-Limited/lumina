@@ -393,8 +393,7 @@ final class AcademyAccountController extends AcademyBaseController
             $this->fail(['password' => (string) $res['error']], 'academy/login');
         }
         if (LearnerAuth::missingContact((array) $res['learner'])) {
-            Flash::info('Please add your phone number, country and WhatsApp number to continue. They help us to support you.');
-            return $this->redirect('academy/account#details');
+            return $this->redirect('academy/dashboard');                                   // the dashboard pop-up asks for the WhatsApp number (and phone, country); nothing else opens before
         }
         return $this->redirect($this->nextAfterLogin());
     }
@@ -441,7 +440,7 @@ final class AcademyAccountController extends AcademyBaseController
         LearnerAuth::signIn($res['learner']);
         if ($res['created'] && LearnerAuth::followRequired()) {                      // a new Google account has not seen the sign-up form: ask for the follow here, then go on
             $go = LearnerPortrait::requiredAtSignup() && empty(LearnerPortrait::of((int) $res['learner']['id'])['photo_path']) ? 'academy/account#picture'
-                : (LearnerAuth::missingContact((array) $res['learner']) ? 'academy/account#details' : $this->nextAfterLogin());
+                : (LearnerAuth::missingContact((array) $res['learner']) ? 'academy/dashboard' : $this->nextAfterLogin());
             \App\Core\Session::put('academy_follow_next', $go);
             Flash::info('Welcome to the LAF Academy! One last step: follow and subscribe to our pages.');
             return $this->redirect('academy/follow');
@@ -451,8 +450,10 @@ final class AcademyAccountController extends AcademyBaseController
             return $this->redirect('academy/account#picture');
         }
         if (LearnerAuth::missingContact((array) $res['learner'])) {
-            Flash::info(($res['created'] ? 'Welcome to the LAF Academy! ' : '') . 'Please add your phone number, country and WhatsApp number to continue. They help us to support you.');
-            return $this->redirect('academy/account#details');
+            if ($res['created']) {
+                Flash::success('Welcome to the LAF Academy! Your account is ready.');
+            }
+            return $this->redirect('academy/dashboard');                                   // the pop-up there asks for the WhatsApp number before anything else opens
         }
         Flash::success($res['created'] ? 'Welcome to the LAF Academy! Your account is ready.' : 'You are signed in with Google.');
         return $this->redirect($this->nextAfterLogin());
@@ -531,22 +532,28 @@ final class AcademyAccountController extends AcademyBaseController
         if ($l === null) {
             return $this->loginRedirect();
         }
-        $name = trim((string) preg_replace('/\s+/u', ' ', strip_tags($request->string('name'))));
-        if (mb_strlen($name) < 2 || mb_strlen($name) > 120) {
+        // gate = the pop-up on the dashboard (LearnerAuth::contactGate): only the phone, country and WhatsApp number are asked; name and bio stay as they are
+        $gate = $request->string('gate') === '1';
+        $name = $gate ? (string) $l['name'] : trim((string) preg_replace('/\s+/u', ' ', strip_tags($request->string('name'))));
+        if (!$gate && (mb_strlen($name) < 2 || mb_strlen($name) > 120)) {
             $this->fail(['name' => 'Please enter your full name.'], 'academy/account');
         }
         $c = LearnerAuth::contact($request->string('phone'), $request->string('country'), $request->string('whatsapp'));
         if ($c['errors'] !== []) {
-            $this->fail($c['errors'], 'academy/account#details');
+            $this->fail($c['errors'], $gate ? 'academy/dashboard' : 'academy/account#details');
         }
         $upd = ['name' => $name, 'phone' => mb_substr($c['phone'], 0, 40), 'country' => mb_substr($c['country'], 0, 80)];
-        if (LearnerAuth::bioReady()) {
+        if (!$gate && LearnerAuth::bioReady()) {
             $bio = trim((string) preg_replace('/\s+/u', ' ', strip_tags($request->string('bio'))));
             $upd['bio'] = $bio !== '' ? mb_substr($bio, 0, 600) : null;
         }
         Database::update('academy_learners', $upd, 'id = ?', [(int) $l['id']]);
         \App\Services\Academy\VerificationCode::saveNumber((int) $l['id'], $c['whatsapp']);
         LearnerAuth::flush();
+        if ($gate) {
+            Flash::success('Thank you. Your WhatsApp number is saved and you can carry on.');
+            return $this->redirect($this->nextAfterLogin('academy/dashboard'));              // back to the page the learner was trying to open, if any
+        }
         Flash::success('Your details were saved. Certificates you already earned keep the name they were issued with.');
         return $this->redirect($this->nextAfterLogin('academy/account'));
     }

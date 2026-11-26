@@ -189,4 +189,5 @@ $active = (int) ($me['is_active'] ?? 1) === 1;
         </div>
     </div>
 </section>
+<?php if (LearnerAuth::missingContact((array) $me)): ?><?= partial('web/academy/portal/_contact-gate', ['me' => $me]) ?><?php endif; ?>
 <?php $this->start('scripts'); ?><script src="<?= e(asset('js/academy.js')) ?>" defer></script><?php $this->end(); ?>
