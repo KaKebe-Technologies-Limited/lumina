@@ -27,6 +27,8 @@ use App\Services\Fund\FundProjects;
  */
 final class FundController extends Controller
 {
+    use GatewayRedirects;
+
     private const MANUAL_METHODS = ['bank' => 'Bank transfer', 'mobile_money' => 'Mobile money (we send you the details)', 'paypal' => 'PayPal', 'other' => 'Another way'];
 
     /**
@@ -37,8 +39,13 @@ final class FundController extends Controller
     private static function methods(): array
     {
         $out = [];
-        if (\App\Services\DarazaPay\DarazaPayments::enabled('project')) {
-            $out['mobile_now'] = 'Pay now with MTN or Airtel mobile money';
+        // the two ways to pay now, in the order set in Admin > Payment options (mobile money first, Pesapal second by default)
+        foreach (\App\Services\Payments\PaymentOptions::ranked() as $way) {
+            if ($way === 'mobile' && \App\Services\DarazaPay\DarazaPayments::enabled('project')) {
+                $out['mobile_now'] = 'Pay now with MTN or Airtel mobile money';
+            } elseif ($way === 'online' && \App\Services\Pesapal\PesapalPayments::offered('project')) {
+                $out['pesapal_now'] = \App\Services\Pesapal\PesapalPlaces::LABEL;
+            }
         }
         if (\App\Services\Payments\PaymentOptions::manual() || $out === []) {
             $out += self::MANUAL_METHODS;
@@ -139,6 +146,10 @@ final class FundController extends Controller
             'ip' => $request->ip(),
         ];
         $pay = $record['method'] === 'mobile_now';
+        $payPesapal = $record['method'] === 'pesapal_now';
+        if ($payPesapal) {
+            $record['method'] = 'pesapal';
+        }
         $big = false;
         if ($pay) {
             $minor = \App\Services\Shop\Money::parse(number_format((float) $record['amount'], 2, '.', ''));
@@ -154,7 +165,23 @@ final class FundController extends Controller
                 $record['method'] = 'mobile_money';
             }
         }
-        $donationId = Donation::create($record);
+        if ($payPesapal) {
+            $minorP = \App\Services\Shop\Money::parse(number_format((float) $record['amount'], 2, '.', ''));
+            if ($minorP === null || $minorP < 1) {
+                $this->fail(['amount' => 'Please check the amount.'], $back);
+            }
+            $donationId = Donation::create($record);
+            $r = \App\Services\Pesapal\PesapalPayments::begin('project', (int) $donationId, (int) $minorP, $currency, 'Gift to ' . $p['short'] . ' - Lumina Africa Foundation', ['name' => $record['donor_name'], 'email' => $record['donor_email'], 'phone' => (string) ($record['donor_phone'] ?? '')]);
+            if ($r['ok']) {
+                \App\Core\Mailer::notify('Project gift started: ' . $p['short'], "A donor started a Pesapal gift to a project (it is recorded as received only when Pesapal confirms the payment).\n\nProject: {$p['title']}\nContribution: {$label}\nAmount: " . number_format((float) $record['amount'], 2) . " {$currency}\nName: {$record['donor_name']}\n\nManage it: " . abs_url('admin/donations') . "\n", $record['donor_email']);
+                return $this->sendToGateway((string) $r['link']);
+            }
+            Flash::error('We could not open the secure payment page just now. Nothing was charged and your gift was saved: we will contact you, or you can try again in a minute.');
+            $record['method'] = 'other';
+            \App\Core\Database::update('donations', ['method' => 'other'], 'id = ?', [(int) $donationId]);
+        } else {
+            $donationId = Donation::create($record);
+        }
         if ($pay) {
             $b = \App\Services\DarazaPay\DarazaPayments::begin('project', (int) $donationId, (int) $minor, $currency, ['name' => $record['donor_name'], 'email' => $record['donor_email'], 'phone' => (string) ($record['donor_phone'] ?? '')]);
             if ($b['ok']) {

@@ -2540,6 +2540,13 @@ PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
 
+-- Pesapal at every payment point (database/updates/2026-11-pesapal-everywhere.sql): gifts to a project and membership fees.
+SET @lumina_ddl = IF((SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'pesapal_payments' AND column_name = 'purpose' AND column_type LIKE '%membership%') = 0 AND (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'pesapal_payments') = 1,
+  'ALTER TABLE `pesapal_payments` MODIFY COLUMN `purpose` ENUM(''donation'',''shop'',''academy_signup'',''academy_cert'',''project'',''membership'') NOT NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 -- Academy sign-up fee paid by mobile money / bank / Daraza: the learner reports the payment (transaction ID + optional proof), an administrator confirms it.
 SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'fee_reference');
 SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_learners` ADD COLUMN `fee_reference` VARCHAR(120) NULL', 'DO 0');

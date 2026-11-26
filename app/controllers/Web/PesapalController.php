@@ -40,6 +40,21 @@ final class PesapalController extends Controller
                 return $this->redirect('shop/order/' . $order['token']);
             }
         }
+        if ($row !== null && $row['purpose'] === 'membership') {
+            $path = \App\Services\Membership\MembershipService::dashboardPath((int) $row['ref_id']);
+            if ($path !== '') {
+                if ($state === 'paid') {
+                    Flash::success('Payment received. Thank you! Your membership payment is recorded and your receipt is on this page.');
+                } elseif ($state === 'failed') {
+                    Flash::error('The Pesapal payment did not go through. Nothing was charged. You can try again below.');
+                } elseif ($state === 'review') {
+                    Flash::info('Your payment needs a quick check by our team. We will contact you if we need anything.');
+                } else {
+                    Flash::info('We are waiting for Pesapal to confirm your payment. If you have paid, it can take a few minutes: please do not pay again.');
+                }
+                return $this->redirect($path);
+            }
+        }
         if ($row !== null && $row['purpose'] === 'academy_cert' && $state === 'paid' && LearnerAuth::check()) {
             Flash::success('Payment received. Thank you! Your certificate is now being finalised: it appears under "Ready" as soon as it is available.');
             return $this->redirect('academy/portal/certificates');

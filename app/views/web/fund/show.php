@@ -195,7 +195,7 @@ $cover = asset('img/projects/' . $p['cover'] . '.jpg');
                     <?= partial('partials/form-field', ['name' => 'is_anonymous', 'label' => 'I would like my gift to stay anonymous', 'type' => 'checkbox']) ?>
                     <button class="btn btn--cta btn--caps btn--block" type="submit"><?= icon('heart', 'icon--sm') ?> <span data-fund-give>Give now</span></button>
                     <?= partial('partials/privacy-note', ['key' => 'donate']) ?>
-                    <p class="fund-details__note"><?= isset($methods['mobile_now']) ? 'Press Give now to pay with MTN or Airtel mobile money. You approve the payment on your phone.' : 'Press Give now and we will contact you with the details to complete your gift.' ?></p>
+                    <p class="fund-details__note"><?php if (isset($methods['mobile_now']) && isset($methods['pesapal_now'])): ?>Press Give now to pay with MTN or Airtel mobile money (you approve on your phone), or choose Card, mobile money or bank (Pesapal): you are taken to Pesapal's secure page to finish and we never see your card details or PIN.<?php elseif (isset($methods['mobile_now'])): ?>Press Give now to pay with MTN or Airtel mobile money. You approve the payment on your phone.<?php elseif (isset($methods['pesapal_now'])): ?>Press Give now to pay with Card, mobile money or bank (Pesapal): you are taken to Pesapal's secure page to finish and we never see your card details or PIN.<?php else: ?>Press Give now and we will contact you with the details to complete your gift.<?php endif; ?></p>
                 </div>
             </aside>
         </form>

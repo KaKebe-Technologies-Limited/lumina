@@ -26,7 +26,7 @@ final class AcademyFeesController extends AcademyAdminController
         $this->authorize('academy.manage');
         $ways = [
             ['Mobile money online (Daraza)', AcademyFees::mobileAvailable('signup'), AcademyFees::mobileAvailable('cert'), 'admin/daraza/api', 'Learners pay from their phone and the payment is confirmed by itself.'],
-            ['Card and online (Pesapal)', PesapalPayments::ready() && PaymentOptions::online(), PesapalPayments::ready() && PaymentOptions::online(), 'admin/pesapal', 'Cards and other online methods.'],
+            ['Card, mobile money or bank (Pesapal)', PesapalPayments::offered('academy_signup'), PesapalPayments::offered('academy_cert'), 'admin/pesapal', 'Cards and other online methods.'],
             ['Payment link (Daraza page)', \App\Services\Daraza::enabled('signup'), \App\Services\Daraza::enabled('cert'), 'admin/daraza', 'A button to your Daraza payment page; you confirm the money by hand.'],
             ['Bank and mobile-money details', AcademyFees::manual() !== null, AcademyFees::manual() !== null, null, 'The details you type below; learners pay by hand and report the transaction.'],
         ];

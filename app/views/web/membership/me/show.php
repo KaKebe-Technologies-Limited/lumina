@@ -57,8 +57,13 @@ ob_start(); ?>
         <?php endif; ?>
         <h3 class="mb-me__h3"><?= e($c('dashboard.instructions_title')) ?></h3>
         <div class="mb-me__prose"><?= $instructions !== '' ? nl2p($instructions) : (!empty($payDaraza) ? '' : nl2p($c('dashboard.payment_none'))) ?></div>
+        <?php $payParts = []; ob_start(); ?>
         <?php if (!empty($mobilePay)): ?><?= partial('partials/pay-banner', []) ?><form method="post" action="<?= e(url('membership/me/' . $token . '/pay-mobile')) ?>" style="margin:0 0 1rem"><?= csrf_field() ?><button class="btn btn--cta btn--caps" type="submit"><?= icon('phone', 'icon--sm') ?> Pay <?= e($mobilePay['display']) ?> with MTN or Airtel mobile money</button></form><?php endif; ?>
+<?php $payParts['mobile'] = ob_get_clean(); ob_start(); ?>
+        <?php if (!empty($pesapalPay)): ?><?= partial('partials/pesapal-pay', ['action' => url('membership/me/' . $token . '/pay-pesapal'), 'button' => 'Pay ' . $pesapalPay['display'] . ' with Card, mobile money or bank (Pesapal)', 'primary' => empty($mobilePay)]) ?><?php endif; ?>
+<?php $payParts['online'] = ob_get_clean(); ob_start(); ?>
         <?php if (!empty($payDaraza)): ?><p><a class="btn btn--cta btn--caps" href="<?= e($payDaraza['url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('external-link', 'icon--sm') ?> <?= e($payDaraza['label']) ?></a></p><?php endif; ?>
+<?php $payParts['link'] = ob_get_clean(); foreach (\App\Services\Payments\PaymentOptions::ranked() as $payWay) { echo $payParts[$payWay] ?? ''; } ?>
         <p class="mb-me__hint"><?= icon('upload', 'icon--sm') ?> <?= e(MembershipService::copy('dashboard.proof_after_paying', 'After you pay, attach your proof of payment below.')) ?> <a href="#proof"><?= e(MembershipService::copy('dashboard.proof_jump', 'Attach proof of payment')) ?></a></p>
     <?php endif; ?>
 </section>

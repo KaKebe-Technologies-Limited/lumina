@@ -75,7 +75,7 @@ final class ShopSettings
         'shop_pay_flutterwave_instructions' => ['', 'text', 'Online payment: instructions'],
         'shop_pay_flutterwave_sort' => ['10', 'int', 'Online payment: position'],
         'shop_pay_pesapal_enabled' => ['0', 'bool', 'Card, mobile money and bank online (Pesapal)'],
-        'shop_pay_pesapal_label'  => ['Card or mobile money (Pesapal)', 'str', 'Pesapal: label'],
+        'shop_pay_pesapal_label'  => ['Card, mobile money or bank (Pesapal)', 'str', 'Pesapal: label'],
         'shop_pay_pesapal_instructions' => ['Pay securely with Visa, Mastercard, MTN Mobile Money or Airtel Money.', 'text', 'Pesapal: instructions'],
         'shop_pay_pesapal_sort'   => ['11', 'int', 'Pesapal: position'],
         'shop_pay_daraza_enabled' => ['0', 'bool', 'Pay with Daraza (payment link)'],

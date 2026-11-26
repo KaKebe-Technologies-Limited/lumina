@@ -11,6 +11,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Services\Pesapal\PesapalClient;
 use App\Services\Pesapal\PesapalPayments;
+use App\Services\Pesapal\PesapalPlaces;
 
 /**
  * Admin > Pesapal payments: is the gateway connected, test the keys, and the list of every Pesapal payment (donations and shop orders) with a
@@ -24,6 +25,10 @@ final class PesapalController extends AdminController
         $tables = Database::tableExists('pesapal_payments') && Database::tableExists('pesapal_ipns');
         return $this->render('admin/pesapal/index', [
             'tables'    => $tables,
+            'places'    => $this->placeRows(),
+            'onlineOff' => PesapalPlaces::onlineWayOff(),
+            'mobileOnly' => PesapalPlaces::mobileOnly(),
+            'canEverywhere' => can('settings.manage'),
             'donationsOn' => PesapalPayments::donationsSwitch(),
             'donateMethod' => PesapalPayments::donateMethod(),
             'shopOn'    => \App\Services\Shop\ShopSettings::bool('shop_pay_pesapal_enabled'),
@@ -53,10 +58,55 @@ final class PesapalController extends AdminController
         if (can('shop.settings')) {
             $changes['shop_pay_pesapal_enabled'] = $request->bool('shop') ? '1' : '0';
         }
+        $changes['pesapal_place_project'] = $request->bool('project') ? '1' : '0';
+        $changes['pesapal_place_membership'] = $request->bool('membership') ? '1' : '0';
+        if (can('academy.manage')) {
+            $changes['pesapal_place_academy_signup'] = $request->bool('academy_signup') ? '1' : '0';
+            $changes['pesapal_place_academy_cert'] = $request->bool('academy_cert') ? '1' : '0';
+        }
         \App\Core\Settings::setMany($changes);
-        AuditLog::record('pesapal.options', 'settings', null, 'Pesapal offered on: ' . implode(', ', array_keys(array_filter(['donations' => $changes['donate_method'] !== 'link', 'shop' => ($changes['shop_pay_pesapal_enabled'] ?? '0') === '1']))) ?: 'nowhere');
+        PesapalPlaces::forgetCache();
+        $on = array_keys(array_filter(['donations' => $changes['donate_method'] !== 'link', 'shop' => ($changes['shop_pay_pesapal_enabled'] ?? '0') === '1', 'projects' => $changes['pesapal_place_project'] === '1', 'membership' => $changes['pesapal_place_membership'] === '1',
+            'academy sign-up' => PesapalPlaces::on('academy_signup'), 'academy certificate' => PesapalPlaces::on('academy_cert')]));
+        AuditLog::record('pesapal.options', 'settings', null, 'Pesapal offered on: ' . ($on !== [] ? implode(', ', $on) : 'nowhere'));
         Flash::success('Saved. Pesapal is now offered on the places you ticked.');
         return $this->redirect('admin/pesapal');
+    }
+
+    /**
+     * "Offer Pesapal everywhere (as the second option)": ticks every place at once. The first option (mobile money) is untouched, nothing is charged by pressing it, and the
+     * site-wide "Pesapal and other online gateways" way is NOT switched on here (see restoreOnline): a warning tells the administrator when it is off.
+     */
+    public function everywhere(Request $request): Response
+    {
+        $this->authorize('settings.manage');
+        $shop = can('shop.settings');
+        $save = PesapalPlaces::enableEverywhere($shop);
+        PesapalPlaces::forgetCache();
+        AuditLog::record('pesapal.everywhere', 'settings', null, 'Pesapal switched on at every payment point as the second option (' . implode(', ', array_keys($save)) . ')');
+        Flash::success('Pesapal is now ticked at every payment point, as the second option after mobile money. Check the list below to see where visitors can actually see it.' . ($shop ? '' : ' (The shop checkout needs the shop settings ability: it was left as it was.)') . (PesapalPlaces::onlineWayOff() ? ' Note: the "online" way is switched off in Payment options, so Pesapal is still hidden.' : ''));
+        return $this->redirect('admin/pesapal');
+    }
+
+    /** Switch the site-wide "Pesapal and other online gateways" way back on (it was switched off by "Mobile money only"). Only when the administrator presses the button. */
+    public function restoreOnline(Request $request): Response
+    {
+        $this->authorize('settings.manage');
+        \App\Services\Payments\PaymentOptions::save(['online' => true]);
+        PesapalPlaces::forgetCache();
+        AuditLog::record('pesapal.online_on', 'settings', null, 'The "Pesapal and other online gateways" way was switched back on (Admin > Pesapal)');
+        Flash::success('The online way is switched on again. Pesapal can now show wherever its place is ticked. The other ways (links, bank details, pay on delivery) were not changed: see Payment options.');
+        return $this->redirect('admin/pesapal');
+    }
+
+    /** One row per payment point for the screen: the switch, whether visitors can see Pesapal, and why not. @return list<array<string,mixed>> */
+    private function placeRows(): array
+    {
+        $out = [];
+        foreach (PesapalPlaces::PLACES as $key => [$label, $path]) {
+            $out[] = ['key' => $key, 'label' => $label, 'path' => $path, 'on' => PesapalPlaces::on($key), 'visible' => PesapalPlaces::visible($key), 'problems' => PesapalPlaces::problems($key)];
+        }
+        return $out;
     }
 
     /** @return array<string,array{amount:string,currency:string,on:bool,display:string}> */

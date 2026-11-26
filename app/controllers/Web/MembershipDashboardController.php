@@ -50,6 +50,42 @@ final class MembershipDashboardController extends Controller
         return $ugx === null ? null : ['ugx' => $ugx, 'display' => 'UGX ' . number_format($ugx)];
     }
 
+    /**
+     * The balance as Pesapal would charge it: [minor units, currency], or null when Pesapal is not offered for memberships (switched off, keys, tables, Mobile money only),
+     * nothing is owed, or the membership is not in a state that takes payment.
+     * @return array{minor:int,currency:string,display:string}|null
+     */
+    private function pesapalOffer(array $m, array $summary): ?array
+    {
+        if (!\App\Services\Pesapal\PesapalPayments::offered('membership') || (float) ($summary['balance'] ?? 0) <= 0 || !in_array((string) $m['status'], ['pending', 'approved', 'expired', 'new', 'under_review'], true)) {
+            return null;
+        }
+        $cur = strtoupper((string) $summary['currency']);
+        $minor = \App\Services\Shop\Money::parse(number_format((float) $summary['balance'], 2, '.', ''));
+        if ($minor === null || $minor < 1 || !\App\Services\Shop\Money::validCurrency($cur)) {
+            return null;
+        }
+        return ['minor' => $minor, 'currency' => $cur, 'display' => \App\Services\Shop\Money::format($minor, $cur)];
+    }
+
+    /** POST membership/me/{token}/pay-pesapal: pay the balance of the membership with Pesapal (card, mobile money or bank). The member's private link is the credential. */
+    public function payPesapal(Request $request, string $token): Response
+    {
+        $m = $this->member($token);
+        $summary = MembershipService::paymentSummary($m);
+        $offer = $this->pesapalOffer($m, $summary);
+        if ($offer === null) {
+            \App\Core\Flash::error('Pesapal is not available for this membership right now.');
+            return $this->redirect($this->path($token));
+        }
+        $r = \App\Services\Pesapal\PesapalPayments::begin('membership', (int) $m['id'], $offer['minor'], $offer['currency'], 'Membership fee - Lumina Africa Foundation', ['name' => (string) $m['full_name'], 'email' => (string) ($m['email'] ?? ''), 'phone' => (string) ($m['phone'] ?? '')]);
+        if (!$r['ok']) {
+            \App\Core\Flash::error('We could not open the Pesapal page just now. Nothing was charged. Please try again in a minute, or use another way to pay.');
+            return $this->redirect($this->path($token));
+        }
+        return $this->redirect((string) $r['link']);
+    }
+
     /** POST membership/me/{token}/pay-mobile: pay the balance of the membership with MTN / Airtel mobile money. */
     public function payMobile(Request $request, string $token): Response
     {
@@ -141,6 +177,7 @@ final class MembershipDashboardController extends Controller
             'instructions' => MembershipService::paymentInstructions(false),
             'payDaraza'    => MembershipService::darazaOption(),
             'mobilePay'    => $this->mobileOffer($m, $summary),
+            'pesapalPay'   => $this->pesapalOffer($m, $summary),
             'contact'      => MembershipService::contactEmail(),
             'timeline'     => CardService::timeline($m),
             'state'        => CardService::dashboardState($m),

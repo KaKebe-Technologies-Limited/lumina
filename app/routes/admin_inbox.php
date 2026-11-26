@@ -99,6 +99,8 @@ $router->group(['prefix' => 'admin', 'middleware' => ['auth']], function ($route
     $router->post('/pesapal/signup-fee-switch', [\App\Controllers\Admin\PesapalController::class, 'signupFeeSwitch'])->middleware('throttle:30,600')->name('admin.pesapal.signup_fee_switch');
     $router->post('/pesapal/fees', [\App\Controllers\Admin\PesapalController::class, 'fees'])->middleware('throttle:30,600')->name('admin.pesapal.fees');
     $router->post('/pesapal/options', [\App\Controllers\Admin\PesapalController::class, 'options'])->middleware('throttle:30,600')->name('admin.pesapal.options');
+    $router->post('/pesapal/everywhere', [\App\Controllers\Admin\PesapalController::class, 'everywhere'])->middleware('throttle:20,600')->name('admin.pesapal.everywhere');
+    $router->post('/pesapal/online-on', [\App\Controllers\Admin\PesapalController::class, 'restoreOnline'])->middleware('throttle:20,600')->name('admin.pesapal.online_on');
     $router->post('/pesapal/test', [\App\Controllers\Admin\PesapalController::class, 'test'])->middleware('throttle:10,600')->name('admin.pesapal.test');
     $router->post('/pesapal/{id}/check', [\App\Controllers\Admin\PesapalController::class, 'check'])->middleware('throttle:30,600')->where('id', '[0-9]+')->name('admin.pesapal.check');
 });

@@ -772,7 +772,7 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('shop_pay_flutterwave_instructions', ''),
   ('shop_pay_flutterwave_sort', '10'),
   ('shop_pay_pesapal_enabled', '0'),
-  ('shop_pay_pesapal_label', 'Card or mobile money (Pesapal)'),
+  ('shop_pay_pesapal_label', 'Card, mobile money or bank (Pesapal)'),
   ('shop_pay_pesapal_instructions', 'Pay securely with Visa, Mastercard, MTN Mobile Money or Airtel Money.'),
   ('shop_pay_pesapal_sort', '11'),
   ('shop_pay_daraza_enabled', '0'),
@@ -1003,3 +1003,13 @@ ON DUPLICATE KEY UPDATE
   nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
   parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
   updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Pesapal at every payment point, as the SECOND option (docs/PESAPAL.md). A new place is OFF until an administrator ticks it (Admin > Pesapal > "Offer Pesapal everywhere");
+-- the two Academy places were always offered (they had no switch), so they stay on. INSERT IGNORE: nothing already saved is changed.
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES
+  ('pesapal_place_project', '0'),
+  ('pesapal_place_membership', '0'),
+  ('pesapal_place_academy_signup', '1'),
+  ('pesapal_place_academy_cert', '1');
+-- the shop's Pesapal label: new wording, only where it still has the old default wording
+UPDATE settings SET setting_value = 'Card, mobile money or bank (Pesapal)' WHERE setting_key = 'shop_pay_pesapal_label' AND setting_value = 'Card or mobile money (Pesapal)';

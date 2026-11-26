@@ -22,8 +22,8 @@ if ($purpose === 'academy_signup' || $purpose === 'academy_cert') {
     ];
     [$icon, $title, $text] = $academy[$state] ?? [$icon, $title, $text];
 }
-$backUrl = in_array($purpose, ['academy_signup', 'academy_cert'], true) ? 'academy/login' : ($state === 'paid' ? '' : 'donate');
-$backLabel = in_array($purpose, ['academy_signup', 'academy_cert'], true) ? 'Go to my learner portal' : ($state === 'paid' ? 'Back to the home page' : 'Back to the donate page');
+$backUrl = in_array($purpose, ['academy_signup', 'academy_cert'], true) ? 'academy/login' : ($state === 'paid' ? '' : ($purpose === 'project' ? 'fund-a-project' : 'donate'));
+$backLabel = in_array($purpose, ['academy_signup', 'academy_cert'], true) ? 'Go to my learner portal' : ($state === 'paid' ? 'Back to the home page' : ($purpose === 'project' ? 'Back to Fund a project' : 'Back to the donate page'));
 ?>
 <?= partial('partials/page-hero', ['title' => $title, 'eyebrow' => 'Donate']) ?>
 <section class="section">

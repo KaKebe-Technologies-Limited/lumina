@@ -192,8 +192,8 @@ $cards = content_list('donate', 'support.items'); $supportUrl = H::href('donate'
                         <button class="btn <?= $btn ?> btn--caps btn--lg" type="submit" formaction="<?= e(url('donate/mobile-money')) ?>" data-loading-text="Opening..."><?= icon('phone', 'icon--sm') ?> Give with MTN or Airtel</button>
                         <span class="form-note">Choose UGX as the currency. You approve the payment on your phone (up to 5 minutes).</span>
                     <?php elseif ($way === 'online'): ?>
-                        <button class="btn <?= $btn ?> btn--caps btn--lg" type="submit" formaction="<?= e(url('donate/online')) ?>" data-loading-text="Opening the secure page..."><?= icon('lock', 'icon--sm') ?> <?= $main ? 'Give securely by card' : 'Or give by card' ?></button>
-                        <span class="form-note">You will be taken to Pesapal's secure page to finish. We never see your card details.</span>
+                        <button class="btn <?= $btn ?> btn--caps btn--lg" type="submit" formaction="<?= e(url('donate/online')) ?>" data-loading-text="Opening the secure page..."><?= icon('lock', 'icon--sm') ?> <?= $main ? 'Give with ' : 'Or give with ' ?>Card, mobile money or bank (Pesapal)</button>
+                        <span class="form-note">Visa, Mastercard, MTN or Airtel Money, or your bank. You are taken to Pesapal's secure page to finish; we never see your card details or PIN.</span>
                     <?php else: ?>
                         <a class="btn <?= $btn ?> btn--caps btn--lg" href="<?= e($darazaDonate['url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('external-link', 'icon--sm') ?> <?= e($darazaDonate['label']) ?></a>
                         <span class="form-note">You will give on Daraza's secure page (it opens in a new tab).</span>

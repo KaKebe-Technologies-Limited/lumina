@@ -265,6 +265,7 @@ set_time_limit(0); require __DIR__ . '/selftest-fund.php';              // Fund 
 set_time_limit(0); require __DIR__ . '/selftest-visitors.php';                         // Admin > Visitors: counting rules, no IP stored, country + page filters
 set_time_limit(0); require __DIR__ . '/selftest-academy-payments.php';                       // Academy payments dashboard: Pesapal + hand-confirmed + reported, figures, filters
 set_time_limit(0); require __DIR__ . '/selftest-pesapal.php';                    // Pesapal payment gateway: client, donations, shop orders, endpoints (mock transport)
+set_time_limit(0); require __DIR__ . '/selftest-pesapal-everywhere.php';           // Pesapal at every payment point as the second option: switches, order, membership and project payments, warnings, abilities
 set_time_limit(0); require __DIR__ . '/selftest-home-focus.php';                // Home page: the four focus areas (numbered colour ribbons): registry section, order, colours, markup, style
 set_time_limit(0); require __DIR__ . '/selftest-academy-catalog.php';           // Academy course cards: banner colours, Free / Certificate pills, level dots, what you will learn, stylesheet
 set_time_limit(0); require __DIR__ . '/selftest-data-policy.php';               // Data protection: privacy policy + rights page, TOC anchors, notices on every form, rights request stored and acknowledged, newsletter consent, admin page access, no placeholder wording

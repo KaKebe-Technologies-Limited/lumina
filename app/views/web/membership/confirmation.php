@@ -76,6 +76,7 @@ $keepNote = trim((string) content('membership', 'confirmation.keep_note'));
                     <div class="mb-pay__body">
                         <h2 class="mb-pay__title"><?= e(content('membership', 'confirmation.payment_title')) ?></h2>
                         <?= $instructions !== '' ? nl2p($instructions) : (!empty($payDaraza) ? '' : nl2p((string) content('membership', 'confirmation.payment_none'))) ?>
+                        <?php if (!empty($pesapalPayUrl)): ?><?= partial('partials/pesapal-pay', ['action' => $pesapalPayUrl, 'primary' => true]) ?><?php endif; ?>
                         <?php if (!empty($payDaraza)): ?><p class="mb-pay__cta"><a class="btn btn--cta btn--caps" href="<?= e($payDaraza['url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('external-link', 'icon--sm') ?> <?= e($payDaraza['label']) ?></a></p><?php endif; ?>
                         <?php if (!empty($meUrl)): ?>
                             <p class="mb-pay__note"><strong><?= e(MembershipService::copy('confirmation.proof_title', 'After you pay')) ?></strong> <?= e(MembershipService::copy('confirmation.proof_text', 'attach your proof of payment (a screenshot, photo or PDF of the receipt) on your private membership page. We check it and confirm your membership.')) ?></p>

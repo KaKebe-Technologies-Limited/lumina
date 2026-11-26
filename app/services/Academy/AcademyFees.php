@@ -63,7 +63,7 @@ final class AcademyFees
     /** The fee that is actually charged now, or null. @return array{minor:int,currency:string,display:string}|null */
     public static function active(string $kind): ?array
     {
-        return self::ready() && (PesapalPayments::ready() || self::mobileAvailable($kind) || \App\Services\Daraza::enabled($kind === 'cert' ? 'cert' : 'signup') || self::manual() !== null) ? self::configured($kind) : null;
+        return self::ready() && (PesapalPayments::offered($kind === 'cert' ? 'academy_cert' : 'academy_signup') || self::mobileAvailable($kind) || \App\Services\Daraza::enabled($kind === 'cert' ? 'cert' : 'signup') || self::manual() !== null) ? self::configured($kind) : null;
     }
 
     /** The mobile-money and bank details learners may pay to (Settings > LAF Academy), or null when the administrator gave none. @return array{mobile:string,bank:string}|null */
@@ -164,7 +164,7 @@ final class AcademyFees
     {
         $l = Database::one('SELECT id, name, email, phone, fee_status FROM academy_learners WHERE id = ?', [$learnerId]);
         $fee = self::configured('signup');
-        if ($l === null || $fee === null || !PesapalPayments::ready()) {
+        if ($l === null || $fee === null || !PesapalPayments::offered('academy_signup')) {
             return ['ok' => false, 'error' => 'unavailable'];
         }
         if ($l['fee_status'] !== 'due') {
@@ -179,7 +179,7 @@ final class AcademyFees
         $c = Database::one('SELECT id, learner_id, course_title, fee_status, revoked_at FROM academy_certificates WHERE id = ?', [$certId]);
         $l = Database::one('SELECT id, name, email, phone FROM academy_learners WHERE id = ?', [$learnerId]);
         $fee = self::configured('cert');
-        if ($c === null || $l === null || (int) $c['learner_id'] !== $learnerId || $fee === null || !PesapalPayments::ready()) {
+        if ($c === null || $l === null || (int) $c['learner_id'] !== $learnerId || $fee === null || !PesapalPayments::offered('academy_cert')) {
             return ['ok' => false, 'error' => 'unavailable'];
         }
         if ($c['fee_status'] !== 'due' || $c['revoked_at'] !== null) {

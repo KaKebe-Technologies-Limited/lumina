@@ -55,7 +55,7 @@
                             <p class="ac-feebox__title">Sign-up fee <strong><?= e($acFee['display']) ?></strong></p>
                             <p class="ac-feebox__text">After you press the button, you pay the fee in one of these ways:</p>
                             <ul class="ac-feebox__ways">
-                                <?php if (\App\Services\Pesapal\PesapalPayments::ready()): ?><li>Pesapal (card or mobile money)</li><?php endif; ?>
+                                <?php if (\App\Services\Pesapal\PesapalPayments::offered('academy_signup')): ?><li>Pesapal (card, mobile money or bank)</li><?php endif; ?>
                                 <?php if (\App\Services\Academy\AcademyFees::daraza('signup')): ?><li><?= e(\App\Services\Daraza::label()) ?></li><?php endif; ?>
                                 <?php if (\App\Services\Academy\AcademyFees::manual()): ?><li>Mobile money or bank transfer</li><?php endif; ?>
                             </ul>

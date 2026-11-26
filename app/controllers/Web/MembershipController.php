@@ -209,9 +209,21 @@ final class MembershipController extends Controller
             'joining'      => MembershipService::joiningFeeLabel($member),
             'instructions' => MembershipService::paymentInstructions(false),
             'payDaraza'    => MembershipService::darazaOption(),
+            'pesapalPayUrl' => $this->confirmationPesapalUrl($member),
             // the applicant's PRIVATE page (photo, proof of payment, progress, card): the link is a credential, so this page is never cached
             'meUrl'        => MembershipService::dashboardPath($member),
         ], $opts)->header('Cache-Control', 'private, no-store, max-age=0')->header('Referrer-Policy', 'no-referrer');
+    }
+
+    /** The Pesapal pay address of the applicant's private page, when Pesapal is offered for memberships and something is owed (the second way to pay, after the instructions). */
+    private function confirmationPesapalUrl(array $member): string
+    {
+        if (!\App\Services\Pesapal\PesapalPayments::offered('membership') || !in_array((string) $member['status'], ['pending', 'approved', 'expired', 'new', 'under_review'], true)) {
+            return '';
+        }
+        $summary = MembershipService::paymentSummary($member);
+        $t = MembershipService::dashboardToken($member);
+        return (float) ($summary['balance'] ?? 0) > 0 && $t !== '' ? url('membership/me/' . $t . '/pay-pesapal') : '';
     }
 
     public function terms(Request $request): Response

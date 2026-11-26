@@ -1210,6 +1210,7 @@ final class MembershipService
     {
         $methods = array_keys(self::options('payment_methods'));
         $methods[] = 'mobile_money';                    // paid through the website with MTN / Airtel (Daraza API)
+        $methods[] = 'pesapal';                         // paid through the website with Pesapal (card, mobile money or bank)
         // a method the owner removed from the list later stays valid for the payment that already uses it (and for the member's own choice)
         $methods[] = (string) ($stored['method'] ?? $member['payment_method'] ?? '');
         $v = Validator::make($input, [

@@ -124,7 +124,7 @@ final class AcademyPortalController extends AcademyBaseController
         }
         return $this->page('certificate-preview', 'certificates', 'Certificate preview', $l, [
             'cert' => $c, 'locked' => CertificateService::lockedSvg($c), 'fee' => AcademyFees::certDue($c) ? AcademyFees::configured('cert') : null,
-            'canPay' => AcademyFees::certDue($c) && \App\Services\Pesapal\PesapalPayments::ready(),
+            'canPay' => AcademyFees::certDue($c) && \App\Services\Pesapal\PesapalPayments::offered('academy_cert'),
         ]);
     }
 

@@ -271,7 +271,7 @@ final class AcademyAccountController extends AcademyBaseController
             $row = \App\Core\Database::one('SELECT id, fee_status FROM academy_learners WHERE id = ?', [$pid]);
             $fee = $row !== null && AcademyFees::signupDue($row) ? AcademyFees::configured('signup') : null;
         }
-        return $this->renderAcademy('web/academy/pending', ['regNo' => (string) \App\Core\Session::get('academy_reg_no', ''), 'hours' => LearnerAuth::approvalText(), 'thread' => $thread, 'fee' => $fee, 'feePesapal' => \App\Services\Pesapal\PesapalPayments::ready(), 'feeDaraza' => $fee !== null ? AcademyFees::daraza('signup') : null,
+        return $this->renderAcademy('web/academy/pending', ['regNo' => (string) \App\Core\Session::get('academy_reg_no', ''), 'hours' => LearnerAuth::approvalText(), 'thread' => $thread, 'fee' => $fee, 'feePesapal' => $fee !== null && \App\Services\Pesapal\PesapalPayments::offered('academy_signup'), 'feeDaraza' => $fee !== null ? AcademyFees::daraza('signup') : null,
             'feeManual' => $fee !== null ? AcademyFees::manual() : null, 'feeReportReady' => AcademyFees::reportReady(),
             'feeReported' => $fee !== null && AcademyFees::reportReady() && $pid > 0 ? \App\Core\Database::one('SELECT fee_reference, fee_reported_at FROM academy_learners WHERE id = ? AND fee_reported_at IS NOT NULL', [$pid]) : null], [
             'bodyClass' => 'is-academy is-academy-auth',

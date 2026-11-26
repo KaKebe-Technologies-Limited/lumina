@@ -118,7 +118,7 @@ final class AcademyFeeMessages
         if ($m !== null) {
             $ways[] = trim(($m['mobile'] !== '' ? 'mobile money: ' . preg_replace('/\s*\R\s*/', ', ', $m['mobile']) : '') . ($m['bank'] !== '' ? ($m['mobile'] !== '' ? '; ' : '') . 'bank: ' . preg_replace('/\s*\R\s*/', ', ', $m['bank']) : ''));
         }
-        if (\App\Services\Pesapal\PesapalPayments::ready() || \App\Services\Daraza::enabled('signup') || AcademyFees::mobileAvailable('signup')) {
+        if (\App\Services\Pesapal\PesapalPayments::offered('academy_signup') || \App\Services\Daraza::enabled('signup') || AcademyFees::mobileAvailable('signup')) {
             $ways[] = 'online on the waiting page';
         }
         return $ways !== [] ? 'You can pay by ' . implode(', or ', $ways) . '.' : '';

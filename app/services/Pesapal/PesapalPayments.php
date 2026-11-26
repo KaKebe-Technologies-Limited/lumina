@@ -24,7 +24,7 @@ use App\Services\Shop\PaymentService;
  */
 final class PesapalPayments
 {
-    public const PURPOSES = ['donation', 'shop', 'academy_signup', 'academy_cert'];
+    public const PURPOSES = ['donation', 'shop', 'academy_signup', 'academy_cert', 'project', 'membership'];
 
     /**
      * @param array{name?:string,email?:string,phone?:string} $payer
@@ -36,7 +36,7 @@ final class PesapalPayments
         if (!in_array($purpose, self::PURPOSES, true) || $refId < 1 || $amountMinor < 1 || !Money::validCurrency($currency)) {
             return ['ok' => false, 'error' => 'rejected'];
         }
-        $reference = 'LAF' . ['donation' => 'D', 'shop' => 'S', 'academy_signup' => 'A', 'academy_cert' => 'C'][$purpose] . $refId . '-' . strtoupper(bin2hex(random_bytes(4)));
+        $reference = 'LAF' . ['donation' => 'D', 'shop' => 'S', 'academy_signup' => 'A', 'academy_cert' => 'C', 'project' => 'P', 'membership' => 'M'][$purpose] . $refId . '-' . strtoupper(bin2hex(random_bytes(4)));
         $id = Database::insert('pesapal_payments', [
             'merchant_reference' => $reference,
             'purpose'            => $purpose,
@@ -163,7 +163,7 @@ final class PesapalPayments
     private static function applySuccess(array $row, array $v, int $amount): void
     {
         try {
-            if ($row['purpose'] === 'donation') {
+            if ($row['purpose'] === 'donation' || $row['purpose'] === 'project') {     // a gift to a project is a donation row too (Fund a project > Give now)
                 for ($try = 0; $try < 5; $try++) {                      // two payments settling at the same moment may pick the same receipt number: the unique key says so, take the next
                     try {
                         Database::execute(
@@ -193,6 +193,8 @@ final class PesapalPayments
             } elseif ($row['purpose'] === 'academy_cert') {
                 \App\Services\Academy\AcademyFees::markCertPaid((int) $row['ref_id'], (string) $row['merchant_reference']);
                 \App\Services\Payments\PaymentThanks::send('academy', 'online', (string) $row['payer_email'], (string) $row['payer_name'], $amount, (string) $row['currency'], (string) $row['merchant_reference'], 'Certificate fee');
+            } elseif ($row['purpose'] === 'membership') {
+                self::applyMembership($row, $amount);
             } elseif ($row['purpose'] === 'shop') {
                 PaymentService::markPaid((int) $row['ref_id'], [
                     'method'     => 'pesapal',
@@ -207,6 +209,30 @@ final class PesapalPayments
         } catch (\Throwable $e) {
             Log::error('Pesapal: a paid payment could not be applied', ['ref' => $row['merchant_reference'], 'error' => $e::class]);
         }
+    }
+
+    /**
+     * Pesapal confirmed a membership payment: record it on the member exactly like the Daraza mobile-money and manual payments (a "received" member_payments row with a receipt
+     * number, the thank-you e-mail, the card trigger). Idempotent twice over: the ledger row is claimed once in pay(), and a payment row with the same reference is never added again.
+     * @param array<string,mixed> $row
+     */
+    private static function applyMembership(array $row, int $amount): void
+    {
+        $ref = (string) $row['merchant_reference'];
+        $memberId = (int) $row['ref_id'];
+        if ((int) Database::value('SELECT COUNT(*) FROM member_payments WHERE member_id = ? AND reference = ?', [$memberId, $ref], 0) > 0) {
+            return;
+        }
+        $r = \App\Services\Membership\MembershipService::recordPayment($memberId, [
+            'amount' => number_format($amount / Money::SCALE, 2, '.', ''), 'currency' => (string) $row['currency'], 'status' => 'received', 'method' => 'pesapal',
+            'reference' => $ref, 'purpose' => 'membership', 'paid_at' => date('Y-m-d H:i'), 'notes' => 'Paid with Pesapal (card, mobile money or bank)',
+        ]);
+        if (!$r['ok']) {
+            Log::error('Pesapal: a membership payment could not be recorded', ['ref' => $ref, 'errors' => implode(',', array_keys($r['errors']))]);
+            Mailer::notify('Pesapal membership payment needs attention', 'Pesapal confirmed ' . $ref . ' for member #' . $memberId . ' but it could not be recorded on the membership. Please record it by hand: ' . abs_url('admin/membership') . "\n", null);
+            return;
+        }
+        AuditLog::record('membership.pesapal', 'member', (string) $memberId, 'Membership payment received through Pesapal (' . $ref . ')');
     }
 
     /** "RCT-2026-0007": the next free number of the current year (same series as the admin's manual receipts). */
@@ -226,8 +252,8 @@ final class PesapalPayments
             } catch (\Throwable $e) {
                 Log::error('Pesapal: a failed payment could not be applied', ['ref' => $row['merchant_reference'], 'error' => $e::class]);
             }
-        } elseif ($row['purpose'] === 'donation') {
-            Database::execute("UPDATE donations SET status = 'cancelled' WHERE id = ? AND status = 'pledged' AND source = 'online'", [(int) $row['ref_id']]);
+        } elseif ($row['purpose'] === 'donation' || $row['purpose'] === 'project') {
+            Database::execute("UPDATE donations SET status = 'cancelled' WHERE id = ? AND status = 'pledged' AND method = 'pesapal'", [(int) $row['ref_id']]);
         }
     }
 
@@ -271,6 +297,12 @@ final class PesapalPayments
     public static function ready(): bool
     {
         return PesapalClient::hasKeys() && \App\Services\Payments\PaymentOptions::online();           // Admin > Payment options can switch it off for the whole site
+    }
+
+    /** Is Pesapal offered to payers at this place (donate | project | shop | membership | academy_signup | academy_cert)? See PesapalPlaces. */
+    public static function offered(string $place): bool
+    {
+        return PesapalPlaces::visible($place);
     }
 
     /** The owner's choice (Settings > Donations > "How online donations are taken", or the tick box on Admin > Pesapal payments): both | pesapal | link. */

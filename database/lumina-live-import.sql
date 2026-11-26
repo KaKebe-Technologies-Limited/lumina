@@ -2549,6 +2549,13 @@ PREPARE lumina_stmt FROM @lumina_ddl;
 EXECUTE lumina_stmt;
 DEALLOCATE PREPARE lumina_stmt;
 
+-- Pesapal at every payment point (database/updates/2026-11-pesapal-everywhere.sql): gifts to a project and membership fees.
+SET @lumina_ddl = IF((SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'pesapal_payments' AND column_name = 'purpose' AND column_type LIKE '%membership%') = 0 AND (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'pesapal_payments') = 1,
+  'ALTER TABLE `pesapal_payments` MODIFY COLUMN `purpose` ENUM(''donation'',''shop'',''academy_signup'',''academy_cert'',''project'',''membership'') NOT NULL', 'DO 0');
+PREPARE lumina_stmt FROM @lumina_ddl;
+EXECUTE lumina_stmt;
+DEALLOCATE PREPARE lumina_stmt;
+
 -- Academy sign-up fee paid by mobile money / bank / Daraza: the learner reports the payment (transaction ID + optional proof), an administrator confirms it.
 SET @lumina_has_col = (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'academy_learners' AND column_name = 'fee_reference');
 SET @lumina_ddl = IF(@lumina_has_col = 0, 'ALTER TABLE `academy_learners` ADD COLUMN `fee_reference` VARCHAR(120) NULL', 'DO 0');
@@ -3436,7 +3443,7 @@ INSERT INTO settings (setting_key, setting_value) VALUES
   ('shop_pay_flutterwave_instructions', ''),
   ('shop_pay_flutterwave_sort', '10'),
   ('shop_pay_pesapal_enabled', '0'),
-  ('shop_pay_pesapal_label', 'Card or mobile money (Pesapal)'),
+  ('shop_pay_pesapal_label', 'Card, mobile money or bank (Pesapal)'),
   ('shop_pay_pesapal_instructions', 'Pay securely with Visa, Mastercard, MTN Mobile Money or Airtel Money.'),
   ('shop_pay_pesapal_sort', '11'),
   ('shop_pay_daraza_enabled', '0'),
@@ -3667,4 +3674,14 @@ ON DUPLICATE KEY UPDATE
   nav_order = IF((@reseed = 1 OR updated_at = created_at), VALUES(nav_order), nav_order),
   parent_slug = IF((@reseed = 1 OR updated_at = created_at), VALUES(parent_slug), parent_slug),
   updated_at = IF((@reseed = 1 OR updated_at = created_at), created_at, updated_at);
+
+-- Pesapal at every payment point, as the SECOND option (docs/PESAPAL.md). A new place is OFF until an administrator ticks it (Admin > Pesapal > "Offer Pesapal everywhere");
+-- the two Academy places were always offered (they had no switch), so they stay on. INSERT IGNORE: nothing already saved is changed.
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES
+  ('pesapal_place_project', '0'),
+  ('pesapal_place_membership', '0'),
+  ('pesapal_place_academy_signup', '1'),
+  ('pesapal_place_academy_cert', '1');
+-- the shop's Pesapal label: new wording, only where it still has the old default wording
+UPDATE settings SET setting_value = 'Card, mobile money or bank (Pesapal)' WHERE setting_key = 'shop_pay_pesapal_label' AND setting_value = 'Card or mobile money (Pesapal)';
 
