@@ -2,7 +2,8 @@
 #
 # Set up once (GitHub: repo Settings > Secrets and variables > Actions):
 #   Secrets:    FTP_SERVER (e.g. ftp.luminaafricafoundation.com), FTP_USERNAME, FTP_PASSWORD   (hPanel > Files > FTP Accounts)
-#   Secret:     FTP_DIR    (the folder on the server, normally  public_html/  , with the trailing slash; for staging use e.g.  public_html/staging/ )
+#   Secret:     FTP_DIR    (the folder on the server relative to the FTP account's own folder, trailing slash: the live site is  ./  ; "public_html/" is treated as  ./  ;
+#                           a staging sub-folder is e.g.  staging/ )
 #   Variable (optional): AUTO_DEPLOY = true   -> every push to main deploys by itself. Leave it unset to deploy only with the "Run workflow" button.
 #
 # Run it by hand: GitHub > Actions > "Deploy to Hostinger" > Run workflow (tick "dry run" first to see what WOULD be sent without sending anything).
@@ -74,7 +75,10 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
-          server-dir: ${{ secrets.FTP_DIR }}
+          # A Hostinger FTP account for the site already STARTS INSIDE the web root (public_html). The secret FTP_DIR was set to "public_html/", which made
+          # this upload create public_html/public_html/... : the run was green but the live site never changed. So "public_html/" (or "public_html") means
+          # the account's own folder, "./". Any other value (for example a staging sub-folder "staging/") is used as it is.
+          server-dir: ${{ (secrets.FTP_DIR == 'public_html/' || secrets.FTP_DIR == 'public_html' || secrets.FTP_DIR == '') && './' || secrets.FTP_DIR }}
           dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
           # never delete or overwrite what only the live server has
           dangerous-clean-slate: false
@@ -94,4 +98,5 @@ jobs:
             tools/**
             database/**
             README.md
+            CONTRIBUTING.md
             **/*.map

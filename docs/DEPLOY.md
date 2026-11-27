@@ -15,7 +15,7 @@ The live site is on Hostinger. **Code** comes from GitHub (this repository, bran
 2. GitHub > repo **Settings > Secrets and variables > Actions > New repository secret**:
    - `FTP_SERVER` the FTP host (for example `ftp.luminaafricafoundation.com`)
    - `FTP_USERNAME` and `FTP_PASSWORD`
-   - `FTP_DIR` the target folder with a trailing slash: `public_html/` (staging: `public_html/staging/`, or the staging subdomain's folder)
+   - `FTP_DIR` the target folder **relative to the FTP account's own folder**, with a trailing slash. A Hostinger FTP account for the site already starts inside `public_html`, so the live site is `./` (a value of `public_html/` is treated as `./` by the workflow: using it literally creates `public_html/public_html/` and the live site never changes). Staging: the sub-folder only, for example `staging/`.
 3. Optional: **Variables > AUTO_DEPLOY = `true`** to deploy on every push to `main`. Without it, you deploy with the **Run workflow** button.
 
 ### The check that runs before every deploy
@@ -24,7 +24,11 @@ Every push to `main` and every manual run first runs the job **Check the code** 
 
 Normal day, once everything above is set up: make the change, test it locally (`php bin/test.php --group=smoke`), `git push`. With `AUTO_DEPLOY` on, it is live a minute or two later; without it, press **Run workflow**. The `upload-...` folders in Downloads are not needed any more.
 
-What a deploy does **not** do: it never changes the database. If a change comes with a file in `database/updates/`, import it in phpMyAdmin once (step 5 of "Deploy day").
+What a deploy does **not** do: it never changes the database. If a change comes with a file in `database/updates/`, import it in phpMyAdmin once (step 5 of "Deploy day"). It also does not send `bin/` (the cron scripts and the self-tests): when a cron script changes, upload that file by hand.
+
+**The first run after the FTP_DIR fix sends every file** (about 1,400, roughly 40 MB), because the sync record `.ftp-deploy-sync-state.json` is kept in the target folder and there is none in the web root yet. It takes several minutes, is not atomic (visitors can briefly meet old and new files), and replaces the live `.htaccess`. Take the hPanel backup and the database export first (step 1 of "Deploy day"). Later runs send only the changed files. After that first run is green and the live site serves the new files, **delete the stray `public_html/public_html` folder** in File Manager (it was created by the wrong FTP_DIR value; do not copy anything out of it).
+
+**Check that a deploy really reached the live site:** open a changed asset on the real address (for example `https://luminaafricafoundation.com/assets/js/academy.js`) and look for the new code. A green run only means the upload finished, not that it landed in the web root.
 
 ## Before the first live deploy: rehearse on staging
 
@@ -46,7 +50,7 @@ What a deploy does **not** do: it never changes the database. If a change comes 
 ## If something goes wrong
 
 - Switch maintenance **on** again.
-- Restore: re-run the workflow from the previous commit (GitHub > Actions > pick the earlier successful run > *Re-run*), or upload the backup zip.
+- Restore: `git revert` the bad commit and push (the run then uses the current workflow), or upload the backup zip. Do **not** use *Re-run* on an old GitHub run: a re-run uses the workflow file from that old commit, and runs made before the FTP_DIR fix (see "One-time setup") upload into the wrong folder.
 - Data problem after an SQL import: restore the database export from step 1.
 
 ## Rules that keep deploys safe
