@@ -42,7 +42,7 @@ use App\Services\Shop\PaymentService;
 echo "-- pay with daraza --\n";
 
 $keys = ['daraza_label', 'daraza_url', 'daraza_donate_url', 'daraza_shop_url', 'daraza_signup_url', 'daraza_cert_url', 'daraza_donate_on', 'daraza_signup_on', 'daraza_cert_on',
-    'shop_pay_daraza_enabled', 'academy_signup_fee', 'academy_signup_fee_currency', 'academy_cert_fee', 'academy_cert_fee_currency', 'academy_cert_approval', 'academy_signup_mode', 'donate_method', 'academy_register_photo_required', 'academy_register_follow_required'];
+    'pay_opt_manual', 'shop_pay_daraza_enabled', 'academy_signup_fee', 'academy_signup_fee_currency', 'academy_cert_fee', 'academy_cert_fee_currency', 'academy_cert_approval', 'academy_signup_mode', 'donate_method', 'academy_register_photo_required', 'academy_register_follow_required'];
 $before = [];
 foreach ($keys as $k) {
     $before[$k] = Settings::isCustomised($k) ? Settings::get($k) : null;
@@ -118,6 +118,15 @@ $page = $get('/donate');
 check('donate page: the section shows the Daraza button (new tab) and no Pesapal form without keys', str_contains($page, 'id="give-online"') && str_contains($page, $good) && str_contains($page, 'Pay with Daraza') && !str_contains($page, 'action="' . $base . '/donate/online"')
     && preg_match('/<a[^>]*href="' . preg_quote($good, '/') . '"[^>]*target="_blank"/', $page) === 1);
 check('donate page: the other online link is kept as a small link when the choice keeps it', preg_match('/Or give through our other online link/', $page) === 1 || trim((string) Settings::get('donate_url', '')) === '');
+// the foundation's official bank account is one more way to give (a bank transfer), next to the Daraza button
+\App\Services\Payments\PaymentOptions::save(['manual' => true]);
+$page = $get('/donate');
+check('donate page: the official bank account is shown (name, number, bank, branch and the "confirm the account name" note) and the give-online section links to it', str_contains($page, 'Lumina Africa Foundation') && str_contains($page, '4090008000229') && str_contains($page, 'Pearl Bank') && str_contains($page, 'Gulu') && str_contains($page, 'confirm the account name')
+    && str_contains($page, 'Prefer a bank transfer?') && str_contains($page, 'href="#donate-account"') && str_contains($page, 'id="donate-account"'));
+\App\Services\Payments\PaymentOptions::save(['manual' => false]);
+$pageOff = $get('/donate');
+check('donate page: with "Bank and manual mobile-money details" off the account and the link to it are gone, the Daraza button stays', !str_contains($pageOff, '4090008000229') && !str_contains($pageOff, 'Pearl Bank') && !str_contains($pageOff, 'Prefer a bank transfer?') && !str_contains($pageOff, 'id="donate-account"') && str_contains($pageOff, $good));
+\App\Services\Payments\PaymentOptions::save(['manual' => true]);
 Settings::set('donate_method', 'pesapal');
 check('donate page: with Pesapal only (no keys here) the Daraza button still works', str_contains($get('/donate'), $good));
 Settings::set('daraza_donate_on', '0');

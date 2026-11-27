@@ -9,17 +9,21 @@ use App\Core\Log;
 use App\Core\Mailer;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\Session;
 use App\Core\ValidationException;
 use App\Core\Validator;
 use App\Models\Donation;
+use App\Services\Payments\OfficialAccount;
+use App\Services\Payments\PaymentOptions;
 use App\Services\Pesapal\PesapalPayments;
 use App\Services\Shop\Money;
 
 /**
- * GET /donate and POST /donate/pledge  - OWNER: B1 "web-core".
- * The page shows the online link (setting donate_url) and the bank / mobile-money / PayPal details from Settings > Donations
- * (each hidden while empty), the FAQ (table faqs, group "donate"; registry fallback) and an optional PLEDGE form.
- * A pledge is a record of intent (donations.status = "pledged", source = "pledge_form"): it never takes a payment.
+ * GET /donate, POST /donate/pledge and GET /donate/thanks  - OWNER: B1 "web-core".
+ * The page shows the online link (setting donate_url), the foundation's OFFICIAL BANK ACCOUNT (App\Services\Payments\OfficialAccount, shown while Admin > Payment options "Bank and manual
+ * mobile-money details" is on), the mobile-money / PayPal details from Settings > Donations (each hidden while empty), the FAQ (table faqs, group "donate"; registry fallback) and an
+ * optional PLEDGE form. A pledge is a record of intent (donations.status = "pledged", source = "pledge_form"): it never takes a payment. After a pledge the donor lands on
+ * /donate/thanks, which shows the account and the reference to quote (DON-<donation id>); no e-mail is sent to the donor automatically (a public form must not become a mail relay).
  */
 final class DonateController extends Controller
 {
@@ -30,11 +34,9 @@ final class DonateController extends Controller
 
     public function index(Request $request): Response
     {
-        $manualOn = \App\Services\Payments\PaymentOptions::manual();
-        $hasMethod = (\App\Services\Payments\PaymentOptions::link() && trim((string) setting('donate_url', '')) !== '') || PesapalPayments::donationsEnabled() || \App\Services\DarazaPay\DarazaPayments::enabled('donation') || \App\Services\Daraza::enabled('donate')
-            || ($manualOn && (trim((string) setting('donate_bank_details', '')) !== ''
-            || trim((string) setting('donate_mobile_money', '')) !== ''
-            || trim((string) setting('donate_paypal_email', '')) !== ''));
+        // the official bank account is always a way to give while "Bank and manual mobile-money details" is on (Admin > Payment options)
+        $hasMethod = (PaymentOptions::link() && trim((string) setting('donate_url', '')) !== '') || PesapalPayments::donationsEnabled() || \App\Services\DarazaPay\DarazaPayments::enabled('donation') || \App\Services\Daraza::enabled('donate')
+            || PaymentOptions::manual();
         $selectedCurrency = (string) old('currency', 'UGX');
         return $this->renderPage('donate', 'web/donate/index', [
             'faqs'             => HomeSupport::faqs('donate', 'donate', 'faq.items'),
@@ -96,14 +98,18 @@ final class DonateController extends Controller
             'is_anonymous' => $request->bool('is_anonymous') ? 1 : 0,
             'ip'           => $request->ip(),
         ];
-        Donation::create($record);
+        $id = Donation::create($record);
+        // the reference the donor writes on a bank transfer (matches receipts and Admin > Payments); a brand-new pledge has none yet, and only an empty reference is ever set here
+        $reference = OfficialAccount::donationReference($id);
+        Donation::update($id, ['reference' => $reference]);
 
         $body = "New donation PLEDGE (a record of intent - no payment was taken)\n\n"
             . "Name: {$record['donor_name']}" . ($record['is_anonymous'] ? " (asked to stay anonymous)\n" : "\n")
             . "Email: {$record['donor_email']}\n"
             . 'Phone: ' . ($record['donor_phone'] ?? '-') . "\n"
             . 'Amount: ' . number_format((float) $record['amount'], 2) . " {$record['currency']}\n"
-            . "Method: {$record['method']}\n\n"
+            . "Method: {$record['method']}\n"
+            . "Payment reference shown to the donor: {$reference}\n\n"
             . "Message:\n" . ($record['message'] ?? '-') . "\n\n"
             . 'Manage it in the admin area: ' . abs_url('admin/donations') . "\n";
         if (!Mailer::notify('New donation pledge', $body, $record['donor_email'])) {
@@ -111,7 +117,40 @@ final class DonateController extends Controller
         }
 
         Flash::success((string) content('donate', 'pledge.success'));
-        return $this->redirect('donate');
+        // what the thank-you page shows (kept small; read with Session::get so a refresh still works; expires after an hour)
+        Session::put('donate_thanks', [
+            'id'       => $id,
+            'ref'      => $reference,
+            'name'     => (string) $record['donor_name'],
+            'amount'   => (float) $record['amount'],
+            'currency' => (string) $record['currency'],
+            'method'   => (string) $record['method'],
+            'at'       => time(),
+        ]);
+        return $this->redirect('donate/thanks');
+    }
+
+    /**
+     * GET /donate/thanks: after a pledge. Thanks the donor, says that no money has been taken yet, and shows the official bank account with the reference to quote and the amount pledged.
+     * Reads the session with get() (not pull()) so a refresh keeps working; a visitor without a recent pledge goes back to /donate. Private and no-store through the /donate prefix of
+     * Cloudflare::NO_STORE_PREFIXES; noindex.
+     */
+    public function thanks(Request $request): Response
+    {
+        $t = (array) Session::get('donate_thanks', []);
+        if (empty($t['ref']) || time() - (int) ($t['at'] ?? 0) > 3600) {
+            return $this->redirect('donate');
+        }
+        $minor = (int) round((float) ($t['amount'] ?? 0) * 100);
+        $t['amount_text'] = Money::format($minor, (string) ($t['currency'] ?? 'UGX'));
+        return $this->renderPage('donate', 'web/donate/thanks', [
+            't'       => $t,
+            // is there a "give online now" form on /donate to point to? (card, mobile money or a payment link)
+            'giveNow' => PesapalPayments::donationsEnabled() || \App\Services\DarazaPay\DarazaPayments::enabled('donation') || \App\Services\Daraza::enabled('donate'),
+        ], [
+            'meta'        => ['title' => 'Thank you for your pledge', 'robots' => 'noindex,nofollow'],
+            'breadcrumbs' => [[HomeSupport::navLabel('donate', 'Donate'), url('donate')], ['Thank you', null]],
+        ]);
     }
 
     /**

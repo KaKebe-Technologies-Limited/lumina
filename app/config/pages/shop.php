@@ -256,7 +256,7 @@ return (static function (): array {
             // ------------------------------------------------------------------------------------------ payment methods
             [
                 'key' => 'payment', 'label' => 'Payment methods: names and instructions',
-                'help' => 'What customers read for each way to pay. These are the defaults: the texts typed in Admin > Shop > Payments win when they are filled in. The account numbers and bank details are NOT here: they are set in Admin > Shop > Payments.',
+                'help' => 'What customers read for each way to pay. These are the defaults: the texts typed in Admin > Shop > Payments win when they are filled in. The mobile-money numbers are NOT here: they are set in Admin > Shop > Payments. The bank account is the foundation\'s official account (Admin > Settings > Donations); Admin > Shop > Payments can override it for the shop.',
                 'fields' => [
                     $t('book_label', 'Booking: name', 'Book now, pay later'),
                     $a('book_instructions', 'Booking: instructions', 'We will reserve your items. Pay when you collect them, or agree another way to pay with us. We keep your reservation for a few days and confirm it by e-mail.', 4),
@@ -269,6 +269,7 @@ return (static function (): array {
                     $t('flutterwave_label', 'Online payment: name', 'Pay online (card or mobile money)'),
                     $a('flutterwave_instructions', 'Online payment: instructions', 'Pay with Visa, Mastercard or mobile money on a secure payment page. You come back to this site when you are done.', 3),
                     $t('reference_line', 'Reference line ({order_number})', 'Use this reference when you pay: {order_number}'),
+                    $t('bank_also_heading', 'E-mail: heading above the bank account when the customer chose another way to pay', 'Or pay by bank transfer:'),
                     $t('redirect_title', 'Moving to the payment page: heading', 'Taking you to the secure payment page'),
                     $a('redirect_text', 'Moving to the payment page: text', 'You will leave this site for a moment to pay on the page of our payment partner. If nothing happens in a few seconds, press the button.', 2),
                     $t('redirect_button', 'Moving to the payment page: button', 'Continue to payment'),
@@ -300,6 +301,9 @@ return (static function (): array {
                     $t('pickup_title', 'Heading: collect your order', 'Collect your order'),
                     $t('deliver_title', 'Heading: delivery address', 'Delivery to'),
                     $t('pay_title', 'Heading: how to pay', 'How to pay'),
+                    $t('bank_title', 'Heading: pay by bank transfer as well', 'Or pay by bank transfer'),
+                    $a('bank_intro', 'Intro under that heading ({order_number}, {amount})', 'You can also pay this order straight into our bank account. Send {amount} and quote {order_number} as the reference. Then tell us your transfer reference below so we can confirm your order.', 3),
+                    $a('bank_online_note', 'Note under that heading when a payment may already be on its way', 'If you have already paid, you do not need to send a transfer.', 2),
                     $t('copy_number', 'Copy button next to a payment number: accessible name', 'Copy number'),
                     $t('copied', 'Copy button: message read out after copying', 'Number copied'),
                     $t('label_mtn', 'Payment details: MTN label', 'MTN Mobile Money'),
@@ -318,7 +322,8 @@ return (static function (): array {
                     $t('ref_button', 'Button: send the reference', 'Send reference'),
                     $a('ref_thanks', 'After sending the reference', 'Thank you. We will check your payment and confirm your order.', 2),
                     $a('ref_error', 'Reference not accepted', 'That reference does not look right. Please check it and try again.', 2),
-                    $a('paid_note', 'Note: paid', 'Payment received. Thank you for supporting our work.', 2),
+                    $a('ref_closed_note', 'Reference not accepted: this order can no longer take one', 'This order can no longer take a payment reference. Please contact us and quote your order number.', 2),
+                    $a('ref_limit_note', 'Reference not accepted: too many sent', 'You have sent several references already. Please contact us and quote your order number.', 2),                    $a('paid_note', 'Note: paid', 'Payment received. Thank you for supporting our work.', 2),
                     $a('pending_note', 'Note: waiting for payment confirmation', 'We are waiting to confirm your payment. We will e-mail you as soon as it is done.', 2),
                     $a('failed_note', 'Note: payment failed', 'The payment did not go through. You can try again.', 2),
                     $a('review_note', 'Note: payment being checked', 'We are checking your payment and will be in touch if we need anything from you.', 2),
@@ -378,7 +383,7 @@ return (static function (): array {
             // ------------------------------------------------------------------------------------------ e-mails
             [
                 'key' => 'email', 'label' => 'E-mail wording',
-                'help' => 'The e-mails the shop sends. Placeholders: {name} {first_name} {order_number} {order_url} {total} {subtotal} {delivery_fee} {items} {payment_method} {payment_instructions} {delivery_method} {delivery_line} {pickup_address} {pickup_hours} {delivery_address} {status} {status_line} {site} {admin_url} {reference}. Subjects must be one line.',
+                'help' => 'The e-mails the shop sends. Placeholders: {name} {first_name} {order_number} {order_url} {total} {subtotal} {delivery_fee} {items} {payment_method} {payment_instructions} {delivery_method} {delivery_line} {pickup_address} {pickup_hours} {delivery_address} {status} {status_line} {site} {admin_url} {reference}. Subjects must be one line. {payment_instructions} also carries the foundation\'s bank account for an unpaid order (keep it in the order text).',
                 'fields' => [
                     $t('order_subject', 'To the customer: order received - subject', 'We received your order {order_number}'),
                     $a('order_body', 'To the customer: order received - text', "Hello {first_name},\n\nThank you for your order {order_number} at {site}.\n\n{items}\n\nTotal: {total}\n\nHow to pay ({payment_method}):\n{payment_instructions}\n\nYou can open your order any time here:\n{order_url}\n\n{delivery_line}", 14),

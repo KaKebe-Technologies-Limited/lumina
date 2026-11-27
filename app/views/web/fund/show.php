@@ -2,10 +2,12 @@
 /**
  * ONE PROJECT (/fund-a-project/{slug}). Vars: $p (the project), $others (the other projects), $methods, $currencies, $gets (what every partner receives).
  * Order: cover > title + key figures > the need and our response > what we will deliver > why donors choose it > the budget > CHOOSE HOW TO GIVE (packages, one contribution, any amount + the pledge form)
+ * > the foundation's BANK ACCOUNT card (partials/bank-card, every project including one still in preparation; hidden while Payment options > "Bank and manual mobile-money details" is off)
  * > what partners receive > questions > the other projects. The price of a fixed choice is calculated on the server again when the pledge is sent.
  */
 $this->start('scripts'); ?><script src="<?= e(asset('js/fund.js')) ?>" defer></script><?php $this->end();
 $coming = $p['status'] !== 'proposal';
+$bankOn = \App\Services\Payments\OfficialAccount::visible();      // the bank card below the form (hidden while Payment options > "Bank and manual mobile-money details" is off)
 $ugxFmt = static fn(float|int $v): string => 'UGX ' . number_format((float) $v);
 $usdFmt = static fn(float|int $v): string => 'USD ' . number_format((float) $v);
 $cover = asset('img/projects/' . $p['cover'] . '.jpg');
@@ -195,10 +197,19 @@ $cover = asset('img/projects/' . $p['cover'] . '.jpg');
                     <?= partial('partials/form-field', ['name' => 'is_anonymous', 'label' => 'I would like my gift to stay anonymous', 'type' => 'checkbox']) ?>
                     <button class="btn btn--cta btn--caps btn--block" type="submit"><?= icon('heart', 'icon--sm') ?> <span data-fund-give>Give now</span></button>
                     <?= partial('partials/privacy-note', ['key' => 'donate']) ?>
-                    <p class="fund-details__note"><?php if (isset($methods['mobile_now']) && isset($methods['pesapal_now'])): ?>Press Give now to pay with MTN or Airtel mobile money (you approve on your phone), or choose Card, mobile money or bank (Pesapal): you are taken to Pesapal's secure page to finish and we never see your card details or PIN.<?php elseif (isset($methods['mobile_now'])): ?>Press Give now to pay with MTN or Airtel mobile money. You approve the payment on your phone.<?php elseif (isset($methods['pesapal_now'])): ?>Press Give now to pay with Card, mobile money or bank (Pesapal): you are taken to Pesapal's secure page to finish and we never see your card details or PIN.<?php else: ?>Press Give now and we will contact you with the details to complete your gift.<?php endif; ?></p>
+                    <p class="fund-details__note"><?php if (isset($methods['mobile_now']) && isset($methods['pesapal_now'])): ?>Press Give now to pay with MTN or Airtel mobile money (you approve on your phone), or choose Card, mobile money or bank (Pesapal): you are taken to Pesapal's secure page to finish and we never see your card details or PIN.<?php elseif (isset($methods['mobile_now'])): ?>Press Give now to pay with MTN or Airtel mobile money. You approve the payment on your phone.<?php elseif (isset($methods['pesapal_now'])): ?>Press Give now to pay with Card, mobile money or bank (Pesapal): you are taken to Pesapal's secure page to finish and we never see your card details or PIN.<?php elseif ($bankOn): ?>Press Give now to record your gift. You can also send it straight to our bank account shown below (<a href="#bankcard-fund">see the account</a>) and we will match it to your pledge.<?php else: ?>Press Give now and we will contact you with the details to complete your gift.<?php endif; ?><?php if ($bankOn && (isset($methods['mobile_now']) || isset($methods['pesapal_now']))): ?> Prefer a bank transfer? <a href="#bankcard-fund">See our bank account</a>.<?php endif; ?></p>
                 </div>
             </aside>
         </form>
+
+        <?= partial('partials/bank-card', [
+            'id' => 'fund',
+            'title' => 'Give by bank transfer',
+            'lead' => $coming
+                ? 'You can already give to this project: send your gift to our account and quote the reference below. Then press Give now above so we can thank you.'
+                : 'Prefer a bank transfer? Send your gift to the account below and quote the reference. Then press Give now above and choose Bank transfer, so we can match it to your pledge and send your receipt.',
+            'reference' => (string) $p['short'],
+        ]) ?>
     </div>
 </section>
 

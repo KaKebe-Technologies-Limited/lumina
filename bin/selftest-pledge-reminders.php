@@ -35,7 +35,8 @@ if (!function_exists('check')) {
 }
 
 echo "-- pledge reminders --\n";
-$keys = ['donate_bank_details', 'donate_mobile_money', 'donate_paypal_email', 'donation_reminder_message'];
+$keys = ['donate_bank_details', 'donate_mobile_money', 'donate_paypal_email', 'donation_reminder_message', 'pay_opt_manual',
+    'official_bank_account_name', 'official_bank_account_number', 'official_bank_name', 'official_bank_branch', 'official_bank_swift', 'official_bank_note'];
 $in = implode(',', array_fill(0, count($keys), '?'));
 $snapshot = Database::all('SELECT * FROM settings WHERE setting_key IN (' . $in . ')', $keys);
 $restore = static function () use ($keys, $in, $snapshot): void {
@@ -49,6 +50,7 @@ $cleanup = static function (): void {
     Database::execute("DELETE FROM donations WHERE donor_email LIKE 'zz-pr-%'");
     Database::execute("DELETE FROM payment_events WHERE reference LIKE 'DON-%' AND who LIKE 'ZZ Pr%'");
     Database::execute("DELETE FROM users WHERE email LIKE 'zz-pr-%'");
+    Database::execute("DELETE FROM audit_log WHERE user_name LIKE '%zz-pr-%'");
     Database::execute('DELETE FROM rate_limits');
 };
 $cleanup();
@@ -76,19 +78,41 @@ $mk = static fn(string $tag, string $status = 'pledged', ?string $amount = '20.0
     'donor_name' => 'ZZ Pr ' . $tag . ' Donor', 'donor_email' => $email !== '' ? $email : 'zz-pr-' . $tag . '@example.test', 'amount' => $amount, 'currency' => $cur, 'method' => 'bank', 'status' => $status, 'source' => 'pledge_form',
 ]);
 
-Settings::setMany(['donate_bank_details' => '', 'donate_mobile_money' => '', 'donate_paypal_email' => '', 'donation_reminder_message' => '']);
-$a = $mk('a');
+// every box empty, saved empty on purpose (what a settings form with blank boxes stores): the foundation's built-in official account is still the account
+Settings::setMany(['donate_bank_details' => '', 'donate_mobile_money' => '', 'donate_paypal_email' => '', 'donation_reminder_message' => '', 'pay_opt_manual' => '1',
+    'official_bank_account_name' => '', 'official_bank_account_number' => '', 'official_bank_name' => '', 'official_bank_branch' => '', 'official_bank_swift' => '', 'official_bank_note' => '']);
+$a0 = $mk('a0');
+$det = PledgeReminders::paymentDetails('DON-' . $a0);
+check('every box empty: the payment details are the official account (name, number, bank, branch), the reference to quote, the note and where to send the proof',
+    str_starts_with($det, "Bank transfer\n") && str_contains($det, 'Account Name: Lumina Africa Foundation') && str_contains($det, 'Account Number: 4090008000229') && str_contains($det, 'Bank: Pearl Bank') && str_contains($det, 'Branch: Gulu')
+    && str_contains($det, 'Payment reference: DON-' . $a0) && str_contains($det, 'proof of payment'), $det);
+check('no reference given: no "Payment reference" line (the details are still complete)', !str_contains(PledgeReminders::paymentDetails(), 'Payment reference') && str_contains(PledgeReminders::paymentDetails(), '4090008000229'));
+\App\Services\Payments\PaymentOptions::save(['manual' => false]);
+check('manual details switched off on screen: the e-mail a staff member sends still lists the account (the switch hides it from visitors only)', str_contains(PledgeReminders::paymentDetails('DON-1'), '4090008000229') && !\App\Services\Payments\OfficialAccount::visible());
 $before = $mails();
-$r = PledgeReminders::remind($a, null);
-check('no account details set: the reminder is refused with a clear instruction and nothing is e-mailed', !$r['ok'] && str_contains($r['message'], 'account details') && $mails() === $before);
+$r = PledgeReminders::remind($a0, null);
+$text0 = $mailText($before);
+check('nothing typed in any box, switch off: the reminder is NOT refused for missing bank details; it is sent with the official account and DON-' . $a0, $r['ok'] && count($mails()) === count($before) + 1 && str_contains($text0, '4090008000229') && str_contains($text0, 'Pearl Bank') && str_contains($text0, 'DON-' . $a0), json_encode($r));
+\App\Services\Payments\PaymentOptions::save(['manual' => true]);
+$pr = (int) Database::insert('donations', ['donor_name' => 'ZZ Pr proj Donor', 'donor_email' => 'zz-pr-proj@example.test', 'amount' => '500000', 'currency' => 'UGX', 'method' => 'bank', 'status' => 'pledged', 'source' => 'pledge_form', 'reference' => 'PROJECT:digital-inclusion|item:laptopx1']);
+$short = (string) (\App\Services\Fund\FundProjects::find('digital-inclusion')['short'] ?? '');
+check('a gift to a project is quoted as "<project short name> DON-<id>" and its PROJECT: reference is left alone', $short !== '' && PledgeReminders::reference((array) Database::one('SELECT * FROM donations WHERE id = ?', [$pr])) === $short . ' DON-' . $pr
+    && str_contains(PledgeReminders::message((array) Database::one('SELECT * FROM donations WHERE id = ?', [$pr])), 'Payment reference: ' . $short . ' DON-' . $pr) && (string) Database::value('SELECT reference FROM donations WHERE id = ?', [$pr], '') === 'PROJECT:digital-inclusion|item:laptopx1');
 
+$a = $mk('a');
 Settings::setMany(['donate_bank_details' => "Bank: Pearl Bank\nAccount Name: Lumina Africa Foundation\nAccount Number: 4090008000229", 'donate_mobile_money' => 'MTN: 0772 000 111']);
 $before = $mails();
 $r = PledgeReminders::remind($a, null);
 $text = $mailText($before);
 check('reminder is sent for a waiting pledge', $r['ok'] && count($mails()) === count($before) + 1, json_encode($r));
 check('the e-mail is thankful, names the donor, the amount and why gifts matter', str_contains($text, 'Dear ZZ,') && str_contains($text, 'Thank you') && str_contains($text, 'USD 20') && str_contains($text, 'generous pledge') && str_contains($text, 'Northern Uganda') && str_contains($text, 'makes a real difference'), substr($text, 0, 400));
-check('the e-mail carries the account details exactly as set (bank, account name and number, mobile money) and the donate link', str_contains($text, 'Pearl Bank') && str_contains($text, 'Account Name: Lumina Africa Foundation') && str_contains($text, '4090008000229') && str_contains($text, 'MTN: 0772 000 111') && str_contains($text, 'donate'));
+check('the e-mail carries the account details (bank, account name and number, mobile money) and the donate link', str_contains($text, 'Pearl Bank') && str_contains($text, 'Account Name: Lumina Africa Foundation') && str_contains($text, '4090008000229') && str_contains($text, 'MTN: 0772 000 111') && str_contains($text, 'donate'));
+$msgA = PledgeReminders::message((array) Database::one('SELECT * FROM donations WHERE id = ?', [$a]));
+check('the account is told ONCE although the old free-text box repeats it, with Gulu, the reference DON-' . $a . ' and the proof-of-payment sentence', substr_count($msgA, '4090008000229') === 1 && str_contains($msgA, 'Gulu') && str_contains($msgA, 'Payment reference: DON-' . $a) && str_contains($msgA, 'proof of payment')
+    && str_contains($text, 'Gulu') && str_contains($text, 'DON-' . $a), (string) substr_count($msgA, '4090008000229'));
+Settings::setMany(['donate_bank_details' => 'Please write your full name too.']);
+check('free text that does not hold the official number is kept as an addition under the account', str_contains(PledgeReminders::paymentDetails('DON-' . $a), "Payment reference: DON-{$a}\n\nPlease write your full name too.") && substr_count(PledgeReminders::paymentDetails(), '4090008000229') === 1);
+Settings::setMany(['donate_bank_details' => "Bank: Pearl Bank\nAccount Name: Lumina Africa Foundation\nAccount Number: 4090008000229"]);
 check('the e-mail asks for the transaction number and leaves no unfilled {placeholder}', str_contains($text, 'transaction number') && preg_match('/\{[a-z_]+\}/', $text) !== 1);
 check('the reminder is written to the payment audit trail', (int) Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = ? AND event = 'reminded'", ['DON-' . $a], 0) === 1);
 check('a second reminder within 24 hours is refused (no spam)', !PledgeReminders::remind($a, null)['ok'] && count($mails()) === count($before) + 1);
@@ -152,13 +176,48 @@ if (!$login('zz-pr-admin@example.test', $pwA, $jA) || !$login('zz-pr-editor@exam
     check('http: "Send thankful reminders to all" mails the waiting pledges that were not reminded today and skips the ones that were', in_array($all['code'], [302, 303], true) && (int) $aAgain === 1 && (int) Database::value("SELECT COUNT(*) FROM payment_events WHERE reference = ? AND event = 'reminded'", ['DON-' . $e], 0) === 1);
     $pg = $req('GET', '/admin/donations', [], $jA);
     check('http: the Donations page shows the "Your account details" box to an administrator', str_contains($pg['body'], 'Your account details') && str_contains($pg['body'], 'name="bank"') && str_contains($pg['body'], 'Pearl Bank'));
+    check('http: the box edits the five official fields and the note (name, number, bank, branch, SWIFT) with the current values, and the old box is now "Extra bank instructions"',
+        preg_match('/id="acc-oname"[^>]*name="official_name"[^>]*value="Lumina Africa Foundation"/', $pg['body']) === 1 && preg_match('/id="acc-onumber"[^>]*name="official_number"[^>]*value="4090008000229"/', $pg['body']) === 1
+        && preg_match('/name="official_bank"[^>]*value="Pearl Bank"/', $pg['body']) === 1 && preg_match('/name="official_branch"[^>]*value="Gulu"/', $pg['body']) === 1 && str_contains($pg['body'], 'name="official_swift"') && str_contains($pg['body'], 'name="official_note"')
+        && str_contains($pg['body'], 'Extra bank instructions') && str_contains($pg['body'], 'Shown to donors'));
+    \App\Services\Payments\PaymentOptions::save(['manual' => false]);
+    $pgOff = $req('GET', '/admin/donations', [], $jA);
+    \App\Services\Payments\PaymentOptions::save(['manual' => true]);
+    check('http: while "Bank and manual mobile-money details" is off the box says the account is hidden from visitors', str_contains($pgOff['body'], 'Hidden (switched off)'));
     $sv = $post('/admin/donations/account-details', ['bank' => "Bank: Test Bank\nAccount Number: 111222", 'mobile' => 'MTN: 0772 999 000', 'paypal' => ''], $jA);
     Settings::flush();
-    check('http: saving the account details writes the same settings as Site settings > Donations', in_array($sv['code'], [302, 303], true) && str_contains((string) Settings::get('donate_bank_details', ''), 'Test Bank') && (string) Settings::get('donate_mobile_money', '') === 'MTN: 0772 999 000');
+    check('http: saving the account details writes the same settings as Site settings > Donations (a form without official boxes leaves the official account alone)', in_array($sv['code'], [302, 303], true) && str_contains((string) Settings::get('donate_bank_details', ''), 'Test Bank') && (string) Settings::get('donate_mobile_money', '') === 'MTN: 0772 999 000'
+        && \App\Services\Payments\OfficialAccount::value('number') === '4090008000229');
     $bp = $post('/admin/donations/account-details', ['bank' => 'Changed', 'mobile' => '', 'paypal' => 'not an email'], $jA);
     Settings::flush();
     check('http: a PayPal value that is not an e-mail address is refused and nothing changes', str_contains((string) Settings::get('donate_bank_details', ''), 'Test Bank'));
-    check('http: an editor cannot change the account details (administrators only)', $req('POST', '/admin/donations/account-details', ['_token' => 'x', 'bank' => 'x'], $jE)['code'] === 403);
+
+    // ---- the official account: valid change, refusals, and "empty = built-in"
+    $OA = \App\Services\Payments\OfficialAccount::class;
+    $full = ['bank' => 'Pay in person too', 'mobile' => 'MTN: 0772 999 000', 'paypal' => '', 'official_name' => 'Lumina Africa Foundation Test', 'official_number' => '1234 5678 9012', 'official_bank' => 'Zed Test Bank', 'official_branch' => 'Kampala', 'official_swift' => 'abcd ug ka', 'official_note' => 'Zed note'];
+    $ok = $post('/admin/donations/account-details', $full, $jA);
+    Settings::flush();
+    check('http: a valid official account is saved in the official_bank_* settings (the SWIFT without spaces, in capitals)', in_array($ok['code'], [302, 303], true) && $OA::value('name') === 'Lumina Africa Foundation Test' && $OA::value('number') === '1234 5678 9012'
+        && (string) Settings::get('official_bank_name', '') === 'Zed Test Bank' && $OA::value('branch') === 'Kampala' && (string) Settings::get('official_bank_swift', '') === 'ABCDUGKA' && $OA::note() === 'Zed note' && (string) Settings::get('donate_bank_details', '') === 'Pay in person too');
+    $aud = (string) Database::value("SELECT summary FROM audit_log WHERE action = 'donation.account_details' AND user_name LIKE '%zz-pr-admin%' ORDER BY id DESC LIMIT 1", [], '');
+    check('http: the audit line says which official fields changed and only the last four digits of the number', str_contains($aud, 'ends in 9012') && str_contains($aud, 'number') && !str_contains($aud, '1234') && !str_contains($aud, '5678'), $aud);
+    $refused = [
+        'a number with symbols' => ['official_number' => '12#34'],
+        'a number that is too long' => ['official_number' => str_repeat('1', 41)],
+        'a SWIFT code of 5 letters' => ['official_swift' => 'ABCDE'],
+        'an account name over 80 characters' => ['official_name' => str_repeat('N', 81)],
+        'a note over 300 characters' => ['official_note' => str_repeat('n', 301)],
+    ];
+    foreach ($refused as $what => $bad) {
+        $res = $post('/admin/donations/account-details', ['official_bank' => 'Should Not Be Saved', 'bank' => 'x', 'mobile' => '', 'paypal' => ''] + $bad, $jA);
+        Settings::flush();
+        check('http: ' . $what . ' is refused and NOTHING in the same form is saved', in_array($res['code'], [302, 303], true) && (string) Settings::get('official_bank_name', '') === 'Zed Test Bank' && $OA::value('number') === '1234 5678 9012' && (string) Settings::get('official_bank_swift', '') === 'ABCDUGKA' && (string) Settings::get('donate_bank_details', '') === 'Pay in person too' && $OA::note() === 'Zed note');
+    }
+    $reset = $post('/admin/donations/account-details', ['bank' => '', 'mobile' => '', 'paypal' => '', 'official_name' => '', 'official_number' => '', 'official_bank' => 'Pearl Bank', 'official_branch' => '', 'official_swift' => '', 'official_note' => ''], $jA);
+    Settings::flush();
+    check('http: empty boxes (or a box equal to the built-in value) go back to the built-in account: the saved rows are removed, so the account can never be blanked', in_array($reset['code'], [302, 303], true) && $OA::get() === ['name' => 'Lumina Africa Foundation', 'number' => '4090008000229', 'bank' => 'Pearl Bank', 'branch' => 'Gulu', 'swift' => '']
+        && !Settings::isCustomised('official_bank_account_number') && !Settings::isCustomised('official_bank_name') && !Settings::isCustomised('official_bank_swift') && !Settings::isCustomised('official_bank_note') && $OA::isBuiltIn());
+    check('http: an editor cannot change the account details (administrators only)', $req('POST', '/admin/donations/account-details', ['_token' => 'x', 'bank' => 'x', 'official_number' => '1'], $jE)['code'] === 403 && $OA::value('number') === '4090008000229');
     check('http: an editor (no inbox.manage) is refused',$req('POST', '/admin/donations/' . $a . '/remind', ['_token' => 'x'], $jE)['code'] === 403 && $req('POST', '/admin/donations/remind-all', ['_token' => 'x'], $jE)['code'] === 403);
 }
 

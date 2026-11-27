@@ -19,6 +19,9 @@ use App\Core\Settings;
  * contains "{name}" stays as typed). {status_line} and {delivery_line} are wording written by the owner in the registry: the tokens INSIDE them
  * ({pickup_address} {pickup_hours} {delivery_address}) are expanded first, so "Collect it from: {pickup_address}" works. {name} / {first_name} are the
  * customer's typed name reduced to letters (see mailName()): the mail goes to an address nobody has proven to own. {items} and {payment_instructions} are multi-line text blocks.
+ * {payment_instructions} also carries the foundation's BANK ACCOUNT: for an order that chose the bank, its note; for an unpaid pay-on-pickup, booking, mobile-money or Daraza order, a second block
+ * "Or pay by bank transfer:" with the account lines, the order number to quote and the note (OrderService::paymentInfo bank_also). It rides inside {payment_instructions}, so wording the owner edited
+ * keeps it; an online order (Pesapal, Flutterwave, mobile) does not get it in the mail: that customer is paying on the gateway now, and the order page shows the account.
  *
  *   kinds: order (customer: we received your order) | pay (customer: online order started - the link to complete the payment) | paid (customer: payment received) | status (customer: ready / shipped / cancelled ...)
  *          staff_new (staff: new order; for an online order it goes out when the payment is confirmed) | staff_reference (staff: a customer typed a transaction ID)
@@ -185,8 +188,23 @@ final class ShopMailer
         if ($order['payment_method'] === 'daraza' && ($dz = \App\Services\Daraza::url('shop')) !== '') {
             $payLines[] = \App\Services\Daraza::label() . ': ' . $dz;
         }
+        $refLine = ShopSettings::registryText('payment.reference_line') !== '' ? str_replace('{order_number}', (string) $order['order_number'], ShopSettings::registryText('payment.reference_line')) : (string) $order['order_number'];
         if (in_array($order['payment_method'], ['momo', 'bank', 'daraza'], true)) {
-            $payLines[] = ShopSettings::registryText('payment.reference_line') !== '' ? str_replace('{order_number}', (string) $order['order_number'], ShopSettings::registryText('payment.reference_line')) : (string) $order['order_number'];
+            $payLines[] = $refLine;
+        }
+        if ($order['payment_method'] === 'bank' && $info['bank_note'] !== '') {
+            $payLines[] = $info['bank_note'];                                          // the account itself came with the details above: only the "confirm the name / share your proof" sentence is added
+        } elseif ($info['bank_also'] && in_array($order['payment_method'], ['cod', 'book', 'momo', 'daraza'], true)) {
+            // the foundation's bank account as another way to pay (an online order is paying on the gateway right now: its page shows the account, its mail does not)
+            $payLines[] = '';
+            $payLines[] = ShopSettings::registryText('payment.bank_also_heading') !== '' ? ShopSettings::registryText('payment.bank_also_heading') : 'Or pay by bank transfer:';
+            foreach ($info['bank_details'] as $d) {
+                $payLines[] = $d['label'] . ': ' . $d['value'];
+            }
+            $payLines[] = $refLine;
+            if ($info['bank_note'] !== '') {
+                $payLines[] = $info['bank_note'];
+            }
         }
         return [
             '{name}'                 => $name,

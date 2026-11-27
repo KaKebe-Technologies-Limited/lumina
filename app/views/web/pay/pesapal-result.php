@@ -1,5 +1,8 @@
 <?php
-/** After the Pesapal page: what Pesapal itself says about the payment. Vars: $state (paid | pending | failed | reversed | review | unknown | verify_failed), $row (the payment or null). */
+/**
+ * After the Pesapal page: what Pesapal itself says about the payment. Vars: $state (paid | pending | failed | reversed | review | unknown | verify_failed), $row (the payment or null),
+ * $bankRef (optional: set only for a donation or project gift that FAILED or was REVERSED; the project name to quote, '' when there is none; the bank card is shown then and never otherwise).
+ */
 $copy = [
     'paid'          => ['heart', 'Thank you for your gift!', 'Your payment was received. Your generosity helps us reach more young people and families across Africa. A confirmation has been e-mailed to you by Pesapal.'],
     'pending'       => ['clock', 'We are waiting for your payment', 'Pesapal has not confirmed the payment yet. If you have paid, it can take a few minutes: you do not need to pay again. If money was taken and nothing changes within the hour, write to us and quote the reference below.'],
@@ -34,5 +37,8 @@ $backLabel = in_array($purpose, ['academy_signup', 'academy_cert'], true) ? 'Go 
         <p>
             <a class="btn btn--cta btn--caps" href="<?= e(url($backUrl)) ?>"><?= e($backLabel) ?></a>
         </p>
+        <?php if (isset($bankRef) && in_array($state, ['failed', 'reversed'], true)): ?>
+        <?= partial('partials/bank-card', ['id' => 'pesapal', 'tag' => 'h2', 'title' => 'Or give by bank transfer', 'lead' => ($state === 'failed' ? 'Nothing was charged. ' : '') . 'If you prefer, send your gift straight to our bank account.', 'reference' => (string) $bankRef]) ?>
+        <?php endif; ?>
     </div>
 </section>

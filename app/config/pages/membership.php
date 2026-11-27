@@ -132,7 +132,7 @@ return (static function (): array {
                 ],
             ],
             [
-                'key' => 'payment', 'label' => 'How to pay', 'toggle' => true, 'help' => 'The payment details themselves are set in Site settings > Membership ("How to pay the membership fee"); while empty, the bank and mobile-money details of the Donations tab are used. The section is hidden while there are no details at all.',
+                'key' => 'payment', 'label' => 'How to pay', 'toggle' => true, 'help' => 'The payment details themselves are set in Site settings > Membership ("How to pay the membership fee"); while empty, the "Extra bank instructions" and the mobile-money details of the Donations tab are used (the foundation\'s official bank account is not used here). The section is hidden while there are no details at all.',
                 'fields' => [
                     $text('eyebrow', 'Small heading above the title (optional)', ''),
                     $text('title', 'Heading', 'How to [[Pay]]', ['help' => $hl]),

@@ -6660,6 +6660,226 @@ body.launch-gate {
   transform: rotate(-2deg);
 }
 
+.bankcard {
+  max-width: 44rem;
+  margin: 2rem auto 0;
+  padding: 1.5rem 1rem;
+  text-align: left;
+  color: #242A32;
+  background: #FFFFFF;
+  border: 1px solid #E5DED0;
+  border-top: 5px solid #D9A441;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(11, 27, 51, 0.08), 0 1px 3px rgba(11, 27, 51, 0.06);
+}
+
+@media (min-width: 576px) {
+  .bankcard {
+    padding: 1.5rem;
+  }
+}
+
+.bankcard__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.bankcard__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  color: #D9A441;
+  background: #142B4A;
+}
+
+.bankcard__title {
+  margin: 0;
+  font-family: "Fraunces", "Fraunces Fallback", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  color: #142B4A;
+}
+
+.bankcard__lead {
+  margin: 0.5rem 0 0;
+  color: #5B6472;
+  font-size: 0.9375rem;
+}
+
+.bankcard__list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.bankcard__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #FAF8F2;
+  border-radius: 12px;
+}
+
+.bankcard__row dt {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #5B6472;
+}
+
+.bankcard__row dd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0;
+  min-width: 0;
+  font-weight: 600;
+  color: #142B4A;
+  overflow-wrap: anywhere;
+}
+
+.bankcard__row .bankcard__hint {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #5B6472;
+}
+
+.bankcard__row--key .bankcard__value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.375rem;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+.bankcard__row--ref {
+  background: #F3EFE5;
+  box-shadow: inset 0 0 0 2px rgba(217, 164, 65, 0.55);
+}
+
+.bankcard__row--ref .bankcard__value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.03em;
+}
+
+.bankcard__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 1rem;
+  font-family: "DM Sans", "DM Sans Fallback", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #142B4A;
+  background: #FFFFFF;
+  border: 1px solid #142B4A;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.bankcard__copy[hidden] {
+  display: none;
+}
+
+.bankcard__copy:hover {
+  background: #F3EFE5;
+}
+
+.bankcard__copy:focus-visible {
+  outline: 3px solid #A5521A;
+  outline-offset: 3px;
+}
+
+.bankcard__copy.is-copied {
+  color: #287A52;
+  background: #E7F5EC;
+  border-color: #287A52;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bankcard__copy {
+    transition: none;
+  }
+}
+
+.bankcard__extra {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  border-left: 4px solid #D9A441;
+  background: #FAF8F2;
+  border-radius: 0 12px 12px 0;
+}
+
+.bankcard__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem;
+  font-size: 0.9375rem;
+  color: #242A32;
+  background: #F3EFE5;
+  border-radius: 12px;
+}
+
+.bankcard__note .icon {
+  flex: none;
+  margin-top: 0.15rem;
+  color: #142B4A;
+}
+
+.bankcard__note a {
+  color: #142B4A;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+.bankcard .bankcard__title {
+  margin: 0;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  color: #142B4A;
+}
+
+.mm__bank {
+  margin-top: 1.5rem;
+}
+
+.mm__bank > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #142B4A;
+  padding: 0.5rem 0;
+}
+
+@media print {
+  .bankcard {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  .bankcard__copy {
+    display: none;
+  }
+}
+
 .faq-split {
   display: grid;
   gap: 2rem;
@@ -11079,6 +11299,75 @@ a.plogo:hover, a.plogo:focus-visible {
 .page-donate .donate-way__cta {
   margin-top: auto;
   padding-top: 0.75rem;
+}
+
+.page-donate .ia-cards > .donate-way--account {
+  flex: 1 1 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.page-donate .donate-way--account .bankcard {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.page-donate .donate-thanks__none, .page-donate .donate-thanks__foreign {
+  max-width: 44rem;
+  margin: 1.5rem auto 0;
+  text-align: center;
+}
+
+.page-donate .donate-thanks__foreign {
+  text-align: left;
+}
+
+.page-donate .donate-thanks__online {
+  margin: 2rem 0 0;
+  text-align: center;
+}
+
+.page-donate .donate-thanks__online .btn {
+  margin-left: 0.5rem;
+}
+
+.page-donate .donate-thanks__back {
+  margin: 2rem 0 0;
+  text-align: center;
+}
+
+.page-donate .donate-next {
+  counter-reset: donate-next;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.page-donate .donate-next li {
+  counter-increment: donate-next;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: #FFFFFF;
+  border: 1px solid #E5DED0;
+  border-radius: 24px;
+}
+
+.page-donate .donate-next li::before {
+  content: counter(donate-next);
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-weight: 700;
+  color: #D9A441;
+  background: #142B4A;
 }
 
 .page-donate .donate-details {
@@ -24224,6 +24513,12 @@ html.cal-lock {
   .sh-refform__row .btn {
     margin-top: 1.55rem;
   }
+}
+
+.sh-bankalt .bankcard {
+  max-width: none;
+  margin: 0 0 1rem;
+  box-shadow: none;
 }
 
 .sh-mini--order {

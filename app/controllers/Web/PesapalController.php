@@ -59,7 +59,12 @@ final class PesapalController extends Controller
             Flash::success('Payment received. Thank you! Your certificate is now being finalised: it appears under "Ready" as soon as it is available.');
             return $this->redirect('academy/portal/certificates');
         }
-        return $this->render('web/pay/pesapal-result', ['state' => $state, 'row' => $row], [
+        // a gift (donation or project) whose payment did not go through: the bank account is offered as another way to give. Never while the payment is pending, under review or unconfirmed
+        // (a second way to pay next to "we are waiting for your payment" invites paying twice). null = no card; the project name is the reference (a failed online gift cancels its pledge).
+        $bankRef = $row !== null && in_array((string) $row['purpose'], ['project', 'donation'], true) && in_array($state, ['failed', 'reversed'], true)
+            ? \App\Services\Fund\FundProjects::referenceFor((int) $row['ref_id'])
+            : null;
+        return $this->render('web/pay/pesapal-result', ['state' => $state, 'row' => $row, 'bankRef' => $bankRef], [
             'page' => 'donate',
             'meta' => ['robots' => 'noindex,nofollow', 'title' => 'Your gift'],
         ])->header('Cache-Control', 'private, no-store');

@@ -19,7 +19,17 @@ $isPaid = $o['payment_status'] === 'paid';
 $closed = in_array($o['status'], ['cancelled', 'refunded'], true);
 $booking = $o['payment_method'] === 'book';
 $online = $o['payment_method'] === 'flutterwave';
-$manual = in_array($o['payment_method'], ['momo', 'bank', 'daraza'], true);
+// a customer can report a BANK transfer on an order that chose another way to pay (the order page's "Or pay by bank transfer" card): the ledger row of that pending reference says 'bank',
+// so staff see the bank checklist and "Paid by" is pre-selected to Bank instead of "Pay on pickup"
+$custRef = null;
+foreach (array_reverse($ledger) as $lp) {
+    if ($lp['source'] === 'customer' && $lp['status'] === 'pending') {
+        $custRef = $lp;
+        break;
+    }
+}
+$viaMethod = (string) ($custRef['method'] ?? $o['payment_method']);
+$manual = in_array($viaMethod, ['momo', 'bank', 'daraza'], true);
 $canRecord = !in_array($o['payment_status'], ['paid', 'refunded'], true) && !$closed;
 $phoneHref = 'tel:' . preg_replace('/[^0-9+]/', '', (string) $o['customer_phone']);
 $waNumber = preg_replace('/[^0-9]/', '', (string) $o['customer_phone']);
@@ -153,7 +163,7 @@ $this->start('scripts'); ?>
                             <div class="ash-check-list">
                                 <strong>Before you mark a mobile-money or bank payment as paid</strong>
                                 <ol>
-                                    <li>Open your <?= e($o['payment_method'] === 'momo' ? 'mobile-money' : 'bank') ?> statement and find the payment<?= (string) ($o['payment_reference'] ?? '') !== '' ? ' with the reference the customer sent: <b>' . e($o['payment_reference']) . '</b>' : '' ?>.</li>
+                                    <li>Open your <?= e($viaMethod === 'momo' ? 'mobile-money' : 'bank') ?> statement and find the payment<?= (string) ($o['payment_reference'] ?? '') !== '' ? ' with the reference the customer sent: <b>' . e($o['payment_reference']) . '</b>' : '' ?>.</li>
                                     <li>Check the amount is at least <b><?= e(Money::format((int) $balance, $cur)) ?></b> and that it is in <?= e($cur) ?>.</li>
                                     <li>Check the same reference has not been used for another order.</li>
                                 </ol>
@@ -169,7 +179,7 @@ $this->start('scripts'); ?>
                                 <div class="field">
                                     <label class="field__label" for="p-method">Paid by</label>
                                     <select class="select" id="p-method" name="via">
-                                        <?php foreach ($methods as $mm): ?><option value="<?= e($mm['key']) ?>"<?= $mm['key'] === $o['payment_method'] ? ' selected' : '' ?>><?= e($mm['label']) ?></option><?php endforeach; ?>
+                                        <?php foreach ($methods as $mm): ?><option value="<?= e($mm['key']) ?>"<?= $mm['key'] === $viaMethod ? ' selected' : '' ?>><?= e($mm['label']) ?></option><?php endforeach; ?>
                                     </select>
                                 </div>
                                 <div class="field">

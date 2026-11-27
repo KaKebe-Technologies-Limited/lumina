@@ -516,7 +516,7 @@ Fixed keys: core `dashboard pages menus stats faqs users settings audit profile`
 ## 15. Settings (organisation-wide; `app/config/settings_schema.php`, edited at `admin/settings`)
 
 Keys (with live-site defaults): `site_name` `tagline` `reg_number` (**default "GSD/R 1545"; the live site shows both GSD/R 1545 (home) and GSD/R 1234 (About) - owner must confirm**) `founder_name` `footer_credit` - `email_primary` `email_info` `phone_1` `phone_2` `whatsapp` `address` `city_country` `map_embed_url` `notify_email` - `social_facebook` `social_instagram` `social_linkedin` `social_x` `social_tiktok` `social_youtube` - `donate_url` (GoFundMe) `donate_intro` `donate_bank_details` `donate_mobile_money` `donate_paypal_email` - `logo_path` `favicon_path` `og_image` `meta_description` `analytics_id`.
-Read with `setting('key')`; never copy these values into registry defaults or views. Hide empty ones (`donate_bank_details` etc.) - show nothing rather than placeholders.
+Read with `setting('key')`; never copy these values into registry defaults or views. Hide empty ones (`donate_mobile_money`, `donate_paypal_email` etc.) - show nothing rather than placeholders. **Exception: the foundation's official bank account** (`official_bank_account_name`, `official_bank_account_number`, `official_bank_name`, `official_bank_branch`, `official_bank_swift`, `official_bank_note`) is built in: its defaults live in `settings_schema.php` and `Payments\OfficialAccount` falls back to them when a saved value is empty (`Settings::get` returns a saved empty string over a default); it is hidden only by the "Bank and manual mobile-money details" switch in Admin > Payment options. `donate_bank_details` is now only "Extra bank instructions". Routes added for it: `GET /donate/thanks` (`DonateController::thanks`, session `donate_thanks`, view `web/donate/thanks.php`); the project, thank-you, Pesapal and mobile-money pages and the shop order page render `partials/bank-card`. Donate page registry: section `thanks` and the field `ways.bank_lead`. See docs/PAYMENTS.md "Official bank account".
 
 ---------------------------------------------------------------------------------------------------------------------
 
@@ -530,7 +530,7 @@ Read with `setting('key')`; never copy these values into registry defaults or vi
 | GET | `/programs`, `/programs/{slug}` | B1 |
 | GET | `/projects`, `/projects/{slug}` | B1 |
 | GET / POST | `/involvement`, `/involvement` (form) | B1 |
-| GET / POST | `/donate`, `/donate/pledge` (pledge form -> `donations`, source `pledge_form`) | B1 |
+| GET / POST | `/donate`, `/donate/pledge` (pledge form -> `donations`, source `pledge_form`), GET `/donate/thanks` (after a pledge: the bank card with the `DON-<id>` reference) | B1 |
 | GET | `/blog`, `/blog/{slug}` (post_type blog) | B2 |
 | GET | `/activities`, `/activities/{slug}` | B2 |
 | GET | `/gallery` | B2 |
@@ -622,7 +622,7 @@ List: files created/changed (absolute paths), URLs implemented, registry pages +
 * `assets/img/site/photo-hero-portrait.jpg` (children at laptops) carries a **third-party watermark strip** ("global-impact-innovators.com") along its bottom edge; replace it with the foundation's own photo before launch (editable in the admin: Home > hero image).
 * `assets/img/site/photo-founder-tall.jpg` is the portrait used for the founder on the live site (Moses Komakech); the other photos are generic classroom/audience images - alt texts describe only what is visible. `photo-02` and `photo-08` are black-and-white photographs of children (one holding a "HOPE" sign): use only with the owner's confirmation that consent/rights exist.
 * No GD locally: image resizing is skipped (originals are stored, but cleaned of EXIF/GPS by `ImageScrubber`). Production hosts normally have GD, so uploads will then be downsized to 2000 px; Admin > Settings > system check warns when GD, `APP_URL` or the signing key (`APP_KEY` / `storage/app.key`) is missing outside local.
-* The donate button currently points to the GoFundMe campaign (`donate_url`); bank / mobile-money / PayPal details stay empty until the foundation confirms them.
+* The donate button currently points to the GoFundMe campaign (`donate_url`); the foundation's bank account (Pearl Bank, Gulu) is built in and shown on the Donate page, the project pages and the shop order page, while the mobile-money and PayPal details stay empty until the foundation confirms them. **The owner must confirm every digit of the account number against the bank.**
 
 ---------------------------------------------------------------------------------------------------------------------
 

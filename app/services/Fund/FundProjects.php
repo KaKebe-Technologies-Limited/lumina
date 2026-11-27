@@ -151,4 +151,28 @@ final class FundProjects
             default => null,
         };
     }
+
+    /**
+     * What a donor writes on a bank transfer for a project gift that has a donation record: the project's short name and the donation number ("Digital Inclusion DON-123").
+     * DON-<id> is the reference the receipt and Admin > Payments already use for a donation, so staff can match the transfer to the pledge.
+     */
+    public static function bankReference(string $short, int $donationId): string
+    {
+        return trim($short . ' ' . \App\Services\Payments\OfficialAccount::donationReference($donationId));
+    }
+
+    /**
+     * The project name to quote on a bank transfer for a donation that is a project gift, or '' when the donation is not one. Used by the gateway result pages: a gift whose
+     * online payment failed is cancelled, so only the project name (never a DON- number of a cancelled pledge) is given there. Reads donations.reference ("PROJECT:<slug>|<code>").
+     */
+    public static function referenceFor(int $donationId): string
+    {
+        $ref = (string) \App\Core\Database::value('SELECT reference FROM donations WHERE id = ?', [$donationId], '');
+        if (!str_starts_with($ref, 'PROJECT:')) {
+            return '';
+        }
+        $slug = (string) strtok(substr($ref, 8), '|');
+        $p = $slug === '' ? null : self::find($slug);
+        return $p === null ? '' : (string) $p['short'];
+    }
 }

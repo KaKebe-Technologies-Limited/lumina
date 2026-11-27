@@ -497,6 +497,8 @@
 .sh-refform { margin-top: $space-5; padding-top: $space-5; border-top: 1px solid $line;
   &__title { margin: 0 0 $space-3; font-family: $font-heading; font-size: $fs-md; color: $navy; }
   &__row { display: grid; gap: $space-3; @include respond(sm) { grid-template-columns: 1fr auto; align-items: start; .btn { margin-top: 1.55rem; } } } }
+// "Or pay by bank transfer": the foundation's bank card (partials/bank-card) sits INSIDE the second box of the order page, so it fills the box instead of floating as a narrow card with its own shadow
+.sh-bankalt { .bankcard { max-width: none; margin: 0 0 $space-4; box-shadow: none; } }
 .sh-mini--order { margin-bottom: $space-4; }
 .sh-address-text { margin: 0; color: $ink; font-size: $fs-sm; overflow-wrap: anywhere; }
 .sh-help { padding: $space-4 $space-5; border-radius: $radius-card; background: $white; border: 1px dashed $border-strong; p { margin: 0 0 $space-3; color: $ink-soft; font-size: $fs-sm; } }

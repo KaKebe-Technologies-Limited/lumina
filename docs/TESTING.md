@@ -50,9 +50,11 @@ local mock servers (`bin/dev/mock-*.php`): **no test sends a real e-mail or move
 | Which ways to pay are shown | switches, ranking, "mobile money only", per-purpose switches | `payment-options` |
 | Payments dashboard and audit trail | ledger union, totals per category, filters, Resolve menu, remind, delete, thank-you e-mail once | `payments-dashboard` |
 | Card / online payment (Pesapal) | order, IPN, status check, reversal, amount and currency mismatch | `pesapal` |
-| Shop | cart, stock race, orders, status and payment state machines, 60% pay-on-delivery deposit, e-mails | `shop`, `shop-laf` |
-| Donations and project giving | "Give now", amount cap, thanks page | `fund` |
-| Pledge reminders | thankful e-mail with account details, one per day, never for received pledges | `pledge-reminders` |
+| Shop | cart, stock race, orders, status and payment state machines, 60% pay-on-delivery deposit, e-mails, the bank-transfer option on the order page (never mixed with the shop's own account, `via=bank` reference, e-mail block) | `shop`, `shop-laf` |
+| Donations and project giving | "Give now", amount cap, thanks page, the official bank account card on the project page, thank-you page, proposal e-mail (not the PDF), Pesapal failure page and mobile-money page | `fund`, `pesapal-everywhere`, `daraza-api` |
+| Official bank account | built-in values with no rows, an empty saved value never blanks it, an edited value wins, the "Bank and manual mobile-money details" switch hides it, the card escapes and has copy buttons, no account in any script | `official-account`, `security` |
+| Donate page and pledge flow | the account on `/donate`, pledge -> `/donate/thanks` with the DON-reference, session expiry, no automatic donor e-mail, hidden with the switch | `donate-thanks`, `daraza`, `payment-options`, `cloudflare` |
+| Pledge reminders | thankful e-mail that always carries the official account and the DON-reference, one per day, never for received pledges; the Admin account box and its validation | `pledge-reminders` |
 | Membership | application, fees, payment, renewal, card, staff review | `membership-pay`, `membership-card-designer`, `membership-card-fixes`, `full` (membership, card) |
 | Academy | sign-up, e-mail confirmation, enrolling, quizzes, fees, certificates, challenges | `academy*` |
 | Academy fees page and messages | fees, payment details, editable messages saved to the settings the site reads; certificate pay reminders | `academy-fees-page`, `academy-certificates` |

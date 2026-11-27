@@ -253,6 +253,61 @@ $answer(2, 0, 'UGX', (string) $row['merchant_reference']);
 PesapalPayments::settle((string) $row['order_tracking_id']);
 check('project: a failed payment cancels the pledge, never "received"', Database::value('SELECT status FROM donations WHERE id = ?', [$dp2]) === 'cancelled');
 
+// ---- the page after the Pesapal screen: a gift that did NOT go through offers the foundation's bank account (the card), and nothing else does ---------------------
+// The controller runs here with the pretend Pesapal; the view is also rendered directly. Never while the payment is pending, under review or unconfirmed: a second way to pay next to
+// "we are waiting for your payment" invites paying twice.
+PaymentOptions::save(['manual' => true]);
+$landing = static function (string $tracking): string {
+    $req = new \App\Core\Request(['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/pay/pesapal/return?OrderTrackingId=' . $tracking, 'HTTP_HOST' => 'localhost', 'SCRIPT_NAME' => '/index.php'], ['OrderTrackingId' => $tracking], [], []);
+    return (new \App\Controllers\Web\PesapalController($req))->returned($req)->body();
+};
+$gift = static function (string $tag, string $purpose, string $reference): array {
+    $id = \App\Models\Donation::create(['donor_name' => 'SELFTEST Landing ' . $tag, 'donor_email' => $tag . '@selftest-pe.invalid', 'amount' => '5000.00', 'currency' => 'UGX', 'method' => 'pesapal', 'status' => 'pledged', 'source' => 'pledge_form', 'reference' => $reference]);
+    $r = PesapalPayments::begin($purpose, $id, 500000, 'UGX', 'Gift', ['name' => 'SELFTEST', 'email' => $tag . '@selftest-pe.invalid']);
+    return ['id' => $id, 'row' => PesapalPayments::byReference((string) $r['reference'])];
+};
+$cardOn = static fn(string $html): bool => str_contains($html, 'data-bankcard');
+$g = $gift('land-fail', 'project', 'PROJECT:digital-inclusion|item:laptopx3');
+$answer(2, 0, 'UGX', (string) $g['row']['merchant_reference']);
+$html = $landing((string) $g['row']['order_tracking_id']);
+check('landing page: a FAILED project gift shows the bank card with the account and the project name as the reference (never a DON- number: the pledge was cancelled)', str_contains($html, 'The payment did not go through') && $cardOn($html) && str_contains($html, '4090008000229') && str_contains($html, '<span class="bankcard__value" translate="no">Digital Inclusion</span>') && !str_contains($html, 'DON-') && str_contains($html, 'Nothing was charged'));
+$g = $gift('land-rev', 'project', 'PROJECT:green-horizons|any');
+$answer(3, 0, 'UGX', (string) $g['row']['merchant_reference']);
+$html = $landing((string) $g['row']['order_tracking_id']);
+check('landing page: a REVERSED project gift shows the card too, without "Nothing was charged"', str_contains($html, 'The payment was reversed') && $cardOn($html) && str_contains($html, '<span class="bankcard__value" translate="no">Green Horizons</span>') && !str_contains($html, 'Nothing was charged. If you prefer'));
+$g = $gift('land-don', 'donation', '');
+$answer(2, 0, 'UGX', (string) $g['row']['merchant_reference']);
+$html = $landing((string) $g['row']['order_tracking_id']);
+check('landing page: a failed plain DONATION shows the card with the account and no reference row', $cardOn($html) && str_contains($html, '4090008000229') && !str_contains($html, 'Payment reference'));
+PaymentOptions::save(['manual' => false]);
+$g = $gift('land-off', 'project', 'PROJECT:digital-inclusion|any');
+$answer(2, 0, 'UGX', (string) $g['row']['merchant_reference']);
+$html = $landing((string) $g['row']['order_tracking_id']);
+check('landing page: with "Bank and manual mobile-money details" switched off the failed gift shows no account', str_contains($html, 'The payment did not go through') && !$cardOn($html) && !str_contains($html, '4090008000229'));
+PaymentOptions::save(['manual' => true]);
+$g = $gift('land-pend', 'project', 'PROJECT:digital-inclusion|any');
+$answer(0, 0, 'UGX', (string) $g['row']['merchant_reference']);
+$html = $landing((string) $g['row']['order_tracking_id']);
+check('landing page: a PENDING gift shows no card (do not pay twice)', str_contains($html, 'We are waiting for your payment') && !$cardOn($html));
+$mock['status'] = [];
+$html = $landing((string) $g['row']['order_tracking_id']);
+check('landing page: when Pesapal cannot be reached (verify_failed) there is no card', str_contains($html, 'We could not confirm the payment yet') && !$cardOn($html));
+$answer(1, 1, 'UGX', (string) $g['row']['merchant_reference']);
+$html = $landing((string) $g['row']['order_tracking_id']);
+check('landing page: a payment that Pesapal confirms for the wrong amount goes to review and shows no card', str_contains($html, 'We are checking your payment') && !$cardOn($html));
+$g = $gift('land-paid', 'project', 'PROJECT:digital-inclusion|any');
+$answer(1, 5000, 'UGX', (string) $g['row']['merchant_reference']);
+$html = $landing((string) $g['row']['order_tracking_id']);
+check('landing page: a PAID gift shows the thank-you and no card', str_contains($html, 'Thank you for your gift!') && !$cardOn($html) && !str_contains($html, '4090008000229'));
+$g = $gift('land-cert', 'academy_cert', '');
+$answer(2, 0, 'UGX', (string) $g['row']['merchant_reference']);
+$html = $landing((string) $g['row']['order_tracking_id']);
+check('landing page: an Academy certificate payment that failed is unchanged: no bank card', str_contains($html, 'The payment did not go through') && !$cardOn($html));
+$viewRow = ['purpose' => 'project', 'ref_id' => 1, 'merchant_reference' => 'LAFP1-TEST'];
+$render = static fn(string $state, ?string $bankRef): string => \App\Core\View::render('web/pay/pesapal-result', ['state' => $state, 'row' => $viewRow] + ($bankRef === null ? [] : ['bankRef' => $bankRef]), null);
+check('view: failed and reversed with a bankRef show the card with the reference; the other states never do, even when a bankRef is passed', $cardOn($render('failed', 'Digital Inclusion')) && $cardOn($render('reversed', 'Digital Inclusion')) && str_contains($render('failed', 'Digital Inclusion'), 'Digital Inclusion</span>')
+    && !$cardOn($render('failed', null)) && !array_filter(['paid', 'pending', 'review', 'verify_failed', 'unknown'], static fn(string $s): bool => $cardOn($render($s, 'Digital Inclusion'))));
+
 // ---- the pages (web server) --------------------------------------------------------------------------------------------------------------------------
 $base = 'http://localhost/' . basename(dirname(__DIR__));
 $http = static function (string $method, string $path, array $form = [], string $jar = '') use ($base): array {

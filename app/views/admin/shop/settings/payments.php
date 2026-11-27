@@ -2,7 +2,9 @@
 /**
  * Admin > Shop > Payments (PAYMENT panel). OWNER: PAYMENTS. Vars: $methods (PaymentMethods::all(), already in display order), $secrets (name => set/source/readable/text), $secretInputs, $canEncrypt,
  * $mode ('test'|'live'), $modeFromEnv, $publicKey, $publicFromEnv, $keyMode ('test'|'live'|'unknown'), $options (selected Flutterwave options), $allOptions, $title, $siteName, $currency,
- * $webhookUrl, $webhookLocal, $webhookInsecure, $mock, $events, $shopOpen.
+ * $webhookUrl, $webhookLocal, $webhookInsecure, $mock, $events, $shopOpen, $official (OfficialAccount::get(): the foundation's account, name / number / bank / branch / swift), $manualOn
+ * (PaymentOptions::manual(): the site-wide "Bank and manual mobile-money details" switch), $bankSource ('shop' while an account number is typed here, else 'official').
+ * BANK BOXES: the official account is shown as a PLACEHOLDER only, never as a value, so saving the form never copies it into the shop_bank_* rows (empty = the official account follows its own settings).
  * SECRETS ARE WRITE-ONLY: the secret key and the webhook hash are never printed back (only "Set (hidden)"); typing a new value replaces it, an empty box keeps it.
  * The "Clear" and "Test connection" buttons belong to small forms at the bottom of the page (a form cannot sit inside a form).
  */
@@ -60,6 +62,10 @@ $this->start('scripts'); ?>
                                     <?php if ($enabled && $m['ready']): ?><span class="badge badge--success badge--dot">On and ready</span>
                                     <?php elseif ($enabled): ?><span class="badge badge--warning badge--dot">On, but not ready: customers do not see it</span>
                                     <?php else: ?><span class="badge badge--neutral badge--dot">Off</span><?php endif; ?>
+                                    <?php if ($k === 'bank'): ?>
+                                        <?php if (!$manualOn): ?><span class="badge badge--warning badge--dot">Hidden everywhere: "Bank and manual mobile-money details" is switched off in Admin &gt; Payment options</span>
+                                        <?php elseif (!$enabled): ?><span class="ash-hint">Not offered as a choice at checkout. The bank account is still shown on the order page of every unpaid order and in the order e-mail.</span><?php endif; ?>
+                                    <?php endif; ?>
                                 </p>
                             </div>
                             <div class="ash-method__switch">
@@ -88,14 +94,16 @@ $this->start('scripts'); ?>
                                 <p class="ash-hint">With this method the customer sends the money themselves, then types the transaction ID on their order page. <strong>You then check your mobile-money statement and mark the order paid</strong> (Orders &gt; open the order &gt; Mark as paid). Nothing is confirmed automatically.</p>
                             <?php elseif ($k === 'bank'): ?>
                                 <h4 class="ash-subtitle">Bank account that receives the money</h4>
+                                <div class="alert alert--info" role="note"><?= icon('info') ?><div class="alert__body">Leave these boxes <strong>empty</strong> to use the foundation's official account: <strong><?= e(implode(', ', array_filter([$official['bank'], $official['name'], $official['number'], $official['branch']], static fn(string $v): bool => $v !== ''))) ?></strong>. Change it in Admin &gt; Settings &gt; Donations. Type an account number here only if the shop should be paid into a <em>different</em> account: then <strong>only the boxes below</strong> are used.
+                                    <?= $bankSource === 'shop' ? 'Right now the shop uses the account typed below.' : 'Right now the shop uses the foundation\'s official account.' ?></div></div>
                                 <div class="form-grid">
-                                    <?= partial('partials/form-field', ['name' => 'shop_bank_name', 'label' => 'Bank', 'value' => $momoDetail('shop_bank_name'), 'maxlength' => 80, 'autocomplete' => 'off']) ?>
-                                    <?= partial('partials/form-field', ['name' => 'shop_bank_account_name', 'label' => 'Account name', 'value' => $momoDetail('shop_bank_account_name'), 'maxlength' => 80, 'autocomplete' => 'off']) ?>
-                                    <?= partial('partials/form-field', ['name' => 'shop_bank_account_number', 'label' => 'Account number', 'value' => $momoDetail('shop_bank_account_number'), 'maxlength' => 40, 'autocomplete' => 'off']) ?>
-                                    <?= partial('partials/form-field', ['name' => 'shop_bank_branch', 'label' => 'Branch (optional)', 'value' => $momoDetail('shop_bank_branch'), 'maxlength' => 80, 'autocomplete' => 'off']) ?>
-                                    <?= partial('partials/form-field', ['name' => 'shop_bank_swift', 'label' => 'SWIFT / BIC code (optional)', 'value' => $momoDetail('shop_bank_swift'), 'maxlength' => 20, 'autocomplete' => 'off', 'help' => 'Only needed for transfers from other countries.']) ?>
+                                    <?= partial('partials/form-field', ['name' => 'shop_bank_name', 'label' => 'Bank (optional)', 'value' => $momoDetail('shop_bank_name'), 'maxlength' => 80, 'autocomplete' => 'off', 'placeholder' => $official['bank']]) ?>
+                                    <?= partial('partials/form-field', ['name' => 'shop_bank_account_name', 'label' => 'Account name (optional)', 'value' => $momoDetail('shop_bank_account_name'), 'maxlength' => 80, 'autocomplete' => 'off', 'placeholder' => $official['name']]) ?>
+                                    <?= partial('partials/form-field', ['name' => 'shop_bank_account_number', 'label' => 'Account number (optional)', 'value' => $momoDetail('shop_bank_account_number'), 'maxlength' => 40, 'autocomplete' => 'off', 'placeholder' => $official['number']]) ?>
+                                    <?= partial('partials/form-field', ['name' => 'shop_bank_branch', 'label' => 'Branch (optional)', 'value' => $momoDetail('shop_bank_branch'), 'maxlength' => 80, 'autocomplete' => 'off', 'placeholder' => $official['branch']]) ?>
+                                    <?= partial('partials/form-field', ['name' => 'shop_bank_swift', 'label' => 'SWIFT / BIC code (optional)', 'value' => $momoDetail('shop_bank_swift'), 'maxlength' => 20, 'autocomplete' => 'off', 'placeholder' => $official['swift'], 'help' => 'Only needed for transfers from other countries.']) ?>
                                 </div>
-                                <p class="ash-hint"><strong>You check your bank statement and mark the order paid.</strong> The customer types their transfer reference on the order page to help you find it.</p>
+                                <p class="ash-hint">The customer sees this account on the order page of every unpaid order, whichever way they chose to pay, and quotes the order number. They type their transfer reference there; <strong>you check your bank statement and mark the order paid</strong> (Orders &gt; open the order &gt; Mark as paid).</p>
                             <?php elseif ($k === 'book'): ?>
                                 <p class="ash-hint">The customer reserves the items and pays later (when collecting, or as you agree). It is offered only when every item in the cart has "Can be booked" switched on. Confirm each booking in Orders; unconfirmed bookings are released after the number of days in Shop settings.</p>
                             <?php elseif ($k === 'cod'): ?>

@@ -11,7 +11,9 @@ namespace App\Services\Shop;
  *   cod          deferred  PAY ON PICKUP / DELIVERY: cash or mobile money when the goods are handed over.
  *   momo         manual    MOBILE MONEY (MTN / Airtel): the customer sends the money to the shown number quoting the order number, then enters
  *                          the transaction ID on the confirmation page; staff VERIFY and mark the order paid.
- *   bank         manual    BANK TRANSFER: same idea with the bank details and an optional transfer reference.
+ *   bank         manual    BANK TRANSFER: same idea with the bank details and an optional transfer reference. The details are the shop's own account while an account number is typed in
+ *                          Admin > Shop > Payments, otherwise the foundation's OFFICIAL account (App\Services\Payments\OfficialAccount): see bankSource(). The same account is also shown
+ *                          on the order page of every unpaid order whatever way it chose to pay (bankOffer()), and a transfer can be reported there.
  *   flutterwave  online    CARD (Visa / Mastercard) + MOBILE MONEY through the Flutterwave hosted checkout (a full-page redirect).
  *   daraza       manual    PAY WITH DARAZA: a payment LINK pasted in Admin > Daraza; the customer pays on Daraza's page, types the transaction ID, staff confirm.
  *   pesapal      online    CARD + MOBILE MONEY + BANK through the Pesapal hosted checkout (docs/PESAPAL.md); needs PESAPAL_CONSUMER_KEY / _SECRET in .env.
@@ -75,18 +77,45 @@ final class PaymentMethods
                 }
             }
         } elseif ($key === 'bank') {
+            // ONE source for all the rows (never a mix): the shop's own boxes, or the foundation's official account
+            $official = self::bankSource() === 'official' ? \App\Services\Payments\OfficialAccount::get() : null;
             foreach ([
-                self::word('label_bank', 'Bank') => 'shop_bank_name', self::word('label_account_name', 'Account name') => 'shop_bank_account_name',
-                self::word('label_account_number', 'Account number') => 'shop_bank_account_number', self::word('label_branch', 'Branch') => 'shop_bank_branch',
-                self::word('label_swift', 'SWIFT / BIC') => 'shop_bank_swift',
-            ] as $label => $k) {
-                $v = ShopSettings::str($k);
+                [self::word('label_bank', 'Bank'), 'shop_bank_name', 'bank'], [self::word('label_account_name', 'Account name'), 'shop_bank_account_name', 'name'],
+                [self::word('label_account_number', 'Account number'), 'shop_bank_account_number', 'number'], [self::word('label_branch', 'Branch'), 'shop_bank_branch', 'branch'],
+                [self::word('label_swift', 'SWIFT / BIC'), 'shop_bank_swift', 'swift'],
+            ] as [$label, $k, $field]) {
+                $v = $official !== null ? trim((string) $official[$field]) : ShopSettings::str($k);
                 if ($v !== '') {
                     $out[] = ['label' => $label, 'value' => $v];
                 }
             }
         }
         return $out;
+    }
+
+    /**
+     * Which bank account the shop shows: 'shop' while an account number is typed in Admin > Shop > Payments (then ONLY the shop_bank_* boxes are used), else 'official' (the foundation's
+     * account, App\Services\Payments\OfficialAccount). It is chosen by the account NUMBER as a whole, never field by field: a typed number beside the official name would send money to the wrong place.
+     */
+    public static function bankSource(): string
+    {
+        return ShopSettings::str('shop_bank_account_number') !== '' ? 'shop' : 'official';
+    }
+
+    /** The account number that is shown, from the source bankSource() chose. */
+    public static function bankAccountNumber(): string
+    {
+        return self::bankSource() === 'shop' ? ShopSettings::str('shop_bank_account_number') : trim(\App\Services\Payments\OfficialAccount::value('number'));
+    }
+
+    /**
+     * Do unpaid orders show the bank account as one more way to pay (and accept a transfer reference)? Yes while the site-wide switch Admin > Payment options > "Bank and manual mobile-money
+     * details" is on and there is an account number. This is the ONLY gate for that block: it does not depend on the "Offer this" switch of the bank method (which only adds "Bank transfer"
+     * to the choices at checkout).
+     */
+    public static function bankOffer(): bool
+    {
+        return \App\Services\Payments\PaymentOptions::manual() && self::bankAccountNumber() !== '';
     }
 
     /** A label shown to customers next to the payment details: the editable wording (Admin > Pages > Shop > Order page), else the plain English default. */
@@ -112,7 +141,7 @@ final class PaymentMethods
                 }
                 break;
             case 'bank':
-                if (ShopSettings::str('shop_bank_account_number') === '') {
+                if (self::bankAccountNumber() === '') {
                     $p[] = 'Add the bank account number.';
                 }
                 break;

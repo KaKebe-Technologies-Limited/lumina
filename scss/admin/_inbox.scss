@@ -230,4 +230,6 @@ body.admin-receipt {
 .don-remind { display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 0 0 1rem; }
 
 .don-account { margin: 0 0 1rem; summary { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; padding: .9rem 1.1rem; cursor: pointer; list-style: none; &::-webkit-details-marker { display: none; } }
-  &__grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); margin-bottom: .6rem; } }
+  &__grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); margin-bottom: .6rem; }
+  // the foundation's official bank account (name, number, bank, branch, SWIFT, note): a plain group above the other details
+  &__official { min-width: 0; margin: 0 0 1.2rem; padding: 0 0 1rem; border: 0; border-bottom: 1px solid $border; legend { padding: 0; margin-bottom: .6rem; } } }

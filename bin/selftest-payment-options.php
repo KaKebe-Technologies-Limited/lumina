@@ -244,6 +244,24 @@ check('admin: "Switch the earlier ways back on" restores them (nothing was lost)
 $don = $req('/donate', null, $ja);
 check('the donate page opens (the banner appears only when the key and the switch are on)', $don['code'] === 200);
 
+// ---- the foundation's official bank account follows the "Bank and manual mobile-money details" switch (and keeps the fixed order of the ways to give)
+Settings::setMany(['donate_url' => 'https://gofund.me/zz-po']);
+PaymentOptions::save(['link' => true, 'manual' => true]);
+$onBody = (string) $req('/donate', null, $ja)['body'];
+check('donate page: with "Bank and manual mobile-money details" on, the official account is shown (name, number, bank, branch, note)', str_contains($onBody, 'Lumina Africa Foundation') && str_contains($onBody, '4090008000229') && str_contains($onBody, 'Pearl Bank') && str_contains($onBody, 'Gulu') && str_contains($onBody, 'confirm the account name') && str_contains($onBody, 'id="donate-account"'));
+$posLink = strpos($onBody, 'Donate online');
+$posAcc = strpos($onBody, '4090008000229');
+check('donate page: the ways to give keep their fixed order: the online link card comes before the bank account, whatever the ranks (the ranks order the buttons of the give-online form)', $posLink !== false && $posAcc !== false && $posLink < $posAcc);
+PaymentOptions::saveRanks(['manual' => 1, 'mobile' => 2, 'online' => 3, 'link' => 4]);
+$rankedBody = (string) $req('/donate', null, $ja)['body'];
+check('donate page: ...also when the account is ranked first in Admin > Payment options', strpos($rankedBody, 'Donate online') < strpos($rankedBody, '4090008000229'));
+PaymentOptions::save(['manual' => false]);
+$offBody = (string) $req('/donate', null, $ja)['body'];
+check('donate page: with the switch off the official account is gone (no number, no card), the page still opens and the other ways stay', !str_contains($offBody, '4090008000229') && !str_contains($offBody, 'Pearl Bank') && !str_contains($offBody, 'bankcard') && str_contains($offBody, 'Donate online'));
+check('...and the account helper agrees (visible() follows the switch)', !\App\Services\Payments\OfficialAccount::visible());
+PaymentOptions::save(['manual' => true]);
+check('switched on again: the account is back on the page', str_contains((string) $req('/donate', null, $ja)['body'], '4090008000229') && \App\Services\Payments\OfficialAccount::visible());
+
 Database::execute("DELETE FROM users WHERE email = 'zz-po-admin@example.test'");
 @unlink($ja);
 $clean();

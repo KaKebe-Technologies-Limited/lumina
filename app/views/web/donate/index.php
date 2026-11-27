@@ -1,6 +1,7 @@
 <?php
 /**
- * DONATE. Copy: content('donate', ...). Account details come from Settings > Donations (each hidden while empty).
+ * DONATE. Copy: content('donate', ...). Account details: the foundation's official bank account is built in (partials/bank-card, shown while the manual-details switch is on);
+ * mobile money and PayPal come from Settings > Donations (each hidden while empty).
  * Vars: $faqs, $hasMethod, $currencies (code => code), $selectedCurrency, $methods (method => label).
  * The pledge form posts to /donate/pledge and records a PLEDGE (status "pledged"); it never takes a payment. It is pre-filled from
  * ?amount=&currency= (donate_prefill(): validated, bounded, escaped when printed) so the home-page donation panel can hand over its amount.
@@ -20,7 +21,7 @@ if ($cta2['has'] && (section_on('donate', 'pledge') || $cta2['url'] !== '#pledge
 
 $intro = trim((string) setting('donate_intro', ''));
 $manualOn = \App\Services\Payments\PaymentOptions::manual();             // Admin > Payment options: bank, mobile-money numbers and PayPal details can be switched off
-$bank = $manualOn ? trim((string) setting('donate_bank_details', '')) : '';
+$bankCard = \App\Services\Payments\OfficialAccount::visible();            // the official bank account (the card also prints the "extra bank instructions" of Settings > Donations)
 $mobile = $manualOn ? trim((string) setting('donate_mobile_money', '')) : '';
 $paypal = $manualOn ? trim((string) setting('donate_paypal_email', '')) : '';
 $linkUrl = \App\Services\Payments\PaymentOptions::link() ? trim((string) setting('donate_url', '')) : '';
@@ -83,13 +84,11 @@ $chipsLabel = trim((string) content('donate', 'pledge.chips_label'));
                         <p class="donate-way__cta"><a class="btn btn--cta btn--caps" href="<?= e(link_url($linkUrl)) ?>"<?= $onlineExternal ? ' target="_blank" rel="noopener noreferrer"' : '' ?>><?= e($heroLabel !== '' ? $heroLabel : (string) content('donate', 'ways.online_title')) ?> <?= icon($onlineExternal ? 'external-link' : 'arrow-right', 'icon--sm') ?></a></p>
                     </article>
                 <?php endif; ?>
-                <?php if ($bank !== ''): ?>
-                    <article class="feature-card donate-way" data-reveal>
-                        <span class="feature-card__icon"><?= icon('banknote') ?></span>
-                        <div class="feature-card__body"><h3 class="feature-card__title"><?= e(content('donate', 'ways.bank_title')) ?></h3></div>
-                        <div class="donate-details" id="donate-bank"><?= nl2br(e($bank), false) ?></div>
-                        <p class="donate-way__cta"><button class="btn btn--outline btn--caps btn--sm" type="button" data-copy="<?= e($bank) ?>" data-copied="<?= e($copied) ?>" hidden><?= icon('copy', 'icon--sm') ?> <span><?= e($copy) ?></span></button></p>
-                    </article>
+                <?php if ($bankCard): ?>
+                    <?php /* the foundation's official bank account, in the slot of the old free-text bank box (the card has its own copy buttons: assets/js/bank-card.js) */ ?>
+                    <div class="donate-way donate-way--account" id="donate-account" data-reveal>
+                        <?= partial('partials/bank-card', ['id' => 'donate-account', 'title' => (string) content('donate', 'ways.bank_title'), 'lead' => (string) content('donate', 'ways.bank_lead'), 'copyLabel' => $copy, 'copiedLabel' => $copied]) ?>
+                    </div>
                 <?php endif; ?>
                 <?php if ($mobile !== ''): ?>
                     <article class="feature-card donate-way" data-reveal>
@@ -213,6 +212,7 @@ $cards = content_list('donate', 'support.items'); $supportUrl = H::href('donate'
         <?php if (!empty($giveLink)): ?>
         <p style="text-align:center;margin-top:1rem"><a href="<?= e($giveLink) ?>"<?= is_external($giveLink) ? ' target="_blank" rel="noopener noreferrer"' : '' ?>>Or give through our other online link</a></p>
         <?php endif; ?>
+        <?php if ($bankCard): ?><p class="form-note donate-give__bank" style="text-align:center;margin-top:1rem">Prefer a bank transfer? <a href="#donate-account">See our bank account</a>.</p><?php endif; ?>
     </div>
 </section>
 <?php endif; ?>

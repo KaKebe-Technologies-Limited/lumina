@@ -51,6 +51,8 @@ $router->get('/fund-a-project/{slug}/thanks', [\App\Controllers\Web\FundControll
 $router->get('/donate', [DonateController::class, 'index'])->name('donate')->middleware('page.published:donate');
 $router->post('/donate/pledge', [DonateController::class, 'pledge'])->name('donate.pledge')
     ->middleware(['page.published:donate', 'honeypot', 'turnstile', 'throttle:5,600']);
+// after a pledge: thanks, the bank account and the reference to quote (reads the session only; private, no-store through the /donate prefix of Cloudflare::NO_STORE_PREFIXES)
+$router->get('/donate/thanks', [DonateController::class, 'thanks'])->name('donate.thanks')->middleware('page.published:donate');
 
 // Pesapal (docs/PESAPAL.md): give online, the customer's return page and Pesapal's server-to-server notification (IPN, exempt from CSRF: Pesapal calls it, and it believes nothing it is told: the payment is asked of Pesapal)
 $router->post('/donate/mobile-money', [DonateController::class, 'mobileMoney'])->name('donate.mobile_money')

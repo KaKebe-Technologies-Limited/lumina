@@ -13,7 +13,8 @@
  *   GET  /shop/checkout                    checkout form + summary         POST /shop/checkout   (honeypot + time trap + throttle + stateless CSRF)
  *   GET  /shop/order/{token}               the order page / confirmation (noindex, no-store; token = 40 hex)
  *   GET  /shop/order/{token}/receipt       printable receipt
- *   POST /shop/order/{token}/reference     the customer enters the mobile-money transaction ID / bank reference (momo / bank orders)
+ *   POST /shop/order/{token}/reference     the customer enters the mobile-money transaction ID / bank reference (momo / bank / Daraza orders); with via=bank (the "or pay by bank transfer" card)
+ *                                          ANY unpaid, open order takes the reference of a bank transfer, whatever way it chose to pay (honeypot + throttle:10,600 as before)
  *   POST /shop/pay/{token}                 start (or restart) the Flutterwave payment of the order -> redirect to the hosted page
  *   GET  /shop/pay/{token}                 no side effect: redirects to the order page, where the "Pay now" button (a POST) is
  *   GET  /shop/pay/return/{rid}            where Flutterwave sends the customer back (query: status, tx_ref, transaction_id): NEVER trusted, the payment is verified server-side;

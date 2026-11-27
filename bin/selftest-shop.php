@@ -963,6 +963,158 @@ check('payment options sent to Flutterwave are filtered to the known list', (fun
 SecretStore::forget('flw_secret_key');
 
 // =====================================================================================================================================================
+echo "Shop: the foundation account as a payment option\n";
+// The built-in account (Pearl Bank, 4090008000229): empty saved official_bank_* values fall back to it, and these checks assert the REAL values. The whole run uses a typed shop account (0012345):
+// every check below that needs the official account clears the shop boxes first, and they are put back at the end of this block.
+foreach (['official_bank_account_name', 'official_bank_account_number', 'official_bank_name', 'official_bank_branch', 'official_bank_swift', 'official_bank_note'] as $zzOfk) {
+    $zzSet($zzOfk, '');
+}
+$zzSet('pay_opt_manual', '1');
+$zzSet('shop_pay_bank_enabled', '1');
+foreach (['shop_bank_account_number', 'shop_bank_name', 'shop_bank_account_name', 'shop_bank_branch', 'shop_bank_swift'] as $zzBk) {
+    $zzSet($zzBk, '');
+}
+$zzOfficialNo = '4090008000229';
+$zzByLabel = static fn(array $rows): array => array_column($rows, 'value', 'label');
+$bkRows = PaymentMethods::details('bank');
+$bkv = $zzByLabel($bkRows);
+check('bank details: with no account number typed in the shop the rows ARE the foundation\'s official account (Bank, Account name, Account number, Branch; no SWIFT row)', PaymentMethods::bankSource() === 'official' && PaymentMethods::bankAccountNumber() === $zzOfficialNo
+    && ($bkv['Bank'] ?? '') === 'Pearl Bank' && ($bkv['Account name'] ?? '') === 'Lumina Africa Foundation' && ($bkv['Account number'] ?? '') === $zzOfficialNo && ($bkv['Branch'] ?? '') === 'Gulu' && count($bkRows) === 4, json_encode($bkRows));
+check('the bank method is ready by itself (no shop setting needed), and the shop settings rows are really empty explicit rows', PaymentMethods::problems('bank') === [] && PaymentMethods::ready('bank')
+    && (string) Database::value("SELECT setting_value FROM settings WHERE setting_key = 'shop_bank_account_number'", [], 'none') === '');
+$zzSet('shop_bank_account_number', '0012345');
+$zzSet('shop_bank_name', 'Zz Bank');
+$ownVals = array_column(PaymentMethods::details('bank'), 'value');
+check('...but once an account number is typed in the shop ONLY the shop boxes are used: never a mix of the two accounts', PaymentMethods::bankSource() === 'shop' && PaymentMethods::bankAccountNumber() === '0012345' && in_array('0012345', $ownVals, true) && in_array('Zz Bank', $ownVals, true)
+    && array_intersect($ownVals, [$zzOfficialNo, 'Pearl Bank', 'Lumina Africa Foundation', 'Gulu']) === [], json_encode($ownVals));
+$zzSet('shop_bank_account_number', '');
+check('a bank name typed WITHOUT an account number is ignored (the number decides the source: an official number beside a typed name would be a hybrid)', PaymentMethods::bankSource() === 'official' && !in_array('Zz Bank', array_column(PaymentMethods::details('bank'), 'value'), true) && in_array($zzOfficialNo, array_column(PaymentMethods::details('bank'), 'value'), true));
+$zzSet('shop_bank_name', '');
+$zzSet('shop_pay_bank_enabled', '0');
+check('the "Offer this" switch of the bank method stays the owner\'s choice: off = not offered at checkout and refused when posted, while the account data is unchanged', !PaymentMethods::enabled('bank') && !PaymentMethods::isAvailable('bank', false)
+    && ($zzOrder([$zzLine($pp, 1)], 'pickup', 'bank')['error'] ?? '') === 'payment' && count(PaymentMethods::details('bank')) === 4);
+$zzSet('shop_pay_bank_enabled', '1');
+check('...and on = offered at checkout with the official account (nothing else to set up)', PaymentMethods::isAvailable('bank', false) && ($zzOrder([$zzLine($pp, 1)], 'pickup', 'bank')['ok'] ?? false) === true);
+
+// -- the order page: the account as one more way to pay (OrderService::paymentInfo)
+$piOf = static fn(array $o): array => OrderService::paymentInfo(OrderService::find((int) $o['id']));
+$pBk = $zzProduct(['allow_booking' => 1, 'price' => '50000.00', 'name' => 'ZZ Bank Book']);
+$setMethod = static function (array $o, string $method): array {
+    Database::execute('UPDATE shop_orders SET payment_method = ? WHERE id = ?', [$method, $o['id']]);       // pesapal / mobile / daraza / flutterwave need keys or links to be offered: the page logic only reads the method
+    return OrderService::find((int) $o['id']);
+};
+$oCod = $mk('cod');
+$oBook = $zzOrder([$zzLine($pBk, 1)], 'pickup', 'book')['order'];
+$oMomo = $mk('momo');
+$oBank = $mk('bank');
+$oDz = $setMethod($mk('cod'), 'daraza');
+$oFlw = $setMethod($mk('cod'), 'flutterwave');
+$oPes = $setMethod($mk('cod'), 'pesapal');
+$oMob = $setMethod($mk('cod'), 'mobile');
+$hasBank = static fn(array $i): bool => $i['bank_also'] === true && in_array('4090008000229', array_column($i['bank_details'], 'value'), true) && str_contains($i['bank_note'], 'confirm the account name') && $i['bank_details'] !== [];
+$iAll = ['cod' => $piOf($oCod), 'book' => $piOf($oBook), 'momo' => $piOf($oMomo), 'daraza' => $piOf($oDz)];
+check('paymentInfo: an unpaid pay-on-pickup, booking, mobile-money and Daraza order ALSO offer the bank account (rows, the note, no "already paid" note)', array_filter($iAll, static fn(array $i): bool => !$hasBank($i) || $i['bank_gateway_note']) === [], json_encode(array_keys(array_filter($iAll, static fn(array $i): bool => !$hasBank($i)))));
+check('paymentInfo: the number row of the card is marked, the others are not', array_column($iAll['cod']['bank_details'], 'field', 'value')['4090008000229'] === 'number' && array_column($iAll['cod']['bank_details'], 'field', 'value')['Pearl Bank'] === '');
+$iBank = $piOf($oBank);
+check('paymentInfo: a BANK order has no second card but keeps its own details and the note', $iBank['bank_also'] === false && $iBank['bank_details'] === [] && in_array($zzOfficialNo, array_column($iBank['details'], 'value'), true) && str_contains($iBank['bank_note'], 'confirm the account name') && $iBank['can_enter_reference'] === true);
+$iOnline = ['flutterwave' => $piOf($oFlw), 'pesapal' => $piOf($oPes), 'mobile' => $piOf($oMob)];
+check('paymentInfo: an online order (Flutterwave, Pesapal, mobile money) offers it too, with the note that nobody who already paid needs to send a transfer', array_filter($iOnline, static fn(array $i): bool => !$hasBank($i) || $i['bank_gateway_note'] !== true) === []);
+$oPart = $mk('cod');
+PaymentService::markPaid((int) $oPart['id'], ['method' => 'cod', 'reference' => 'ZZBNK-PART', 'amount' => 1000, 'currency' => 'UGX', 'source' => 'staff', 'notify' => false]);
+$partRow = OrderService::find((int) $oPart['id']);
+$iPart = $piOf($oPart);
+check('paymentInfo: a part payment recorded by staff (state "pending" with a reference) is not a customer transfer waiting to be checked: the balance still gets the bank card, without "being checked" or "no need to send a transfer"', $partRow['payment_status'] === 'pending' && $iPart['bank_also'] === true && $iPart['bank_reported'] === false && $iPart['bank_gateway_note'] === false, (string) $partRow['payment_status']);
+$oPaid = $mk('cod');
+PaymentService::markPaid((int) $oPaid['id'], ['method' => 'cod', 'reference' => 'ZZBNK-P1', 'amount' => 5000000, 'currency' => 'UGX', 'source' => 'staff', 'notify' => false]);
+$oCan = $mk('cod');
+OrderService::setStatus((int) $oCan['id'], 'cancelled', ['notify' => false]);
+$oRef = $mk('cod');
+PaymentService::markPaid((int) $oRef['id'], ['method' => 'cod', 'reference' => 'ZZBNK-P2', 'amount' => 5000000, 'currency' => 'UGX', 'source' => 'staff', 'notify' => false]);
+OrderService::setStatus((int) $oRef['id'], 'refunded', ['notify' => false]);
+$oDone = $mk('cod');
+OrderService::setStatus((int) $oDone['id'], 'confirmed', ['notify' => false]);
+OrderService::setStatus((int) $oDone['id'], 'completed', ['notify' => false, 'allow_unpaid' => true]);
+$oRev = $mk('cod');
+Database::execute("UPDATE shop_orders SET payment_status = 'review' WHERE id = ?", [$oRev['id']]);
+$oFail = $mk('cod');
+Database::execute("UPDATE shop_orders SET payment_status = 'failed' WHERE id = ?", [$oFail['id']]);
+$oConf = $mk('cod');
+OrderService::setStatus((int) $oConf['id'], 'confirmed', ['notify' => false]);
+check('paymentInfo: no bank card for a paid, cancelled, refunded, completed or "being checked" order', !$piOf($oPaid)['bank_also'] && !$piOf($oCan)['bank_also'] && !$piOf($oRef)['bank_also'] && !$piOf($oDone)['bank_also'] && !$piOf($oRev)['bank_also']
+    && $piOf($oPaid)['bank_details'] === [] && $piOf($oCan)['bank_details'] === []);
+check('paymentInfo: a CONFIRMED but still unpaid order and one whose payment failed keep the card (a transfer can still be reported)', $hasBank($piOf($oConf)) && $hasBank($piOf($oFail)));
+$zzSet('pay_opt_manual', '0');
+check('paymentInfo: with the site-wide "Bank and manual mobile-money details" switch OFF there is no card for anyone; the account of a bank order is still its own data', !PaymentMethods::bankOffer() && !$piOf($oCod)['bank_also'] && !$piOf($oMomo)['bank_also'] && !$piOf($oFlw)['bank_also'] && $piOf($oCod)['bank_details'] === []
+    && in_array($zzOfficialNo, array_column($piOf($oBank)['details'], 'value'), true));
+$zzSet('pay_opt_manual', '1');
+check('...and back on: bankOffer() is true again', PaymentMethods::bankOffer() && $piOf($oCod)['bank_also']);
+
+// -- the customer reports a bank transfer (recordCustomerReference with via = bank)
+$mailCount = static fn(): int => count(glob(STORAGE_PATH . '/mail/*.eml') ?: []);
+$vc = $mk('cod');
+$mm0 = $mailCount();
+$rv1 = PaymentService::recordCustomerReference((int) $vc['id'], 'BNK123456', 'bank');
+$mm1 = $mailCount();
+$rv2 = PaymentService::recordCustomerReference((int) $vc['id'], 'BNK123456', 'bank');
+$mm2 = $mailCount();
+$vx = OrderService::find((int) $vc['id']);
+$vLedger = Database::all('SELECT * FROM shop_payments WHERE order_id = ?', [$vc['id']]);
+check('transfer reported on a pay-on-pickup order: accepted; payment PENDING (never paid by the customer), reference stored, the order keeps its own method', $rv1['ok'] && $vx['payment_status'] === 'pending' && $vx['payment_reference'] === 'BNK123456' && $vx['payment_method'] === 'cod');
+check('...ONE ledger row (method bank, source customer, status pending) and the stock is held for at least the manual days', count($vLedger) === 1 && $vLedger[0]['method'] === 'bank' && $vLedger[0]['source'] === 'customer' && $vLedger[0]['status'] === 'pending'
+    && $vx['hold_until'] !== null && strtotime((string) $vx['hold_until']) >= time() + ShopSettings::int('shop_manual_hold_days', 1, 60) * 86400 - 300, (string) $vx['hold_until']);
+check('...staff are e-mailed ONCE and the same reference again is a no-op (no second row, no second mail)', $mm1 === $mm0 + 1 && $mm2 === $mm1 && $rv2['ok'] && count(Database::all('SELECT id FROM shop_payments WHERE order_id = ?', [$vc['id']])) === 1);
+$bnkRef = static fn(): string => 'BNKZ' . random_int(100000, 999999);
+$bnk = static fn(array $o, ?string $via): string => (string) (PaymentService::recordCustomerReference((int) $o['id'], $bnkRef(), $via)['error'] ?? 'ok');
+check('WITHOUT via a pay-on-pickup order is still refused (not_allowed); via momo / BANK / empty / garbage is ignored, not a way in', $bnk($mk('cod'), null) === 'not_allowed' && $bnk($mk('cod'), 'momo') === 'not_allowed' && $bnk($mk('cod'), 'BANK') === 'not_allowed'
+    && $bnk($mk('cod'), '') === 'not_allowed' && $bnk($mk('cod'), "bank\0") === 'not_allowed' && $bnk($mk('cod'), 'x') === 'not_allowed');
+check('via bank is refused for a cancelled, a refunded, a completed, a paid and a "being checked" order (nothing is written)', $bnk($oCan, 'bank') === 'not_allowed' && $bnk($oRef, 'bank') === 'not_allowed' && $bnk($oDone, 'bank') === 'not_allowed' && $bnk($oPaid, 'bank') === 'not_allowed' && $bnk($oRev, 'bank') === 'not_allowed'
+    && (int) Database::value("SELECT COUNT(*) FROM shop_payments WHERE source = 'customer' AND order_id IN (?,?,?,?,?)", [$oCan['id'], $oRef['id'], $oDone['id'], $oPaid['id'], $oRev['id']], 0) === 0);
+check('a CONFIRMED order, a booking, an online order and one whose payment failed all accept a bank reference', $bnk($oConf, 'bank') === 'ok' && $bnk($oBook, 'bank') === 'ok' && $bnk($oFlw, 'bank') === 'ok' && $bnk($oFail, 'bank') === 'ok');
+check('a junk reference is "invalid" (no markup, too short), also via bank', (PaymentService::recordCustomerReference((int) $mk('cod')['id'], '<script>', 'bank')['error'] ?? '') === 'invalid' && (PaymentService::recordCustomerReference((int) $mk('cod')['id'], 'ab', 'bank')['error'] ?? '') === 'invalid');
+$vm = $mk('cod');
+$tm = [];
+foreach (['BNKM00001', 'BNKM00002', 'BNKM00003', 'BNKM00004', 'BNKM00005', 'BNKM00006'] as $mref) {
+    $tm[] = (string) (PaymentService::recordCustomerReference((int) $vm['id'], $mref, 'bank')['error'] ?? 'ok');
+}
+check('at most 5 references per order: the 6th distinct one is "too_many"', $tm === ['ok', 'ok', 'ok', 'ok', 'ok', 'too_many'], json_encode($tm));
+$rP = PaymentService::markPaid((int) $vc['id'], ['method' => 'bank', 'reference' => 'BNK123456', 'amount' => PaymentService::balanceMinor($vx), 'currency' => 'UGX', 'source' => 'staff', 'notify' => false]);
+$vRows = Database::all('SELECT method, status, source FROM shop_payments WHERE order_id = ?', [$vc['id']]);
+check('staff mark it paid under the same reference: the pending bank row BECOMES the success row (still one row), the order is paid and keeps its own method', !empty($rP['ok']) && count($vRows) === 1 && $vRows[0]['status'] === 'success' && $vRows[0]['method'] === 'bank'
+    && OrderService::find((int) $vc['id'])['payment_status'] === 'paid' && OrderService::find((int) $vc['id'])['payment_method'] === 'cod');
+$dashRows = \App\Services\Payments\PaymentsDashboard::rows(['range' => 'all', 'q' => 'BNK123456'], 20, 0)['rows'];
+check('Admin > Payments counts it as one manual shop payment (paid)', count($dashRows) === 1 && $dashRows[0]['channel'] === 'manual' && $dashRows[0]['cat'] === 'shop' && $dashRows[0]['status'] === 'paid' && str_contains((string) $dashRows[0]['detail'], 'bank'));
+
+// -- the order e-mail
+$mailOf = static fn(array $o): string => ShopMailer::render('order', OrderService::find((int) $o['id']), OrderService::items((int) $o['id']))['text'];
+$hasAcct = static fn(string $t, array $o): bool => str_contains($t, '4090008000229') && str_contains($t, 'Pearl Bank') && str_contains($t, 'Lumina Africa Foundation') && str_contains($t, 'Or pay by bank transfer:') && str_contains($t, 'confirm the account name')
+    && str_contains($t, 'Use this reference when you pay: ' . $o['order_number']) && substr_count($t, '4090008000229') === 1 && !preg_match('/\{[a-z_]+\}/', $t);
+$badKinds = [];
+foreach (['cod' => $oCod, 'book' => $oBook, 'momo' => $oMomo, 'daraza' => $oDz] as $kind => $o) {
+    if (!$hasAcct($mailOf($o), $o)) {
+        $badKinds[] = $kind;
+    }
+}
+check('e-mail: the order mail of an unpaid pay-on-pickup, booking, mobile-money and Daraza order carries the bank account, the order number as the reference and the note (once)', $badKinds === [], implode(',', $badKinds));
+check('e-mail: an online order (Pesapal, Flutterwave, mobile money) does not (that customer is paying on the gateway now), nor does a paid, a cancelled or a refunded order', !str_contains($mailOf($oPes), '4090008000229') && !str_contains($mailOf($oFlw), '4090008000229') && !str_contains($mailOf($oMob), '4090008000229')
+    && !str_contains($mailOf($oPaid), '4090008000229') && !str_contains($mailOf($oCan), '4090008000229') && !str_contains($mailOf($oRef), '4090008000229'));
+$tBank = $mailOf($oBank);
+check('e-mail: a BANK order lists the account exactly once (no duplicate block), the reference line and the note', substr_count($tBank, '4090008000229') === 1 && str_contains($tBank, 'Use this reference when you pay: ' . $oBank['order_number']) && str_contains($tBank, 'confirm the account name') && !str_contains($tBank, 'Or pay by bank transfer:'));
+$hBank = ShopMailer::render('order', OrderService::find((int) $oCod['id']), OrderService::items((int) $oCod['id']))['html'];
+check('e-mail: the HTML part carries the account too, as text (nothing typed by a customer becomes markup)', str_contains($hBank, '4090008000229') && !str_contains($hBank, '<script') && !str_contains($hBank, '{'));
+check('e-mail: the status mail ("ready for pickup") is unchanged: no account', !str_contains(ShopMailer::render('status', OrderService::find((int) $oCod['id']), [], 'ready')['text'], '4090008000229'));
+$zzSet('pay_opt_manual', '0');
+check('e-mail: with the site-wide manual switch off the order mail carries no account', !str_contains($mailOf($oCod), '4090008000229') && !str_contains($mailOf($oMomo), '4090008000229'));
+$zzSet('pay_opt_manual', '1');
+$zzSet('shop_bank_account_number', '0012345');
+$zzSet('shop_bank_name', 'Zz Bank');
+$tOwn = $mailOf($oCod);
+check('e-mail: when the shop has its own account typed, THAT account is in the mail and the official one is not', str_contains($tOwn, '0012345') && str_contains($tOwn, 'Zz Bank') && !str_contains($tOwn, '4090008000229') && !str_contains($tOwn, 'Pearl Bank'));
+check('registry: the wording of the new card and the e-mail heading is editable and filled ({order_number} and {amount} in the intro)', content('shop', 'order.bank_title') !== '' && str_contains((string) content('shop', 'order.bank_intro'), '{order_number}') && str_contains((string) content('shop', 'order.bank_intro'), '{amount}')
+    && content('shop', 'order.bank_online_note') !== '' && content('shop', 'order.ref_closed_note') !== '' && content('shop', 'order.ref_limit_note') !== '' && content('shop', 'payment.bank_also_heading') !== '');
+// the rest of the run uses the typed shop account again (as before this block)
+$zzSet('shop_pay_bank_enabled', '1');
+
+// =====================================================================================================================================================
 echo "Shop: CSV export and e-mails\n";
 $ev = $zzOrder([$zzLine($pB, 1)], 'delivery', 'cod', ['name' => '=HYPERLINK("http://evil","x")', 'address' => '@SUM(1+1) street one', 'note' => '+cmd|calc'])['order'];
 $csv = tempnam(sys_get_temp_dir(), 'zzshop');

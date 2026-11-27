@@ -269,6 +269,8 @@ set_time_limit(0); require __DIR__ . '/selftest-pesapal-everywhere.php';        
 set_time_limit(0); require __DIR__ . '/selftest-home-focus.php';                // Home page: the four focus areas (numbered colour ribbons): registry section, order, colours, markup, style
 set_time_limit(0); require __DIR__ . '/selftest-academy-catalog.php';           // Academy course cards: banner colours, Free / Certificate pills, level dots, what you will learn, stylesheet
 set_time_limit(0); require __DIR__ . '/selftest-data-policy.php';               // Data protection: privacy policy + rights page, TOC anchors, notices on every form, rights request stored and acknowledged, newsletter consent, admin page access, no placeholder wording
+set_time_limit(0); require __DIR__ . '/selftest-official-account.php';          // The foundation's official bank account: built-in values, empty saved value, switch, bank-card partial, no account in scripts
+set_time_limit(0); require __DIR__ . '/selftest-donate-thanks.php';             // Donate: bank card on /donate, pledge -> /donate/thanks with the DON-reference, session expiry, hidden with the switch
 set_time_limit(0); require __DIR__ . '/selftest-cloudflare.php';               // Cloudflare readiness: real visitor IP + spoofing, CIDR, HSTS on HTTPS only, cache headers, protected paths, Turnstile (fake transport), admin card
 
 echo $fail === 0 ? "\nALL CHECKS PASSED\n" : "\n{$fail} CHECK(S) FAILED\n";

@@ -38,7 +38,7 @@ $total = array_sum(array_map(static fn(array $p): float => (float) $p['budget'][
         <ol class="fund-steps">
             <li><span>1</span><h3>Pick a project</h3><p>Read the case and the budget of the project that matches what you care about.</p></li>
             <li><span>2</span><h3>Choose your contribution</h3><p>Fund the whole programme, a Year 1 launch package, a co-funding share, one priced contribution, or any amount.</p></li>
-            <li><span>3</span><h3>Send your pledge</h3><p>We contact you to complete the gift by bank transfer, mobile money or PayPal, and we report back to you.</p></li>
+            <li><span>3</span><h3>Send your pledge</h3><p><?= \App\Services\Payments\OfficialAccount::visible() ? 'Pay at once by mobile money, card or bank transfer (our bank account is shown on every project page), or send a pledge and we contact you to complete the gift. We report back to you.' : 'We contact you to complete the gift by bank transfer, mobile money or PayPal, and we report back to you.' ?></p></li>
         </ol>
     </div>
 </section>

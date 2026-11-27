@@ -18,12 +18,17 @@ use App\Models\ContactMessage;
 use App\Models\Donation;
 use App\Services\Fund\ProposalDocument;
 use App\Services\Fund\FundProjects;
+use App\Services\Payments\OfficialAccount;
 
 /**
  * FUND A PROJECT: GET /fund-a-project (the proposed projects), GET /fund-a-project/{slug} (one project: the case, the budget and the ways to give), POST /fund-a-project/{slug}/pledge
  * and GET /fund-a-project/{slug}/thanks. A donor picks the whole programme, the Year 1 package, a co-funding share, ONE contribution ("sponsor a component", with a quantity) or any amount;
  * the amount is calculated here from app/config/fundraising/projects.php (never taken from the browser for a fixed choice) and recorded as a PLEDGE in Admin > Donations
  * (a record of intent, never a payment) with the project in the reference and the message, and e-mailed to the notification address.
+ *
+ * The foundation's OFFICIAL BANK ACCOUNT (App\Services\Payments\OfficialAccount, shown while Admin > Payment options "Bank and manual mobile-money details" is on) is offered to anyone who wants to
+ * give straight away: a card on every project page, on the thank-you page (with the reference "<project> DON-<donation id>" and the amount), in the proposal e-mail the visitor asked for, and
+ * on the Pesapal and mobile-money pages of a gift that did not go through. No e-mail is sent automatically to a donor who types an address on the pledge form (a public form must not relay mail).
  */
 final class FundController extends Controller
 {
@@ -191,17 +196,21 @@ final class FundController extends Controller
             Flash::error('We could not open the mobile-money page just now. Your gift was saved and we will contact you. You can also try again in a minute.');
         }
 
+        // what the donor writes on a bank transfer so we can match it to this pledge ("Digital Inclusion DON-123"); the stored donations.reference ("PROJECT:...", read by the reports) is not touched
+        $ref = FundProjects::bankReference((string) $p['short'], (int) $donationId);
+
         $body = "New PROJECT gift request (no payment was taken yet)\n" . ($big ? "This amount is above the UGX 5,000,000 limit of one mobile-money payment: please contact the donor to arrange it.\n" : '') . "\n"
             . "Project: {$p['title']}\nContribution: {$label}" . ($detail !== '' ? "\n{$detail}" : '') . "\n"
             . 'Amount: ' . number_format((float) $record['amount'], 2) . " {$record['currency']}\n\n"
             . "Name: {$record['donor_name']}" . ($record['is_anonymous'] ? " (asked to stay anonymous)\n" : "\n")
-            . "Email: {$record['donor_email']}\nPhone: " . ($record['donor_phone'] ?? '-') . "\nMethod: {$record['method']}\n\n"
+            . "Email: {$record['donor_email']}\nPhone: " . ($record['donor_phone'] ?? '-') . "\nMethod: {$record['method']}\n"
+            . "Reference quoted to the donor for a bank transfer: {$ref}\n\n"
             . "Message:\n" . (trim((string) ($data['message'] ?? '')) !== '' ? trim((string) $data['message']) : '-') . "\n\nManage it in the admin area: " . abs_url('admin/donations') . "\n";
         if (!Mailer::notify('New project pledge: ' . $p['short'], $body, $record['donor_email'])) {
             Log::warning('Project pledge notification e-mail could not be sent', ['email' => $record['donor_email']]);
         }
 
-        Session::put('fund_thanks', ['slug' => $slug, 'label' => $label, 'detail' => $detail, 'amount' => (float) $record['amount'], 'currency' => $currency, 'method' => (string) $record['method'], 'name' => (string) $record['donor_name'], 'big' => $big]);
+        Session::put('fund_thanks', ['slug' => $slug, 'label' => $label, 'detail' => $detail, 'amount' => (float) $record['amount'], 'currency' => $currency, 'method' => (string) $record['method'], 'name' => (string) $record['donor_name'], 'big' => $big, 'ref' => $ref]);
         return $this->redirect('fund-a-project/' . $slug . '/thanks');
     }
 
@@ -262,6 +271,7 @@ final class FundController extends Controller
                 . ($many ? 'The ' . count($targets) . " full proposals are attached to this e-mail (PDF):\n- " . implode("\n- ", array_column($targets, 'title')) . "\n\n" : "The full proposal is attached to this e-mail (PDF). ")
                 . 'It sets out the need, what the project delivers, why it is a sound choice, the budget and every way to give.' . "\n\n"
                 . 'When you are ready, you can give or pledge here: ' . abs_url('fund-a-project' . ($many ? '' : '/' . $targets[0]['slug'])) . "\n\n"
+                . (OfficialAccount::visible() ? 'To give by bank transfer, send your gift to our account and quote ' . ($many ? 'the name of the project you are funding' : '"' . $targets[0]['short'] . '"') . " as the payment reference:\n\n" . OfficialAccount::text() . "\n\n" : '')
                 . 'If you would like the detailed budget, a conversation or a visit, just reply to this e-mail' . ($team !== '' ? ' or write to ' . $team : '') . ".\n\n"
                 . "With gratitude,\n" . $site . "\n" . abs_url('') . "\n";
             $sent = Mailer::send($email, $many ? 'Your full proposals: ' . $site : 'Your full proposal: ' . $targets[0]['title'], $text, ['attachments' => $files, 'reply_to' => $team !== '' ? $team : null]);

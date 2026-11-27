@@ -1,5 +1,8 @@
 <?php
-/** Pay with mobile money (Daraza). Vars: $row (ledger row), $what, $orig (amount in the original currency or ''), $phone, $ready, $next (where to go when paid). */
+/**
+ * Pay with mobile money (Daraza). Vars: $row (ledger row), $what, $orig (amount in the original currency or ''), $phone, $ready, $next (where to go when paid),
+ * $bankRef (optional: set only for an open DONATION or PROJECT gift; the reference to quote on a bank transfer, '' when there is none; null for every other purpose and for a paid or running payment).
+ */
 $paid = $row['status'] === 'paid';
 $this->start('scripts'); ?><script src="<?= e(asset('js/mobile-money.js')) ?>" defer></script><?php $this->end();
 ?>
@@ -41,6 +44,16 @@ $this->start('scripts'); ?><script src="<?= e(asset('js/mobile-money.js')) ?>" d
                 <?php endif; ?>
             </div>
         </div>
+        <?php
+        // a donation or project gift that is still open: the bank account as another way to give (folded away while the mobile-money form works; open when it does not). Prints nothing while the
+        // site-wide "Bank and manual mobile-money details" switch is off.
+        $bankCard = isset($bankRef) ? partial('partials/bank-card', ['id' => 'mm', 'tag' => 'h2', 'title' => 'Pay by bank transfer', 'lead' => 'Send your gift to our bank account and quote the reference.', 'reference' => (string) $bankRef]) : '';
+        if (trim($bankCard) !== ''): ?>
+        <details class="mm__bank"<?= !$ready ? ' open' : '' ?>>
+            <summary>Prefer to pay by bank transfer instead?</summary>
+            <?= $bankCard ?>
+        </details>
+        <?php endif; ?>
         <p class="text-muted mm__note">Your PIN is entered on your phone only: we never see it. Questions? <a href="<?= e(url('academy/contact')) ?>">Write to us</a> and quote the reference above.</p>
     </div>
 </section>

@@ -83,19 +83,38 @@ $this->start('scripts'); ?>
 
     <?= partial('admin/inbox/_tabs', ['tabs' => $tabs, 'current' => $f['status'], 'base' => 'admin/donations', 'keep' => $keep]) ?>
 
-    <?php $hasAccount = trim($account['bank'] . $account['mobile'] . $account['paypal']) !== ''; ?>
+    <?php
+    // the official bank account is built in (App\Services\Payments\OfficialAccount): the boxes show what donors see now; an emptied box goes back to the built-in value
+    $official = $account['official'];
+    $builtIn = static fn(string $field): string => trim((string) (\App\Core\Settings::definition(\App\Services\Payments\OfficialAccount::FIELDS[$field][0])['default'] ?? ''));
+    $noteDefault = trim((string) (\App\Core\Settings::definition(\App\Services\Payments\OfficialAccount::NOTE_KEY)['default'] ?? ''));
+    $extraOthers = trim($account['bank'] . $account['mobile'] . $account['paypal']) !== '';
+    ?>
     <?php if ($canAccount): ?>
-        <details class="card don-account" id="account-details"<?= $hasAccount ? '' : ' open' ?>>
+        <details class="card don-account" id="account-details"<?= ($account['visible'] || $extraOthers) ? '' : ' open' ?>>
             <summary><?= icon('banknote', 'icon--sm') ?> <strong>Your account details</strong>
-                <span class="af-pill<?= $hasAccount ? ' af-pill--on' : '' ?>"><?= $hasAccount ? 'Set' : 'Not set yet' ?></span>
-                <span class="text-muted">Shown on the Donate page and in the pledge reminder e-mails.</span></summary>
+                <span class="af-pill<?= $account['visible'] ? ' af-pill--on' : '' ?>"><?= $account['visible'] ? 'Shown to donors' : 'Hidden (switched off)' ?></span>
+                <span class="text-muted">Shown on the Donate page and after a pledge, on every project gift page, on the shop order page and in the pledge reminder e-mails.</span></summary>
             <form method="post" action="<?= e(url('admin/donations/account-details')) ?>" class="card__body"><?= csrf_field() ?>
+                <?php if (!$account['visible']): ?><p class="alert alert--info" role="status">The bank account is switched off: "Bank and manual mobile-money details" is off in Admin > Payment options, so visitors do not see it on the website. The pledge reminder e-mails you send still list it.</p><?php endif; ?>
+                <fieldset class="don-account__official">
+                    <legend class="field__label">Official bank account <?= $account['builtIn'] ? '<span class="text-muted">(the built-in account of the foundation)</span>' : '' ?></legend>
+                    <div class="don-account__grid">
+                        <div class="field"><label class="field__label" for="acc-oname">Account name</label><input class="input" id="acc-oname" name="official_name" maxlength="80" value="<?= e($official['name']) ?>" placeholder="<?= e($builtIn('name')) ?>"></div>
+                        <div class="field"><label class="field__label" for="acc-onumber">Account number</label><input class="input" id="acc-onumber" name="official_number" maxlength="40" inputmode="numeric" autocomplete="off" value="<?= e($official['number']) ?>" placeholder="<?= e($builtIn('number')) ?>"></div>
+                        <div class="field"><label class="field__label" for="acc-obank">Bank</label><input class="input" id="acc-obank" name="official_bank" maxlength="80" value="<?= e($official['bank']) ?>" placeholder="<?= e($builtIn('bank')) ?>"></div>
+                        <div class="field"><label class="field__label" for="acc-obranch">Branch</label><input class="input" id="acc-obranch" name="official_branch" maxlength="80" value="<?= e($official['branch']) ?>" placeholder="<?= e($builtIn('branch')) ?>"></div>
+                        <div class="field"><label class="field__label" for="acc-oswift">SWIFT / BIC (optional)</label><input class="input" id="acc-oswift" name="official_swift" maxlength="11" autocomplete="off" value="<?= e($official['swift']) ?>" placeholder="Only for gifts from abroad"></div>
+                    </div>
+                    <div class="field"><label class="field__label" for="acc-onote">Note under the account</label><textarea class="textarea" id="acc-onote" name="official_note" rows="2" maxlength="300" placeholder="<?= e($noteDefault) ?>"><?= e($account['note']) ?></textarea></div>
+                    <p class="text-muted">Clear a box to go back to the built-in value. Check every digit against the bank statement: donors send real money to this account.</p>
+                </fieldset>
                 <div class="don-account__grid">
-                    <div class="field"><label class="field__label" for="acc-bank">Bank transfer</label><textarea class="textarea" id="acc-bank" name="bank" rows="4" maxlength="2000" placeholder="Bank: Pearl Bank&#10;Account Name: Lumina Africa Foundation&#10;Account Number: 0000000000"><?= e($account['bank']) ?></textarea></div>
+                    <div class="field"><label class="field__label" for="acc-bank">Extra bank instructions (optional)</label><textarea class="textarea" id="acc-bank" name="bank" rows="4" maxlength="2000" placeholder="Another account or special instructions (not needed for the official account above)"><?= e($account['bank']) ?></textarea></div>
                     <div class="field"><label class="field__label" for="acc-mobile">Mobile money</label><textarea class="textarea" id="acc-mobile" name="mobile" rows="4" maxlength="1000" placeholder="MTN: 0772 000 000&#10;Airtel: 0700 000 000&#10;Name: Lumina Africa Foundation"><?= e($account['mobile']) ?></textarea></div>
                     <div class="field"><label class="field__label" for="acc-paypal">PayPal e-mail (optional)</label><input class="input" id="acc-paypal" type="email" name="paypal" maxlength="190" value="<?= e($account['paypal']) ?>"></div>
                 </div>
-                <p class="text-muted">Write each detail on its own line, exactly as a donor should see it. Check the numbers carefully: donors send money to what you type here.</p>
+                <p class="text-muted">For mobile money, write each detail on its own line, exactly as a donor should see it. The extra bank instructions are printed under the official account (not repeated when they already contain its number).</p>
                 <button class="btn btn--primary" type="submit"><?= icon('check', 'icon--sm') ?> Save the account details</button>
             </form>
         </details>

@@ -7,6 +7,47 @@
         padding: $space-6 $space-5;
         &__cta { margin-top: auto; padding-top: $space-3; }
     }
+    // the foundation's bank-account card (partials/bank-card) takes a whole row of the narrow-card grid; the card brings its own frame, so the wrapper adds none
+    // (the wrapper is as wide as the row so the card always starts its own line; the card inside is centred and not wider than 44rem)
+    .ia-cards > .donate-way--account { flex: 1 1 100%; max-width: none; padding: 0; }
+    .donate-way--account .bankcard { max-width: 44rem; margin: 0 auto; }
+
+    // /donate/thanks (after a pledge)
+    .donate-thanks__none, .donate-thanks__foreign { max-width: 44rem; margin: $space-5 auto 0; text-align: center; }
+    .donate-thanks__foreign { text-align: left; }
+    .donate-thanks__online { margin: $space-6 0 0; text-align: center; .btn { margin-left: $space-2; } }
+    .donate-thanks__back { margin: $space-6 0 0; text-align: center; }
+    .donate-next {
+        counter-reset: donate-next;
+        display: grid;
+        gap: $space-3;
+        max-width: 40rem;
+        margin: 0 auto;
+        padding: 0;
+        list-style: none;
+        li {
+            counter-increment: donate-next;
+            display: flex;
+            align-items: flex-start;
+            gap: $space-4;
+            padding: $space-4;
+            background: $white;
+            border: 1px solid $line;
+            border-radius: $radius-card;
+            &::before {
+                content: counter(donate-next);
+                flex: none;
+                display: grid;
+                place-items: center;
+                width: 2rem;
+                height: 2rem;
+                border-radius: 50%;
+                font-weight: 700;
+                color: $gold;
+                background: $navy;
+            }
+        }
+    }
     .donate-details {
         padding: $space-4;
         border-radius: $radius-card;

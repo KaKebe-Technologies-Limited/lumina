@@ -189,6 +189,35 @@ $run = $req('/pay/mobile-money/' . $open . '/run', ['_token' => $tok($pg['body']
 check('without the key in .env, "run" says it is not available (no call is made)', in_array($run['code'], [503, 200], true) && str_contains($run['body'], 'unavailable') || str_contains($run['body'], 'not available'), $run['code'] . ' ' . substr($run['body'], 0, 120));
 check('an unknown reference is a 404', $req('/pay/mobile-money/NOPE-0000000', null, $jp)['code'] === 404);
 
+// ---- the foundation's bank account as another way to give, on the page of an open DONATION or PROJECT gift only (folded away while mobile money works, open when it does not)
+\App\Services\Payments\PaymentOptions::save(['manual' => true]);
+$giftRow = static function (string $purpose, int $refId, string $ref, string $status): string {
+    Database::execute("INSERT INTO daraza_payments (reference, direction, purpose, ref_id, amount_minor, currency, amount_ugx, status, mode, payer_email) VALUES (?,'in',?,?,5000000,'UGX',50000,?,'sandbox','zz-dz-bank@example.test')", [$ref, $purpose, $refId, $status]);
+    return $ref;
+};
+$dProj = \App\Models\Donation::create(['donor_name' => 'ZZ Dz Bank', 'donor_email' => 'zz-dz-bank@example.test', 'amount' => '50000.00', 'currency' => 'UGX', 'method' => 'mobile_money', 'status' => 'pledged', 'source' => 'pledge_form', 'reference' => 'PROJECT:digital-inclusion|any']);
+$dPlain = \App\Models\Donation::create(['donor_name' => 'ZZ Dz Bank', 'donor_email' => 'zz-dz-bank@example.test', 'amount' => '50000.00', 'currency' => 'UGX', 'method' => 'mobile_money', 'status' => 'pledged', 'source' => 'pledge_form', 'reference' => '']);
+$bank = static fn(string $ref): array => $req('/pay/mobile-money/' . $ref, null, $jp);
+$pgProj = $bank($giftRow('project', $dProj, 'DZZ-BANKP1', 'pending'));
+check('project gift page: a folded "Prefer to pay by bank transfer instead?" holds the bank card with the account and "<project> DON-<id>" (open here: mobile money is not available)', $pgProj['code'] === 200 && str_contains($pgProj['body'], '<details class="mm__bank" open>') && str_contains($pgProj['body'], 'Prefer to pay by bank transfer instead?') && str_contains($pgProj['body'], 'data-bankcard')
+    && str_contains($pgProj['body'], '4090008000229') && str_contains($pgProj['body'], '<span class="bankcard__value" translate="no">Digital Inclusion DON-' . $dProj . '</span>'), (string) $pgProj['code']);
+$pgDon = $bank($giftRow('donation', $dPlain, 'DZZ-BANKD1', 'pending'));
+check('donation page: the same card, the reference being DON-<donation id>', str_contains($pgDon['body'], 'data-bankcard') && str_contains($pgDon['body'], '<span class="bankcard__value" translate="no">DON-' . $dPlain . '</span>'));
+$pgFail = $bank($giftRow('project', $dProj, 'DZZ-BANKF1', 'failed'));
+check('a FAILED mobile-money attempt keeps the card (the pledge is still open)', str_contains($pgFail['body'], 'data-bankcard'));
+$pgPaid = $bank($giftRow('project', $dProj, 'DZZ-BANKX1', 'paid'));
+check('a PAID gift shows no bank card', $pgPaid['code'] === 200 && !str_contains($pgPaid['body'], 'data-bankcard') && !str_contains($pgPaid['body'], 'mm__bank') && !str_contains($pgPaid['body'], '4090008000229'));
+$pgBusy = $bank($giftRow('project', $dProj, 'DZZ-BANKC1', 'collecting'));
+check('a payment that is being collected (money may be on its way) shows no bank card: no double payment', !str_contains($pgBusy['body'], 'data-bankcard') && !str_contains($pgBusy['body'], 'mm__bank'));
+$pgAcademy = $bank($open);
+check('an Academy certificate payment page is unchanged: no bank card', !str_contains($pgAcademy['body'], 'data-bankcard') && !str_contains($pgAcademy['body'], 'mm__bank') && !str_contains($pgAcademy['body'], '4090008000229'));
+\App\Services\Payments\PaymentOptions::save(['manual' => false]);
+$pgOff = $bank('DZZ-BANKP1');
+check('with "Bank and manual mobile-money details" switched off the page has no card and no empty "pay by bank transfer" fold', $pgOff['code'] === 200 && !str_contains($pgOff['body'], 'data-bankcard') && !str_contains($pgOff['body'], 'mm__bank') && !str_contains($pgOff['body'], '4090008000229'));
+\App\Services\Payments\PaymentOptions::save(['manual' => true]);
+$mmView = static fn(bool $ready, ?string $bankRef): string => \App\Core\View::render('web/pay/mobile-money', ['row' => ['reference' => 'DZZ-V1', 'status' => 'pending', 'amount_ugx' => 50000], 'what' => 'Gifts to a project', 'orig' => '', 'phone' => '', 'ready' => $ready, 'next' => '/donate'] + ($bankRef === null ? [] : ['bankRef' => $bankRef]), null);
+check('view: the fold is collapsed while the mobile-money form works and open when it does not', str_contains($mmView(true, 'Digital Inclusion DON-3'), '<details class="mm__bank">') && str_contains($mmView(false, 'Digital Inclusion DON-3'), '<details class="mm__bank" open>') && !str_contains($mmView(true, null), 'mm__bank'));
+
 $pw = 'Daraza admin pass 71';
 \App\Models\User::create(['name' => 'ZZ Dz Admin', 'email' => 'zz-dz-admin@example.test', 'password_hash' => \App\Core\Auth::hashPassword($pw), 'role' => 'admin', 'is_active' => 1, 'must_change_password' => 0]);
 Database::execute('DELETE FROM rate_limits');

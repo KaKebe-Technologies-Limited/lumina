@@ -12,6 +12,7 @@ use App\Core\Response;
 use App\Core\Validator;
 use App\Models\Donation;
 use App\Services\Inbox\Support;
+use App\Services\Payments\OfficialAccount;
 use App\Services\Inbox\Where;
 
 /**
@@ -54,7 +55,9 @@ final class DonationController extends InboxController
             'canExport'    => can('export.csv'),
             'pledgeReminders' => \App\Services\Payments\PledgeReminders::count(),
             'canAccount' => can('settings.manage'),
-            'account' => ['bank' => (string) setting('donate_bank_details', ''), 'mobile' => (string) setting('donate_mobile_money', ''), 'paypal' => (string) setting('donate_paypal_email', '')],
+            // 'bank' is the EXTRA bank instructions; 'official' the foundation's official account (built in, see OfficialAccount), 'visible' false while Admin > Payment options hides it
+            'account' => ['bank' => (string) setting('donate_bank_details', ''), 'mobile' => (string) setting('donate_mobile_money', ''), 'paypal' => (string) setting('donate_paypal_email', ''),
+                'official' => OfficialAccount::get(), 'note' => OfficialAccount::note(), 'visible' => OfficialAccount::visible(), 'builtIn' => OfficialAccount::isBuiltIn()],
         ], ['title' => 'Donations', 'nav' => 'donations', 'breadcrumbs' => [['Donations', null]]]);
     }
 
@@ -111,24 +114,93 @@ final class DonationController extends InboxController
         return $this->redirect('admin/donations');
     }
 
-    /** POST donations/account-details: the bank, mobile-money and PayPal details donors are told to pay to (the same settings as Site settings > Donations). Administrators only. */
+    /**
+     * POST donations/account-details: the account donors are told to pay to. The five official bank fields (name, number, bank, branch, SWIFT) and the note under them are the settings
+     * official_bank_* (the same ones as Site settings > Donations): an empty box, or one equal to the built-in value, goes back to the built-in value (the row is removed), so the account can
+     * never be blanked. "bank" is the EXTRA bank instructions (donate_bank_details), then mobile money and PayPal. Administrators only. The audit line never holds the whole account number.
+     */
     public function accountDetails(Request $request): Response
     {
         $this->authorize('settings.manage');
         $bank = trim((string) $request->post('bank', ''));
         $mobile = trim((string) $request->post('mobile', ''));
         $paypal = trim((string) $request->post('paypal', ''));
+        // a box that is not in the posted form at all is left as it is; a box that is posted empty goes back to the built-in value
+        $official = [];
+        foreach (['name', 'number', 'bank', 'branch', 'swift'] as $f) {
+            $raw = $request->post('official_' . $f);
+            if (is_string($raw)) {
+                $official[$f] = $f === 'swift' ? strtoupper((string) preg_replace('/\s+/', '', $raw)) : trim($raw);
+            }
+        }
+        $rawNote = $request->post('official_note');
+        $note = is_string($rawNote) ? trim($rawNote) : null;
+        $refuse = function (string $message): Response {
+            Flash::error($message);
+            return $this->redirect('admin/donations#account-details');
+        };
         if (mb_strlen($bank) > 2000 || mb_strlen($mobile) > 1000) {
-            Flash::error('The bank box holds at most 2000 characters and the mobile-money box 1000.');
-            return $this->redirect('admin/donations');
+            return $refuse('The extra bank instructions box holds at most 2000 characters and the mobile-money box 1000.');
         }
         if ($paypal !== '' && !\App\Core\Mailer::validEmail($paypal)) {
-            Flash::error('The PayPal address must be an e-mail address, or leave it empty.');
-            return $this->redirect('admin/donations');
+            return $refuse('The PayPal address must be an e-mail address, or leave it empty.');
         }
-        \App\Core\Settings::setMany(['donate_bank_details' => $bank, 'donate_mobile_money' => $mobile, 'donate_paypal_email' => $paypal]);
-        $this->audit('donation.account_details', 'settings', null, 'Donation account details saved (bank ' . ($bank !== '' ? 'set' : 'empty') . ', mobile money ' . ($mobile !== '' ? 'set' : 'empty') . ', PayPal ' . ($paypal !== '' ? 'set' : 'empty') . ')');
-        Flash::success($bank . $mobile . $paypal === '' ? 'Saved. No account details are set.' : 'Your account details were saved. The Donate page and the reminder e-mails use them from now on.');
+        foreach (['name' => 'account name', 'bank' => 'bank name', 'branch' => 'branch'] as $f => $label) {
+            if (mb_strlen($official[$f] ?? '') > 80) {
+                return $refuse('The ' . $label . ' can hold at most 80 characters.');
+            }
+        }
+        if (($official['number'] ?? '') !== '' && preg_match('/^[0-9A-Za-z -]{4,40}$/', $official['number']) !== 1) {
+            return $refuse('The account number can only hold letters, digits, spaces and dashes (4 to 40 characters). Nothing was changed: check it against the bank statement.');
+        }
+        if (($official['swift'] ?? '') !== '' && preg_match('/^[A-Za-z0-9]{8}([A-Za-z0-9]{3})?$/', $official['swift']) !== 1) {
+            return $refuse('A SWIFT / BIC code has 8 or 11 letters and digits. Nothing was changed: leave it empty if you are not sure.');
+        }
+        if ($note !== null && mb_strlen($note) > 300) {
+            return $refuse('The note under the account holds at most 300 characters.');
+        }
+
+        $before = OfficialAccount::get();
+        $beforeNote = OfficialAccount::note();
+        $values = ['donate_bank_details' => $bank, 'donate_mobile_money' => $mobile, 'donate_paypal_email' => $paypal];
+        $resets = [];
+        $posted = [];
+        foreach (OfficialAccount::FIELDS as $field => [$key]) {
+            if (isset($official[$field])) {
+                $posted[$key] = $official[$field];
+            }
+        }
+        if ($note !== null) {
+            $posted[OfficialAccount::NOTE_KEY] = $note;
+        }
+        foreach ($posted as $key => $value) {
+            // empty, or the built-in value itself: remove the saved row so the built-in value applies again
+            if ($value === '' || $value === trim((string) (\App\Core\Settings::definition($key)['default'] ?? ''))) {
+                $resets[] = $key;
+            } else {
+                $values[$key] = $value;
+            }
+        }
+        \App\Core\Settings::setMany($values);
+        foreach ($resets as $key) {
+            \App\Core\Settings::reset($key);
+        }
+
+        $after = OfficialAccount::get();
+        $changed = [];
+        foreach ($after as $field => $value) {
+            if ($value !== $before[$field]) {
+                $changed[] = $field;
+            }
+        }
+        if (OfficialAccount::note() !== $beforeNote) {
+            $changed[] = 'note';
+        }
+        $last4 = substr((string) preg_replace('/\s+/', '', $after['number']), -4);
+        $this->audit('donation.account_details', 'settings', null, 'Donation account details saved (official account '
+            . ($changed === [] ? 'unchanged' : 'changed: ' . implode(', ', $changed) . ($last4 !== '' && in_array('number', $changed, true) ? '; the number now ends in ' . $last4 : ''))
+            . ', extra bank instructions ' . ($bank !== '' ? 'set' : 'empty') . ', mobile money ' . ($mobile !== '' ? 'set' : 'empty') . ', PayPal ' . ($paypal !== '' ? 'set' : 'empty') . ')');
+        Flash::success('Your account details were saved. The Donate page, the shop, project gifts and the reminder e-mails use them from now on.');
         return $this->redirect('admin/donations');
     }
 

@@ -670,13 +670,28 @@ final class OrderService
 
     /**
      * What the confirmation page shows about paying.
+     *
+     * BANK TRANSFER AS ANOTHER WAY TO PAY (bank_also): an order that is still unpaid and not closed (any status except cancelled / refunded / completed, payment unpaid / pending / failed) whose own method is NOT
+     * the bank shows the account as a second card and takes a reference of a transfer (PaymentService::recordCustomerReference with via 'bank'), while the site-wide manual switch is on
+     * (PaymentMethods::bankOffer). bank_details are the rows of that card (the number row is marked field 'number'); bank_note is the "confirm the account name / share your proof" sentence (also for an order
+     * that chose the bank); bank_gateway_note is true when a payment may already be in flight (an online payment, or a reference already sent): the page then says nobody needs to send a transfer as well;
+     * bank_reported is true for a pay-on-pickup / booking order whose customer already reported a transfer (the page says it is being checked).
      * @return array{method:string,label:string,instructions:string,details:list<array<string,string>>,reference:string,paid:bool,
-     *   can_enter_reference:bool,can_pay_online:bool,awaiting_verification:bool}
+     *   can_enter_reference:bool,can_pay_online:bool,awaiting_verification:bool,bank_also:bool,bank_details:list<array<string,string>>,bank_note:string,bank_gateway_note:bool,bank_reported:bool}
      */
     public static function paymentInfo(array $order): array
     {
         $m = (string) $order['payment_method'];
         $open = $order['status'] === 'pending' && in_array($order['payment_status'], ['unpaid', 'pending', 'failed'], true);
+        $sent = $order['payment_status'] === 'pending' && (string) ($order['payment_reference'] ?? '') !== '';          // the customer already sent a reference
+        $awaiting = $sent && in_array($m, ['momo', 'bank', 'daraza'], true);
+        $payable = !in_array($order['status'], ['cancelled', 'refunded', 'completed'], true) && in_array($order['payment_status'], ['unpaid', 'pending', 'failed'], true);
+        $bankAlso = $m !== 'bank' && $payable && PaymentMethods::bankOffer();
+        $number = $bankAlso ? PaymentMethods::bankAccountNumber() : '';
+        // a reference typed by the CUSTOMER (a pending customer row in the ledger): a part payment recorded by staff also leaves payment_status 'pending' with a reference, but it is not a transfer
+        // waiting to be checked, so it must not make the page say "being checked" or "you do not need to send a transfer" for a balance that is still owed
+        $customerSent = $bankAlso && $sent
+            && (int) Database::value('SELECT COUNT(*) FROM shop_payments WHERE order_id = ? AND source = ? AND status = ?', [(int) $order['id'], 'customer', 'pending'], 0) > 0;
         return [
             'method'                => $m,
             'label'                 => PaymentMethods::label($m),
@@ -688,7 +703,12 @@ final class OrderService
             'daraza_url'            => $m === 'daraza' ? \App\Services\Daraza::url('shop') : '',
             'can_pay_online'        => (in_array($m, ['flutterwave', 'pesapal', 'mobile'], true) && $open && PaymentMethods::ready($m)) || ($m === 'cod' && $open && CodDeposit::active() && CodDeposit::ready()),
             'deposit'               => $m === 'cod' && CodDeposit::active() ? CodDeposit::split(Money::fromDb($order['total']), (string) $order['currency']) : null,
-            'awaiting_verification' => $order['payment_status'] === 'pending' && in_array($m, ['momo', 'bank', 'daraza'], true) && (string) ($order['payment_reference'] ?? '') !== '',
+            'awaiting_verification' => $awaiting,
+            'bank_also'             => $bankAlso,
+            'bank_details'          => $bankAlso ? array_map(static fn(array $r): array => $r + ['field' => $number !== '' && ($r['value'] ?? '') === $number ? 'number' : ''], PaymentMethods::details('bank')) : [],
+            'bank_note'             => ($bankAlso || $m === 'bank') ? \App\Services\Payments\OfficialAccount::note() : '',
+            'bank_gateway_note'     => $bankAlso && ($customerSent || in_array($m, ['flutterwave', 'pesapal', 'mobile'], true)),
+            'bank_reported'         => $bankAlso && $customerSent && in_array($m, ['cod', 'book'], true),
         ];
     }
 

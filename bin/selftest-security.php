@@ -316,6 +316,7 @@ foreach (glob(dirname(__DIR__) . '/assets/js/*.js') ?: [] as $f) {
     $assets .= (string) file_get_contents($f);
 }
 check('no key, token or "Api-Key" header appears in the public pages or in any script a browser downloads', !str_contains($pub . $assets, $canary) && !preg_match('/FLWSECK-|Api-Key\s|consumer_secret|DARAZA_API_KEY|PESAPAL_CONSUMER|ANTHROPIC_API_KEY|sk-ant-/i', $pub . $assets));
+check('the bank-card script exists and, like every script, holds no account value (the account lives only in the settings and their built-in defaults)', is_file(dirname(__DIR__) . '/assets/js/bank-card.js') && !str_contains($assets, '4090008000229') && !str_contains($assets, 'Pearl Bank'));
 SecretStore::forget('flw_secret_key');
 
 $restore();

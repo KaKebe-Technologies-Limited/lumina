@@ -4,8 +4,9 @@
  * Default wording = the owner's planned-programs copy (docs/content-source/planned-programs.md). The earlier live-site wording (school
  * supplies, food and clothing for children, "life-changing programs") was replaced because it contradicted the planned-programs
  * wording; the support cards now name the partnership routes of that copy. Review them in Admin > Pages > Donate.
- * Account details (bank, mobile money, PayPal) and the online link are NOT copy: they come from Settings > Donations and are simply
- * hidden while empty. Pledges are stored in Admin > Donations with status "pledged" (a record of intent, never a payment).
+ * Account details (the official bank account, mobile money, PayPal) and the online link are NOT copy: they come from Settings > Donations (the
+ * bank account: App\Services\Payments\OfficialAccount, built in) and are simply hidden while empty / while the manual-details switch is off.
+ * Pledges are stored in Admin > Donations with status "pledged" (a record of intent, never a payment); after one the donor sees /donate/thanks (section "thanks").
  * The quick-amount buttons of the pledge form are the ones of the donation panel (Site-wide content > Donation panel): suggestions only.
  * Heading fields accept [[double brackets]] around the words that get the hand-drawn underline.
  */
@@ -14,7 +15,7 @@ return [
     'slug'  => 'donate',
     'title' => 'Donate',
     'route' => '/donate',
-    'help'  => 'Ways to give (details from Settings > Donations), what donations support, the pledge form and the FAQ. The pledge form can be pre-filled with ?amount=50&currency=USD.',
+    'help'  => 'Ways to give (details from Settings > Donations), what donations support, the pledge form, the thank-you page after a pledge and the FAQ. The pledge form can be pre-filled with ?amount=50&currency=USD.',
     'nav'   => ['label' => 'Donate', 'order' => 95, 'header' => true, 'footer' => true, 'button' => true],
     'seo'   => [
         'title'       => 'Support Our Planned Programs',
@@ -38,12 +39,13 @@ return [
             ],
         ],
         [
-            'key' => 'ways', 'label' => 'Ways to give', 'help' => 'Only the methods that have details in Settings > Donations are shown.',
+            'key' => 'ways', 'label' => 'Ways to give', 'help' => 'The foundation\'s official bank account is shown while "Bank and manual mobile-money details" is switched on in Admin > Payment options (edit the account in Admin > Donations > "Your account details"); the other methods only when they have details in Settings > Donations.',
             'fields' => [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Ways to [[give]]', 'help' => $hlHelp],
                 ['key' => 'online_title', 'label' => 'Online donation: heading', 'type' => 'text', 'default' => 'Donate online'],
                 ['key' => 'bank_title', 'label' => 'Bank transfer: heading', 'type' => 'text', 'default' => 'Bank transfer'],
+                ['key' => 'bank_lead', 'label' => 'Bank transfer: sentence under the heading', 'type' => 'text', 'default' => 'Send your gift from any bank or banking app to this account, then share your proof of payment with us.'],
                 ['key' => 'mobile_title', 'label' => 'Mobile money: heading', 'type' => 'text', 'default' => 'Mobile money'],
                 ['key' => 'paypal_title', 'label' => 'PayPal: heading', 'type' => 'text', 'default' => 'PayPal'],
                 ['key' => 'paypal_text', 'label' => 'PayPal: text before the email address', 'type' => 'text', 'default' => 'Send your gift via PayPal to'],
@@ -83,7 +85,7 @@ return [
                 ['key' => 'eyebrow', 'label' => 'Small heading above the title (optional)', 'type' => 'text', 'default' => ''],
                 ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Make a [[pledge]]', 'help' => $hlHelp],
                 ['key' => 'text', 'label' => 'Text', 'type' => 'textarea', 'rows' => 3, 'default' => 'Tell us how you would like to give and we will follow up with you.'],
-                ['key' => 'note', 'label' => 'Notice (this is a record of intent, not a payment)', 'type' => 'textarea', 'rows' => 3, 'default' => 'This form records your intention to give. It is a pledge, not a payment: no money is taken here. We will contact you with the details to complete your gift.'],
+                ['key' => 'note', 'label' => 'Notice (this is a record of intent, not a payment)', 'type' => 'textarea', 'rows' => 3, 'default' => 'This form records your intention to give. It is a pledge, not a payment: no money is taken here. After you send it, the next page shows how to complete your gift straight away.'],
                 ['key' => 'chips_label', 'label' => 'Quick amounts: label (the buttons come from Site-wide content > Donation panel)', 'type' => 'text', 'default' => 'Quick amounts'],
                 ['key' => 'name_label', 'label' => 'Field: name', 'type' => 'text', 'default' => 'Your name'],
                 ['key' => 'email_label', 'label' => 'Field: email', 'type' => 'text', 'default' => 'Email address'],
@@ -100,7 +102,7 @@ return [
                 ['key' => 'required_note', 'label' => 'Note about required fields', 'type' => 'text', 'default' => 'Fields marked * are required.'],
                 ['key' => 'submit_label', 'label' => 'Submit button text', 'type' => 'text', 'default' => 'Submit my pledge'],
                 ['key' => 'sending_label', 'label' => 'Submit button text while sending', 'type' => 'text', 'default' => 'Sending...'],
-                ['key' => 'success', 'label' => 'Message after a successful pledge', 'type' => 'textarea', 'rows' => 2, 'default' => 'Thank you. Your pledge has been recorded (no payment has been taken). We will be in touch with the details.'],
+                ['key' => 'success', 'label' => 'Message after a successful pledge', 'type' => 'textarea', 'rows' => 2, 'default' => 'Thank you. Your pledge has been recorded (no payment has been taken yet).'],
                 ['key' => 'error_title', 'label' => 'Error summary: heading (shown above the form when something needs fixing)', 'type' => 'text', 'default' => 'Please check the following before sending'],
                 ['key' => 'err_required', 'label' => 'Error: required field is empty', 'type' => 'text', 'default' => 'Please fill in this field.'],
                 ['key' => 'err_email', 'label' => 'Error: invalid email', 'type' => 'text', 'default' => 'Please enter a valid email address.'],
@@ -110,6 +112,32 @@ return [
                 ['key' => 'err_number', 'label' => 'Error: invalid amount', 'type' => 'text', 'default' => 'Please enter an amount greater than zero.'],
                 ['key' => 'err_amount_range', 'label' => 'Error: amount outside the allowed range', 'type' => 'text', 'default' => 'Please enter an amount between 1 and 1,000,000,000.'],
                 ['key' => 'err_amount_format', 'label' => 'Error: amount typed in an unclear way', 'type' => 'text', 'default' => 'Please type the amount with digits only, using a point for cents (for example 1500 or 1500.50).'],
+            ],
+        ],
+        [
+            'key' => 'thanks', 'label' => 'Thank-you page after a pledge',
+            'help' => 'The page a donor sees right after sending the pledge form (/donate/thanks). It shows the foundation\'s bank account with the reference to quote, and any mobile-money or PayPal details set in Settings > Donations. Use {name} for the donor\'s first name and {amount} for the amount pledged.',
+            'fields' => [
+                ['key' => 'title', 'label' => 'Heading', 'type' => 'text', 'default' => 'Thank you, {name}!', 'maxlength' => 140],
+                ['key' => 'lead', 'label' => 'Intro sentence under the heading (keep it short)', 'type' => 'text', 'default' => 'Your pledge of {amount} is recorded. No money has been taken yet.'],
+                ['key' => 'pay_title', 'label' => 'Heading above the payment details', 'type' => 'text', 'default' => 'Complete your gift'],
+                ['key' => 'bank_lead', 'label' => 'Bank transfer: sentence under the heading', 'type' => 'text', 'default' => 'Send your gift to this account and write the reference below on the transfer, so we can match it to your pledge.'],
+                ['key' => 'foreign_note', 'label' => 'Note for a pledge in a currency other than UGX', 'type' => 'textarea', 'rows' => 2, 'default' => 'Giving from outside Uganda, or in another currency? Please write to us before you send, and we will confirm the best way to transfer your gift.'],
+                ['key' => 'no_details', 'label' => 'Message when no payment details are shown', 'type' => 'textarea', 'rows' => 2, 'default' => 'We will contact you, usually within a few working days, with the details to complete your gift.'],
+                ['key' => 'online_text', 'label' => 'Give-online hint (shown only when online giving is switched on)', 'type' => 'text', 'default' => 'You can also give right now by card or mobile money.'],
+                ['key' => 'online_label', 'label' => 'Give-online button text', 'type' => 'text', 'default' => 'Give online now'],
+                ['key' => 'next_title', 'label' => 'Heading: what happens next', 'type' => 'text', 'default' => 'What happens next'],
+                ['key' => 'next_items', 'label' => 'What happens next: steps', 'type' => 'repeater', 'item_label' => 'text', 'add_label' => 'Add a step', 'max_rows' => 6,
+                    'fields' => [
+                        ['key' => 'text', 'label' => 'Step', 'type' => 'textarea', 'rows' => 2],
+                    ],
+                    'default' => [
+                        ['text' => 'Send your gift whenever you are ready and quote your reference.'],
+                        ['text' => 'Share your proof of payment with us by WhatsApp, phone or e-mail.'],
+                        ['text' => 'We confirm your gift and send you a receipt.'],
+                    ],
+                ],
+                ['key' => 'back_label', 'label' => 'Link back to the Donate page: text', 'type' => 'text', 'default' => 'Back to the Donate page'],
             ],
         ],
         [

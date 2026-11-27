@@ -19,7 +19,7 @@ final class PaymentOptions
     public const OPTIONS = [
         'online' => ['Pesapal and other online gateways', 'Card and wallet payments on a hosted page.'],
         'link'   => ['Payment links (Daraza, GoFundMe)', 'Buttons that send the visitor to an outside page: the "Pay with Daraza" link and the online donation link (GoFundMe).'],
-        'manual' => ['Bank and manual mobile-money details', 'Account numbers shown for the payer to pay by hand, then send the transaction ID.'],
+        'manual' => ['Bank and manual mobile-money details', 'The foundation\'s bank account (edit it in Admin > Donations) and any manual mobile-money numbers, shown for the payer to pay by hand, then send the transaction ID.'],
         'other'  => ['Pay on delivery and booking (shop)', 'Cash on delivery and "reserve and pay later" at the shop checkout.'],
     ];
 
@@ -28,7 +28,7 @@ final class PaymentOptions
         'mobile' => ['MTN and Airtel mobile money', 'Pay now with a phone: the payer approves on the phone (Daraza API). Switched on per place below.'],
         'online' => ['Card and online (Pesapal, Flutterwave)', 'Visa, Mastercard and wallets on a secure hosted page.'],
         'link'   => ['Payment links (Daraza, GoFundMe)', 'The "Pay with Daraza" button and the online donation link.'],
-        'manual' => ['Bank and manual mobile-money details', 'Account numbers shown for the payer to pay by hand.'],
+        'manual' => ['Bank and manual mobile-money details', 'The foundation\'s bank account and manual mobile-money numbers, shown for the payer to pay by hand.'],
         'other'  => ['Pay on delivery and booking (shop)', 'Cash on delivery and reserve-and-pay-later at the shop checkout.'],
     ];
 

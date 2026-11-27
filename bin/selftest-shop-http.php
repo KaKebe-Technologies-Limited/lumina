@@ -153,6 +153,90 @@ sleep(3);
 $r = $http('POST', 'shop/order/' . $mo['token'] . '/reference', ['post' => ['_token' => $mpTok, '_hp_ts' => $mpHp, 'reference' => 'MP7654321']]);
 $mox = OrderService::find((int) $mo['id']);
 check('POST reference: noted, payment PENDING (never paid by the customer), reference stored', $r['code'] === 302 && $mox['payment_status'] === 'pending' && $mox['payment_reference'] === 'MP7654321');
+
+// the foundation's bank account on the order page ("Or pay by bank transfer"): selftest-shop.php runs with a typed shop account (0012345), so clear it to see the OFFICIAL account here
+echo "Shop: HTTP flow (the foundation account on the order page)\n";
+Database::execute('DELETE FROM rate_limits');
+foreach (['official_bank_account_name', 'official_bank_account_number', 'official_bank_name', 'official_bank_branch', 'official_bank_swift', 'official_bank_note', 'shop_bank_account_number', 'shop_bank_name'] as $zzK) {
+    $zzSet($zzK, '');
+}
+$zzSet('pay_opt_manual', '1');
+$jarB = $tmp . '-bank.txt';
+$bp = $http('GET', 'shop/order/' . $tokenOrder, ['jar' => $jarB]);
+preg_match('#<section class="bankcard".*?</section>#s', $bp['body'], $cardM);
+$card = $cardM[0] ?? '';
+check('COD order page: the official account is shown as "Or pay by bank transfer" (name, number, bank, branch), still noindex and no-store',
+    $bp['code'] === 200 && str_contains($bp['body'], 'Or pay by bank transfer') && str_contains($bp['body'], '4090008000229') && str_contains($bp['body'], 'Pearl Bank') && str_contains($bp['body'], 'Gulu') && str_contains($bp['body'], 'Lumina Africa Foundation')
+    && str_contains($bp['body'], 'noindex') && str_contains(strtolower(implode(',', $bp['headers']['cache-control'] ?? [])), 'no-store') && !str_contains($bp['body'], '0012345'));
+check('...with a copy button on the number, the card script, the amount to send, the order number as the reference to quote and the note', str_contains($bp['body'], 'data-bankcard-copy="4090008000229"') && str_contains($bp['body'], 'js/bank-card.js')
+    && str_contains($card, 'UGX 20,000') && str_contains($card, (string) $ord['order_number']) && str_contains($bp['body'], 'Use this reference when you pay: ' . $ord['order_number']) && str_contains($bp['body'], 'Please confirm the account name before sending'));
+check('...and the form for the transfer reference: hidden via=bank, id f-reference-bank exactly once', str_contains($bp['body'], 'name="via" value="bank"') && preg_match_all('/id="f-reference-bank"/', $bp['body']) === 1 && substr_count($bp['body'], 'name="reference"') === 1);
+$mp2 = $http('GET', 'shop/order/' . $mo['token'], ['jar' => $jarB]);
+preg_match_all('/\bid="((?:f-reference|bankcard|sh-bank|sh-pay)[^"]*)"/', $mp2['body'], $idm);
+check('a mobile-money order page has BOTH reference forms (f-reference and f-reference-bank), no id twice, and says nobody who already sent a reference needs to send a transfer too',
+    preg_match_all('/id="f-reference"/', $mp2['body']) === 1 && preg_match_all('/id="f-reference-bank"/', $mp2['body']) === 1 && substr_count($mp2['body'], 'name="reference"') === 2 && count($idm[1]) === count(array_unique($idm[1]))
+    && str_contains($mp2['body'], '0777000111') && str_contains($mp2['body'], '4090008000229') && str_contains($mp2['body'], 'If you have already paid, you do not need to send a transfer'), json_encode($idm[1]));
+$bo = $zzOrder([$zzLine($pHttp, 1)], 'pickup', 'bank', ['email' => 'zz-shop-http9@example.test'])['order'];
+$bop = $http('GET', 'shop/order/' . $bo['token']);
+check('a BANK order page shows the account in its own box with a copy button and the note, and NO second card', $bop['code'] === 200 && str_contains($bop['body'], 'data-shop-copy="4090008000229"') && str_contains($bop['body'], 'Pearl Bank') && str_contains($bop['body'], 'Please confirm the account name before sending')
+    && !str_contains($bop['body'], 'Or pay by bank transfer') && preg_match_all('/id="f-reference"/', $bop['body']) === 1 && !str_contains($bop['body'], 'f-reference-bank'));
+// an order that is paid or cancelled shows no card; one with a pay-on-delivery DEPOSIT shows the deposit as the amount
+$paidO = $zzOrder([$zzLine($pHttp, 1)], 'pickup', 'cod', ['email' => 'zz-shop-http6@example.test'])['order'];
+PaymentService::markPaid((int) $paidO['id'], ['method' => 'cod', 'reference' => 'ZZHTTP-PAID', 'amount' => 1000000, 'currency' => 'UGX', 'source' => 'staff', 'notify' => false]);
+$canO = $zzOrder([$zzLine($pHttp, 1)], 'pickup', 'cod', ['email' => 'zz-shop-http7@example.test'])['order'];
+OrderService::setStatus((int) $canO['id'], 'cancelled', ['notify' => false]);
+$offO = $zzOrder([$zzLine($pHttp, 1)], 'pickup', 'cod', ['email' => 'zz-shop-http8@example.test'])['order'];
+$depO = $zzOrder([$zzLine($pHttp, 1)], 'pickup', 'cod', ['email' => 'zz-shop-http10@example.test'])['order'];
+$pp1 = $http('GET', 'shop/order/' . $paidO['token'])['body'];
+$pc1 = $http('GET', 'shop/order/' . $canO['token'])['body'];
+check('a PAID and a CANCELLED order page show no bank card and no account', !str_contains($pp1, 'Or pay by bank transfer') && !str_contains($pp1, '4090008000229') && !str_contains($pc1, 'Or pay by bank transfer') && !str_contains($pc1, '4090008000229') && !str_contains($pc1, 'f-reference-bank'));
+$zzSet('shop_cod_deposit_pct', '50');
+$dp = $http('GET', 'shop/order/' . $depO['token'])['body'];
+$zzSet('shop_cod_deposit_pct', '0');
+preg_match('#<section class="bankcard".*?</section>#s', $dp, $dcm);
+check('a pay-on-delivery order with a 50% deposit shows the DEPOSIT (UGX 5,000) as the amount to send on the bank card, not the total', str_contains($dcm[0] ?? '', 'UGX 5,000') && !str_contains($dcm[0] ?? '', 'UGX 10,000'));
+$bTok = $field($bp['body'], '_token');
+$bHp = $field($bp['body'], '_hp_ts');
+sleep(3);
+$refUrl = static fn(string $t): string => 'shop/order/' . $t . '/reference';
+check('POST via=bank without a CSRF token: 403', $http('POST', $refUrl($tokenOrder), ['jar' => $jarB, 'post' => ['reference' => 'BNK7654321', 'via' => 'bank']])['code'] === 403);
+$r = $http('POST', $refUrl($tokenOrder), ['jar' => $jarB, 'post' => ['_token' => $bTok, '_hp_ts' => $bHp, 'reference' => 'BNK7654321', 'via' => 'bank']]);
+$bx = OrderService::find((int) $ord['id']);
+$bLedger = Database::all("SELECT method, source, status FROM shop_payments WHERE order_id = ?", [$ord['id']]);
+check('POST via=bank on the COD order: back to the order page, payment PENDING (never paid by the customer), reference stored, the ledger row says bank, the order is still pay-on-pickup',
+    $r['code'] === 302 && str_contains($r['headers']['location'][0] ?? '', 'shop/order/' . $tokenOrder) && $bx['payment_status'] === 'pending' && $bx['payment_reference'] === 'BNK7654321' && $bx['payment_method'] === 'cod'
+    && count($bLedger) === 1 && $bLedger[0]['method'] === 'bank' && $bLedger[0]['source'] === 'customer' && $bLedger[0]['status'] === 'pending');
+$bp2 = $http('GET', 'shop/order/' . $tokenOrder, ['jar' => $jarB]);
+check('...the page thanks the customer and says the payment is being checked, and the card stays (a typo can be corrected)', str_contains($bp2['body'], 'Thank you. We will check your payment') && str_contains($bp2['body'], 'We are waiting to confirm your payment') && str_contains($bp2['body'], '4090008000229')
+    && str_contains($bp2['body'], 'id="f-reference-bank"'));
+$r = $http('POST', $refUrl($paidO['token']), ['jar' => $jarB, 'post' => ['_token' => $bTok, '_hp_ts' => $bHp, 'reference' => 'BNK1111111', 'via' => 'bank']]);
+$pg = $http('GET', 'shop/order/' . $paidO['token'], ['jar' => $jarB]);
+check('POST via=bank on a PAID order changes nothing (302, still paid, no customer row) and the customer is told it takes no reference', $r['code'] === 302 && OrderService::find((int) $paidO['id'])['payment_status'] === 'paid'
+    && (int) Database::value("SELECT COUNT(*) FROM shop_payments WHERE order_id = ? AND source = 'customer'", [$paidO['id']], 0) === 0 && str_contains($pg['body'], 'This order can no longer take a payment reference'));
+$r = $http('POST', $refUrl($canO['token']), ['jar' => $jarB, 'post' => ['_token' => $bTok, '_hp_ts' => $bHp, 'reference' => 'BNK2222222', 'via' => 'bank']]);
+check('POST via=bank on a CANCELLED order changes nothing', $r['code'] === 302 && OrderService::find((int) $canO['id'])['payment_status'] === 'unpaid' && (int) Database::value("SELECT COUNT(*) FROM shop_payments WHERE order_id = ?", [$canO['id']], 0) === 0);
+$r = $http('POST', $refUrl($offO['token']), ['jar' => $jarB, 'post' => ['_token' => $bTok, '_hp_ts' => $bHp, 'reference' => 'BNK3333333']]);
+check('POST WITHOUT via on a pay-on-pickup order is refused as before (nothing stored)', $r['code'] === 302 && OrderService::find((int) $offO['id'])['payment_status'] === 'unpaid' && (int) Database::value("SELECT COUNT(*) FROM shop_payments WHERE order_id = ?", [$offO['id']], 0) === 0);
+$http('GET', 'shop/order/' . $offO['token'], ['jar' => $jarB]);                               // reads (and so clears) the note of the refusal above
+$zzSet('pay_opt_manual', '0');
+$off = $http('GET', 'shop/order/' . $tokenOrder, ['jar' => $jarB]);
+$r = $http('POST', $refUrl($offO['token']), ['jar' => $jarB, 'post' => ['_token' => $bTok, '_hp_ts' => $bHp, 'reference' => 'BNK4444444', 'via' => 'bank']]);
+$offPage = $http('GET', 'shop/order/' . $offO['token'], ['jar' => $jarB]);
+check('with the site-wide manual switch OFF the card is gone from the order page, via=bank is refused (redirect, no ledger row) and the customer is told so',
+    !str_contains($off['body'], 'Or pay by bank transfer') && !str_contains($off['body'], '4090008000229') && !str_contains($off['body'], 'f-reference-bank') && $r['code'] === 302 && (int) Database::value("SELECT COUNT(*) FROM shop_payments WHERE order_id = ?", [$offO['id']], 0) === 0
+    && OrderService::find((int) $offO['id'])['payment_status'] === 'unpaid' && str_contains($offPage['body'], 'This order can no longer take a payment reference'));
+$zzSet('pay_opt_manual', '1');
+$shopPubB = Database::value("SELECT is_published FROM pages WHERE slug = 'shop'", [], null);
+if ($shopPubB !== null) {
+    try {
+        Database::execute("UPDATE pages SET is_published = 0 WHERE slug = 'shop'");
+        $upB = $http('GET', 'shop/order/' . $tokenOrder);
+    } finally {
+        Database::execute('UPDATE pages SET is_published = ? WHERE slug = \'shop\'', [$shopPubB]);
+    }
+    check('Shop page unpublished: the order page is still 200 and still shows the account', $upB['code'] === 200 && str_contains($upB['body'], '4090008000229'));
+}
+
 SecretStore::put('flw_secret_key', 'FLWSECK_TEST-http-test');
 SecretStore::put('flw_secret_hash', 'zz-http-hash');
 $gOrder = $zzOrder([$zzLine($pHttp, 1)], 'pickup', 'flutterwave', ['email' => 'zz-shop-http3@example.test'])['order'];
@@ -301,6 +385,56 @@ foreach ($au as $a) {
 check('the audit log holds order numbers and actions only (no names, e-mails or phone numbers)', $au !== [] && !$leak);
 $r = $http('POST', 'admin/shop/payments/test-connection', ['jar' => $jars['admin'], 'post' => ['_token' => $field($http('GET', 'admin/shop/payments', ['jar' => $jars['admin']])['body'], '_token')]]);
 check('the payment settings routes exist and are admin-only (the stub answers; orders-only role gets 403)', in_array($r['code'], [200, 302, 422, 501], true) && $http('POST', 'admin/shop/payments/test-connection', ['jar' => $jars['orders']])['code'] === 403);
+// the foundation's bank account in Admin > Shop > Payments: the official values are PLACEHOLDERS (never values), so a save never copies them into the shop rows; the shop boxes are still empty here
+$payPage = $http('GET', 'admin/shop/payments', ['jar' => $jars['admin']]);
+check('admin Payments: the info box names the official account and the five bank boxes carry it as placeholders only (no value)', $payPage['code'] === 200 && str_contains($payPage['body'], 'Leave these boxes') && str_contains($payPage['body'], 'Pearl Bank, Lumina Africa Foundation, 4090008000229, Gulu')
+    && str_contains($payPage['body'], 'placeholder="4090008000229"') && str_contains($payPage['body'], 'placeholder="Pearl Bank"') && str_contains($payPage['body'], 'placeholder="Lumina Africa Foundation"') && str_contains($payPage['body'], 'placeholder="Gulu"')
+    && !str_contains($payPage['body'], 'value="4090008000229"') && !str_contains($payPage['body'], 'value="Pearl Bank"') && str_contains($payPage['body'], 'Right now the shop uses the foundation'));
+$zzPayKeys = [];
+foreach (\App\Services\Shop\PaymentMethods::KEYS as $zzM) {
+    foreach (['enabled', 'label', 'instructions', 'sort'] as $zzF) {
+        $zzPayKeys[] = "shop_pay_{$zzM}_{$zzF}";
+    }
+}
+foreach (['mtn', 'airtel'] as $zzN) {
+    array_push($zzPayKeys, "shop_momo_{$zzN}_name", "shop_momo_{$zzN}_number");
+}
+array_push($zzPayKeys, 'shop_bank_name', 'shop_bank_account_name', 'shop_bank_branch', 'shop_bank_account_number', 'shop_bank_swift', 'shop_currency', 'shop_flw_public_key', 'shop_flw_mode', 'shop_flw_options', 'shop_flw_title');
+foreach ($zzPayKeys as $zzPk) {                      // the save below rewrites every one of these: remember the rows so the clean-up puts them back exactly
+    if (!array_key_exists($zzPk, $zzSettingRows)) {
+        $zzSettingRows[$zzPk] = Database::one('SELECT * FROM settings WHERE setting_key = ?', [$zzPk]);
+    }
+}
+$payPost = ['_token' => $field($payPage['body'], '_token'), 'shop_currency' => 'UGX', 'shop_flw_mode' => \App\Services\Shop\PaymentMethods::flwMode(), 'shop_flw_public_key' => \App\Services\Shop\PaymentMethods::flwPublicKey(),
+    'shop_flw_options' => \App\Services\Shop\PaymentMethods::flwOptions() ?: ['card'], 'shop_flw_title' => \App\Services\Shop\ShopSettings::str('shop_flw_title')];
+foreach (\App\Services\Shop\PaymentMethods::KEYS as $zzM) {
+    if (\App\Services\Shop\ShopSettings::bool("shop_pay_{$zzM}_enabled")) {
+        $payPost["shop_pay_{$zzM}_enabled"] = '1';
+    }
+    $payPost["shop_pay_{$zzM}_label"] = \App\Services\Shop\ShopSettings::str("shop_pay_{$zzM}_label");
+    $payPost["shop_pay_{$zzM}_instructions"] = \App\Services\Shop\ShopSettings::str("shop_pay_{$zzM}_instructions");
+    $payPost["shop_pay_{$zzM}_sort"] = preg_match('/^\d{1,3}$/', \App\Services\Shop\ShopSettings::str("shop_pay_{$zzM}_sort")) === 1 && (int) \App\Services\Shop\ShopSettings::str("shop_pay_{$zzM}_sort") >= 1 ? \App\Services\Shop\ShopSettings::str("shop_pay_{$zzM}_sort") : '99';
+}
+foreach (['mtn', 'airtel'] as $zzN) {
+    $payPost["shop_momo_{$zzN}_name"] = \App\Services\Shop\ShopSettings::str("shop_momo_{$zzN}_name");
+    $payPost["shop_momo_{$zzN}_number"] = \App\Services\Shop\ShopSettings::str("shop_momo_{$zzN}_number");
+}
+foreach (['shop_bank_name', 'shop_bank_account_name', 'shop_bank_account_number', 'shop_bank_branch', 'shop_bank_swift'] as $zzB) {
+    $payPost[$zzB] = '';                              // exactly what the form posts when the boxes are left empty
+}
+$r = $http('POST', 'admin/shop/payments', ['jar' => $jars['admin'], 'post' => $payPost]);
+\App\Core\Settings::flush();
+$shopBankNow = array_map(static fn(string $k): string => \App\Services\Shop\ShopSettings::str($k), ['shop_bank_name', 'shop_bank_account_name', 'shop_bank_account_number', 'shop_bank_branch', 'shop_bank_swift']);
+$payAfter = $http('GET', 'admin/shop/payments', ['jar' => $jars['admin']]);
+check('admin Payments: saving with the bank boxes empty keeps them EMPTY (the official values are never copied into the shop rows) and the shop still uses the official account', $r['code'] === 302 && $shopBankNow === ['', '', '', '', '']
+    && \App\Services\Shop\PaymentMethods::bankSource() === 'official' && \App\Services\Shop\PaymentMethods::bankAccountNumber() === '4090008000229', $r['code'] . ' ' . json_encode($shopBankNow));
+check('...and tells the administrator that bank transfer uses the foundation\'s official account', str_contains($payAfter['body'], 'official account (Pearl Bank, Lumina Africa Foundation, 4090008000229, Gulu)'));
+$bAdm = $http('GET', 'admin/shop/orders/' . $ord['id'], ['jar' => $jars['orders']]);
+check('admin order of the COD order whose customer reported a bank transfer: the bank checklist is shown, the reference is named and "Paid by" is pre-selected on Bank (not Pay on pickup)', $bAdm['code'] === 200 && str_contains($bAdm['body'], 'Before you mark a mobile-money or bank payment as paid')
+    && str_contains($bAdm['body'], 'bank statement') && str_contains($bAdm['body'], 'BNK7654321') && preg_match('/<option value="bank" selected>/', $bAdm['body']) === 1 && preg_match('/<option value="cod" selected>/', $bAdm['body']) === 0);
+$zzSet('shop_bank_account_number', '0012345');       // back to the typed shop account of this run
+$zzSet('shop_bank_name', 'Zz Bank');
+
 // review pass: the export audit, price limits, stock edits while orders arrive, a cancelled order that holds money
 $http('GET', 'admin/shop/orders/export?kind=orders&q=zz-shop-secret-search&status=pending', ['jar' => $jars['admin']]);
 $auq = (string) Database::value("SELECT details FROM audit_log WHERE action = 'shop.export' ORDER BY id DESC LIMIT 1", [], '');

@@ -149,7 +149,7 @@ Without a valid token: 404 (or the `confirmation.invalid_*` copy with status 404
 Show only: first name, reference, type, fee (snapshot), payment instructions, next steps. **Nothing else** from the record. `noindex,nofollow`.
 
 ### Payment instructions
-`MembershipService::paymentInstructions()` = setting `membership_payment_instructions`, else `donate_bank_details` + `donate_mobile_money`; `''` when none (then show `confirmation.payment_none`; hide the `payment` section on `/membership`).
+`MembershipService::paymentInstructions()` = setting `membership_payment_instructions`, else `donate_bank_details` (now "Extra bank instructions") + `donate_mobile_money` (the official bank account is NOT used here); `''` when none (then show `confirmation.payment_none`; hide the `payment` section on `/membership`).
 
 ### Terms
 `/membership/terms` renders registry page `membership-terms` (`terms.body` is rich text; **the default is a placeholder** for the owner to replace). The form's "I agree" label contains `{terms_link}` and `{privacy_link}` (replace them with links, escaping the link text).
@@ -310,7 +310,7 @@ Dev DB state after testing: 3 placeholder types, 0 members. The selftest cleans 
 
 1. Set the fee of each membership type (Admin > Membership types & fees) and rename or delete the three placeholder types. Until a fee is set the site says "Fee to be announced".
 2. Replace the benefits, eligibility text and the **membership terms** (Admin > Pages > Membership / Membership terms) with the foundation's own wording.
-3. Enter the payment instructions (Site settings > Membership), or confirm the bank / mobile-money details on the Donations tab.
+3. Enter the payment instructions (Site settings > Membership), or confirm the extra bank instructions / mobile-money details on the Donations tab (the official bank account is not used for membership).
 4. Review the privacy page section "Membership registration" (Admin > Pages > Privacy Policy, last block "Membership registration": it is its own block, so it survives edits of the notice list) and fill in the data-retention period; confirm with counsel whether the Data Protection and Privacy Act, 2019 requires registration or notices.
 5. Decide whether to ask for a national ID / passport number (off by default), then turn on `membership_open` (Site settings > Membership). Registration ships **closed**.
 

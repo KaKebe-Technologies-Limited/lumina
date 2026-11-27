@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Services\Shop\OnlinePayment;
 use App\Services\Shop\OrderService;
+use App\Services\Shop\PaymentMethods;
 use App\Services\Shop\PaymentService;
 
 /**
@@ -18,7 +19,8 @@ use App\Services\Shop\PaymentService;
  *
  *   start      POST /shop/pay/{token}              new Flutterwave attempt -> a short "taking you to the payment page" page with a meta refresh to the hosted page (or back to the order page with an error note)
  *   startGet   GET  /shop/pay/{token}              no side effect: 302 to the order page
- *   reference  POST /shop/order/{token}/reference  the customer's transaction ID / transfer reference (field `reference`) -> PaymentService::recordCustomerReference
+ *   reference  POST /shop/order/{token}/reference  the customer's transaction ID / transfer reference (field `reference`; hidden field via=bank on the "or pay by bank transfer" card, which
+ *                                                  any unpaid open order shows) -> PaymentService::recordCustomerReference. Three different notes: not accepted for this order / too many / does not look right
  *   return     GET  /shop/pay/return/{rid}         verify with Flutterwave, then 302 to the order page with a flash note. NEVER trusts the query string; {rid} = OnlinePayment::returnKey(tx_ref),
  *                                                  the keyed proof that this browser started the payment (the order number alone is NOT a credential)
  *              GET  /shop/pay/return               no key: the same neutral "thank you" page for every reference (no lookup, no redirect, no gateway call, no cookie)
@@ -84,11 +86,23 @@ final class ShopPaymentController extends Controller
         if ($order === null) {
             $this->abort(404);
         }
-        $r = PaymentService::recordCustomerReference((int) $order['id'], $request->string('reference'));
+        // via=bank: the "or pay by bank transfer" card of the order page (any unpaid order, whatever way it chose). Only while that card is on (the site-wide manual switch), else the same page without a reference stored.
+        $via = $request->string('via') === 'bank' ? 'bank' : null;
+        if ($via === 'bank' && !PaymentMethods::bankOffer()) {
+            Flash::error((string) content('shop', 'order.ref_closed_note'));
+            return $this->redirect('shop/order/' . $order['token']);
+        }
+        $r = PaymentService::recordCustomerReference((int) $order['id'], $request->string('reference'), $via);
         if ($r['ok']) {
             Flash::success((string) content('shop', 'order.ref_thanks'));
         } else {
-            Flash::error((string) content('shop', 'order.ref_error'));
+            // say what is really the matter: an order that can no longer take a reference, or one that has taken too many, is not "a reference that does not look right"
+            $msg = match ((string) ($r['error'] ?? '')) {
+                'not_allowed' => (string) content('shop', 'order.ref_closed_note'),
+                'too_many'    => (string) content('shop', 'order.ref_limit_note'),
+                default       => (string) content('shop', 'order.ref_error'),
+            };
+            Flash::error($msg);
         }
         return $this->redirect('shop/order/' . $order['token']);
     }

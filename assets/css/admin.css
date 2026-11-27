@@ -8250,6 +8250,19 @@ body.admin-receipt .receipt__sign-label {
   margin-bottom: .6rem;
 }
 
+.don-account__official {
+  min-width: 0;
+  margin: 0 0 1.2rem;
+  padding: 0 0 1rem;
+  border: 0;
+  border-bottom: 1px solid #E5DED0;
+}
+
+.don-account__official legend {
+  padding: 0;
+  margin-bottom: .6rem;
+}
+
 .admin-org .org-sort {
   display: inline-flex;
   align-items: center;

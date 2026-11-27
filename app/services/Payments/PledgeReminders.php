@@ -11,7 +11,8 @@ use App\Services\Shop\Money;
 
 /**
  * Admin > Donations: a warm, thankful follow-up e-mail to a donor whose pledge is still "pledged" (not received yet).
- * It thanks them, says why their gift matters, and gives the foundation's account details (Settings > Donations: bank, mobile money, PayPal, online link).
+ * It thanks them, says why their gift matters, and gives the foundation's account details: the OFFICIAL BANK ACCOUNT (OfficialAccount, built in, always listed here, with the reference to
+ * write on the transfer: DON-<id>), then the extra bank instructions, mobile money and PayPal from Settings > Donations, and the online link.
  * The wording can be changed in Settings > Donations > "Pledge reminder e-mail"; empty = the built-in text below. At most one reminder per pledge per 24 hours
  * (the audit trail 'reminded' event is the memory), every reminder is written to the payment audit trail and the activity log.
  * Placeholders: {first_name} {amount} {pledge_date} {payment_details} {donate_link} {site_name}.
@@ -34,11 +35,34 @@ final class PledgeReminders
         return Database::one('SELECT * FROM donations WHERE id = ?', [$id]);
     }
 
-    /** The account details to put in the e-mail (empty string when none are set). */
-    public static function paymentDetails(): string
+    /**
+     * What the donor writes on a bank transfer: DON-<id>, and for a gift to a project "<project short name> DON-<id>" (the reference column then holds PROJECT:<slug>|<code>,
+     * which is never overwritten: reports parse it).
+     * @param array<string,mixed> $d a donations row
+     */
+    public static function reference(array $d): string
+    {
+        $ref = OfficialAccount::donationReference((int) ($d['id'] ?? 0));
+        $stored = (string) ($d['reference'] ?? '');
+        if (str_starts_with($stored, 'PROJECT:')) {
+            $slug = explode('|', substr($stored, 8))[0];
+            $short = trim((string) (\App\Services\Fund\FundProjects::find($slug)['short'] ?? ''));
+            if ($short !== '') {
+                return $short . ' ' . $ref;
+            }
+        }
+        return $ref;
+    }
+
+    /**
+     * The account details to put in the e-mail: the foundation's official bank account (with the reference to quote when given), the extra bank instructions, mobile money and PayPal.
+     * The bank account is always there: this e-mail is sent by a person at the foundation, so the on-screen switch "Bank and manual mobile-money details" does not apply to it.
+     * Empty string only when nothing at all can be said.
+     */
+    public static function paymentDetails(?string $reference = null): string
     {
         $parts = [];
-        $bank = trim((string) setting('donate_bank_details', ''));
+        $bank = OfficialAccount::lines() !== [] ? OfficialAccount::text((string) $reference) : OfficialAccount::extra();
         $mobile = trim((string) setting('donate_mobile_money', ''));
         $paypal = trim((string) setting('donate_paypal_email', ''));
         if ($bank !== '') {
@@ -53,10 +77,11 @@ final class PledgeReminders
         return implode("\n\n", $parts);
     }
 
+    /** Only reached when there is no account to tell (the official account is built in, so this is a safety net). */
     private static function needDetails(): string
     {
         return can('settings.manage')
-            ? 'Add your account details first: open "Your account details" on this page (Donations), fill in the bank transfer, mobile money or PayPal box and save. The e-mail needs them to tell donors where to send their gift.'
+            ? 'There are no account details to send. Open "Your account details" on this page (Donations), fill in the official bank account and save: the e-mail needs it to tell donors where to send their gift.'
             : 'The account details are not set yet. Ask an administrator to add them on the Donations page ("Your account details").';
     }
 
@@ -85,7 +110,7 @@ final class PledgeReminders
             'first_name' => $first !== '' ? $first : 'friend',
             'amount' => Money::format($minor, (string) $d['currency']),
             'pledge_date' => format_date((string) $d['created_at'], 'j F Y'),
-            'payment_details' => self::paymentDetails(),
+            'payment_details' => self::paymentDetails(self::reference($d)),
             'donate_link' => ((string) setting('donate_method', 'both') !== 'link' || trim((string) setting('donate_url', '')) !== '') ? 'You can also give online, by card or mobile money, at ' . abs_url('donate') . "\n\n" : '',
             'site_name' => (string) setting('site_name', 'Lumina Africa Foundation'),
         ]);

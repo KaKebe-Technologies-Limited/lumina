@@ -10,6 +10,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Settings;
 use App\Core\ValidationException;
+use App\Services\Payments\OfficialAccount;
+use App\Services\Payments\PaymentOptions;
 use App\Services\Shop\FlutterwaveClient;
 use App\Services\Shop\Money;
 use App\Services\Shop\PaymentMethods;
@@ -188,6 +190,9 @@ final class ShopSettingsController extends AdminController
             'mock'        => FlutterwaveClient::usingDevBase(),
             'events'      => PaymentService::events(20),
             'shopOpen'    => ShopSettings::isOpen(),
+            'official'    => OfficialAccount::get(),
+            'manualOn'    => PaymentOptions::manual(),
+            'bankSource'  => PaymentMethods::bankSource(),
         ], ['title' => 'Payments', 'nav' => 'shop_payments', 'breadcrumbs' => [['Shop', url('admin/shop')], ['Payments', null]]]);
     }
 
@@ -340,6 +345,19 @@ final class ShopSettingsController extends AdminController
             if ($m['enabled'] && !$m['ready']) {
                 Flash::warning($m['label'] . ' is switched on but customers will NOT see it yet. ' . implode(' ', $m['problems']));
             }
+        }
+        // the bank account: empty boxes mean "use the foundation's official account" (saved as empty on purpose, so a later change of that account reaches the shop)
+        if (PaymentMethods::bankSource() === 'official') {
+            $o = OfficialAccount::get();
+            if ($new['shop_pay_bank_enabled'] === '1') {
+                Flash::info('Bank transfer uses the foundation\'s official account (' . implode(', ', array_filter([$o['bank'], $o['name'], $o['number'], $o['branch']], static fn(string $v): bool => $v !== '')) . ').');
+            }
+        }
+        if (PaymentMethods::bankSource() === 'official' && ($new['shop_bank_name'] !== '' || $new['shop_bank_account_name'] !== '' || $new['shop_bank_branch'] !== '' || $new['shop_bank_swift'] !== '')) {
+            Flash::warning('You typed bank details but no account number, so they are not used: the shop shows the foundation\'s official account. Type the account number as well to use a different account.');
+        }
+        if (!PaymentOptions::manual()) {
+            Flash::warning('"Bank and manual mobile-money details" is switched off in Admin > Payment options, so no bank or mobile-money details are shown anywhere in the shop.');
         }
         $secret = SecretStore::get('flw_secret_key');
         $mode = PaymentMethods::flwMode();

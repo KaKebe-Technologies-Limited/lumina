@@ -1,0 +1,95 @@
+// The foundation's bank-account card (partials/bank-card.php + assets/js/bank-card.js): account name, number, bank, branch, the reference to quote and the
+// "confirm the name / share your proof of payment" note. Global (not under a page class): it appears on the Donate page, the project gift pages, the shop order page
+// and the payment result pages. Long account numbers wrap, the copy buttons are 44px high and are shown by the script only.
+.bankcard {
+    max-width: 44rem;
+    margin: $space-6 auto 0;
+    padding: $space-5 $space-4;
+    text-align: left;
+    color: $ink;
+    background: $white;
+    border: 1px solid $line;
+    border-top: 5px solid $gold;
+    border-radius: $radius-card;
+    box-shadow: $shadow-card;
+    @include respond(sm) { padding: $space-5; }
+
+    &__head { display: flex; align-items: flex-start; gap: $space-4; }
+    &__icon {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        color: $gold;
+        background: $navy;
+    }
+    &__title { margin: 0; font-family: $font-display; font-size: $fs-lg; line-height: 1.2; color: $navy; }
+    &__lead { margin: $space-2 0 0; color: $ink-soft; font-size: $fs-sm; }
+
+    &__list { display: grid; gap: $space-2; margin: $space-4 0; }
+    &__row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: $space-2 $space-3;
+        padding: $space-3 $space-4;
+        background: $surface;
+        border-radius: $radius;
+
+        dt { margin: 0; font-size: $fs-xs; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: $ink-soft; }
+        dd { display: flex; align-items: center; flex-wrap: wrap; gap: $space-3; margin: 0; min-width: 0; font-weight: 600; color: $navy; overflow-wrap: anywhere; }
+        .bankcard__hint { flex: 1 0 100%; margin: 0; font-size: $fs-xs; font-weight: 400; color: $ink-soft; }
+    }
+    // the account number is what people copy: large, monospaced, easy to select
+    &__row--key &__value { font-family: $font-mono; font-size: $fs-lg; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; user-select: all; -webkit-user-select: all; }
+    &__row--ref { background: $tint-cool; box-shadow: inset 0 0 0 2px rgba($gold, 0.55); }
+    &__row--ref &__value { font-family: $font-mono; letter-spacing: 0.03em; }
+
+    &__copy {
+        display: inline-flex;
+        align-items: center;
+        gap: $space-2;
+        min-height: 2.75rem;
+        padding: 0.4rem 1rem;
+        font-family: $font-heading;
+        font-size: $fs-xs;
+        font-weight: 600;
+        color: $navy;
+        background: $white;
+        border: 1px solid $navy;
+        border-radius: $radius-pill;
+        cursor: pointer;
+        transition: background-color $t-fast ease, color $t-fast ease, border-color $t-fast ease;
+        &[hidden] { display: none; }
+        &:hover { background: $tint-cool; }
+        &:focus-visible { @include focus-ring; }
+        &.is-copied { color: $success; background: $success-bg; border-color: $success; }
+        @include reduced-motion { transition: none; }
+    }
+
+    &__extra { margin: 0 0 $space-4; padding: $space-3 $space-4; font-size: $fs-sm; border-left: 4px solid $gold; background: $surface; border-radius: 0 $radius $radius 0; }
+    &__note {
+        display: flex;
+        align-items: flex-start;
+        gap: $space-3;
+        margin: 0;
+        padding: $space-4;
+        font-size: $fs-sm;
+        color: $ink;
+        background: $tint-cool;
+        border-radius: $radius;
+        .icon { flex: none; margin-top: 0.15rem; color: $navy; }
+        a { color: $navy; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+    }
+}
+
+// The title is an h2 on some pages (thank-you, payment results): page-level heading rules such as ".fund-thanks h2" must not restyle it, so it is pinned with a higher specificity.
+.bankcard .bankcard__title { margin: 0; font-size: $fs-lg; line-height: 1.2; color: $navy; }
+
+// a collapsed "pay by bank transfer instead" fold on the mobile-money payment page
+.mm__bank { margin-top: $space-5; > summary { cursor: pointer; font-weight: 600; color: $navy; padding: $space-2 0; } }
+
+@media print { .bankcard { box-shadow: none; break-inside: avoid; } .bankcard__copy { display: none; } }

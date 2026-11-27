@@ -4,10 +4,13 @@ declare(strict_types=1);
 namespace App\Controllers\Web;
 
 use App\Core\Controller;
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Services\DarazaPay\DarazaApi;
 use App\Services\DarazaPay\DarazaPayments;
+use App\Services\Fund\FundProjects;
+use App\Services\Payments\OfficialAccount;
 use App\Services\Shop\Money;
 
 /**
@@ -40,8 +43,27 @@ final class DarazaPayController extends Controller
         $orig = (string) $row['currency'] !== 'UGX' ? Money::format((int) $row['amount_minor'], (string) $row['currency']) : '';
         return $this->render('web/pay/mobile-money', [
             'row' => $row, 'what' => $what, 'orig' => $orig, 'phone' => (string) ($row['phone'] ?? ''), 'ready' => DarazaApi::hasKey() && DarazaPayments::on((string) $row['purpose']),
-            'next' => url(self::NEXT[$row['purpose']] ?? ''),
+            'next' => url(self::NEXT[$row['purpose']] ?? ''), 'bankRef' => $this->bankRef($row),
         ], ['title' => 'Pay with mobile money', 'meta' => ['robots' => 'noindex,nofollow']]);
+    }
+
+    /**
+     * What to write on a bank transfer when the payer would rather pay into the foundation's bank account than by mobile money: only for a DONATION or a gift to a PROJECT, and only while the
+     * payment is still open (not yet started, or failed). null = no bank card (paid, a payment that may be in flight, and every other purpose: shop, membership and Academy pages are unchanged).
+     * Unlike a failed Pesapal gift, an open mobile-money gift keeps its pledge, so the donation number is part of the reference ("Digital Inclusion DON-12", "DON-12").
+     */
+    private function bankRef(array $row): ?string
+    {
+        $purpose = (string) $row['purpose'];
+        if (!in_array($purpose, ['donation', 'project'], true) || !in_array((string) $row['status'], ['pending', 'failed'], true)) {
+            return null;
+        }
+        $id = (int) $row['ref_id'];
+        if ($purpose === 'project') {
+            $short = FundProjects::referenceFor($id);
+            return $short === '' ? '' : FundProjects::bankReference($short, $id);
+        }
+        return Database::value('SELECT id FROM donations WHERE id = ?', [$id]) === null ? '' : OfficialAccount::donationReference($id);
     }
 
     public function run(Request $request, string $reference): Response

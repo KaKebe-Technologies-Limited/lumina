@@ -8,7 +8,10 @@ declare(strict_types=1);
  */
 
 use App\Core\Database;
+use App\Core\Settings;
 use App\Services\Fund\FundProjects;
+use App\Services\Payments\OfficialAccount;
+use App\Services\Payments\PaymentOptions;
 
 if (!function_exists('check')) {
     if (PHP_SAPI !== 'cli') {
@@ -119,6 +122,42 @@ $hp = static function (): string {
 Database::execute("DELETE FROM donations WHERE donor_email LIKE 'zz-fund-%'");
 Database::execute('DELETE FROM rate_limits');
 
+// The foundation's bank account card: these settings are changed by the checks below. Start from the built-in values (no saved rows) and put the original rows back at the end.
+$optKeys = ['pay_opt_manual', 'donate_bank_details', 'official_bank_account_name', 'official_bank_account_number', 'official_bank_name', 'official_bank_branch', 'official_bank_swift', 'official_bank_note'];
+$optIn = implode(',', array_fill(0, count($optKeys), '?'));
+$optSnapshot = Database::all('SELECT * FROM settings WHERE setting_key IN (' . $optIn . ')', $optKeys);
+$restoreOptions = static function () use ($optKeys, $optIn, $optSnapshot): void {
+    Database::execute('DELETE FROM settings WHERE setting_key IN (' . $optIn . ')', $optKeys);
+    foreach ($optSnapshot as $row) {
+        Database::insert('settings', $row);
+    }
+    Settings::flush();
+};
+Database::execute('DELETE FROM settings WHERE setting_key IN (' . $optIn . ')', $optKeys);
+Settings::flush();
+// the e-mails the checks cause: written to storage/mail by the file driver; the text parts are base64 or quoted-printable
+$mailDir = STORAGE_PATH . '/mail';
+$mailsBefore = glob($mailDir . '/*.eml') ?: [];
+$mailText = static function (string $raw): string {
+    $t = $raw . "\n";
+    if (preg_match_all('/Content-Transfer-Encoding: base64\r?\n(?:[A-Za-z-]+: [^\r\n]*\r?\n)*\r?\n([A-Za-z0-9+\/=\r\n]+)/', $raw, $mm)) {
+        foreach ($mm[1] as $b64) {
+            $t .= (string) base64_decode(preg_replace('/\s+/', '', $b64) ?? '') . "\n";
+        }
+    }
+    return $t . (preg_match('/quoted-printable/i', $raw) ? quoted_printable_decode($raw) . "\n" : '');
+};
+$newMails = static function (string $needle) use ($mailDir, $mailsBefore, $mailText): array {
+    $out = [];
+    foreach (array_diff(glob($mailDir . '/*.eml') ?: [], $mailsBefore) as $f) {
+        $raw = (string) file_get_contents($f);
+        if (str_contains($raw, $needle)) {
+            $out[] = $mailText($raw);
+        }
+    }
+    return $out;
+};
+
 $hub = $req('GET', '/fund-a-project');
 $allTitles = true;
 foreach ($all as $p) {
@@ -139,6 +178,23 @@ foreach ($all as $p) {
 }
 check('every project page opens with its budget, price list, pledge form and questions (or the "in preparation" notice)', $pagesOk, $why);
 check('an unknown project is a 404', $req('GET', '/fund-a-project/nope')['code'] === 404);
+
+// ---- the foundation's bank account on every project page (also a project still in preparation), the reference being the project name
+$accountNeedles = ['data-bankcard', 'Pearl Bank', '4090008000229', 'Lumina Africa Foundation', 'Gulu', 'Please confirm the account name before sending'];
+foreach (['digital-inclusion', 'voices-of-change'] as $slug) {
+    $pg = $req('GET', '/fund-a-project/' . $slug);
+    $short = (string) FundProjects::find($slug)['short'];
+    $lack = array_values(array_filter($accountNeedles, static fn(string $n): bool => !str_contains($pg['body'], $n)));
+    $posForm = strpos($pg['body'], 'data-fund-form');
+    $posCard = strpos($pg['body'], 'id="bankcard-fund"');
+    check('bank card on /fund-a-project/' . $slug . ': the account (name, number, bank, branch, note), below the form, with the project name as the payment reference and a link from the form', $pg['code'] === 200 && $lack === [] && $posForm !== false && $posCard !== false && $posForm < $posCard
+        && str_contains($pg['body'], '<span class="bankcard__value" translate="no">' . e($short) . '</span>') && str_contains($pg['body'], 'href="#bankcard-fund"') && substr_count($pg['body'], 'js/bank-card.js') === 1, implode(',', $lack));
+}
+check('the card sits between the pledge form and the proposal form of a funded project', (static function () use ($req): bool {
+    $b = $req('GET', '/fund-a-project/digital-inclusion')['body'];
+    return (int) strpos($b, 'id="bankcard-fund"') > (int) strpos($b, 'data-fund-form') && (int) strpos($b, 'id="bankcard-fund"') < (int) strpos($b, 'id="proposal"');
+})());
+check('the hub tells the donor that the bank account is on every project page', str_contains($req('GET', '/fund-a-project')['body'], 'our bank account is shown on every project page'));
 $hits = [];
 foreach (['' => 'home', 'donate' => 'donate', 'projects' => 'projects'] as $path => $name) {
     if (!str_contains($req('GET', '/' . $path)['body'], '/fund-a-project')) {
@@ -170,7 +226,53 @@ $d = $last('item');
 check('pledging three laptops records UGX 6,300,000 (the amount typed in the form is ignored), as a pledge with the project and the contribution', $r['code'] === 302 && str_contains($r['loc'], 'fund-a-project/digital-inclusion/thanks') && $d !== null && (float) $d['amount'] === 6300000.0 && $d['currency'] === 'UGX' && $d['status'] === 'pledged' && str_starts_with((string) $d['reference'], 'PROJECT:digital-inclusion|item:laptopx3') && str_contains((string) $d['message'], 'PROJECT PLEDGE: Digital Inclusion') && str_contains((string) $d['message'], 'Quantity: 3') && str_contains((string) $d['message'], 'Happy to help'), $r['code'] . ' ' . $r['loc'] . ' ' . json_encode($d));
 $th = $req('GET', '/fund-a-project/digital-inclusion/thanks');
 check('the thank-you page shows the contribution, the amount and what happens next', $th['code'] === 200 && str_contains($th['body'], 'Thank you, Zed') && str_contains($th['body'], 'Laptop for a learner workstation') && str_contains($th['body'], '6,300,000.00') && str_contains($th['body'], 'What happens next'), (string) $th['code']);
+check('the thank-you page buttons are real links (an opening tag lost its "a" once and printed raw text)', preg_match('~<a class="btn btn--cta btn--caps" href="[^"]+">[^<]+</a>\s*<a class="btn btn--outline btn--caps" href="[^"]*fund-a-project">Fund another project</a>~', $th['body']) === 1 && !str_contains($th['body'], '< class='));
 check('the thank-you page of another project (or without a pledge) goes back to the project', $req('GET', '/fund-a-project/green-horizons/thanks')['code'] === 302);
+
+// ---- after pledging: the bank account with the reference "<project> DON-<donation id>" and the amount, ready to copy
+$ref1 = 'Digital Inclusion DON-' . $d['id'];
+$lack = array_values(array_filter($accountNeedles, static fn(string $n): bool => !str_contains($th['body'], $n)));
+check('thank-you page: the bank card with the account, the reference "' . $ref1 . '" and the amount to send, the "give right now" sentence, the next steps and the no-money-taken note', $lack === []
+    && str_contains($th['body'], '<span class="bankcard__value" translate="no">' . $ref1 . '</span>') && str_contains($th['body'], '<span class="bankcard__value" translate="no">UGX 6,300,000.00</span>')
+    && str_contains($th['body'], 'give right now by bank transfer') && str_contains($th['body'], '<strong>' . $ref1 . '</strong>') && str_contains($th['body'], 'More ways to give') && str_contains($th['body'], 'What happens next') && str_contains($th['body'], 'No money has been taken yet'), implode(',', $lack));
+check('the stored reference of the pledge is not overwritten (reports read "PROJECT:...")', str_starts_with((string) $d['reference'], 'PROJECT:digital-inclusion|item:laptopx3') && FundProjects::referenceFor((int) $d['id']) === 'Digital Inclusion' && FundProjects::bankReference('Digital Inclusion', (int) $d['id']) === $ref1);
+$staff = $newMails('zz-fund-item@example.test');
+check('the e-mail to the team says which reference was quoted to the donor, so a bank transfer can be matched', count($staff) >= 1 && str_contains(implode("\n", $staff), 'Reference quoted to the donor for a bank transfer: ' . $ref1), (string) count($staff));
+$oldSession = \App\Core\View::render('web/fund/thanks', ['p' => FundProjects::find('digital-inclusion'), 't' => ['slug' => 'digital-inclusion', 'label' => 'A gift', 'detail' => '', 'amount' => 5000.0, 'currency' => 'UGX', 'method' => 'bank', 'name' => 'Old Session', 'big' => false], 'methods' => ['bank' => 'Bank transfer']], null);
+check('a thank-you page from before the reference existed (no "ref" in the session) falls back to the project name', str_contains($oldSession, '<span class="bankcard__value" translate="no">Digital Inclusion</span>') && !str_contains($oldSession, 'DON-'));
+$bigSession = \App\Core\View::render('web/fund/thanks', ['p' => FundProjects::find('digital-inclusion'), 't' => ['slug' => 'digital-inclusion', 'label' => 'A gift', 'detail' => '', 'amount' => 9000000.0, 'currency' => 'UGX', 'method' => 'other', 'name' => 'Big Donor', 'big' => true, 'ref' => 'Digital Inclusion DON-7'], 'methods' => ['other' => 'Another way']], null);
+check('a gift above the UGX 5,000,000 mobile-money limit: the team arranges it, and the page also offers the bank transfer', str_contains($bigSession, 'above the UGX 5,000,000 limit') && str_contains($bigSession, 'You can also send it by bank transfer to the account below') && str_contains($bigSession, 'Digital Inclusion DON-7'));
+
+// ---- the switch "Bank and manual mobile-money details" (Admin > Payment options) hides the account everywhere on screen, and the pages then say the team makes contact
+PaymentOptions::save(['manual' => false]);
+$off = $req('GET', '/fund-a-project/digital-inclusion');
+$offSoon = $req('GET', '/fund-a-project/voices-of-change');
+$post('digital-inclusion', ['method' => 'other'] + $who('off') + ['choice' => 'item:laptop', 'qty' => '1', 'currency' => 'UGX']);
+$dOff = $last('off');
+$thOff = $req('GET', '/fund-a-project/digital-inclusion/thanks');
+$hubOff = $req('GET', '/fund-a-project');
+check('switch off: no bank card and no account number on the project pages, the form note does not point to it', $off['code'] === 200 && $offSoon['code'] === 200 && !str_contains($off['body'], 'data-bankcard') && !str_contains($off['body'], '4090008000229') && !str_contains($off['body'], 'bankcard-fund') && !str_contains($offSoon['body'], 'data-bankcard') && !str_contains($offSoon['body'], '4090008000229'));
+check('switch off: the thank-you page shows no account, keeps the reference to quote when writing to us and still says what happens next', $dOff !== null && $thOff['code'] === 200 && !str_contains($thOff['body'], 'data-bankcard') && !str_contains($thOff['body'], '4090008000229') && !str_contains($thOff['body'], 'give right now by bank transfer')
+    && str_contains($thOff['body'], 'Digital Inclusion DON-' . $dOff['id']) && str_contains($thOff['body'], 'What happens next') && str_contains($thOff['body'], 'See the payment details') && !str_contains($thOff['body'], 'More ways to give'), (string) $thOff['code']);
+check('switch off: the hub keeps the earlier wording of step 3', !str_contains($hubOff['body'], 'our bank account is shown on every project page') && str_contains($hubOff['body'], 'by bank transfer, mobile money or PayPal'));
+check('OfficialAccount::visible() follows the switch', OfficialAccount::visible() === false);
+PaymentOptions::save(['manual' => true]);
+check('...and the card is back when the switch is on again', OfficialAccount::visible() === true && str_contains($req('GET', '/fund-a-project/digital-inclusion')['body'], '4090008000229'));
+
+// ---- the account is edited in Settings (official_bank_*): a custom value wins, an empty value falls back to the built-in one, and everything is escaped
+Settings::set('official_bank_account_number', '1112223334');
+$custom = $req('GET', '/fund-a-project/digital-inclusion')['body'];
+check('a custom account number is shown instead of the built-in one', str_contains($custom, '1112223334') && !str_contains($custom, '4090008000229'));
+Settings::set('official_bank_account_name', '<b>x</b>');
+$esc = $req('GET', '/fund-a-project/digital-inclusion')['body'];
+check('an account name with markup is printed escaped', str_contains($esc, '&lt;b&gt;x&lt;/b&gt;') && !str_contains($esc, '<b>x</b>'));
+foreach (['official_bank_account_name', 'official_bank_account_number', 'official_bank_name', 'official_bank_branch', 'official_bank_swift'] as $k) {
+    Settings::set($k, '');
+}
+$blank = $req('GET', '/fund-a-project/digital-inclusion')['body'];
+check('saving every account box empty can never blank the account: the built-in values come back', str_contains($blank, '4090008000229') && str_contains($blank, 'Pearl Bank') && str_contains($blank, 'Lumina Africa Foundation') && str_contains($blank, 'Gulu') && !str_contains($blank, 'SWIFT'));
+Database::execute('DELETE FROM settings WHERE setting_key IN (' . $optIn . ')', $optKeys);
+Settings::flush();
 
 $post('healthy-futures', $who('usd') + ['choice' => 'package:year1', 'currency' => 'USD']);
 $d = $last('usd');
@@ -207,8 +309,6 @@ check('the report "Project pledges" lists the pledge with its project and contri
 
 // ---- "Request the full proposal": a real form, the proposal PDF e-mailed at once
 echo "-- full proposal request --\n";
-$mailDir = STORAGE_PATH . '/mail';
-$mailsBefore = glob($mailDir . '/*.eml') ?: [];
 $page = $req('GET', '/fund-a-project/digital-inclusion');
 check('proposal: the button leads to a form on the page (no mailto: link any more) and the form asks for name and e-mail', str_contains($page['body'], 'href="#proposal"') && str_contains($page['body'], 'id="proposal"') && str_contains($page['body'], 'name="pr_email"') && !str_contains($page['body'], 'href="mailto:' . (string) setting('email_info', setting('email_primary', '')) . '?subject=Full'));
 $soon = array_values(array_filter($all, static fn(array $p): bool => $p['status'] !== 'proposal'))[0] ?? null;
@@ -254,6 +354,10 @@ if (count($sentMails) === 1 && preg_match('/Content-Type: application\/pdf;[^\n]
     $nameOk = str_contains($sentMails[0], 'Proposal-Digital-Inclusion.pdf');
 }
 check('proposal: the visitor gets ONE e-mail with the proposal attached as a real PDF named after the project', count($sentMails) === 1 && $pdfOk && $nameOk, 'mails=' . count($sentMails));
+$propText = $sentMails !== [] ? $mailText($sentMails[0]) : '';
+check('proposal e-mail: it carries the bank account (name, number, bank, branch) and asks the donor to quote the project name', str_contains($propText, 'Account Name: Lumina Africa Foundation') && str_contains($propText, 'Account Number: 4090008000229') && str_contains($propText, 'Bank: Pearl Bank') && str_contains($propText, 'Branch: Gulu')
+    && str_contains($propText, 'quote "Digital Inclusion" as the payment reference') && str_contains($propText, 'Please confirm the account name before sending'));
+check('proposal PDF: stays as it was, without the account number (a PDF is forwarded and cannot be corrected later)', !str_contains($doc, '4090008000229') && !str_contains($doc, 'Pearl Bank'));
 $r2 = $prop('digital-inclusion', ['pr_name' => 'Amina Prop', 'pr_email' => 'zz-fund-prop@example.test']);
 $r3 = $prop('digital-inclusion', ['pr_name' => 'Amina Prop', 'pr_email' => 'zz-fund-prop@example.test']);
 check('proposal: the same address gets at most two copies a day (no mail bombing through the form)', count($mine()) === 2 && in_array($r3['code'], [302, 303], true));
@@ -285,6 +389,16 @@ check('proposal: "all" sends ONE e-mail with the four proposals attached', in_ar
 Database::execute('DELETE FROM rate_limits');      // the route allows 6 posts per 10 minutes per visitor; this test has made more
 $none = $prop('digital-inclusion', ['pr_project' => 'not-a-project', 'pr_name' => 'Amina Prop', 'pr_email' => 'zz-fund-prop@example.test']);
 check('proposal: a value that is not in the list is refused', in_array($none['code'], [302, 303], true) && count($mine()) === 4, 'code=' . $none['code'] . ' mails=' . count($mine()));
+$allText = $allMail !== [] ? $mailText($allMail[0]) : '';
+check('proposal e-mail for all four projects: the account is there and asks for the name of the project being funded', str_contains($allText, 'Account Number: 4090008000229') && str_contains($allText, 'quote the name of the project you are funding'));
+PaymentOptions::save(['manual' => false]);
+Database::execute('DELETE FROM rate_limits');
+$prop('digital-inclusion', ['pr_name' => 'Amina Off', 'pr_email' => 'zz-fund-prop2@example.test']);
+$offMails = $newMails('zz-fund-prop2@example.test');
+$offText = implode("\n", array_filter($offMails, static fn(string $t): bool => str_contains($t, 'application/pdf')));
+check('proposal e-mail while the bank-details switch is off: the proposal is still sent, without the account', $offText !== '' && !str_contains($offText, '4090008000229') && !str_contains($offText, 'To give by bank transfer') && str_contains($offText, 'you can give or pledge here'), (string) count($offMails));
+PaymentOptions::save(['manual' => true]);
+$restoreOptions();
 Database::execute("DELETE FROM contact_messages WHERE email LIKE 'zz-fund-%'");
 foreach (array_diff(glob($mailDir . '/*.eml') ?: [], $mailsBefore) as $f) {
     if (str_contains((string) file_get_contents($f), 'zz-fund-')) {

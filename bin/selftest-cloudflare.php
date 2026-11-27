@@ -131,7 +131,7 @@ check('existing protections are still sent (nosniff, framing, referrer, permissi
 check('the CSP does not mention Cloudflare unless a Turnstile widget is on the page', !str_contains((string) $h['Content-Security-Policy'], 'cloudflare'));
 
 echo "-- cache headers on private pages --\n";
-foreach (['/admin/login', '/admin/security', '/academy/account', '/academy/portal/courses', '/membership/me/abc', '/shop/cart', '/shop/checkout', '/donate', '/donate/online', '/pay/mobile-money/X1', '/api/newsletters', '/forms/x', '/track-application'] as $p) {
+foreach (['/admin/login', '/admin/security', '/academy/account', '/academy/portal/courses', '/membership/me/abc', '/shop/cart', '/shop/checkout', '/donate', '/donate/thanks', '/donate/online', '/pay/mobile-money/X1', '/api/newsletters', '/forms/x', '/track-application'] as $p) {
     $h = $hdrs(['REMOTE_ADDR' => '127.0.0.1'], false, $p);
     check("HTML at {$p} is private, no-store", ($h['Cache-Control'] ?? '') === 'private, no-store');
 }

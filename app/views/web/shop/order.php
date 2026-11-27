@@ -1,9 +1,15 @@
 <?php
 /**
  * ORDER PAGE / confirmation (private page, opened by the secret link). OWNER: STOREFRONT. Vars: $order, $items, $pay (OrderService::paymentInfo), $text (subtotal, delivery, total,
- * balance), $status, $paystatus. Forms: POST shop/pay/{token} (Pay now / Pay again) and POST shop/order/{token}/reference (field `reference`).
+ * balance), $status, $paystatus. Forms: POST shop/pay/{token} (Pay now / Pay again) and POST shop/order/{token}/reference (field `reference`; the second form, with the hidden field via=bank,
+ * belongs to the "Or pay by bank transfer" card).
+ *
+ * BANK TRANSFER: an order that chose the bank keeps its own "How to pay" box (the account rows, a copy button on the number, the note). Every other unpaid, open order gets a SECOND box after it,
+ * "Or pay by bank transfer" ($pay['bank_also'], OrderService::paymentInfo): the account as the shared card (partials/bank-card, the shop's own rows), the amount and the order number to quote, and a
+ * form for the transfer reference. It follows the site-wide "Bank and manual mobile-money details" switch (Admin > Payment options), never the shop's "Offer this" switch of the bank method.
  */
 use App\Services\Shop\Money;
+use App\Services\Shop\PaymentMethods;
 use App\Services\Shop\ShopSettings;
 
 $this->start('scripts'); ?>
@@ -20,6 +26,7 @@ $steps = ['pending', 'confirmed', 'processing', $o['delivery_method'] === 'deliv
 $flow = ['pending' => 0, 'confirmed' => 1, 'processing' => 2, 'ready' => 3, 'shipped' => 3, 'completed' => 4];
 $at = $flow[$o['status']] ?? -1;
 $tone = $cancelled ? 'danger' : ($isPaid ? 'success' : ($o['payment_status'] === 'failed' ? 'danger' : 'warning'));
+$bankNumber = $o['payment_method'] === 'bank' ? PaymentMethods::bankAccountNumber() : '';      // the row that gets a copy button on an order that chose the bank
 ?>
 <?= partial('partials/page-hero', [
     'title'   => (string) content('shop', $booking ? 'order.title_booking' : 'order.title'),
@@ -74,12 +81,15 @@ $tone = $cancelled ? 'danger' : ($isPaid ? 'success' : ($o['payment_status'] ===
                                 <?php foreach ($pay['details'] as $d): ?>
                                     <?php if (isset($d['number'])): ?>
                                         <div><dt><?= e($d['label']) ?><?= $d['name'] !== '' ? ' <span>(' . e($d['name']) . ')</span>' : '' ?></dt><dd><span class="sh-copyable"><?= e($d['number']) ?></span> <button class="sh-copybtn" type="button" data-shop-copy="<?= e(preg_replace('/\s+/', '', (string) $d['number'])) ?>" data-copied="<?= e(content('shop', 'order.copied')) ?>" hidden aria-label="<?= e(content('shop', 'order.copy_number')) ?>: <?= e($d['number']) ?>"><?= icon('copy', 'icon--sm') ?></button></dd></div>
+                                    <?php elseif ($bankNumber !== '' && ($d['value'] ?? '') === $bankNumber): ?>
+                                        <div><dt><?= e($d['label']) ?></dt><dd><span class="sh-copyable" translate="no"><?= e($d['value']) ?></span> <button class="sh-copybtn" type="button" data-shop-copy="<?= e(preg_replace('/\s+/', '', $bankNumber)) ?>" data-copied="<?= e(content('shop', 'order.copied')) ?>" hidden aria-label="<?= e(content('shop', 'order.copy_number')) ?>: <?= e($d['value']) ?>"><?= icon('copy', 'icon--sm') ?></button></dd></div>
                                     <?php else: ?>
                                         <div><dt><?= e($d['label']) ?></dt><dd><?= e($d['value']) ?></dd></div>
                                     <?php endif; ?>
                                 <?php endforeach; ?>
                             </dl>
                         <?php endif; ?>
+                        <?php if ($o['payment_method'] === 'bank' && $pay['bank_note'] !== ''): ?><p class="sh-alert sh-alert--info" role="note"><?= icon('info', 'icon--sm') ?> <span><?= e($pay['bank_note']) ?></span></p><?php endif; ?>
 
                         <?php if (!empty($pay['daraza_url']) && !$pay['paid']): ?>
                             <p class="sh-payform"><a class="btn btn--cta btn--caps btn--lg" href="<?= e($pay['daraza_url']) ?>" target="_blank" rel="noopener noreferrer"><?= icon('external-link', 'icon--sm') ?> <?= e(\App\Services\Daraza::label()) ?></a></p>
@@ -110,6 +120,36 @@ $tone = $cancelled ? 'danger' : ($isPaid ? 'success' : ($o['payment_status'] ===
                             </form>
                         <?php endif; ?>
                     </section>
+
+                    <?php if (!empty($pay['bank_also'])): $bankAmount = $pay['deposit'] !== null ? Money::format($pay['deposit']['deposit'], $cur) : $text['balance']; ?>
+                        <?php /* the foundation's bank account as one more way to pay: for every unpaid, open order whose own method is not the bank (the card prints nothing while the manual-details switch is off, and so does this box: bank_also follows the same switch) */ ?>
+                        <section class="sh-card-box sh-bankalt" aria-labelledby="sh-bank-title">
+                            <h2 class="sh-card-box__title" id="sh-bank-title"><?= icon('banknote', 'icon--sm') ?> <?= e(content('shop', 'order.bank_title')) ?></h2>
+                            <p class="sh-instructions"><?= e(str_replace(['{order_number}', '{amount}'], [(string) $o['order_number'], str_replace(' ', "\u{00A0}", $bankAmount)], (string) content('shop', 'order.bank_intro'))) ?></p>
+                            <?php if (!empty($pay['bank_reported'])): ?><p class="sh-alert sh-alert--info" role="status"><?= icon('clock', 'icon--sm') ?> <span><?= e(content('shop', 'order.pending_note')) ?></span></p><?php endif; ?>
+                            <?php if (!empty($pay['bank_gateway_note'])): ?><p class="sh-alert sh-alert--info" role="status"><?= icon('info', 'icon--sm') ?> <span><?= e(content('shop', 'order.bank_online_note')) ?></span></p><?php endif; ?>
+                            <?= partial('partials/bank-card', [
+                                'rows'      => $pay['bank_details'],
+                                'note'      => $pay['bank_note'],
+                                'reference' => (string) $o['order_number'],
+                                'amount'    => $bankAmount,
+                                'title'     => PaymentMethods::label('bank'),
+                                'tag'       => 'h3',
+                                'id'        => 'shop',
+                                'extra'     => false,                       // the free-text donation instructions are not for the shop
+                            ]) ?>
+                            <p class="sh-refline"><?= icon('info', 'icon--sm') ?> <strong><?= e(str_replace('{order_number}', (string) $o['order_number'], (string) content('shop', 'payment.reference_line'))) ?></strong></p>
+                            <form method="post" action="<?= e(url('shop/order/' . $token . '/reference')) ?>" class="sh-refform" novalidate>
+                                <?= csrf_field() ?><?= honeypot_field() ?>
+                                <input type="hidden" name="via" value="bank">
+                                <h3 class="sh-refform__title"><?= e(content('shop', 'order.ref_title')) ?></h3>
+                                <div class="sh-refform__row">
+                                    <?= partial('partials/form-field', ['name' => 'reference', 'id' => 'f-reference-bank', 'label' => (string) content('shop', 'order.ref_label_bank'), 'required' => true, 'maxlength' => 60, 'value' => '', 'autocomplete' => 'off', 'help' => (string) content('shop', 'order.ref_help')]) ?>
+                                    <button class="btn btn--primary btn--caps" type="submit"><?= e(content('shop', 'order.ref_button')) ?></button>
+                                </div>
+                            </form>
+                        </section>
+                    <?php endif; ?>
                 <?php endif; ?>
 
                 <section class="sh-card-box" aria-labelledby="sh-items-title">

@@ -228,24 +228,34 @@ final class PaymentService
     /**
      * The customer typed their mobile-money transaction ID / bank transfer reference: staff must VERIFY it. The order becomes payment-pending
      * and its hold is extended. Nothing is marked paid.
+     *
+     * Without $via only an order that chose mobile money, the bank or Daraza and is still new ('pending') takes a reference. With $via = 'bank' (the "or pay by bank transfer" card of the order
+     * page) ANY unpaid order that is not closed (not cancelled, refunded or completed) takes the reference of a bank transfer, whatever way it chose to pay: the order keeps its own method
+     * and the ledger row says 'bank', so staff verify it against the bank statement. Any other $via is ignored. This service does not look at PaymentOptions: the controller decides whether the card is on.
      * @return array{ok:bool,error?:string}  errors: not_found | invalid | not_allowed | too_many
      */
-    public static function recordCustomerReference(int $orderId, string $reference): array
+    public static function recordCustomerReference(int $orderId, string $reference, ?string $via = null): array
     {
+        $via = $via === 'bank' ? 'bank' : null;
         $reference = trim((string) preg_replace('/\s+/u', ' ', $reference));
         if (preg_match('/^[A-Za-z0-9][A-Za-z0-9 ._\/-]{3,59}$/', $reference) !== 1) {
             return ['ok' => false, 'error' => 'invalid'];
         }
         $stored = false;
         try {
-            Database::transaction(function () use ($orderId, $reference, &$stored): void {
+            Database::transaction(function () use ($orderId, $reference, $via, &$stored): void {
                 $o = Database::one('SELECT * FROM shop_orders WHERE id = ? FOR UPDATE', [$orderId]);
                 if ($o === null) {
                     throw new ShopException('not_found');
                 }
-                if (!in_array($o['payment_method'], ['momo', 'bank', 'daraza'], true) || $o['status'] !== 'pending' || !in_array($o['payment_status'], ['unpaid', 'pending', 'failed'], true)) {
+                $m = (string) $o['payment_method'];
+                $okMethod = $via === 'bank' || in_array($m, ['momo', 'bank', 'daraza'], true);
+                $okStatus = $via === 'bank' ? !in_array($o['status'], ['cancelled', 'refunded', 'completed'], true) : $o['status'] === 'pending';
+                if (!$okMethod || !$okStatus || !in_array($o['payment_status'], ['unpaid', 'pending', 'failed'], true)) {
                     throw new ShopException('not_allowed');
                 }
+                $ledger = $via ?? $m;                                                  // a transfer reported on a pay-on-pickup order is a 'bank' payment in the ledger (the order keeps its method)
+                $byBank = $via === 'bank' && $m !== 'bank';
                 if (Database::one("SELECT id FROM shop_payments WHERE order_id = ? AND reference = ? AND source = 'customer'", [$orderId, $reference]) !== null) {
                     return;                                                            // the same reference again: nothing new (and no second e-mail to staff)
                 }
@@ -253,14 +263,14 @@ final class PaymentService
                     throw new ShopException('too_many');
                 }
                 Database::insert('shop_payments', [
-                    'order_id' => $orderId, 'method' => $o['payment_method'], 'amount' => $o['total'], 'currency' => $o['currency'], 'reference' => $reference,
-                    'status' => 'pending', 'source' => 'customer', 'meta' => 'Reference entered by the customer - to be verified',
+                    'order_id' => $orderId, 'method' => $ledger, 'amount' => $o['total'], 'currency' => $o['currency'], 'reference' => $reference,
+                    'status' => 'pending', 'source' => 'customer', 'meta' => $byBank ? 'Bank transfer reference entered by the customer - to be verified' : 'Reference entered by the customer - to be verified',
                 ]);
                 Database::execute(
-                    "UPDATE shop_orders SET payment_reference = ?, payment_status = 'pending', hold_until = GREATEST(COALESCE(hold_until, '1970-01-01 00:00:00'), ?) WHERE id = ?",
-                    [$reference, OrderService::holdUntil($o['payment_method']), $orderId]
+                    "UPDATE shop_orders SET payment_reference = ?, payment_status = 'pending', hold_until = IF(status = 'pending', GREATEST(COALESCE(hold_until, '1970-01-01 00:00:00'), ?), hold_until) WHERE id = ?",   // only a NEW order is held: a confirmed one has no hold
+                    [$reference, OrderService::holdUntil($ledger), $orderId]
                 );
-                OrderService::addLog($orderId, 'payment', 'The customer entered a payment reference (waiting for staff to verify).');
+                OrderService::addLog($orderId, 'payment', $byBank ? 'The customer reported a bank transfer and entered its reference (waiting for staff to verify against the bank statement).' : 'The customer entered a payment reference (waiting for staff to verify).');
                 $stored = true;
             });
         } catch (ShopException $e) {
